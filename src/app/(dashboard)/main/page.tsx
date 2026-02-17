@@ -17,13 +17,13 @@ export default function MainPage() {
   const { schedules } = useSchedule();
 
   return (
-    <div className="grid grid-cols-12 gap-10">
+    <div className="grid grid-cols-12 gap-6">
       {/* Left Column */}
-      <div className="col-span-5 flex flex-col gap-10">
+      <div className="col-span-5 flex flex-col gap-6">
         {/* TTS Section */}
         <section>
           <h2 className="mb-6 text-3xl font-bold text-white">TTS</h2>
-          <div className="flex flex-col gap-6 rounded-2xl border border-white/10 bg-black/40 p-8 backdrop-blur-md shadow-2xl">
+          <div className="flex flex-col gap-6 rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-md shadow-2xl">
             <TextInput
               value={text}
               onChange={setText}
@@ -40,7 +40,7 @@ export default function MainPage() {
         {/* Broadcast Schedule */}
         <section>
           <h2 className="mb-6 text-3xl font-bold text-white">방송예약</h2>
-          <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-black/40 p-8 backdrop-blur-md shadow-2xl relative overflow-hidden">
+          <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-md shadow-2xl relative overflow-hidden">
             {/* Glow effect */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent opacity-50" />
 
@@ -55,7 +55,7 @@ export default function MainPage() {
                 />
               ))}
             </div>
-            <Link href="/dashboard/broadcast" className="mt-2 text-right text-sm font-medium text-white/40 hover:text-white transition-colors">
+            <Link href="/broadcast" className="mt-2 text-right text-sm font-medium text-white/40 hover:text-white transition-colors">
               자세히 보기
             </Link>
           </div>
@@ -64,7 +64,7 @@ export default function MainPage() {
         {/* Broadcast Monitoring */}
         <section>
           <h2 className="mb-6 text-3xl font-bold text-white">방송 모니터링</h2>
-          <div className="flex flex-col gap-6 rounded-2xl border border-white/10 bg-black/40 p-8 backdrop-blur-md shadow-2xl">
+          <div className="flex flex-col gap-6 rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-md shadow-2xl">
             <div className="aspect-video w-full rounded-xl bg-black flex items-center justify-center border border-white/10 relative overflow-hidden shadow-inner">
               <div className="absolute inset-0 bg-gradient-to-t from-red-900/10 to-transparent" />
               <div className="relative z-10 flex flex-col items-center justify-center gap-2">
@@ -80,11 +80,11 @@ export default function MainPage() {
       </div>
 
       {/* Right Column */}
-      <div className="col-span-7 flex flex-col gap-10">
+      <div className="col-span-7 flex flex-col gap-6">
         {/* Network Status */}
         <section>
           <h2 className="mb-6 text-3xl font-bold text-white">네트워크 상태</h2>
-          <div className="rounded-2xl border border-white/10 bg-black/40 p-8 backdrop-blur-md shadow-2xl bg-gradient-to-br from-white/5 to-transparent">
+          <div className="rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-md shadow-2xl bg-gradient-to-br from-white/5 to-transparent">
             <div className="grid grid-cols-2 gap-6">
               {statuses.map((item) => (
                 <StatusCard key={item.label} label={item.label} status={item.status} height={120} />
@@ -96,7 +96,7 @@ export default function MainPage() {
         {/* Speaker Management */}
         <section>
           <h2 className="mb-6 text-3xl font-bold text-white">스피커 관리</h2>
-          <div className="rounded-2xl border border-white/10 bg-black/40 p-8 backdrop-blur-md shadow-2xl">
+          <div className="rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-md shadow-2xl">
             <div className="grid grid-cols-5 gap-3 mb-8">
               {zones.map((zone) => (
                 <StatusCard key={zone.id} label={zone.name} status={zone.status} />

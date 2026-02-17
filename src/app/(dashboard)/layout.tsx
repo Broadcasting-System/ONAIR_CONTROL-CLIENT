@@ -15,7 +15,7 @@ export default function DashboardLayout({
   return (
     <div className="flex h-screen w-full bg-black text-white overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className="flex w-[280px] flex-col border-r border-white/10 bg-[#0A0A0A] p-6 z-20">
+      <aside className="flex w-[240px] flex-col border-r border-white/10 bg-[#0A0A0A] p-6 z-20">
         <div className="mb-12">
           <h1 className="text-2xl font-bold tracking-tighter">메인 세팅</h1>
           <p className="text-xs text-white/30 uppercase tracking-widest">MAIN</p>
@@ -58,7 +58,7 @@ export default function DashboardLayout({
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
         </div>
 
-        <div className="relative z-10 p-10 min-h-full">
+        <div className="relative z-10 p-6 min-h-full">
           {children}
         </div>
       </main>
