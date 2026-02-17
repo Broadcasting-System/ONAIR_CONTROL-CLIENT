@@ -1,17 +1,19 @@
 import { create } from "zustand";
-import { SpeakerState } from "@/types/speaker";
+import { SpeakerState, SpeakerZone } from "@/types/speaker";
 
 interface SpeakerStore extends SpeakerState {
-  updateZone: (id: string, active: boolean) => void;
+  setZones: (zones: SpeakerZone[]) => void;
+  updateZoneStatus: (id: string, status: "on" | "off" | "error") => void;
   setMasterUnknown: (unknown: boolean) => void;
 }
 
 export const useSpeakerStore = create<SpeakerStore>((set) => ({
   zones: [],
   masterUnknown: false,
-  updateZone: (id, active) =>
+  setZones: (zones) => set({ zones }),
+  updateZoneStatus: (id, status) =>
     set((state) => ({
-      zones: state.zones.map((z) => (z.id === id ? { ...z, active } : z)),
+      zones: state.zones.map((z) => (z.id === id ? { ...z, status } : z)),
     })),
   setMasterUnknown: (masterUnknown) => set({ masterUnknown }),
 }));
