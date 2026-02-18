@@ -26,7 +26,7 @@ export default function TextInput({
       disabled={disabled}
       style={{ width }}
       className={cn(
-        "h-[50px] rounded-md border border-white/10 bg-[#1A1A1A] px-4 text-base text-white placeholder:text-white/30 focus:border-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+        "h-[64px] rounded-xl border border-white/5 bg-[#1C1C1C] px-6 text-lg font-pretendard text-white placeholder:text-white/20 focus:border-white/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-all",
       )}
     />
   );

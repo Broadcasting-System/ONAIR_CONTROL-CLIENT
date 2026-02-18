@@ -32,15 +32,18 @@ export default function StatusCard({
     <div
       onClick={onClick}
       style={{ width, height }}
-      className="flex cursor-pointer flex-col justify-between rounded-lg border border-white/5 bg-[#1E1E1E] p-4 transition-colors hover:bg-white/5"
+      className={cn(
+        "flex cursor-pointer flex-col justify-between rounded-xl border border-white/5 bg-[#1C1C1C] p-6 transition-all hover:bg-white/5",
+        "backdrop-blur-sm"
+      )}
     >
-      <div className="flex items-center gap-2">
-        <div className={cn("h-2.5 w-2.5 rounded-full", config.color)} />
-        <span className="font-mono text-xs font-bold uppercase tracking-wider text-white">
+      <div className="flex items-center gap-3">
+        <div className={cn("h-2 w-2 rounded-full shadow-[0_0_8px_currentColor]", config.color)} />
+        <span className="font-mbc text-sm font-medium uppercase tracking-wider text-white/50">
           {config.text}
         </span>
       </div>
-      <div className="mt-4 text-lg font-bold text-white/90">{label}</div>
+      <div className="mt-4 text-xl font-bold font-pretendard text-white leading-tight">{label}</div>
     </div>
   );
 }

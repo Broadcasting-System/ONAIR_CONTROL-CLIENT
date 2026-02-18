@@ -21,16 +21,16 @@ export default function ScheduleItem({
     <div
       onClick={onClick}
       className={cn(
-        "flex w-full cursor-pointer items-center justify-between rounded-lg border border-white/5 bg-[#1A1A1A] p-4 transition-all",
+        "flex w-full cursor-pointer items-center justify-between rounded-xl border border-white/5 bg-[#1C1C1C] p-5 transition-all",
         isActive
-          ? "border-primary/50 bg-primary/10 shadow-[0_0_20px_-5px_rgba(255,255,255,0.1)]"
+          ? "border-white/20 bg-white/10 shadow-[0_0_20px_-5px_rgba(255,255,255,0.1)]"
           : "hover:bg-white/5",
       )}
     >
-      <span className="text-base font-bold text-white">{title}</span>
+      <span className={cn("text-lg font-bold font-pretendard", isActive ? "text-white" : "text-white/90")}>{title}</span>
       <div className="text-right">
-        <div className="text-xs font-medium text-white/70">{date}</div>
-        <div className="text-xs text-white/50">{day}</div>
+        <div className="text-sm font-medium text-white/50 font-mbc mb-0.5">{date}</div>
+        <div className="text-xs text-white/30 font-pretendard">{day}</div>
       </div>
     </div>
   );
