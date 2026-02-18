@@ -13,12 +13,15 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   return (
-    <div className="flex h-screen w-full bg-background text-foreground overflow-hidden font-sans">
-      <aside className="flex w-[245px] flex-col border-r border-sidebar-border bg-sidebar p-6 z-20">
-        <div className="mb-12">
-          <h1 className="text-2xl font-bold tracking-tighter">메인 세팅</h1>
-          <p className="text-xs text-white/30 uppercase tracking-widest">MAIN</p>
-        </div>
+    <div className="relative flex h-screen w-full bg-background text-foreground overflow-hidden font-sans">
+      {/* Global Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1a0505] to-black opacity-80" />
+        <div className="absolute inset-0 bg-[url('/onair_background.png')] bg-cover bg-center opacity-40 mix-blend-screen" />
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
+      </div>
+
+      <aside className="relative flex w-[245px] flex-col bg-transparent pt-[56px] pl-[10px] z-20">
 
         <nav className="flex flex-col gap-4">
           {NAVIGATION_ITEMS.map((item) => {
@@ -46,13 +49,7 @@ export default function DashboardLayout({
         </nav>
       </aside>
 
-      <main className="relative flex-1 overflow-auto bg-background">
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a0505] to-black opacity-80" />
-          <div className="absolute inset-0 bg-[url('/onair_background.png')] bg-cover bg-center opacity-40 mix-blend-screen" />
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
-        </div>
-
+      <main className="relative flex-1 overflow-auto bg-transparent">
         <div className="relative z-10 p-10 min-h-full">
           {children}
         </div>
