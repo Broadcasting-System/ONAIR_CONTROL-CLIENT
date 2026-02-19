@@ -14,7 +14,6 @@ export default function DashboardLayout({
 
   return (
     <div className="relative flex h-screen w-full bg-background text-foreground overflow-hidden font-sans">
-      {/* Global Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-br from-[#1a0505] to-black opacity-80" />
         <div className="absolute inset-0 bg-[url('/onair_background.png')] bg-cover bg-center opacity-40 mix-blend-screen" />

@@ -17,25 +17,38 @@ export function useSpeakers() {
     }
   }, [zones.length, setZones]);
 
-  const toggleAll = (status: "on" | "off") => {
-    const newZones = zones.map((z) => ({ ...z, status }));
-    setZones(newZones);
-  };
+  const toggleSpeaker = (target: "all" | "grade" | string) => {
+    if (target === "all") {
+      const allOn = zones.every((z) => z.status === "on");
+      const newStatus = allOn ? "off" : "on";
+      setZones(zones.map((z) => ({ ...z, status: newStatus })));
+      return;
+    }
 
-  const toggleGrade = (grade: string, status: "on" | "off") => {
-    const newZones = zones.map((z) => {
-      if (z.name.startsWith(grade)) {
-        return { ...z, status };
-      }
-      return z;
-    });
-    setZones(newZones);
+    if (target === "grade") {
+      const grades = ["1학년", "2학년", "3학년"];
+      const gradeZones = zones.filter((z) => grades.some((g) => z.name.startsWith(g)));
+      const allOn = gradeZones.every((z) => z.status === "on");
+      const newStatus = allOn ? "off" : "on";
+
+      setZones(
+        zones.map((z) =>
+          grades.some((g) => z.name.startsWith(g)) ? { ...z, status: newStatus } : z,
+        ),
+      );
+      return;
+    }
+
+    setZones(
+      zones.map((z) =>
+        z.id === target ? { ...z, status: z.status === "on" ? "off" : "on" } : z,
+      ),
+    );
   };
 
   return {
     zones,
     updateZoneStatus,
-    toggleAll,
-    toggleGrade,
+    toggleSpeaker,
   };
 }

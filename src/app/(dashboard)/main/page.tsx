@@ -12,7 +12,7 @@ import Link from "next/link";
 
 export default function MainPage() {
   const { text, setText, handleSend, isSending } = useTts();
-  const { zones, toggleAll, toggleGrade } = useSpeakers();
+  const { zones, toggleSpeaker } = useSpeakers();
   const { statuses } = useNetworkStatus();
   const { schedules } = useSchedule();
 
@@ -90,20 +90,24 @@ export default function MainPage() {
           <div className="rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl">
             <div className="grid grid-cols-5 gap-4 mb-8">
               {zones.map((zone) => (
-                <StatusCard key={zone.id} label={zone.name} status={zone.status} variant="speaker" />
+                <StatusCard
+                  key={zone.id}
+                  label={zone.name}
+                  status={zone.status}
+                  variant="speaker"
+                  onClick={() => toggleSpeaker(zone.id)}
+                />
               ))}
             </div>
             <div className="flex gap-12 justify-center">
               <div className="w-[360px]">
-                <Button label="전체" onClick={() => toggleAll("on")} />
+                <Button label="전체" onClick={() => toggleSpeaker("all")} />
               </div>
               <div className="w-[360px]">
                 <Button
                   label="학년 전체"
                   color="#1e3a8a"
-                  onClick={() => {
-                    ["1학년", "2학년", "3학년"].forEach(g => toggleGrade(g, "on"));
-                  }}
+                  onClick={() => toggleSpeaker("grade")}
                 />
               </div>
             </div>
