@@ -1,7 +1,7 @@
 export interface SpeakerZone {
   id: string;
   name: string;
-  active: boolean;
+  status: "on" | "off" | "error";
   volume?: number;
 }
 
