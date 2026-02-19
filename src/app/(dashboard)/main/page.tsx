@@ -1,10 +1,10 @@
 "use client";
 
-import Button from "@/components/Button";
-import TextInput from "@/components/TextInput";
+import Button from "@/components/common/Button";
+import TextInput from "@/components/common/TextInput";
 import ScheduleItem from "@/components/ScheduleItem";
 import StatusCard from "@/components/StatusCard";
-import SectionHeader from "@/components/SectionHeader";
+import SectionHeader from "@/components/common/SectionHeader";
 import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
