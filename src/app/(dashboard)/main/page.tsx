@@ -79,7 +79,7 @@ export default function MainPage() {
           <div className="rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl bg-gradient-to-br from-white/5 to-transparent">
             <div className="grid grid-cols-2 gap-8">
               {statuses.map((item) => (
-                <StatusCard key={item.label} label={item.label} status={item.status} height={120} />
+                <StatusCard key={item.label} label={item.label} status={item.status} variant="network" />
               ))}
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function MainPage() {
           <div className="rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl">
             <div className="grid grid-cols-5 gap-4 mb-8">
               {zones.map((zone) => (
-                <StatusCard key={zone.id} label={zone.name} status={zone.status} />
+                <StatusCard key={zone.id} label={zone.name} status={zone.status} variant="speaker" />
               ))}
             </div>
             <div className="flex gap-12 justify-center">

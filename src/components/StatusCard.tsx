@@ -2,48 +2,82 @@
 
 import { cn } from "@/lib/utils";
 
-type StatusType = "on" | "off" | "good" | "error";
-
 interface StatusCardProps {
   label: string;
-  status: StatusType;
+  status: "on" | "off" | "good" | "caution" | "critical" | "error" | "normal";
   width?: string | number;
   height?: string | number;
   onClick?: () => void;
+  variant?: "network" | "speaker";
+  className?: string; // Added className to interface
 }
 
-const statusConfig: Record<StatusType, { color: string; text: string }> = {
-  on: { color: "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]", text: "ON" },
-  off: { color: "bg-zinc-600", text: "OFF" },
-  good: { color: "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]", text: "GOOD" },
-  error: { color: "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]", text: "ERROR" },
+const statusConfig = {
+  // Speaker States
+  on: { color: "bg-[#0075FF] shadow-[0_0_10px_#0075FF]", text: "ON" },
+  off: { color: "bg-[#585858]", text: "OFF" },
+
+  // Network States
+  good: { color: "bg-[#00FF57] shadow-[0_0_10px_#00FF57]", text: "GOOD" },
+  normal: { color: "bg-[#00FF57] shadow-[0_0_10px_#00FF57]", text: "GOOD" }, // Alias for good
+  caution: { color: "bg-[#FFD600] shadow-[0_0_10px_#FFD600]", text: "CHECK" },
+  critical: { color: "bg-[#FF0000] shadow-[0_0_10px_#FF0000]", text: "ERROR" },
+  error: { color: "bg-[#FF0000] shadow-[0_0_10px_#FF0000]", text: "ERROR" }, // Alias for critical
 };
 
 export default function StatusCard({
   label,
   status,
-  width = "100%",
-  height = "auto",
+  width,
+  height,
   onClick,
+  variant = "network",
+  className,
 }: StatusCardProps) {
-  const config = statusConfig[status];
+  const config = statusConfig[status] || statusConfig.off;
+
+  // Figma Specs:
+  // Network (variant="network"): 260x92 (reduced to ~92px height), padding: pl-[7px] pr-[5px] py-[4px]
+  // Speaker (variant="speaker"): 150x53, padding: pl-[7px] pr-[5px] py-[4px]
+
+  const isNetwork = variant === "network";
 
   return (
     <div
       onClick={onClick}
       style={{ width, height }}
       className={cn(
-        "flex cursor-pointer flex-col justify-between rounded-xl border border-white/5 bg-[#1C1C1C] p-6 transition-all hover:bg-white/5",
-        "backdrop-blur-sm"
+        "flex cursor-pointer flex-col justify-between rounded-[8px] border-none bg-black/40 transition-all hover:bg-white/10",
+        isNetwork ? "h-[92px] px-[7px] py-[4px]" : "h-[53px] px-[7px] py-[4px]",
+        className
       )}
     >
-      <div className="flex items-center gap-3">
-        <div className={cn("h-2 w-2 rounded-full shadow-[0_0_8px_currentColor]", config.color)} />
-        <span className="font-mbc text-sm font-medium uppercase tracking-wider text-white/50">
+      {/* Top Row: Icon + Status Text */}
+      <div className="flex items-center gap-2">
+        <div
+          className={cn(
+            "rounded-full",
+            isNetwork ? "h-[15px] w-[15px]" : "h-[11px] w-[11px]",
+            config.color
+          )}
+        />
+        <span
+          className={cn(
+            "font-orbitron font-normal leading-none text-white",
+            isNetwork ? "text-[18px]" : "text-[10px]"
+          )}
+        >
           {config.text}
         </span>
       </div>
-      <div className="mt-4 text-xl font-bold font-pretendard text-white leading-tight">{label}</div>
+
+      {/* Bottom Row: Label */}
+      <div className={cn(
+        "w-full text-center font-wooju leading-none text-white",
+        isNetwork ? "text-[40px]" : "text-[22px]"
+      )}>
+        {label}
+      </div>
     </div>
   );
 }
