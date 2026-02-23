@@ -9,20 +9,17 @@ interface StatusCardProps {
   height?: string | number;
   onClick?: () => void;
   variant?: "network" | "speaker";
-  className?: string; // Added className to interface
+  className?: string;
 }
 
 const statusConfig = {
-  // Speaker States
   on: { color: "bg-[#0075FF] shadow-[0_0_10px_#0075FF]", text: "ON" },
   off: { color: "bg-[#585858]", text: "OFF" },
-
-  // Network States
   good: { color: "bg-[#00FF57] shadow-[0_0_10px_#00FF57]", text: "GOOD" },
-  normal: { color: "bg-[#00FF57] shadow-[0_0_10px_#00FF57]", text: "GOOD" }, // Alias for good
+  normal: { color: "bg-[#00FF57] shadow-[0_0_10px_#00FF57]", text: "GOOD" },
   caution: { color: "bg-[#FFD600] shadow-[0_0_10px_#FFD600]", text: "CHECK" },
   critical: { color: "bg-[#FF0000] shadow-[0_0_10px_#FF0000]", text: "ERROR" },
-  error: { color: "bg-[#FF0000] shadow-[0_0_10px_#FF0000]", text: "ERROR" }, // Alias for critical
+  error: { color: "bg-[#FF0000] shadow-[0_0_10px_#FF0000]", text: "ERROR" },
 };
 
 export default function StatusCard({
@@ -35,11 +32,6 @@ export default function StatusCard({
   className,
 }: StatusCardProps) {
   const config = statusConfig[status] || statusConfig.off;
-
-  // Figma Specs:
-  // Network (variant="network"): 260x92 (reduced to ~92px height), padding: pl-[7px] pr-[5px] py-[4px]
-  // Speaker (variant="speaker"): 150x53, padding: pl-[7px] pr-[5px] py-[4px]
-
   const isNetwork = variant === "network";
 
   return (
@@ -52,7 +44,6 @@ export default function StatusCard({
         className
       )}
     >
-      {/* Top Row: Icon + Status Text */}
       <div className="flex items-center gap-2">
         <div
           className={cn(
@@ -71,7 +62,6 @@ export default function StatusCard({
         </span>
       </div>
 
-      {/* Bottom Row: Label */}
       <div className={cn(
         "w-full text-center font-wooju leading-none text-white",
         isNetwork ? "text-[40px]" : "text-[22px]"
