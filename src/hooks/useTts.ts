@@ -9,7 +9,6 @@ export function useTts() {
 
     setIsSending(true);
     try {
-      // Mock API call
       console.log("Sending TTS:", text);
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setText("");
