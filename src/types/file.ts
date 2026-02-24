@@ -6,6 +6,9 @@ export interface UploadedFile {
   fileName: string;
   fileUrl: string;
   thumbnailUrl?: string;
+  urls?: string[];
+  duration?: number;
   fileSize: number;
   uploadedAt: string;
 }
+

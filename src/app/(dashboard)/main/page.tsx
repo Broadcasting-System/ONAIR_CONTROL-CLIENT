@@ -33,12 +33,13 @@ export default function MainPage() {
 
   const handleSelectMedia = async (file: UploadedFile) => {
     try {
-      await showMedia(file.type, file.id);
+      await showMedia(file);
       setIsMediaModalOpen(false);
     } catch (err) {
       console.error(err);
     }
   };
+
 
   return (
     <div className="grid grid-cols-12 gap-16 h-full">
