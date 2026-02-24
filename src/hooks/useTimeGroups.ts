@@ -110,8 +110,9 @@ export const useTimeGroups = () => {
   );
 
   const copyBells = useCallback(() => {
-    copy(bells);
-  }, [bells, copy]);
+    const currentBells = activeGroup.days.find((d) => d.dayType === activeDay)?.bells || [];
+    copy(currentBells);
+  }, [activeGroup.days, activeDay, copy]);
 
   const pasteBells = useCallback(() => {
     const newBells = paste();
