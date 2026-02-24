@@ -56,7 +56,7 @@ export default function BellEditor({
   };
 
   return (
-    <div className="flex flex-col w-[864px] h-full gap-8">
+    <div className="flex flex-col w-full max-w-[600px] h-full gap-6">
       {/* Title Input */}
       <TextInput
         value={label}
@@ -66,7 +66,7 @@ export default function BellEditor({
       />
 
       {/* Speakers Grid */}
-      <div className="grid grid-cols-3 gap-x-[68px] gap-y-4 px-10 max-h-[460px] overflow-y-auto pr-4 custom-scrollbar">
+      <div className="grid grid-cols-3 gap-x-4 gap-y-3 px-2 max-h-[350px] overflow-y-auto pr-4 custom-scrollbar">
         {speakers.map((speaker) => {
           const isSelected = selectedSpeakers.includes(speaker.id);
           return (
@@ -75,7 +75,7 @@ export default function BellEditor({
               label={speaker.name}
               status={isSelected ? "on" : "off"}
               variant="speaker"
-              width="217px"
+              width="100%"
               onClick={() => toggleSpeaker(speaker.id)}
             />
           );
@@ -83,24 +83,24 @@ export default function BellEditor({
       </div>
 
       {/* Time & Audio Settings */}
-      <div className="flex gap-[40px] px-10 mt-auto pb-4">
-        <div className="flex-1 flex flex-col gap-3">
-          <label className="text-white text-[16px] font-bold">시보 시간</label>
+      <div className="flex gap-6 px-2 mt-auto pb-4">
+        <div className="flex-1 flex flex-col gap-2">
+          <label className="text-white text-[15px] font-bold">시보 시간</label>
           <input
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="h-[59px] w-full rounded-xl border border-white/5 bg-[#1C1C1C] px-6 text-lg font-pretendard text-white focus:border-white/20 focus:outline-none transition-all [color-scheme:dark]"
+            className="h-[48px] w-full rounded-xl border border-white/5 bg-[#1C1C1C] px-4 text-md font-pretendard text-white focus:border-white/20 focus:outline-none transition-all [color-scheme:dark]"
           />
         </div>
-        <div className="flex-1 flex flex-col gap-3">
-          <label className="text-white text-[16px] font-bold">
+        <div className="flex-1 flex flex-col gap-2">
+          <label className="text-white text-[15px] font-bold">
             시보 음악 (클릭하여 변경)
           </label>
           <select
             value={audioFile}
             onChange={(e) => setAudioFile(e.target.value)}
-            className="h-[59px] w-full rounded-xl border border-white/5 bg-[#1C1C1C] px-6 text-lg font-pretendard text-white focus:border-white/20 focus:outline-none transition-all appearance-none cursor-pointer"
+            className="h-[48px] w-full rounded-xl border border-white/5 bg-[#1C1C1C] px-4 text-md font-pretendard text-white focus:border-white/20 focus:outline-none transition-all appearance-none cursor-pointer"
           >
             <option value="" disabled>
               음악을 선택해주세요
@@ -116,14 +116,14 @@ export default function BellEditor({
       </div>
 
       {/* Editor Local Actions */}
-      <div className="flex gap-4 mt-2 self-end w-[495px]">
+      <div className="flex gap-4 mt-2 px-2 pb-4">
         {bell && onDelete && (
           <div className="flex-1">
             <Button
               label="삭제"
               onClick={onDelete}
               color="red"
-              className="h-[58px]"
+              className="h-[48px]"
             />
           </div>
         )}
@@ -132,7 +132,7 @@ export default function BellEditor({
             label="저장"
             onClick={handleSave}
             color="white"
-            className="h-[58px]"
+            className="h-[48px]"
           />
         </div>
       </div>

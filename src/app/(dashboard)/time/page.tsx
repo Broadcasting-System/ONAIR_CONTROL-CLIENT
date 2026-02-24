@@ -93,9 +93,9 @@ export default function TimePage() {
     <div className="flex flex-col h-full w-full pb-10">
       <SectionHeader>시보 설정</SectionHeader>
 
-      <div className="flex flex-1 flex-col mt-[40px] h-full overflow-hidden">
+      <div className="flex flex-1 flex-col mt-6 h-full overflow-hidden">
         {/* Top: Groups */}
-        <div className="flex-shrink-0 mb-[60px] max-w-[1610px]">
+        <div className="flex-shrink-0 mb-8 max-w-[1400px]">
           <GroupTab
             groups={groups}
             activeGroupId={activeGroup.id}
@@ -104,11 +104,11 @@ export default function TimePage() {
         </div>
 
         {/* Bottom: Split Editor Layout */}
-        <div className="flex flex-1 gap-[62px] min-h-0 relative max-w-[1610px]">
+        <div className="flex flex-1 gap-[40px] min-h-0 relative max-w-[1400px]">
           {/* Left Panel */}
-          <div className="flex flex-col w-[684px] h-full flex-shrink-0">
+          <div className="flex flex-col w-[350px] h-full flex-shrink-0">
             {/* Day Selector */}
-            <div className="mb-[32px]">
+            <div className="mb-[24px]">
               <DaySelector
                 days={DAYS.map((d) => d.value)}
                 activeDay={activeDay}
@@ -153,18 +153,18 @@ export default function TimePage() {
             )}
 
             {/* Global Bottom Actions */}
-            <div className="absolute bottom-0 right-0 flex flex-col gap-[28px] w-[495px]">
+            <div className="absolute bottom-0 right-0 flex flex-col gap-4 w-[400px]">
               <Button
                 label="시보 추가"
                 onClick={handleCreateNew}
                 color={isAddingNew ? "red" : "white"}
-                className="h-[58px]"
+                className="h-[48px]"
               />
               <Button
                 label="시보 전송"
                 onClick={sendTimeTable}
                 color="white"
-                className="h-[58px]"
+                className="h-[48px]"
               />
             </div>
           </div>
