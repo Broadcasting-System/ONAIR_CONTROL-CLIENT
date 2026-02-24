@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FileType, UploadedFile } from "@/types/file";
+import { getApiBase } from "@/lib/apiBase";
 
 interface UploadResponse {
   id: string;
@@ -21,8 +22,8 @@ export const useFileUpload = () => {
     setProgress(0);
     setError(null);
 
-    const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-    const endpoint = `${BASE_URL}/files/upload`;
+    const BASE = getApiBase();
+    const endpoint = `${BASE}/files/upload`;
 
     try {
       const results = await Promise.all(

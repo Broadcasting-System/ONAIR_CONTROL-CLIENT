@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { FileType, UploadedFile } from "@/types/file";
+import { getApiBase } from "@/lib/apiBase";
 
 export const useFiles = () => {
   const [files, setFiles] = useState<Record<FileType, UploadedFile[]>>({
@@ -15,8 +16,8 @@ export const useFiles = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-      const res = await fetch(`${BASE_URL}/files`);
+      const BASE = getApiBase();
+      const res = await fetch(`${BASE}/files`);
       if (!res.ok) throw new Error("파일 목록을 불러오는데 실패했습니다.");
 
       const data: UploadedFile[] = await res.json();
@@ -39,8 +40,8 @@ export const useFiles = () => {
 
   const deleteFile = async (fileId: string, type: FileType) => {
     try {
-      const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-      const res = await fetch(`${BASE_URL}/files/${fileId}`, {
+      const BASE = getApiBase();
+      const res = await fetch(`${BASE}/files/${fileId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("파일 삭제에 실패했습니다.");
@@ -56,8 +57,8 @@ export const useFiles = () => {
 
   const renameFile = async (fileId: string, type: FileType, newName: string) => {
     try {
-      const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-      const res = await fetch(`${BASE_URL}/files`, {
+      const BASE = getApiBase();
+      const res = await fetch(`${BASE}/files`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: fileId, type, newName }),

@@ -2,6 +2,7 @@ import { useSpeakerStore } from "@/stores/speakerStore";
 import { SPEAKER_ITEMS } from "@/constants/speakers";
 import { useEffect, useCallback } from "react";
 import { SpeakerZone } from "@/types/speaker";
+import { getApiBase } from "@/lib/apiBase";
 
 interface SpeakersStatusResponse {
   active_devices: string[];
@@ -18,9 +19,9 @@ export function useSpeakers() {
   const { zones, setZones } = useSpeakerStore();
 
   const loadStatus = useCallback(async () => {
-    const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+    const BASE = getApiBase();
     try {
-      const res = await fetch(`${BASE_URL}/speakers/status`);
+      const res = await fetch(`${BASE}/speakers/status`);
       if (!res.ok) throw new Error("스피커 상태 로드 실패");
       const data: SpeakersStatusResponse = await res.json();
       const activeSet = new Set(data.active_devices);
@@ -47,8 +48,8 @@ export function useSpeakers() {
   }, [zones.length, loadStatus]);
 
   const callControl = async (targets: string[], action: "on" | "off") => {
-    const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-    const res = await fetch(`${BASE_URL}/speakers/control`, {
+    const BASE = getApiBase();
+    const res = await fetch(`${BASE}/speakers/control`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ targets, action }),

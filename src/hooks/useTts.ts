@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSpeakerStore } from "@/stores/speakerStore";
+import { getApiBase } from "@/lib/apiBase";
 
 interface BroadcastResponse {
   success: boolean;
@@ -20,8 +21,8 @@ export function useTts() {
 
     setIsSending(true);
     try {
-      const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-      const res = await fetch(`${BASE_URL}/broadcast/execute`, {
+      const BASE = getApiBase();
+      const res = await fetch(`${BASE}/broadcast/execute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
