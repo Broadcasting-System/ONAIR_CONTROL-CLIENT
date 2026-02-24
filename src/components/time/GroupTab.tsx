@@ -9,7 +9,7 @@ interface GroupTabProps {
 
 export default function GroupTab({ groups, activeGroupId, onSelect }: GroupTabProps) {
   return (
-    <div className="flex gap-[30px] w-full">
+    <div className="flex gap-[22px] w-full">
       {groups.map((group) => {
         const isActive = group.id === activeGroupId;
         return (
@@ -17,13 +17,13 @@ export default function GroupTab({ groups, activeGroupId, onSelect }: GroupTabPr
             key={group.id}
             onClick={() => onSelect(group.id)}
             className={cn(
-              "flex items-center justify-center w-[160px] h-[55px] rounded-[7px] pb-[4px] pt-[8px] transition-all",
+              "flex items-center justify-center w-[208px] h-[64px] rounded-[6px] transition-all bg-transparent",
               isActive
-                ? "bg-[rgba(32,32,32,0.8)] border border-white/30 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]"
-                : "bg-[rgba(32,32,32,0.6)] border border-[rgba(255,255,255,0.1)] text-white/50 hover:bg-[rgba(32,32,32,0.7)] hover:text-white/80"
+                ? "border-[2px] border-white text-white font-semibold"
+                : "border border-white/20 text-white/40 hover:border-white/40 hover:text-white/80 font-medium"
             )}
           >
-            <span className="font-orbitron font-normal text-[24px] leading-[0] tracking-wider mt-2">
+            <span className="font-pretendard text-[22px] tracking-widest">
               {group.name}
             </span>
           </button>

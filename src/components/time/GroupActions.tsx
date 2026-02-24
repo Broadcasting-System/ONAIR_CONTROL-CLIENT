@@ -14,25 +14,25 @@ export default function GroupActions({
   hasCopiedData,
 }: GroupActionsProps) {
   return (
-    <div className="flex flex-col gap-4 w-full max-w-[400px]">
+    <div className="flex flex-col gap-[16px] w-[340px]">
       <Button
         label="요일 시보 복사"
         onClick={onCopy}
         color="white"
-        className="h-[48px]"
+        className="h-[64px]"
       />
       <Button
         label="요일 시보 붙여넣기"
         onClick={onPaste}
         disabled={!hasCopiedData}
         color="white"
-        className="h-[48px]"
+        className="h-[64px]"
       />
       <Button
         label="초기화"
         onClick={onReset}
         color="red"
-        className="h-[48px]"
+        className="h-[64px]"
       />
     </div>
   );

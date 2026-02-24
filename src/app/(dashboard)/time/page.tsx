@@ -91,11 +91,8 @@ export default function TimePage() {
 
   return (
     <div className="flex flex-col h-full w-full pb-10">
-      <SectionHeader>시보 설정</SectionHeader>
-
-      <div className="flex flex-1 flex-col mt-6 h-full overflow-hidden">
-        {/* Top: Groups */}
-        <div className="flex-shrink-0 mb-8 max-w-[1400px]">
+      <div className="flex flex-1 flex-col mt-4 h-full overflow-hidden relative">
+        <div className="flex-shrink-0 mb-6 w-full flex justify-center">
           <GroupTab
             groups={groups}
             activeGroupId={activeGroup.id}
@@ -103,20 +100,16 @@ export default function TimePage() {
           />
         </div>
 
-        {/* Bottom: Split Editor Layout */}
-        <div className="flex flex-1 gap-[40px] min-h-0 relative max-w-[1400px]">
-          {/* Left Panel */}
-          <div className="flex flex-col w-[350px] h-full flex-shrink-0">
-            {/* Day Selector */}
+        <div className="flex flex-1 gap-[40px] min-h-0 relative max-w-[1500px] mx-auto w-full">
+          <div className="flex flex-col w-[600px] h-full flex-shrink-0">
             <div className="mb-[24px]">
               <DaySelector
-                days={DAYS.map((d) => d.value)}
+                days={DAYS}
                 activeDay={activeDay}
                 onSelect={selectDay}
               />
             </div>
 
-            {/* Bells List */}
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-4">
               <div className="grid grid-cols-2 gap-x-[16px] gap-y-[10px] w-full">
                 {bells.map((bell) => (
@@ -131,41 +124,44 @@ export default function TimePage() {
             </div>
           </div>
 
-          {/* Right Panel */}
-          <div className="flex flex-col flex-1 pb-[100px] relative h-full">
-            {editingBellId !== null ? (
-              <BellEditor
-                bell={editingBell}
-                speakers={SPEAKERS}
-                audioFiles={audioFiles}
-                onSave={handleSaveBell}
-                onDelete={editingBell ? handleDeleteBell : undefined}
-              />
-            ) : (
-              <div className="h-full w-[864px] flex items-center justify-end relative pb-[200px]">
-                <GroupActions
-                  onCopy={copyBells}
-                  onPaste={pasteBells}
-                  onReset={() => setIsResetModalOpen(true)}
-                  hasCopiedData={hasCopiedData}
+          <div className="flex flex-col flex-1 h-full min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0 mb-4">
+              {editingBellId !== null ? (
+                <BellEditor
+                  bell={editingBell}
+                  speakers={SPEAKERS}
+                  audioFiles={audioFiles}
+                  onSave={handleSaveBell}
+                  onDelete={editingBell ? handleDeleteBell : undefined}
+                />
+              ) : (
+                <div className="h-full w-full flex flex-col justify-center items-end pb-[160px]">
+                  <GroupActions
+                    onCopy={copyBells}
+                    onPaste={pasteBells}
+                    onReset={() => setIsResetModalOpen(true)}
+                    hasCopiedData={hasCopiedData}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex-shrink-0 flex justify-end pb-4">
+              <div className="flex flex-col gap-[20px] w-full max-w-[340px]">
+                <Button
+                  label="시보 추가"
+                  onClick={handleCreateNew}
+                  color={isAddingNew ? "red" : "white"}
+                  className="h-[64px]"
+                />
+                <Button
+                  label="시보 전송"
+                  onClick={sendTimeTable}
+                  color="#9EFAE1"
+                  glowSize="20px"
+                  className="h-[64px]"
                 />
               </div>
-            )}
-
-            {/* Global Bottom Actions */}
-            <div className="absolute bottom-0 right-0 flex flex-col gap-4 w-[400px]">
-              <Button
-                label="시보 추가"
-                onClick={handleCreateNew}
-                color={isAddingNew ? "red" : "white"}
-                className="h-[48px]"
-              />
-              <Button
-                label="시보 전송"
-                onClick={sendTimeTable}
-                color="white"
-                className="h-[48px]"
-              />
             </div>
           </div>
         </div>
@@ -183,6 +179,6 @@ export default function TimePage() {
         confirmText="초기화"
         isDestructive={true}
       />
-    </div>
+    </div >
   );
 }

@@ -57,7 +57,6 @@ export default function BellEditor({
 
   return (
     <div className="flex flex-col w-full max-w-[600px] h-full gap-6">
-      {/* Title Input */}
       <TextInput
         value={label}
         onChange={setLabel}
@@ -65,7 +64,6 @@ export default function BellEditor({
         width="100%"
       />
 
-      {/* Speakers Grid */}
       <div className="grid grid-cols-3 gap-x-4 gap-y-3 px-2 max-h-[350px] overflow-y-auto pr-4 custom-scrollbar">
         {speakers.map((speaker) => {
           const isSelected = selectedSpeakers.includes(speaker.id);
@@ -82,7 +80,6 @@ export default function BellEditor({
         })}
       </div>
 
-      {/* Time & Audio Settings */}
       <div className="flex gap-6 px-2 mt-auto pb-4">
         <div className="flex-1 flex flex-col gap-2">
           <label className="text-white text-[15px] font-bold">시보 시간</label>
@@ -115,7 +112,6 @@ export default function BellEditor({
         </div>
       </div>
 
-      {/* Editor Local Actions */}
       <div className="flex gap-4 mt-2 px-2 pb-4">
         {bell && onDelete && (
           <div className="flex-1">
