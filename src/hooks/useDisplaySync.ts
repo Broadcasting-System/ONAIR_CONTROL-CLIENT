@@ -23,7 +23,7 @@ export function useDisplaySync() {
 
       if (type === 'video' || type === 'image' || type === 'audio') {
         if (!finalUrl && fileId) {
-          finalUrl = `/uploads/${fileId}`
+          finalUrl = `/api/files/stream/${type}/${fileId}`
         }
         if (finalUrl && !finalUrl.startsWith('http')) {
           finalUrl = `${BASE}${finalUrl}`
