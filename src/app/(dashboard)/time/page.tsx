@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import SectionHeader from "@/components/common/SectionHeader";
+
 import GroupTab from "@/components/time/GroupTab";
 import DaySelector from "@/components/time/DaySelector";
 import BellCard from "@/components/time/BellCard";

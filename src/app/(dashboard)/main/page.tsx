@@ -5,6 +5,7 @@ import TextInput from "@/components/common/TextInput";
 import ScheduleItem from "@/components/ScheduleItem";
 import StatusCard from "@/components/StatusCard";
 import SectionHeader from "@/components/common/SectionHeader";
+
 import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -13,8 +14,7 @@ import { useDisplay } from "@/hooks/useDisplay";
 import { useFiles } from "@/hooks/useFiles";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { FileType, UploadedFile } from "@/types/file";
-import ConfirmModal from "@/components/common/ConfirmModal";
+import { UploadedFile } from "@/types/file";
 import FileUploadSection from "@/components/file/FileUploadSection";
 
 export default function MainPage() {
