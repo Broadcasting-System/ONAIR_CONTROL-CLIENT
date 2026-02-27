@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { Group, DayType, Bell } from "@/types/time";
 import { useBellClipboard } from "./useBellClipboard";
+import { getApiBase } from "@/lib/apiBase";
 
 const INITIAL_GROUPS: Group[] = Array.from({ length: 5 }, (_, i) => ({
   id: i + 1,
@@ -127,8 +128,8 @@ export const useTimeGroups = () => {
 
   const sendTimeTable = useCallback(async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const endpoint = baseUrl.endsWith("/api") ? `${baseUrl}/time` : `${baseUrl}/api/time`;
+      const BASE = getApiBase();
+      const endpoint = `${BASE}/time`;
 
       const payload = {
         groupId: activeGroupId,

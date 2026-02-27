@@ -56,6 +56,7 @@ export default function MainPage() {
               label={isTtsSending ? "송출 중..." : "TTS 송출하기"}
               onClick={handleSend}
               disabled={!text.trim() || isTtsSending}
+              className="h-[64px]"
             />
           </div>
         </section>
@@ -94,7 +95,11 @@ export default function MainPage() {
               <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-0 bg-[length:100%_2px,3px_100%] pointer-events-none" />
             </div>
             <div className="mt-auto">
-              <Button label="송출 미디어 변경" onClick={() => setIsMediaModalOpen(true)} />
+              <Button
+                label="송출 미디어 변경"
+                onClick={() => setIsMediaModalOpen(true)}
+                className="h-[64px]"
+              />
             </div>
           </div>
         </section>
@@ -168,13 +173,14 @@ export default function MainPage() {
             </div>
             <div className="mt-auto flex gap-12 justify-center">
               <div className="w-[360px]">
-                <Button label="전체" onClick={() => toggleSpeaker("all")} />
+                <Button label="전체" onClick={() => toggleSpeaker("all")} className="h-[64px]" />
               </div>
               <div className="w-[360px]">
                 <Button
                   label="학년 전체"
                   color="#1e3a8a"
                   onClick={() => toggleSpeaker("grade")}
+                  className="h-[64px]"
                 />
               </div>
             </div>
