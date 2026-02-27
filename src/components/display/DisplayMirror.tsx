@@ -53,43 +53,22 @@ export const DisplayMirror = () => {
   }, [content]);
 
   useEffect(() => {
-    if (content?.type !== "video" || !content.url || !content.serverTimestamp || !videoRef.current) {
-      return;
+    if (content?.type === "video" && content.serverTimestamp && videoRef.current) {
+      const video = videoRef.current;
+      const elapsedSec = (Date.now() - content.serverTimestamp) / 1000;
+
+      const syncVideo = async () => {
+        try {
+          video.currentTime = elapsedSec;
+          await video.play();
+        } catch (err) {
+          video.muted = true;
+          video.play().catch(() => { });
+        }
+      };
+
+      syncVideo();
     }
-
-    const video = videoRef.current;
-    let syncInterval: NodeJS.Timeout;
-
-    const syncVideo = () => {
-      if (!video) return;
-      const elapsedSec = (Date.now() - content.serverTimestamp!) / 1000;
-
-      if (video.paused && !video.ended) {
-        video.play().catch(() => { });
-      }
-
-      const drift = Math.abs(video.currentTime - elapsedSec);
-      if (drift > 2) {
-        video.currentTime = elapsedSec;
-      }
-    };
-
-    const onCanPlay = () => {
-      const elapsedSec = (Date.now() - content.serverTimestamp!) / 1000;
-      video.currentTime = elapsedSec;
-      video.play().catch(() => {
-        video.muted = true;
-        video.play().catch(() => { });
-      });
-    };
-
-    video.addEventListener("canplay", onCanPlay);
-    syncInterval = setInterval(syncVideo, 3000);
-
-    return () => {
-      video.removeEventListener("canplay", onCanPlay);
-      clearInterval(syncInterval);
-    };
   }, [content]);
 
   if (!content || content.type === "standby") {
