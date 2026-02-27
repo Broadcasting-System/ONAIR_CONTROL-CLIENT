@@ -92,7 +92,7 @@ export default function BellEditor({
         </div>
         <div className="flex-1 flex flex-col gap-2">
           <label className="text-white text-[15px] font-bold">
-            시보 음악 (클릭하여 변경)
+            시보 음악
           </label>
           <select
             value={audioFile}
@@ -119,7 +119,7 @@ export default function BellEditor({
               label="삭제"
               onClick={onDelete}
               color="red"
-              className="h-[48px]"
+              className="h-[64px]"
             />
           </div>
         )}
@@ -128,7 +128,7 @@ export default function BellEditor({
             label="저장"
             onClick={handleSave}
             color="white"
-            className="h-[48px]"
+            className="h-[64px]"
           />
         </div>
       </div>
