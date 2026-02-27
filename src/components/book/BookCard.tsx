@@ -25,12 +25,12 @@ const BookCard = memo(({ book, isSelected, onClick }: BookCardProps) => {
           : "bg-transparent border border-[rgba(255,255,255,0.05)] hover:bg-white/5"
       )}
     >
-      <span className="font-semibold text-[16px] text-white truncate max-w-[200px]">
-        {book.name}
+      <span className="font-semibold text-[16px] text-white truncate max-w-[220px]">
+        {book.name || "이름 없음"}
       </span>
       <div className="flex flex-col items-end gap-[4px] text-[14px]">
         {book.date && <span className="font-medium text-[#d1d1d1] leading-none">{book.date}</span>}
-        <span className="font-medium text-[#d1d1d1] leading-none truncate max-w-[100px]">
+        <span className="font-medium text-[#d1d1d1] leading-none truncate max-w-[200px]">
           {formatDays(book.days)} {book.time}
         </span>
       </div>

@@ -3,6 +3,8 @@ import { Book, BookDayType } from "@/types/book";
 import TextInput from "@/components/common/TextInput";
 import Button from "@/components/common/Button";
 import { cn } from "@/lib/utils";
+import MediaSelectModal from "@/components/common/MediaSelectModal";
+import { UploadedFile } from "@/types/file";
 
 const DAY_OPTIONS: { label: string; value: BookDayType }[] = [
   { label: "M", value: "M" },
@@ -24,18 +26,25 @@ export default function BookEditor({ book, onSave, onDelete }: BookEditorProps) 
   const [time, setTime] = useState("");
   const [date, setDate] = useState("");
   const [selectedDays, setSelectedDays] = useState<BookDayType[]>([]);
+  const [mediaUrl, setMediaUrl] = useState<string | undefined>(undefined);
+  const [mediaType, setMediaType] = useState<string | undefined>(undefined);
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
   useEffect(() => {
     if (book) {
-      setName(book.name);
-      setTime(book.time);
+      setName(book.name || "");
+      setTime(book.time || "");
       setDate(book.date || "");
-      setSelectedDays(book.days);
+      setSelectedDays(book.days || ["M"]);
+      setMediaUrl(book.mediaUrl);
+      setMediaType(book.mediaType);
     } else {
       setName("");
       setTime("");
       setDate("");
       setSelectedDays(["M"]);
+      setMediaUrl(undefined);
+      setMediaType(undefined);
     }
   }, [book]);
 
@@ -60,37 +69,55 @@ export default function BookEditor({ book, onSave, onDelete }: BookEditorProps) 
     if (selectedDays.length === 0) return;
 
     onSave({
-      id: book?.id || Date.now().toString(),
+      id: book?.id || `book_${Date.now()}`,
       name,
       time,
       date: selectedDays.includes("P") ? date : undefined,
       days: selectedDays,
+      mediaUrl,
+      mediaType,
     });
+  };
+
+  const handleSelectMedia = (file: UploadedFile) => {
+    setMediaUrl(file.fileUrl);
+    setMediaType(file.type);
+    setIsMediaModalOpen(false);
   };
 
   const isSpecial = selectedDays.includes("P");
 
   return (
     <div className="flex flex-col w-full max-w-[600px] h-full gap-6 mx-auto">
-      <div className="w-full aspect-video bg-[#0a0a0a] rounded-2xl flex flex-col justify-center items-center border border-white/10 relative overflow-hidden">
-        <div className="flex flex-col items-center">
-          <span className="text-[40px] font-black text-red-500 tracking-widest drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">OFF AIR</span>
-          <span className="text-[#a0a0a0] text-sm mt-2">방송 준비 중입니다. 잠시만 기다려주세요.</span>
-        </div>
+      <div className="w-full aspect-video bg-[#0a0a0a] rounded-2xl flex flex-col justify-center items-center border border-white/10 relative overflow-hidden shadow-inner">
+        {mediaUrl ? (
+          <div className="flex flex-col items-center gap-3">
+            <div className="text-white/60 text-sm">선택된 미디어:</div>
+            <div className="text-white text-lg font-bold px-4 py-2 bg-white/5 rounded-lg border border-white/10 max-w-[80%] truncate">
+              {mediaUrl.split("/").pop()}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center">
+            <span className="text-[40px] font-black text-red-500 tracking-widest drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">OFF AIR</span>
+            <span className="text-[#a0a0a0] text-sm mt-2">사용할 미디어를 선택해주세요.</span>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-4 px-2 justify-center">
         <Button
           label="예약 미디어 변경"
           color="white"
-          onClick={() => { }}
+          onClick={() => setIsMediaModalOpen(true)}
           className="h-[48px] px-8 text-base flex-1 max-w-[240px]"
         />
         <Button
           label="미디어 삭제"
           color="red"
-          onClick={() => { }}
+          onClick={() => setMediaUrl(undefined)}
           className="h-[48px] px-8 text-base flex-1 max-w-[240px]"
+          disabled={!mediaUrl}
         />
       </div>
 
@@ -167,7 +194,7 @@ export default function BookEditor({ book, onSave, onDelete }: BookEditorProps) 
         ) : null}
         <div className="flex-1">
           <Button
-            label="변경사항 저장"
+            label={book ? "변경사항 저장" : "예약 추가하기"}
             onClick={handleSave}
             color="#4B7BFF"
             glowSize="15px"
@@ -175,6 +202,13 @@ export default function BookEditor({ book, onSave, onDelete }: BookEditorProps) 
           />
         </div>
       </div>
+
+      {isMediaModalOpen && (
+        <MediaSelectModal
+          onSelect={handleSelectMedia}
+          onClose={() => setIsMediaModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
