@@ -9,10 +9,11 @@ interface FileUploadSectionProps {
   title: string;
   files: UploadedFile[];
   displayType: "grid" | "chips";
-  onUpload: (files: FileList) => void;
+  onUpload?: (files: FileList) => void;
   onSelectFile: (e: React.MouseEvent, file: UploadedFile) => void;
-  acceptedFormats: string;
+  acceptedFormats?: string;
   isUploading?: boolean;
+  readonly?: boolean;
 }
 
 export default function FileUploadSection({
@@ -21,13 +22,14 @@ export default function FileUploadSection({
   displayType,
   onUpload,
   onSelectFile,
-  acceptedFormats,
+  acceptedFormats = "",
   isUploading = false,
+  readonly = false,
 }: FileUploadSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
+    if (e.target.files && e.target.files.length > 0 && onUpload) {
       onUpload(e.target.files);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -70,23 +72,25 @@ export default function FileUploadSection({
           )}
         </div>
 
-        <div className="mt-auto pt-4 flex justify-center">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept={acceptedFormats}
-            multiple
-            className="hidden"
-          />
-          <div className="w-[300px]">
-            <Button
-              label={isUploading ? "업로드 중..." : `${title} 파일 추가`}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
+        {!readonly && (
+          <div className="mt-auto pt-4 flex justify-center">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept={acceptedFormats}
+              multiple
+              className="hidden"
             />
+            <div className="w-[300px]">
+              <Button
+                label={isUploading ? "업로드 중..." : `${title} 파일 추가`}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

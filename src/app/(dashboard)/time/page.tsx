@@ -15,8 +15,8 @@ import { SPEAKER_ITEMS } from "@/constants/speakers";
 import { DAYS } from "@/constants/days";
 import ConfirmModal from "@/components/common/ConfirmModal";
 
-const SPEAKERS: Speaker[] = SPEAKER_ITEMS.map((s, idx) => ({
-  id: `spk-${idx}`,
+const SPEAKERS: Speaker[] = SPEAKER_ITEMS.map((s) => ({
+  id: s.label,
   name: s.label,
 }));
 

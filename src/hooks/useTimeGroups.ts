@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
-import { Group, DayType, Bell } from "@/types/time";
+import { useState, useCallback, useEffect } from "react";
+import { Group, DayType, Bell, DaySchedule } from "@/types/time";
 import { useBellClipboard } from "./useBellClipboard";
+import { getApiBase } from "@/lib/apiBase";
 
 const INITIAL_GROUPS: Group[] = Array.from({ length: 5 }, (_, i) => ({
   id: i + 1,
@@ -125,10 +126,45 @@ export const useTimeGroups = () => {
     replaceBells([]);
   }, [replaceBells]);
 
+  const fetchTimeTable = useCallback(async () => {
+    try {
+      const BASE = getApiBase();
+      const endpoint = `${BASE}/time`;
+      const res = await fetch(endpoint);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && json.data) {
+        const serverData = json.data;
+        setGroups((prev) =>
+          prev.map((g) => {
+            const groupData = serverData[g.id];
+            if (!groupData || !groupData.schedules) return g;
+
+            // Override days with what's in the server's schedules array for this group
+            const serverSchedules: DaySchedule[] = groupData.schedules;
+            return {
+              ...g,
+              days: g.days.map(d => {
+                const found = serverSchedules.find(s => s.dayType === d.dayType);
+                return found ? found : d;
+              })
+            };
+          })
+        );
+      }
+    } catch (err: unknown) {
+      console.error("Failed to load timetable", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTimeTable();
+  }, [fetchTimeTable]);
+
   const sendTimeTable = useCallback(async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const endpoint = baseUrl.endsWith("/api") ? `${baseUrl}/time` : `${baseUrl}/api/time`;
+      const BASE = getApiBase();
+      const endpoint = `${BASE}/time`;
 
       const payload = {
         groupId: activeGroupId,
@@ -143,10 +179,13 @@ export const useTimeGroups = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
+      // On success, refresh the whole timetable to stay in sync
+      fetchTimeTable();
     } catch (err: unknown) {
       console.error(err);
     }
-  }, [activeGroupId, activeDay, activeGroup.days]);
+  }, [activeGroupId, activeDay, activeGroup.days, fetchTimeTable]);
 
   return {
     groups,

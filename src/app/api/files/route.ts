@@ -69,7 +69,7 @@ export async function GET(_req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const files = formData.getAll("files") as File[];
+    const files = formData.getAll("file") as File[];
     const type = formData.get("type") as FileType;
 
     if (!files || files.length === 0 || !type) {
@@ -111,18 +111,22 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    const id = url.searchParams.get("id");
-    const type = url.searchParams.get("type") as FileType;
+    const segments = url.pathname.split("/");
+    const id = segments[segments.length - 1];
 
-    if (!id || !type) {
+    if (!id) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
+    const dashIdx = id.indexOf("-");
+    if (dashIdx === -1) {
+      return NextResponse.json({ error: "Invalid file id format" }, { status: 400 });
+    }
+    const type = id.substring(0, dashIdx) as FileType;
     const typeDirName = type === "presentation" ? "presentations" : type + "s";
     const typeDir = await getWorkingDir(typeDirName);
 
-    // id is constructed as `${type}-${fileName}`
-    const fileName = id.substring(type.length + 1);
+    const fileName = id.substring(dashIdx + 1);
     const filePath = join(typeDir, fileName);
 
     await unlink(filePath);

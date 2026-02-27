@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { FileType, UploadedFile } from "@/types/file";
+import { getApiBase } from "@/lib/apiBase";
 
 export const useFiles = () => {
   const [files, setFiles] = useState<Record<FileType, UploadedFile[]>>({
@@ -15,28 +16,23 @@ export const useFiles = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const endpoint = baseUrl.endsWith("/api") ? `${baseUrl}/files` : `${baseUrl}/api/files`;
-      const response = await fetch(endpoint);
-      if (!response.ok) throw new Error("파일 목록을 불러오는데 실패했습니다.");
+      const BASE = getApiBase();
+      const res = await fetch(`${BASE}/files`);
+      if (!res.ok) throw new Error("파일 목록을 불러오는데 실패했습니다.");
 
-      const data: UploadedFile[] = await response.json();
-      const groupedFiles: Record<FileType, UploadedFile[]> = {
+      const data: UploadedFile[] = await res.json();
+      const grouped: Record<FileType, UploadedFile[]> = {
         image: [],
         video: [],
         audio: [],
         presentation: [],
       };
-
-      data.forEach(file => {
-        if (groupedFiles[file.type]) {
-          groupedFiles[file.type].push(file);
-        }
+      data.forEach((file) => {
+        if (grouped[file.type]) grouped[file.type].push(file);
       });
-
-      setFiles(groupedFiles);
+      setFiles(grouped);
     } catch (err: unknown) {
-      setError((err as Error).message || "알 수 없는 오류가 발생했습니다.");
+      setError((err as Error).message ?? "알 수 없는 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -44,38 +40,33 @@ export const useFiles = () => {
 
   const deleteFile = async (fileId: string, type: FileType) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const endpoint = baseUrl.endsWith("/api") ? `${baseUrl}/files` : `${baseUrl}/api/files`;
-      const response = await fetch(`${endpoint}?id=${fileId}&type=${type}`, {
+      const BASE = getApiBase();
+      const res = await fetch(`${BASE}/files/${fileId}`, {
         method: "DELETE",
       });
-
-      if (!response.ok) throw new Error("파일 삭제에 실패했습니다.");
-      setFiles(prev => ({
+      if (!res.ok) throw new Error("파일 삭제에 실패했습니다.");
+      setFiles((prev) => ({
         ...prev,
-        [type]: prev[type].filter(f => f.id !== fileId)
+        [type]: prev[type].filter((f) => f.id !== fileId),
       }));
     } catch (err: unknown) {
-      setError((err as Error).message || "삭제 중 오류가 발생했습니다.");
+      setError((err as Error).message ?? "삭제 중 오류가 발생했습니다.");
       throw err;
     }
   };
 
   const renameFile = async (fileId: string, type: FileType, newName: string) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const endpoint = baseUrl.endsWith("/api") ? `${baseUrl}/files` : `${baseUrl}/api/files`;
-      const response = await fetch(endpoint, {
+      const BASE = getApiBase();
+      const res = await fetch(`${BASE}/files`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: fileId, type, newName }),
       });
-
-      if (!response.ok) throw new Error("파일 이름 수정에 실패했습니다.");
-
+      if (!res.ok) throw new Error("파일 이름 수정에 실패했습니다.");
       await fetchFiles();
     } catch (err: unknown) {
-      setError((err as Error).message || "이름 수정 중 오류가 발생했습니다.");
+      setError((err as Error).message ?? "이름 수정 중 오류가 발생했습니다.");
       throw err;
     }
   };
