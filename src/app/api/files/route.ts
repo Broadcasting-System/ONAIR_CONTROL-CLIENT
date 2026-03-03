@@ -25,7 +25,7 @@ async function getWorkingDir(typeDirName: string): Promise<string> {
   }
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
     const types: FileType[] = ["image", "video", "audio", "presentation"];
     const allFiles: UploadedFile[] = [];

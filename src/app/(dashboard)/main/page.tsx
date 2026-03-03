@@ -5,17 +5,18 @@ import TextInput from "@/components/common/TextInput";
 import ScheduleItem from "@/components/ScheduleItem";
 import StatusCard from "@/components/StatusCard";
 import SectionHeader from "@/components/common/SectionHeader";
+
 import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useSchedule } from "@/hooks/useSchedule";
 import { useDisplay } from "@/hooks/useDisplay";
 import { useFiles } from "@/hooks/useFiles";
+import { DisplayMirror } from "@/components/display/DisplayMirror";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { FileType, UploadedFile } from "@/types/file";
-import ConfirmModal from "@/components/common/ConfirmModal";
-import FileUploadSection from "@/components/file/FileUploadSection";
+import { UploadedFile } from "@/types/file";
+import MediaSelectModal from "@/components/common/MediaSelectModal";
 
 export default function MainPage() {
   const { text, setText, handleSend, isSending: isTtsSending } = useTts();
@@ -23,7 +24,7 @@ export default function MainPage() {
   const { statuses } = useNetworkStatus();
   const { schedules } = useSchedule();
   const { showMedia } = useDisplay();
-  const { files, fetchFiles } = useFiles();
+  const { fetchFiles } = useFiles();
 
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
@@ -88,10 +89,7 @@ export default function MainPage() {
           <div className="flex-1 flex flex-col gap-6 rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl">
             <div className="aspect-video w-full rounded-xl bg-black flex items-center justify-center border border-white/10 relative overflow-hidden shadow-inner">
               <div className="absolute inset-0 bg-gradient-to-t from-red-900/10 to-transparent" />
-              <div className="relative z-10 flex flex-col items-center justify-center gap-2">
-                <h3 className="text-4xl font-black italic tracking-wider text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">OFF AIR</h3>
-                <p className="text-xs font-medium text-red-500 tracking-tight opacity-80">방송 송출 준비 중입니다 잠시만 기다려주세요</p>
-              </div>
+              <DisplayMirror />
               <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-0 bg-[length:100%_2px,3px_100%] pointer-events-none" />
             </div>
             <div className="mt-auto">
@@ -105,43 +103,10 @@ export default function MainPage() {
         </section>
 
         {isMediaModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-10">
-            <div className="bg-[#121212] border border-white/10 rounded-[32px] w-full max-w-5xl max-h-[80vh] overflow-y-auto p-12">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-3xl font-bold text-white font-wooju">송출 미디어 선택</h2>
-                <button
-                  onClick={() => setIsMediaModalOpen(false)}
-                  className="text-white/40 hover:text-white transition-colors text-xl font-bold"
-                >
-                  닫기
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-12">
-                <FileUploadSection
-                  title="이미지"
-                  files={files.image}
-                  displayType="grid"
-                  onSelectFile={(_, file) => handleSelectMedia(file)}
-                  readonly
-                />
-                <FileUploadSection
-                  title="동영상"
-                  files={files.video}
-                  displayType="grid"
-                  onSelectFile={(_, file) => handleSelectMedia(file)}
-                  readonly
-                />
-                <FileUploadSection
-                  title="프리젠테이션"
-                  files={files.presentation}
-                  displayType="grid"
-                  onSelectFile={(_, file) => handleSelectMedia(file)}
-                  readonly
-                />
-              </div>
-            </div>
-          </div>
+          <MediaSelectModal
+            onSelect={handleSelectMedia}
+            onClose={() => setIsMediaModalOpen(false)}
+          />
         )}
       </div>
 
