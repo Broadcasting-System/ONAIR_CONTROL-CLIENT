@@ -1,12 +1,12 @@
 import { create } from "zustand";
-import { UploadedFile } from "@/types/file";
+import { FileItem } from "@/types/file";
 
-interface FileState {
-  files: UploadedFile[];
-  setFiles: (files: UploadedFile[]) => void;
+interface FileStore {
+  files: FileItem[];
+  setFiles: (files: FileItem[]) => void;
 }
 
-export const useFileStore = create<FileState>((set) => ({
+export const useFileStore = create<FileStore>((set) => ({
   files: [],
   setFiles: (files) => set({ files }),
 }));
