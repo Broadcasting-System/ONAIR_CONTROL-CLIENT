@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import Providers from "@/components/providers";
+import { Geist, Geist_Mono, Orbitron } from "next/font/google";
+import localFont from "next/font/local";
+import Providers from "@/components/providers/Providers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -11,6 +12,21 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const orbitron = Orbitron({
+  variable: "--font-orbitron",
+  subsets: ["latin"],
+});
+
+const mbcFont = localFont({
+  src: "../../public/fonts/MBC 1961 OTF M.otf",
+  variable: "--font-mbc",
+});
+
+const woojuFont = localFont({
+  src: "../../public/fonts/HakgyoansimWoojuR.otf",
+  variable: "--font-wooju",
 });
 
 export const metadata: Metadata = {
@@ -24,9 +40,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} ${mbcFont.variable} ${woojuFont.variable} antialiased`}
       >
         <Providers>{children}</Providers>
       </body>
