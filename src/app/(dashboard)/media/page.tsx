@@ -29,7 +29,8 @@ export default function MediaPage() {
   const { files, fetchFiles, isLoading } = useFiles();
   const { showMedia, isSending } = useDisplay();
   const { content } = useDisplaySync();
-  const { toggle, seek, setVolume, setMuted, setFit, setSlide } = usePlayer();
+  const { toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide } =
+    usePlayer();
 
   const [tab, setTab] = useState<FileType>("video");
   const [, setTick] = useState(0);
@@ -156,6 +157,18 @@ export default function MediaPage() {
                   className="flex h-11 w-24 shrink-0 items-center justify-center whitespace-nowrap rounded-xl border border-white/15 bg-white/10 font-mbc text-white hover:bg-white/15"
                 >
                   {pb.playing ? "일시정지" : "재생"}
+                </button>
+
+                <button
+                  onClick={() => setLoop(!pb.loop)}
+                  className={cn(
+                    "shrink-0 whitespace-nowrap rounded-xl border px-4 py-2 font-mbc text-sm transition-colors",
+                    pb.loop
+                      ? "border-green-500/40 bg-green-500/15 text-green-300 hover:bg-green-500/25"
+                      : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10",
+                  )}
+                >
+                  반복 {pb.loop ? "ON" : "OFF"}
                 </button>
 
                 <div className="flex shrink-0 items-center gap-3">

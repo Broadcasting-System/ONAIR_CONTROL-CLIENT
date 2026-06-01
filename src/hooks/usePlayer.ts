@@ -2,11 +2,12 @@ import { useCallback } from "react";
 import { getApiBase } from "@/lib/apiBase";
 
 type PlayerBody = {
-  action: "play" | "pause" | "toggle" | "seek" | "volume" | "fit";
+  action: "play" | "pause" | "toggle" | "seek" | "volume" | "fit" | "loop";
   position?: number;
   volume?: number;
   muted?: boolean;
   fit?: "contain" | "cover";
+  loop?: boolean;
 };
 
 async function sendPlayer(body: PlayerBody) {
@@ -43,6 +44,10 @@ export function usePlayer() {
     (fit: "contain" | "cover") => sendPlayer({ action: "fit", fit }),
     [],
   );
+  const setLoop = useCallback(
+    (loop: boolean) => sendPlayer({ action: "loop", loop }),
+    [],
+  );
   const setSlide = useCallback(async (index: number) => {
     try {
       await fetch(`${getApiBase()}/display/slide`, {
@@ -54,5 +59,5 @@ export function usePlayer() {
       /* ignore */
     }
   }, []);
-  return { play, pause, toggle, seek, setVolume, setMuted, setFit, setSlide };
+  return { play, pause, toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide };
 }

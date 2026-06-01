@@ -11,6 +11,7 @@ export interface Playback {
   muted: boolean
   duration?: number | null
   fit?: 'contain' | 'cover'
+  loop?: boolean
 }
 
 export interface DisplayContent {
