@@ -19,11 +19,19 @@ const calculateSlideIndex = (content: DisplayContent | null) => {
   return index < content.urls.length ? index : content.urls.length - 1;
 };
 
-const posFromPlayback = (pb?: Playback | null): number | null => {
+const posFromPlayback = (
+  pb?: Playback | null,
+  duration?: number,
+): number | null => {
   if (!pb) return null;
-  return pb.playing
+  const raw = pb.playing
     ? Math.max(0, pb.offset + (Date.now() - pb.anchorTs) / 1000)
     : Math.max(0, pb.offset);
+  // 반복 재생: 서버 시계는 계속 증가하므로 영상 길이로 나눈 나머지로 환산
+  if (pb.loop && duration && Number.isFinite(duration) && duration > 0) {
+    return raw % duration;
+  }
+  return raw;
 };
 
 export const DisplayMirror = () => {
@@ -77,7 +85,7 @@ export const DisplayMirror = () => {
       if (applied) return;
       applied = true;
       const pb = playbackRef.current;
-      const target = posFromPlayback(pb) ?? initialPos();
+      const target = posFromPlayback(pb, video.duration) ?? initialPos();
       if (
         Number.isFinite(video.duration) &&
         Math.abs(video.currentTime - target) > 0.7
@@ -91,6 +99,30 @@ export const DisplayMirror = () => {
     };
     video.addEventListener("loadedmetadata", apply);
 
+    // 반복 재생: 끝나면 처음부터 (네이티브 loop는 ended를 막으므로 이벤트로 처리)
+    video.loop = false;
+    const onEndedEvt = () => {
+      if (playbackRef.current?.loop) {
+        try {
+          video.currentTime = 0;
+        } catch {}
+        video.play().catch(() => {});
+      }
+    };
+    video.addEventListener("ended", onEndedEvt);
+    const loopCheck = setInterval(() => {
+      const pb = playbackRef.current;
+      const dur = video.duration;
+      const nearEnd =
+        Number.isFinite(dur) && dur > 0 && video.currentTime >= dur - 0.4;
+      if (pb?.loop && (video.ended || (video.paused && nearEnd))) {
+        try {
+          video.currentTime = 0;
+        } catch {}
+        video.play().catch(() => {});
+      }
+    }, 700);
+
     if (primary.includes(".m3u8") && Hls.isSupported()) {
       hls = new Hls({ maxMaxBufferLength: 20, startPosition: initialPos() });
       hls.loadSource(primary);
@@ -102,6 +134,8 @@ export const DisplayMirror = () => {
 
     return () => {
       video.removeEventListener("loadedmetadata", apply);
+      video.removeEventListener("ended", onEndedEvt);
+      clearInterval(loopCheck);
       if (hls) hls.destroy();
     };
   }, [content?.url, content?.type, content?.serverTimestamp]);
@@ -111,7 +145,7 @@ export const DisplayMirror = () => {
     const v = videoRef.current;
     if (content?.type !== "video" || !v || !content.playback) return;
     const pb = content.playback;
-    const target = posFromPlayback(pb);
+    const target = posFromPlayback(pb, v.duration);
     if (
       target != null &&
       Number.isFinite(v.duration) &&

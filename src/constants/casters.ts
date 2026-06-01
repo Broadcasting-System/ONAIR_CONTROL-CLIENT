@@ -69,6 +69,12 @@ export function groupCastersByCohort(): { cohort: number; members: Caster[] }[] 
     .map(([cohort, members]) => ({ cohort, members }));
 }
 
+/** bio가 없을 때 보여줄 기본 소개. 예: "방송부 4기 부원 류승찬입니다." */
+export function defaultCasterBio(c: Caster): string {
+  const role = c.role === "leader" ? "부장" : "부원";
+  return `방송부 ${c.cohort}기 ${role} ${c.name}입니다.`;
+}
+
 /** 상세 패널의 역할 부제 텍스트 */
 export function casterSubtitle(c: Caster): string {
   const base = c.role === "leader" ? `방송부 ${c.cohort}기 부장` : `방송부 ${c.cohort}기 부원`;

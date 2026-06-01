@@ -48,11 +48,14 @@ export default function MediaPage() {
 
   const pb = content?.type === "video" ? content.playback : undefined;
   const duration = pb?.duration ?? content?.duration ?? 0;
-  const livePos = pb
+  const rawPos = pb
     ? pb.playing
       ? pb.offset + (Date.now() - pb.anchorTs) / 1000
       : pb.offset
     : 0;
+  // 반복 재생 중엔 서버 시계가 계속 늘어나므로 길이로 나눈 나머지로 환산
+  const livePos =
+    pb?.loop && duration > 0 ? rawPos % duration : rawPos;
   const pos = dragPos ?? Math.min(livePos, duration || livePos);
 
   const clearDisplay = useCallback(async () => {

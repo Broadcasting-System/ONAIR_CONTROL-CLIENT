@@ -9,6 +9,7 @@ import {
   CASTERS,
   groupCastersByCohort,
   casterSubtitle,
+  defaultCasterBio,
 } from "@/constants/casters";
 
 export default function CasterPage() {
@@ -63,7 +64,7 @@ export default function CasterPage() {
         </p>
 
         <div className="mt-10 max-w-[1000px] whitespace-pre-line font-pretendard text-[18px] leading-relaxed text-white/75">
-          {selected.bio ?? "소개를 준비 중입니다."}
+          {selected.bio ?? defaultCasterBio(selected)}
         </div>
       </div>
     </div>
