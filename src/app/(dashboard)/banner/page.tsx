@@ -452,13 +452,13 @@ function ScoreboardEditor({
         <div className="flex gap-2">
           <button
             onClick={() => declareVictory("left")}
-            className="flex-1 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 font-mbc text-sm text-yellow-200 hover:bg-yellow-500/20"
+            className="flex-1 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 font-mbc text-sm text-yellow-200 transition-colors hover:border-yellow-400/70 active:bg-yellow-500/25"
           >
             {value.teamA.name || "왼쪽"} 승리
           </button>
           <button
             onClick={() => declareVictory("right")}
-            className="flex-1 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 font-mbc text-sm text-yellow-200 hover:bg-yellow-500/20"
+            className="flex-1 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 font-mbc text-sm text-yellow-200 transition-colors hover:border-yellow-400/70 active:bg-yellow-500/25"
           >
             {value.teamB.name || "오른쪽"} 승리
           </button>
