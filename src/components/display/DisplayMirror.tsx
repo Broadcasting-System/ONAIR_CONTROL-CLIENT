@@ -1,0 +1,188 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Hls from "hls.js";
+import { useDisplaySync, DisplayContent, Playback } from "@/hooks/useDisplaySync";
+
+const calculateSlideIndex = (content: DisplayContent | null) => {
+  if (
+    content?.type !== "presentation" ||
+    !content.urls ||
+    !content.duration ||
+    !content.serverTimestamp
+  ) {
+    return 0;
+  }
+  const elapsedMs = Date.now() - content.serverTimestamp;
+  const totalDurationMs = content.duration * 1000;
+  const index = Math.floor(elapsedMs / totalDurationMs);
+  return index < content.urls.length ? index : content.urls.length - 1;
+};
+
+const posFromPlayback = (pb?: Playback | null): number | null => {
+  if (!pb) return null;
+  return pb.playing
+    ? Math.max(0, pb.offset + (Date.now() - pb.anchorTs) / 1000)
+    : Math.max(0, pb.offset);
+};
+
+export const DisplayMirror = () => {
+  const { content } = useDisplaySync();
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(() =>
+    calculateSlideIndex(content),
+  );
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const playbackRef = useRef<Playback | null | undefined>(content?.playback);
+  playbackRef.current = content?.playback;
+
+  // 프레젠테이션 슬라이드
+  useEffect(() => {
+    if (
+      content?.type !== "presentation" ||
+      !content.urls ||
+      !content.duration ||
+      !content.serverTimestamp
+    ) {
+      setCurrentSlideIndex((prev) => (prev !== 0 ? 0 : prev));
+      return;
+    }
+    const id = setInterval(() => {
+      const elapsedMs = Date.now() - content.serverTimestamp!;
+      const idx = Math.floor(elapsedMs / (content.duration! * 1000));
+      if (idx < content.urls!.length) {
+        setCurrentSlideIndex((prev) => (prev !== idx ? idx : prev));
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [content]);
+
+  // 영상 로드 (URL 변경 시에만)
+  useEffect(() => {
+    if (content?.type !== "video" || !content.url || !videoRef.current) return;
+    const video = videoRef.current;
+    const primary = content.url;
+    let hls: Hls | null = null;
+
+    const initialPos = () => {
+      const p = posFromPlayback(playbackRef.current);
+      if (p != null) return p;
+      return content.serverTimestamp
+        ? Math.max(0, (Date.now() - content.serverTimestamp) / 1000)
+        : 0;
+    };
+
+    let applied = false;
+    const apply = () => {
+      if (applied) return;
+      applied = true;
+      const pb = playbackRef.current;
+      const target = posFromPlayback(pb) ?? initialPos();
+      if (
+        Number.isFinite(video.duration) &&
+        Math.abs(video.currentTime - target) > 0.7
+      ) {
+        try {
+          video.currentTime = target;
+        } catch {}
+      }
+      video.muted = true; // 모니터는 항상 음소거
+      if (!pb || pb.playing) video.play().catch(() => {});
+    };
+    video.addEventListener("loadedmetadata", apply);
+
+    if (primary.includes(".m3u8") && Hls.isSupported()) {
+      hls = new Hls({ maxMaxBufferLength: 20, startPosition: initialPos() });
+      hls.loadSource(primary);
+      hls.attachMedia(video);
+    } else {
+      video.src = primary;
+      video.load();
+    }
+
+    return () => {
+      video.removeEventListener("loadedmetadata", apply);
+      if (hls) hls.destroy();
+    };
+  }, [content?.url, content?.type, content?.serverTimestamp]);
+
+  // 재생제어 반영 (play/pause/seek) — 소리는 모니터라 항상 muted
+  useEffect(() => {
+    const v = videoRef.current;
+    if (content?.type !== "video" || !v || !content.playback) return;
+    const pb = content.playback;
+    const target = posFromPlayback(pb);
+    if (
+      target != null &&
+      Number.isFinite(v.duration) &&
+      Math.abs(v.currentTime - target) > 0.7
+    ) {
+      try {
+        v.currentTime = target;
+      } catch {}
+    }
+    if (pb.playing) {
+      if (v.paused) v.play().catch(() => {});
+    } else if (!v.paused) {
+      v.pause();
+    }
+  }, [content?.type, content?.playback]);
+
+  if (!content || content.type === "standby") {
+    return (
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black">
+        <h3 className="text-4xl font-black italic tracking-wider text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+          OFF AIR
+        </h3>
+        <p className="text-xs font-medium text-red-500 tracking-tight opacity-80">
+          방송 송출 준비 중입니다 잠시만 기다려주세요
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black">
+      {content.type === "image" && content.url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={content.url}
+          alt="Mirror View"
+          className="h-full w-full object-contain"
+        />
+      ) : null}
+
+      {content.type === "video" && content.url ? (
+        <video
+          ref={videoRef}
+          muted
+          playsInline
+          className="h-full w-full"
+          style={{ objectFit: content.playback?.fit ?? "contain" }}
+        />
+      ) : null}
+
+      {content.type === "presentation" && content.urls ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={
+            content.urls[
+              typeof content.slideIndex === "number"
+                ? Math.max(0, Math.min(content.slideIndex, content.urls.length - 1))
+                : currentSlideIndex
+            ]
+          }
+          alt="Mirror Slide"
+          className="h-full w-full object-contain"
+        />
+      ) : null}
+
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-full border border-red-500/50 bg-red-600/90 px-3 py-1.5 shadow-lg">
+        <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+        <span className="text-[10px] font-black uppercase tracking-tighter text-white">
+          LIVE MONITOR
+        </span>
+      </div>
+    </div>
+  );
+};
