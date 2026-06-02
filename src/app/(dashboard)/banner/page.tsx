@@ -53,7 +53,12 @@ export default function BannerPage() {
     fetchFiles();
   }, [fetchFiles]);
 
-  const previewUrl = useMemo(() => getDisplayPreviewUrl(), []);
+  // window.location 기반이라 SSR(localhost)과 클라이언트(실제 호스트)가 달라
+  // hydration 불일치가 발생 → 마운트 후 클라이언트에서만 설정한다.
+  const [previewUrl, setPreviewUrl] = useState("");
+  useEffect(() => {
+    setPreviewUrl(getDisplayPreviewUrl());
+  }, []);
   const didInit = useRef(false);
 
   // ---- 초기 상태 동기화 ----
@@ -218,11 +223,13 @@ export default function BannerPage() {
               className="relative w-full overflow-hidden rounded-lg bg-black"
               style={{ aspectRatio: "6845 / 552" }}
             >
-              <iframe
-                src={previewUrl}
-                title="banner preview"
-                className="absolute inset-0 h-full w-full border-0"
-              />
+              {previewUrl ? (
+                <iframe
+                  src={previewUrl}
+                  title="banner preview"
+                  className="absolute inset-0 h-full w-full border-0"
+                />
+              ) : null}
             </div>
           </div>
           <p className="font-pretendard text-xs text-white/30">
