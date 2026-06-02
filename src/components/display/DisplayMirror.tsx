@@ -2,7 +2,57 @@
 
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
-import { useDisplaySync, DisplayContent, Playback } from "@/hooks/useDisplaySync";
+import {
+  useDisplaySync,
+  DisplayContent,
+  Playback,
+  ImageOverlay,
+} from "@/hooks/useDisplaySync";
+
+/** 이미지 위 텍스트 오버레이 (송출 화면과 동일 규칙, 16:9 박스의 cqw 기준) */
+function MirrorTextOverlay({ overlay }: { overlay: ImageOverlay }) {
+  if (!overlay.visible || !overlay.text?.trim()) return null;
+  const justify =
+    overlay.position === "top"
+      ? "flex-start"
+      : overlay.position === "center"
+        ? "center"
+        : "flex-end";
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        inset: 0,
+        containerType: "inline-size",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: justify,
+        alignItems: "center",
+        padding: "6cqw",
+        pointerEvents: "none",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: '"Paperlogy", "Pretendard Variable", sans-serif',
+          fontWeight: 800,
+          fontSize: `${overlay.size}cqw`,
+          lineHeight: 1.15,
+          color: overlay.color || "#ffffff",
+          textAlign: "center",
+          whiteSpace: "pre-wrap",
+          wordBreak: "keep-all",
+          textShadow:
+            "0 0.3cqw 1.2cqw rgba(0,0,0,0.85), 0 0 0.4cqw rgba(0,0,0,0.9)",
+          WebkitTextStroke: "0.08cqw rgba(0,0,0,0.55)",
+        }}
+      >
+        {overlay.text}
+      </span>
+    </div>
+  );
+}
 
 const calculateSlideIndex = (content: DisplayContent | null) => {
   if (
@@ -178,12 +228,22 @@ export const DisplayMirror = () => {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black">
       {content.type === "image" && content.url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={content.url}
-          alt="Mirror View"
-          className="h-full w-full object-contain"
-        />
+        <div
+          className="relative flex items-center justify-center"
+          style={{
+            aspectRatio: "16 / 9",
+            maxWidth: "100%",
+            maxHeight: "100%",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={content.url}
+            alt="Mirror View"
+            className="h-full w-full object-contain"
+          />
+          {content.overlay ? <MirrorTextOverlay overlay={content.overlay} /> : null}
+        </div>
       ) : null}
 
       {content.type === "video" && content.url ? (

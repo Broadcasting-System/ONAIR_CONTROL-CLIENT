@@ -39,9 +39,21 @@ export interface ScoreboardPayload {
   teamB: TeamState;
 }
 
+export interface BannerOverlay {
+  title: string;
+  subtitle: string;
+  titleSize: number; // 디자인 px (6845×552 기준)
+  subtitleSize: number;
+  showSubtitle: boolean;
+  color: string;
+  position: "top" | "center" | "bottom";
+  visible: boolean;
+}
+
 export interface ImagePayload {
   url: string;
   fit?: "cover" | "contain";
+  overlay?: BannerOverlay;
 }
 
 export interface GifPayload {

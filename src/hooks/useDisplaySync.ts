@@ -14,6 +14,14 @@ export interface Playback {
   loop?: boolean
 }
 
+export interface ImageOverlay {
+  text: string
+  size: number
+  color: string
+  position: 'top' | 'center' | 'bottom'
+  visible: boolean
+}
+
 export interface DisplayContent {
   type: ContentType
   url?: string
@@ -24,6 +32,7 @@ export interface DisplayContent {
   serverTimestamp?: number
   playback?: Playback
   slideIndex?: number
+  overlay?: ImageOverlay
   command?: 'display'
   [key: string]: unknown
 }
@@ -73,6 +82,7 @@ export function useDisplaySync() {
               serverTimestamp: resolved.serverTimestamp,
               playback: resolved.playback,
               slideIndex: resolved.slideIndex,
+              overlay: resolved.overlay,
             })
           }
         }
@@ -112,6 +122,7 @@ export function useDisplaySync() {
               serverTimestamp: resolved.serverTimestamp,
               playback: resolved.playback,
               slideIndex: resolved.slideIndex,
+              overlay: resolved.overlay,
             })
           }
         } catch (err) {

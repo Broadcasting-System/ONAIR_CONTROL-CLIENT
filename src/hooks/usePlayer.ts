@@ -59,5 +59,25 @@ export function usePlayer() {
       /* ignore */
     }
   }, []);
-  return { play, pause, toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide };
+  const setOverlay = useCallback(
+    async (patch: {
+      text?: string;
+      size?: number;
+      color?: string;
+      position?: "top" | "center" | "bottom";
+      visible?: boolean;
+    }) => {
+      try {
+        await fetch(`${getApiBase()}/display/overlay`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        });
+      } catch {
+        /* ignore */
+      }
+    },
+    [],
+  );
+  return { play, pause, toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide, setOverlay };
 }

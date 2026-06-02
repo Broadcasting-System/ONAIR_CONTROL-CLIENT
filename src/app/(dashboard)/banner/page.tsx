@@ -9,6 +9,7 @@ import {
   BannerScene,
   ScoreboardPayload,
   ImagePayload,
+  BannerOverlay,
   GifPayload,
   ScoreAnim,
   SCORE_ANIM_OPTIONS,
@@ -634,6 +635,33 @@ function StepBtn({
 }
 
 /* ---------------- 이미지 / GIF 에디터 ---------------- */
+const BANNER_OVERLAY_COLORS = [
+  "#ffffff",
+  "#000000",
+  "#ffe14d",
+  "#ff3b3b",
+  "#7dffb0",
+  "#5ab8ff",
+];
+const BANNER_OVERLAY_POSITIONS: {
+  key: "top" | "center" | "bottom";
+  label: string;
+}[] = [
+  { key: "top", label: "위" },
+  { key: "center", label: "가운데" },
+  { key: "bottom", label: "아래" },
+];
+const DEFAULT_BANNER_OVERLAY: BannerOverlay = {
+  title: "",
+  subtitle: "",
+  titleSize: 240,
+  subtitleSize: 120,
+  showSubtitle: true,
+  color: "#ffffff",
+  position: "center",
+  visible: true,
+};
+
 function ImageEditor({
   value,
   onChange,
@@ -643,6 +671,11 @@ function ImageEditor({
   onChange: (v: ImagePayload) => void;
   images: UploadedFile[];
 }) {
+  // 옛/부분 오버레이가 들어와도 누락 필드는 기본값으로 채움
+  const ov: BannerOverlay = { ...DEFAULT_BANNER_OVERLAY, ...value.overlay };
+  const patchOverlay = (patch: Partial<BannerOverlay>) =>
+    onChange({ ...value, overlay: { ...ov, ...patch } });
+
   return (
     <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
       <Field label="등록된 이미지에서 선택">
@@ -675,6 +708,131 @@ function ImageEditor({
               {fit === "cover" ? "꽉 채움 (cover)" : "전체 표시 (contain)"}
             </button>
           ))}
+        </div>
+      </Field>
+
+      {/* 텍스트 오버레이 — 점수보드 제목/부제목과 동일 스타일 */}
+      <Field label="텍스트 오버레이">
+        <div className="flex flex-col gap-3">
+          {/* 제목 */}
+          <div className="flex items-stretch gap-3">
+            <TextInput
+              value={ov.title}
+              onChange={(title) => patchOverlay({ title })}
+              placeholder="제목"
+              className="flex-1"
+            />
+            <button
+              onClick={() => patchOverlay({ visible: !ov.visible })}
+              className={cn(
+                "w-24 shrink-0 whitespace-nowrap rounded-xl border font-mbc text-sm transition-colors",
+                ov.visible
+                  ? "border-green-500/40 bg-green-500/15 text-green-300 hover:bg-green-500/25"
+                  : "border-white/10 bg-white/5 text-white/50 hover:bg-white/10",
+              )}
+            >
+              표시 {ov.visible ? "ON" : "OFF"}
+            </button>
+          </div>
+          <div className="flex items-center gap-3 pl-1">
+            <span className="font-mbc text-sm text-white/50">제목 크기</span>
+            <input
+              type="range"
+              min={60}
+              max={520}
+              step={10}
+              value={ov.titleSize}
+              onChange={(e) =>
+                patchOverlay({ titleSize: Number(e.target.value) })
+              }
+              className="w-40 accent-white"
+            />
+            <span className="w-10 font-orbitron text-xs text-white/40">
+              {ov.titleSize}
+            </span>
+          </div>
+
+          {/* 부제목 (제거 가능) */}
+          <div className="flex items-stretch gap-3 pt-1">
+            <TextInput
+              value={ov.subtitle}
+              onChange={(subtitle) => patchOverlay({ subtitle })}
+              placeholder="부제목"
+              disabled={!ov.showSubtitle}
+              className="flex-1"
+            />
+            <button
+              onClick={() => patchOverlay({ showSubtitle: !ov.showSubtitle })}
+              className={cn(
+                "w-24 shrink-0 whitespace-nowrap rounded-xl border font-mbc text-sm transition-colors",
+                ov.showSubtitle
+                  ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
+                  : "border-white/10 bg-white/5 text-white/40 hover:bg-white/10",
+              )}
+            >
+              부제목 {ov.showSubtitle ? "ON" : "OFF"}
+            </button>
+          </div>
+          {ov.showSubtitle ? (
+            <div className="flex items-center gap-3 pl-1">
+              <span className="font-mbc text-sm text-white/50">부제목 크기</span>
+              <input
+                type="range"
+                min={40}
+                max={360}
+                step={10}
+                value={ov.subtitleSize}
+                onChange={(e) =>
+                  patchOverlay({ subtitleSize: Number(e.target.value) })
+                }
+                className="w-40 accent-white"
+              />
+              <span className="w-10 font-orbitron text-xs text-white/40">
+                {ov.subtitleSize}
+              </span>
+            </div>
+          ) : null}
+
+          {/* 색상 · 위치 */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-1">
+            <div className="flex items-center gap-2">
+              <span className="font-mbc text-sm text-white/50">색상</span>
+              {BANNER_OVERLAY_COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => patchOverlay({ color: c })}
+                  style={{ backgroundColor: c }}
+                  className={cn(
+                    "h-7 w-7 rounded-full border transition-transform",
+                    ov.color === c
+                      ? "scale-110 border-white ring-2 ring-white/40"
+                      : "border-white/20 hover:scale-105",
+                  )}
+                  aria-label={c}
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-mbc text-sm text-white/50">위치</span>
+              <div className="flex overflow-hidden rounded-lg border border-white/10">
+                {BANNER_OVERLAY_POSITIONS.map((p) => (
+                  <button
+                    key={p.key}
+                    onClick={() => patchOverlay({ position: p.key })}
+                    className={cn(
+                      "px-3 py-2 font-mbc text-sm transition-colors",
+                      ov.position === p.key
+                        ? "bg-white/15 text-white"
+                        : "bg-transparent text-white/40 hover:bg-white/5",
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </Field>
     </div>
@@ -779,19 +937,22 @@ function TextInput({
   onChange,
   placeholder,
   className,
+  disabled = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }) {
   return (
     <input
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
+      disabled={disabled}
       className={cn(
-        "rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 font-pretendard text-white placeholder:text-white/20 focus:border-white/30 focus:outline-none",
+        "rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 font-pretendard text-white placeholder:text-white/20 focus:border-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40",
         className,
       )}
     />

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/apiBase";
 import { useFiles } from "@/hooks/useFiles";
 import { useDisplay } from "@/hooks/useDisplay";
-import { useDisplaySync } from "@/hooks/useDisplaySync";
+import { useDisplaySync, ImageOverlay } from "@/hooks/useDisplaySync";
 import { usePlayer } from "@/hooks/usePlayer";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 import { FileType, UploadedFile } from "@/types/file";
@@ -29,7 +29,7 @@ export default function MediaPage() {
   const { files, fetchFiles, isLoading } = useFiles();
   const { showMedia, isSending } = useDisplay();
   const { content } = useDisplaySync();
-  const { toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide } =
+  const { toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide, setOverlay } =
     usePlayer();
 
   const [tab, setTab] = useState<FileType>("video");
@@ -239,6 +239,13 @@ export default function MediaPage() {
               onGo={(i) => setSlide(i)}
               onClear={clearDisplay}
             />
+          ) : content?.type === "image" ? (
+            <ImageOverlayEditor
+              key={content.url}
+              overlay={content.overlay}
+              onChange={setOverlay}
+              onClear={clearDisplay}
+            />
           ) : content && content.type !== "standby" ? (
             <div className="flex items-center justify-between">
               <p className="font-pretendard text-white/50">
@@ -322,6 +329,146 @@ function PresentationNav({
         <button
           onClick={onClear}
           className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10"
+        >
+          송출 끄기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const OVERLAY_COLORS = [
+  "#ffffff",
+  "#000000",
+  "#ffe14d",
+  "#ff3b3b",
+  "#7dffb0",
+  "#5ab8ff",
+];
+const OVERLAY_POSITIONS: { key: "top" | "center" | "bottom"; label: string }[] = [
+  { key: "top", label: "위" },
+  { key: "center", label: "가운데" },
+  { key: "bottom", label: "아래" },
+];
+
+function ImageOverlayEditor({
+  overlay,
+  onChange,
+  onClear,
+}: {
+  overlay?: ImageOverlay;
+  onChange: (patch: Partial<ImageOverlay>) => void;
+  onClear: () => void;
+}) {
+  const [text, setText] = useState(overlay?.text ?? "");
+  const [size, setSize] = useState(overlay?.size ?? 6);
+  const [color, setColor] = useState(overlay?.color ?? "#ffffff");
+  const [position, setPosition] = useState<"top" | "center" | "bottom">(
+    overlay?.position ?? "bottom",
+  );
+  const [visible, setVisible] = useState(overlay?.visible ?? true);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-start gap-3">
+        <textarea
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            onChange({ text: e.target.value });
+          }}
+          rows={2}
+          placeholder="이미지 위에 표시할 텍스트를 입력하세요 (줄바꿈 가능)"
+          className="flex-1 resize-none rounded-xl border border-white/10 bg-[#141414] px-4 py-3 font-pretendard text-[15px] text-white placeholder:text-white/25 focus:border-white/25 focus:outline-none"
+        />
+        <button
+          onClick={() => {
+            const v = !visible;
+            setVisible(v);
+            onChange({ visible: v });
+          }}
+          className={cn(
+            "h-[60px] w-24 shrink-0 whitespace-nowrap rounded-xl border font-mbc text-sm transition-colors",
+            visible
+              ? "border-green-500/40 bg-green-500/15 text-green-300 hover:bg-green-500/25"
+              : "border-white/10 bg-white/5 text-white/50 hover:bg-white/10",
+          )}
+        >
+          표시 {visible ? "ON" : "OFF"}
+        </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        {/* 글자 크기 */}
+        <div className="flex items-center gap-3">
+          <span className="font-mbc text-sm text-white/50">크기</span>
+          <input
+            type="range"
+            min={2}
+            max={20}
+            step={0.5}
+            value={size}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setSize(v);
+              onChange({ size: v });
+            }}
+            className="w-40 accent-white"
+          />
+          <span className="w-8 font-orbitron text-xs text-white/40">
+            {size.toFixed(1)}
+          </span>
+        </div>
+
+        {/* 색상 */}
+        <div className="flex items-center gap-2">
+          <span className="font-mbc text-sm text-white/50">색상</span>
+          {OVERLAY_COLORS.map((c) => (
+            <button
+              key={c}
+              onClick={() => {
+                setColor(c);
+                onChange({ color: c });
+              }}
+              style={{ backgroundColor: c }}
+              className={cn(
+                "h-7 w-7 rounded-full border transition-transform",
+                color === c
+                  ? "scale-110 border-white ring-2 ring-white/40"
+                  : "border-white/20 hover:scale-105",
+              )}
+              aria-label={c}
+            />
+          ))}
+        </div>
+
+        {/* 위치 */}
+        <div className="flex items-center gap-2">
+          <span className="font-mbc text-sm text-white/50">위치</span>
+          <div className="flex overflow-hidden rounded-lg border border-white/10">
+            {OVERLAY_POSITIONS.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => {
+                  setPosition(p.key);
+                  onChange({ position: p.key });
+                }}
+                className={cn(
+                  "px-3 py-2 font-mbc text-sm transition-colors",
+                  position === p.key
+                    ? "bg-white/15 text-white"
+                    : "bg-transparent text-white/40 hover:bg-white/5",
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={onClear}
+          className="ml-auto shrink-0 whitespace-nowrap rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10"
         >
           송출 끄기
         </button>
