@@ -15,8 +15,8 @@ const BellCard = memo(({ bell, isSelected, onClick }: BellCardProps) => {
       className={cn(
         "w-full h-[60px] rounded-[8px] flex items-center justify-between px-[20px] transition-all relative overflow-hidden text-left mb-2",
         isSelected
-          ? "bg-[rgba(213,185,185,0.2)] shadow-[0_0_20px_-5px_#c69efa,inset_0_0_10px_-2px_#c69efa] border border-white/20"
-          : "bg-transparent border border-[rgba(255,255,255,0.05)] hover:bg-white/5"
+          ? "bg-[rgba(167,139,250,0.14)] shadow-[0_0_20px_-5px_#c69efa,inset_0_0_10px_-2px_#c69efa] border border-[#c4b5fd]"
+          : "bg-transparent border border-[#7c6db0]/20 hover:border-[#7c6db0]/45 hover:bg-white/5"
       )}
     >
       <span className="font-semibold text-[16px] text-white truncate max-w-[150px]">

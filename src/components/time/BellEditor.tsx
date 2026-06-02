@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Bell, Speaker, AudioFile } from "@/types/time";
+import { cn } from "@/lib/utils";
 import TextInput from "@/components/common/TextInput";
-import StatusCard from "@/components/StatusCard";
 import Button from "@/components/common/Button";
 
 interface BellEditorProps {
@@ -68,14 +68,19 @@ export default function BellEditor({
         {speakers.map((speaker) => {
           const isSelected = selectedSpeakers.includes(speaker.id);
           return (
-            <StatusCard
+            <button
               key={speaker.id}
-              label={speaker.name}
-              status={isSelected ? "on" : "off"}
-              variant="speaker"
-              width="100%"
+              type="button"
               onClick={() => toggleSpeaker(speaker.id)}
-            />
+              className={cn(
+                "flex h-[44px] w-full items-center justify-center rounded-[10px] border px-2 text-center font-pretendard text-[15px] transition-all",
+                isSelected
+                  ? "border-[#c4b5fd] bg-[#a78bfa]/15 text-white shadow-[0_0_14px_-3px_#a78bfa]"
+                  : "border-[#7c6db0]/35 bg-white/[0.02] text-white/70 hover:border-[#7c6db0]/70 hover:text-white"
+              )}
+            >
+              {speaker.name}
+            </button>
           );
         })}
       </div>
