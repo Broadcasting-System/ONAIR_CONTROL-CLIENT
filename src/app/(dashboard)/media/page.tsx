@@ -115,18 +115,18 @@ export default function MediaPage() {
             ))
           )}
         </div>
+
+        {/* 내 화면 공유 (미디어 선택의 한 항목처럼) */}
+        <ScreenShareButton
+          isSharing={isSharing}
+          onStart={startShare}
+          onStop={stopShare}
+        />
       </div>
 
       {/* 우측: 미리보기 + 재생 제어 */}
       <div className="flex flex-1 flex-col gap-5 overflow-hidden">
-        <div className="flex items-center justify-between">
-          <SectionHeader>송출 미리보기</SectionHeader>
-          <ScreenShareButton
-            isSharing={isSharing}
-            onStart={startShare}
-            onStop={stopShare}
-          />
-        </div>
+        <SectionHeader>송출 미리보기</SectionHeader>
 
         {/* 미리보기 (높이 고정) — 화면 공유 중이면 내 화면 로컬 프리뷰 */}
         <div className="relative h-[48vh] w-full shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black">
@@ -364,10 +364,10 @@ function ScreenShareButton({
     <button
       onClick={isSharing ? onStop : onStart}
       className={cn(
-        "flex items-center gap-2 whitespace-nowrap rounded-xl border px-4 py-2 font-mbc text-sm transition-colors",
+        "flex w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border py-3 font-mbc text-sm transition-colors",
         isSharing
           ? "border-red-500/50 bg-red-500/15 text-red-200 hover:bg-red-500/25"
-          : "border-white/15 bg-white/10 text-white hover:bg-white/15",
+          : "border-white/15 bg-white/[0.04] text-white/80 hover:bg-white/10",
       )}
     >
       {isSharing ? (
@@ -376,7 +376,7 @@ function ScreenShareButton({
           화면 공유 중지
         </>
       ) : (
-        <>🖥 화면 공유</>
+        "내 화면 공유"
       )}
     </button>
   );
