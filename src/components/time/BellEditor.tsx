@@ -44,6 +44,28 @@ export default function BellEditor({
     );
   };
 
+  // 빠른 선택: 학년(1~3학년 반)·전 학년·학교 전체 일괄 토글
+  const QUICK_GROUPS: { label: string; test: RegExp | null }[] = [
+    { label: "1학년", test: /^1-\d/ },
+    { label: "2학년", test: /^2-\d/ },
+    { label: "3학년", test: /^3-\d/ },
+    { label: "전 학년", test: /^\d-\d/ },
+    { label: "학교 전체", test: null },
+  ];
+
+  const groupIds = (test: RegExp | null) =>
+    speakers.filter((s) => (test ? test.test(s.id) : true)).map((s) => s.id);
+
+  const toggleGroup = (ids: string[]) => {
+    setSelectedSpeakers((prev) => {
+      const allOn = ids.length > 0 && ids.every((id) => prev.includes(id));
+      if (allOn) return prev.filter((id) => !ids.includes(id));
+      const set = new Set(prev);
+      ids.forEach((id) => set.add(id));
+      return Array.from(set);
+    });
+  };
+
   const handleSave = () => {
     if (!label.trim()) return;
     onSave({
@@ -63,6 +85,33 @@ export default function BellEditor({
         placeholder="라벨을 붙여주세요"
         width="100%"
       />
+
+      {/* 빠른 선택 버튼 (학년/전체 일괄 토글) */}
+      <div className="flex flex-col gap-2 px-2">
+        <span className="font-mbc text-sm text-white/50">빠른 선택</span>
+        <div className="flex flex-wrap gap-2">
+          {QUICK_GROUPS.map((g) => {
+            const ids = groupIds(g.test);
+            const active =
+              ids.length > 0 && ids.every((id) => selectedSpeakers.includes(id));
+            return (
+              <button
+                key={g.label}
+                type="button"
+                onClick={() => toggleGroup(ids)}
+                className={cn(
+                  "rounded-lg border px-4 py-2 font-mbc text-sm transition-colors",
+                  active
+                    ? "border-[#c4b5fd] bg-[#a78bfa]/20 text-white"
+                    : "border-white/15 bg-white/[0.03] text-white/60 hover:border-white/30 hover:text-white",
+                )}
+              >
+                {g.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="grid grid-cols-3 gap-x-4 gap-y-3 px-2 max-h-[350px] overflow-y-auto pr-4 custom-scrollbar">
         {speakers.map((speaker) => {
