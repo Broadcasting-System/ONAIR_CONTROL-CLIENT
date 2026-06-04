@@ -217,6 +217,18 @@ export const DisplayMirror = () => {
     }
   }, [content?.type, content?.playback]);
 
+  if (content?.type === "screen") {
+    return (
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black">
+        <span className="text-2xl">🖥</span>
+        <h3 className="font-mbc text-2xl text-white">화면 공유 중</h3>
+        <p className="font-pretendard text-xs text-white/40">
+          노트북 화면이 송출되고 있습니다
+        </p>
+      </div>
+    );
+  }
+
   if (!content || content.type === "standby") {
     return (
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black">

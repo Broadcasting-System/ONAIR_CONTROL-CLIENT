@@ -8,6 +8,7 @@ import { useFiles } from "@/hooks/useFiles";
 import { useDisplay } from "@/hooks/useDisplay";
 import { useDisplaySync, ImageOverlay } from "@/hooks/useDisplaySync";
 import { usePlayer } from "@/hooks/usePlayer";
+import { useScreenShare } from "@/hooks/useScreenShare";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 import { FileType, UploadedFile } from "@/types/file";
 
@@ -31,6 +32,8 @@ export default function MediaPage() {
   const { content } = useDisplaySync();
   const { toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide, setOverlay } =
     usePlayer();
+  const { isSharing, start: startShare, stop: stopShare, localStream } =
+    useScreenShare();
 
   const [tab, setTab] = useState<FileType>("video");
   const [, setTick] = useState(0);
@@ -116,11 +119,22 @@ export default function MediaPage() {
 
       {/* 우측: 미리보기 + 재생 제어 */}
       <div className="flex flex-1 flex-col gap-5 overflow-hidden">
-        <SectionHeader>송출 미리보기</SectionHeader>
+        <div className="flex items-center justify-between">
+          <SectionHeader>송출 미리보기</SectionHeader>
+          <ScreenShareButton
+            isSharing={isSharing}
+            onStart={startShare}
+            onStop={stopShare}
+          />
+        </div>
 
-        {/* 미리보기 (높이 고정) */}
+        {/* 미리보기 (높이 고정) — 화면 공유 중이면 내 화면 로컬 프리뷰 */}
         <div className="relative h-[48vh] w-full shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black">
-          <DisplayMirror />
+          {isSharing ? (
+            <ScreenLocalPreview stream={localStream} />
+          ) : (
+            <DisplayMirror />
+          )}
         </div>
 
         {/* 재생 제어 바: 하단 고정 */}
@@ -332,6 +346,59 @@ function PresentationNav({
         >
           송출 끄기
         </button>
+      </div>
+    </div>
+  );
+}
+
+function ScreenShareButton({
+  isSharing,
+  onStart,
+  onStop,
+}: {
+  isSharing: boolean;
+  onStart: () => void;
+  onStop: () => void;
+}) {
+  return (
+    <button
+      onClick={isSharing ? onStop : onStart}
+      className={cn(
+        "flex items-center gap-2 whitespace-nowrap rounded-xl border px-4 py-2 font-mbc text-sm transition-colors",
+        isSharing
+          ? "border-red-500/50 bg-red-500/15 text-red-200 hover:bg-red-500/25"
+          : "border-white/15 bg-white/10 text-white hover:bg-white/15",
+      )}
+    >
+      {isSharing ? (
+        <>
+          <span className="h-2 w-2 animate-pulse rounded-full bg-red-400" />
+          화면 공유 중지
+        </>
+      ) : (
+        <>🖥 화면 공유</>
+      )}
+    </button>
+  );
+}
+
+/** 화면 공유 중 내 화면 로컬 프리뷰 (음소거) */
+function ScreenLocalPreview({ stream }: { stream: MediaStream | null }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    v.srcObject = stream;
+    if (stream) v.play().catch(() => {});
+  }, [stream]);
+  return (
+    <div className="relative h-full w-full bg-black">
+      <video ref={ref} autoPlay muted playsInline className="h-full w-full object-contain" />
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-full border border-red-500/50 bg-red-600/90 px-3 py-1.5 shadow-lg">
+        <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+        <span className="text-[10px] font-black uppercase tracking-tighter text-white">
+          화면 공유 중
+        </span>
       </div>
     </div>
   );

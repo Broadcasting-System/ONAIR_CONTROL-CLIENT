@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { backendBase, backendWs } from '@/lib/backend'
 
-export type ContentType = 'image' | 'video' | 'presentation' | 'audio' | 'standby'
+export type ContentType = 'image' | 'video' | 'presentation' | 'audio' | 'standby' | 'screen'
 
 export interface Playback {
   playing: boolean
