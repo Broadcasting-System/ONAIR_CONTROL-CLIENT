@@ -3,7 +3,13 @@ import { displayAppBase } from "@/lib/backend";
 
 export type BannerScene = "blank" | "image" | "gif" | "scoreboard";
 
-export type ScoreAnim = "slamshine" | "slam" | "shine" | "neon" | "drop";
+export type ScoreAnim =
+  | "slamshine"
+  | "slam"
+  | "shine"
+  | "neon"
+  | "drop"
+  | "collide";
 
 export type VictoryState = {
   side: "left" | "right";
@@ -17,6 +23,7 @@ export const SCORE_ANIM_OPTIONS: { key: ScoreAnim; label: string }[] = [
   { key: "shine", label: "샤인 스윕" },
   { key: "neon", label: "네온 점등" },
   { key: "drop", label: "바운스 드롭" },
+  { key: "collide", label: "충돌 합체" },
 ];
 
 export interface TeamState {
