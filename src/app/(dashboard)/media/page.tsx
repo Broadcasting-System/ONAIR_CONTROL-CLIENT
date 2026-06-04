@@ -77,7 +77,7 @@ export default function MediaPage() {
       <div className="flex w-[420px] shrink-0 flex-col gap-5">
         <SectionHeader>미디어 선택</SectionHeader>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {TYPE_TABS.map((t) => (
             <button
               key={t.key}
@@ -92,6 +92,21 @@ export default function MediaPage() {
               {t.label}
             </button>
           ))}
+          {/* 화면 공유 — 파일 종류 옆에 탭처럼 (선택이 아니라 시작/중지 동작) */}
+          <button
+            onClick={isSharing ? stopShare : startShare}
+            className={cn(
+              "flex items-center gap-2 rounded-xl border px-4 py-2 font-mbc text-sm transition-all",
+              isSharing
+                ? "border-red-500/50 bg-red-500/15 text-red-200 hover:bg-red-500/25"
+                : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
+            )}
+          >
+            {isSharing && (
+              <span className="h-2 w-2 animate-pulse rounded-full bg-red-400" />
+            )}
+            {isSharing ? "공유 중지" : "화면 공유"}
+          </button>
         </div>
 
         <div className="flex flex-1 flex-col gap-2 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a] p-3">
@@ -115,13 +130,6 @@ export default function MediaPage() {
             ))
           )}
         </div>
-
-        {/* 내 화면 공유 (미디어 선택의 한 항목처럼) */}
-        <ScreenShareButton
-          isSharing={isSharing}
-          onStart={startShare}
-          onStop={stopShare}
-        />
       </div>
 
       {/* 우측: 미리보기 + 재생 제어 */}
@@ -348,37 +356,6 @@ function PresentationNav({
         </button>
       </div>
     </div>
-  );
-}
-
-function ScreenShareButton({
-  isSharing,
-  onStart,
-  onStop,
-}: {
-  isSharing: boolean;
-  onStart: () => void;
-  onStop: () => void;
-}) {
-  return (
-    <button
-      onClick={isSharing ? onStop : onStart}
-      className={cn(
-        "flex w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border py-3 font-mbc text-sm transition-colors",
-        isSharing
-          ? "border-red-500/50 bg-red-500/15 text-red-200 hover:bg-red-500/25"
-          : "border-white/15 bg-white/[0.04] text-white/80 hover:bg-white/10",
-      )}
-    >
-      {isSharing ? (
-        <>
-          <span className="h-2 w-2 animate-pulse rounded-full bg-red-400" />
-          화면 공유 중지
-        </>
-      ) : (
-        "내 화면 공유"
-      )}
-    </button>
   );
 }
 
