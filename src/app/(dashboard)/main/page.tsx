@@ -2,22 +2,18 @@
 
 import Button from "@/components/common/Button";
 import TextInput from "@/components/common/TextInput";
-import ScheduleItem from "@/components/ScheduleItem";
 import StatusCard from "@/components/StatusCard";
 import SectionHeader from "@/components/common/SectionHeader";
 
 import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { useSchedule } from "@/hooks/useSchedule";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
-import Link from "next/link";
 
 export default function MainPage() {
   const { text, setText, handleSend, isSending: isTtsSending } = useTts();
   const { zones, toggleSpeaker } = useSpeakers();
   const { statuses } = useNetworkStatus();
-  const { schedules } = useSchedule();
 
   return (
     <div className="grid grid-cols-12 gap-16 h-full">
@@ -36,28 +32,6 @@ export default function MainPage() {
               disabled={!text.trim() || isTtsSending}
               className="h-[64px]"
             />
-          </div>
-        </section>
-
-        <section>
-          <SectionHeader>방송예약</SectionHeader>
-          <div className="flex flex-col gap-6 rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent opacity-50" />
-
-            <div className="flex flex-col gap-5">
-              {schedules.map((item) => (
-                <ScheduleItem
-                  key={item.id}
-                  title={item.title}
-                  date={item.scheduledTime}
-                  day={item.day || ""}
-                  isActive={item.active}
-                />
-              ))}
-            </div>
-            <Link href="/broadcast" className="mt-2 text-right text-sm font-medium text-white/40 hover:text-white transition-colors">
-              자세히 보기
-            </Link>
           </div>
         </section>
 

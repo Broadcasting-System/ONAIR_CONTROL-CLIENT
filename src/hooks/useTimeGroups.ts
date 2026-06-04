@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Group, DayType, Bell, DaySchedule } from "@/types/time";
 import { useBellClipboard } from "./useBellClipboard";
 import { getApiBase } from "@/lib/apiBase";
+import { toast } from "@/components/common/Toast";
 
 const INITIAL_GROUPS: Group[] = Array.from({ length: 5 }, (_, i) => ({
   id: i + 1,
@@ -20,6 +21,8 @@ export const useTimeGroups = () => {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [activeGroupId, setActiveGroupId] = useState<number>(1);
   const [activeDay, setActiveDay] = useState<DayType>("M");
+  // 그룹별 특별(P) 모드 활성 여부 (서버 isSpecialActive)
+  const [specialActive, setSpecialActive] = useState<Record<number, boolean>>({});
 
   const { clipboard, copy, paste } = useBellClipboard();
 
@@ -135,6 +138,14 @@ export const useTimeGroups = () => {
       const json = await res.json();
       if (json.success && json.data) {
         const serverData = json.data;
+        // 그룹별 특별모드 플래그 동기화
+        setSpecialActive(() => {
+          const map: Record<number, boolean> = {};
+          for (const key of Object.keys(serverData)) {
+            map[Number(key)] = !!serverData[key]?.isSpecialActive;
+          }
+          return map;
+        });
         setGroups((prev) =>
           prev.map((g) => {
             const groupData = serverData[g.id];
@@ -182,18 +193,45 @@ export const useTimeGroups = () => {
 
       if (!res.ok) {
         const msg = await res.text().catch(() => "");
-        alert("시보 전송에 실패했습니다." + (msg ? `\n${msg.slice(0, 160)}` : ""));
+        toast.error("시보 전송에 실패했습니다." + (msg ? `\n${msg.slice(0, 160)}` : ""));
         return;
       }
 
       // On success, refresh the whole timetable to stay in sync
       fetchTimeTable();
-      alert("시보가 전송되었습니다.");
+      toast.success("시보가 전송되었습니다.");
     } catch (err: unknown) {
       console.error(err);
-      alert("시보 전송 중 오류가 발생했습니다.");
+      toast.error("시보 전송 중 오류가 발생했습니다.");
     }
   }, [activeGroupId, activeDay, activeGroup.days, fetchTimeTable]);
+
+  /** 특별(P) 모드 ON/OFF를 서버에 전송. ON이면 P 스케줄이 매일 동작(평일 억제). */
+  const setSpecialMode = useCallback(
+    async (active: boolean) => {
+      // 낙관적 반영
+      setSpecialActive((prev) => ({ ...prev, [activeGroupId]: active }));
+      try {
+        const res = await fetch(`${getApiBase()}/time/special`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ groupId: activeGroupId, active }),
+        });
+        if (!res.ok) throw new Error(await res.text().catch(() => ""));
+        toast.success(
+          active
+            ? `특별(P) 모드 ON — GROUP ${activeGroupId} P 시보가 매일 동작합니다.`
+            : `특별(P) 모드 OFF — GROUP ${activeGroupId} 평일 시보로 복귀합니다.`,
+        );
+      } catch (err) {
+        // 롤백
+        setSpecialActive((prev) => ({ ...prev, [activeGroupId]: !active }));
+        console.error(err);
+        toast.error("특별(P) 모드 전환에 실패했습니다.");
+      }
+    },
+    [activeGroupId],
+  );
 
   return {
     groups,
@@ -210,5 +248,7 @@ export const useTimeGroups = () => {
     pasteBells,
     resetBells,
     sendTimeTable,
+    isSpecialActive: !!specialActive[activeGroupId],
+    setSpecialMode,
   };
 };

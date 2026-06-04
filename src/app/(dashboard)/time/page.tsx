@@ -14,6 +14,7 @@ import { Speaker, Bell, AudioFile } from "@/types/time";
 import { SPEAKER_ITEMS } from "@/constants/speakers";
 import { DAYS } from "@/constants/days";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { cn } from "@/lib/utils";
 
 const SPEAKERS: Speaker[] = SPEAKER_ITEMS.map((s) => ({
   id: s.label,
@@ -36,6 +37,8 @@ export default function TimePage() {
     pasteBells,
     resetBells,
     sendTimeTable,
+    isSpecialActive,
+    setSpecialMode,
   } = useTimeGroups();
 
   const { files, fetchFiles } = useFiles();
@@ -102,12 +105,46 @@ export default function TimePage() {
 
         <div className="flex flex-1 gap-[40px] min-h-0 relative max-w-[1500px] mx-auto w-full">
           <div className="flex flex-col w-[600px] h-full flex-shrink-0">
-            <div className="mb-[24px]">
+            <div className="mb-[16px]">
               <DaySelector
                 days={DAYS}
                 activeDay={activeDay}
                 onSelect={selectDay}
               />
+            </div>
+
+            {/* 특별(P) 모드 토글 — ON이면 P 시보가 매일 동작(평일 억제) */}
+            <div
+              className={cn(
+                "mb-[24px] flex items-center justify-between rounded-2xl border px-5 py-4 transition-colors",
+                isSpecialActive
+                  ? "border-[#c4b5fd]/60 bg-[#a78bfa]/12"
+                  : "border-white/10 bg-white/[0.02]",
+              )}
+            >
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mbc text-[15px] text-white">
+                  특별(P) 모드 {isSpecialActive ? "ON" : "OFF"}
+                </span>
+                <span className="font-pretendard text-xs text-white/40">
+                  켜면 요일과 무관하게 <b className="text-white/60">P 시보가 매일</b> 반복됩니다 (평일 시보는 잠시 중단).
+                </span>
+              </div>
+              <button
+                onClick={() => setSpecialMode(!isSpecialActive)}
+                className={cn(
+                  "relative h-[34px] w-[64px] shrink-0 rounded-full transition-colors",
+                  isSpecialActive ? "bg-[#a78bfa]" : "bg-white/15",
+                )}
+                aria-pressed={isSpecialActive}
+              >
+                <span
+                  className={cn(
+                    "absolute top-[3px] h-[28px] w-[28px] rounded-full bg-white shadow transition-all",
+                    isSpecialActive ? "left-[33px]" : "left-[3px]",
+                  )}
+                />
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-4">

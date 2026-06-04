@@ -4,6 +4,7 @@ import { NAVIGATION_ITEMS } from "@/constants/navigation";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ToastHost } from "@/components/common/Toast";
 
 export default function DashboardLayout({
   children,
@@ -53,6 +54,8 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
+
+      <ToastHost />
     </div>
   );
 }
