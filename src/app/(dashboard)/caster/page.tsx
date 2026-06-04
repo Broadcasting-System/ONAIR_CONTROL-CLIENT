@@ -6,6 +6,7 @@ import SectionHeader from "@/components/common/SectionHeader";
 import StatusCard from "@/components/StatusCard";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/common/Toast";
 import {
   Caster,
   CASTERS,
@@ -82,7 +83,7 @@ function CasterInner() {
       // 소스(casters.ts)가 갱신됨 → HMR 반영 확실히 하려 새로고침 (?edit=1 유지)
       window.location.reload();
     } catch (e) {
-      alert("저장 실패: " + (e instanceof Error ? e.message : String(e)));
+      toast.error("저장 실패: " + (e instanceof Error ? e.message : String(e)));
       setSaving(false);
     }
   };

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { FileType, UploadedFile } from "@/types/file";
 import { getApiBase } from "@/lib/apiBase";
+import { toast } from "@/components/common/Toast";
 
 export const useFiles = () => {
   const [files, setFiles] = useState<Record<FileType, UploadedFile[]>>({
@@ -49,8 +50,10 @@ export const useFiles = () => {
         ...prev,
         [type]: prev[type].filter((f) => f.id !== fileId),
       }));
+      toast.success("파일을 삭제했습니다.");
     } catch (err: unknown) {
       setError((err as Error).message ?? "삭제 중 오류가 발생했습니다.");
+      toast.error("파일 삭제에 실패했습니다.");
       throw err;
     }
   };
@@ -65,8 +68,10 @@ export const useFiles = () => {
       });
       if (!res.ok) throw new Error("파일 이름 수정에 실패했습니다.");
       await fetchFiles();
+      toast.success("파일 이름을 변경했습니다.");
     } catch (err: unknown) {
       setError((err as Error).message ?? "이름 수정 중 오류가 발생했습니다.");
+      toast.error("파일 이름 변경에 실패했습니다.");
       throw err;
     }
   };
