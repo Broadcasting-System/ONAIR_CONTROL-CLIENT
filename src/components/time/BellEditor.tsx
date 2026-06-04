@@ -4,6 +4,18 @@ import { cn } from "@/lib/utils";
 import TextInput from "@/components/common/TextInput";
 import Button from "@/components/common/Button";
 
+/** 시보 음악을 기기 호스트와 무관하게 식별하기 위한 정규화.
+ *  절대 URL(http://host:8000/api/files/stream/audio/x.mp3)이 기기마다 호스트가 달라
+ *  드롭다운이 매칭에 실패("없음")하던 문제를 해결 → 경로(pathname)만 저장·비교. */
+function audioKey(u: string): string {
+  if (!u || u === "none") return u;
+  try {
+    return u.startsWith("http") ? new URL(u).pathname : u;
+  } catch {
+    return u;
+  }
+}
+
 interface BellEditorProps {
   bell: Bell | null;
   speakers: Speaker[];
@@ -28,7 +40,7 @@ export default function BellEditor({
     if (bell) {
       setLabel(bell.label);
       setTime(bell.time);
-      setAudioFile(bell.audioFile);
+      setAudioFile(audioKey(bell.audioFile)); // 레거시 절대 URL → 경로로 정규화
       setSelectedSpeakers(bell.speakers);
     } else {
       setLabel("");
@@ -149,7 +161,7 @@ export default function BellEditor({
             시보 음악
           </label>
           <select
-            value={audioFile}
+            value={audioKey(audioFile)}
             onChange={(e) => setAudioFile(e.target.value)}
             className="h-[48px] w-full rounded-xl border border-white/5 bg-[#1C1C1C] px-4 text-md font-pretendard text-white focus:border-white/20 focus:outline-none transition-all appearance-none cursor-pointer"
           >
@@ -158,8 +170,8 @@ export default function BellEditor({
             </option>
             <option value="none">없음</option>
             {audioFiles.map((file) => (
-              // value는 URL(서버가 실제 파일을 찾는 경로), 표시는 이름
-              <option key={file.id} value={file.url}>
+              // value·저장값 모두 호스트 없는 경로로 통일 → 기기 간 동기화
+              <option key={file.id} value={audioKey(file.url)}>
                 {file.name}
               </option>
             ))}
