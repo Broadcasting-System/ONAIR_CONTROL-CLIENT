@@ -11,6 +11,9 @@ interface BroadcastResponse {
 export function useTts() {
   const [text, setText] = useState("");
   const [isSending, setIsSending] = useState(false);
+  // TTS 앞/뒤로 재생할 음원("none"=안 함)
+  const [startSound, setStartSound] = useState("none");
+  const [endSound, setEndSound] = useState("none");
   const { zones } = useSpeakerStore();
 
   const handleSend = async () => {
@@ -36,6 +39,8 @@ export function useTts() {
           sourceId: text.trim(),
           targets,
           restoreState: true,
+          startSound,
+          endSound,
         }),
       });
       const data: BroadcastResponse = await res.json();
@@ -55,5 +60,9 @@ export function useTts() {
     handleSend,
     isSending,
     isValid: text.trim().length > 0,
+    startSound,
+    setStartSound,
+    endSound,
+    setEndSound,
   };
 }

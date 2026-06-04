@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Button from "@/components/common/Button";
 import TextInput from "@/components/common/TextInput";
 import StatusCard from "@/components/StatusCard";
@@ -8,12 +9,29 @@ import SectionHeader from "@/components/common/SectionHeader";
 import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useFiles } from "@/hooks/useFiles";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 
 export default function MainPage() {
-  const { text, setText, handleSend, isSending: isTtsSending } = useTts();
+  const {
+    text,
+    setText,
+    handleSend,
+    isSending: isTtsSending,
+    startSound,
+    setStartSound,
+    endSound,
+    setEndSound,
+  } = useTts();
   const { zones, toggleSpeaker } = useSpeakers();
   const { statuses } = useNetworkStatus();
+  const { files, fetchFiles } = useFiles();
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
+
+  const audioFiles = files.audio ?? [];
 
   return (
     <div className="grid grid-cols-12 gap-16 h-full">
@@ -26,6 +44,23 @@ export default function MainPage() {
               onChange={setText}
               placeholder="방송할 텍스트를 입력해주세요"
             />
+
+            {/* TTS 시작/끝 음원 (선택 — '안 함' 가능) */}
+            <div className="flex gap-4">
+              <SoundSelect
+                label="시작 음원"
+                value={startSound}
+                onChange={setStartSound}
+                options={audioFiles}
+              />
+              <SoundSelect
+                label="끝 음원"
+                value={endSound}
+                onChange={setEndSound}
+                options={audioFiles}
+              />
+            </div>
+
             <Button
               label={isTtsSending ? "송출 중..." : "TTS 송출하기"}
               onClick={handleSend}
@@ -89,6 +124,36 @@ export default function MainPage() {
           </div>
         </section>
       </div>
+    </div>
+  );
+}
+
+function SoundSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { id: string; fileName: string; fileUrl: string }[];
+}) {
+  return (
+    <div className="flex flex-1 flex-col gap-2">
+      <span className="font-mbc text-sm text-white/50">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-[48px] w-full cursor-pointer rounded-xl border border-white/10 bg-[#1C1C1C] px-4 font-pretendard text-[15px] text-white transition-all focus:border-white/30 focus:outline-none"
+      >
+        <option value="none">안 함</option>
+        {options.map((f) => (
+          <option key={f.id} value={f.fileUrl}>
+            {f.fileName}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
