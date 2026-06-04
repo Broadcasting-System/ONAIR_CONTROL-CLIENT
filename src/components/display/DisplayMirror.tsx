@@ -174,7 +174,12 @@ export const DisplayMirror = () => {
     }, 700);
 
     if (primary.includes(".m3u8") && Hls.isSupported()) {
-      hls = new Hls({ maxMaxBufferLength: 20, startPosition: initialPos() });
+      hls = new Hls({
+        enableWorker: true,
+        maxMaxBufferLength: 20, // 미리보기는 가볍게
+        maxBufferLength: 20,
+        startPosition: initialPos(),
+      });
       hls.loadSource(primary);
       hls.attachMedia(video);
     } else {
