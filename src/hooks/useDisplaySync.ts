@@ -86,8 +86,10 @@ export function useDisplaySync() {
             })
           }
         }
-      } catch (err) {
-        console.error('Failed to fetch initial status', err)
+      } catch {
+        // 초기 status는 보조용(fast-path). 백엔드가 잠깐 안 닿아도 아래 WebSocket이
+        // 자동 재연결하며 상태를 받아오므로 치명적이지 않다 → 경고만(에러 오버레이 방지).
+        console.warn('초기 상태 fetch 실패 — WebSocket 연결로 복구 시도')
       }
     }
 
