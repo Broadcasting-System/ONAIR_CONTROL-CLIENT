@@ -147,7 +147,7 @@ function SoundSelect({
         onChange={(e) => onChange(e.target.value)}
         className="h-[48px] w-full cursor-pointer rounded-xl border border-white/10 bg-[#1C1C1C] px-4 font-pretendard text-[15px] text-white transition-all focus:border-white/30 focus:outline-none"
       >
-        <option value="none">안 함</option>
+        <option value="none">미사용</option>
         {options.map((f) => (
           <option key={f.id} value={f.fileUrl}>
             {f.fileName}
