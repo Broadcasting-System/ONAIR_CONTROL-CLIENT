@@ -10,9 +10,11 @@ type PlayerBody = {
   loop?: boolean;
 };
 
-async function sendPlayer(body: PlayerBody) {
+const chQs = (channel: number) => (channel > 1 ? `?channel=${channel}` : "");
+
+async function sendPlayer(body: PlayerBody, channel: number = 1) {
   try {
-    const res = await fetch(`${getApiBase()}/display/player`, {
+    const res = await fetch(`${getApiBase()}/display/player${chQs(channel)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -23,34 +25,34 @@ async function sendPlayer(body: PlayerBody) {
   }
 }
 
-/** 일반 display 영상 재생 제어 (서버 권위적, WS로 display·control 동기화). */
-export function usePlayer() {
-  const play = useCallback(() => sendPlayer({ action: "play" }), []);
-  const pause = useCallback(() => sendPlayer({ action: "pause" }), []);
-  const toggle = useCallback(() => sendPlayer({ action: "toggle" }), []);
+/** 일반 display 영상 재생 제어 (서버 권위적, WS로 display·control 동기화). channel 대상. */
+export function usePlayer(channel: number = 1) {
+  const play = useCallback(() => sendPlayer({ action: "play" }, channel), [channel]);
+  const pause = useCallback(() => sendPlayer({ action: "pause" }, channel), [channel]);
+  const toggle = useCallback(() => sendPlayer({ action: "toggle" }, channel), [channel]);
   const seek = useCallback(
-    (position: number) => sendPlayer({ action: "seek", position }),
-    [],
+    (position: number) => sendPlayer({ action: "seek", position }, channel),
+    [channel],
   );
   const setVolume = useCallback(
-    (volume: number) => sendPlayer({ action: "volume", volume }),
-    [],
+    (volume: number) => sendPlayer({ action: "volume", volume }, channel),
+    [channel],
   );
   const setMuted = useCallback(
-    (muted: boolean) => sendPlayer({ action: "volume", muted }),
-    [],
+    (muted: boolean) => sendPlayer({ action: "volume", muted }, channel),
+    [channel],
   );
   const setFit = useCallback(
-    (fit: "contain" | "cover") => sendPlayer({ action: "fit", fit }),
-    [],
+    (fit: "contain" | "cover") => sendPlayer({ action: "fit", fit }, channel),
+    [channel],
   );
   const setLoop = useCallback(
-    (loop: boolean) => sendPlayer({ action: "loop", loop }),
-    [],
+    (loop: boolean) => sendPlayer({ action: "loop", loop }, channel),
+    [channel],
   );
   const setSlide = useCallback(async (index: number) => {
     try {
-      await fetch(`${getApiBase()}/display/slide`, {
+      await fetch(`${getApiBase()}/display/slide${chQs(channel)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ index }),
@@ -58,7 +60,7 @@ export function usePlayer() {
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [channel]);
   const setOverlay = useCallback(
     async (patch: {
       text?: string;
@@ -68,7 +70,7 @@ export function usePlayer() {
       visible?: boolean;
     }) => {
       try {
-        await fetch(`${getApiBase()}/display/overlay`, {
+        await fetch(`${getApiBase()}/display/overlay${chQs(channel)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(patch),
@@ -77,7 +79,7 @@ export function usePlayer() {
         /* ignore */
       }
     },
-    [],
+    [channel],
   );
   return { play, pause, toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide, setOverlay };
 }

@@ -35,13 +35,14 @@ export function useDisplay() {
     };
   };
 
-  const showMedia = async (file: UploadedFile) => {
+  const showMedia = async (file: UploadedFile, channel: number = 1) => {
     setIsSending(true);
     setError(null);
     try {
       const BASE = getApiBase();
       const { url, hlsUrl } = await resolveMediaUrls(file, BASE);
-      const res = await fetch(`${BASE}/display/show`, {
+      const qs = channel > 1 ? `?channel=${channel}` : "";
+      const res = await fetch(`${BASE}/display/show${qs}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -10,6 +10,7 @@ import { useDisplaySync, ImageOverlay } from "@/hooks/useDisplaySync";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useScreenShare } from "@/hooks/useScreenShare";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
+import { useChannelStore, MAX_CHANNELS } from "@/stores/channelStore";
 import { FileType, UploadedFile } from "@/types/file";
 
 const TYPE_TABS: { key: FileType; label: string }[] = [
@@ -27,21 +28,52 @@ const fmt = (s: number) => {
 };
 
 export default function MediaPage() {
+  const channel = useChannelStore((s) => s.channel);
+  const setChannel = useChannelStore((s) => s.setChannel);
   const { files, fetchFiles, isLoading } = useFiles();
   const { showMedia, isSending } = useDisplay();
-  const { content } = useDisplaySync();
+  const { content } = useDisplaySync(channel);
   const { toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide, setOverlay } =
-    usePlayer();
+    usePlayer(channel);
   const { isSharing, start: startShare, stop: stopShare, localStream } =
-    useScreenShare();
+    useScreenShare(channel);
 
   const [tab, setTab] = useState<FileType>("video");
   const [, setTick] = useState(0);
   const [dragPos, setDragPos] = useState<number | null>(null);
+  const [liveChannels, setLiveChannels] = useState<number[]>([]);
 
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
+
+  // 어느 채널이 송출 중인지(standby 아님) 주기적으로 확인 → 채널 탭에 표시
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      const BASE = getApiBase();
+      const checks = await Promise.all(
+        Array.from({ length: MAX_CHANNELS }, (_, i) => i + 1).map(async (ch) => {
+          try {
+            const qs = ch > 1 ? `?channel=${ch}` : "";
+            const res = await fetch(`${BASE}/display/status${qs}`);
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data?.type && data.type !== "standby" ? ch : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      if (!cancelled) setLiveChannels(checks.filter((c): c is number => c !== null));
+    };
+    poll();
+    const id = setInterval(poll, 2500);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
   // 진행바 부드럽게 갱신
   useEffect(() => {
@@ -63,11 +95,12 @@ export default function MediaPage() {
 
   const clearDisplay = useCallback(async () => {
     try {
-      await fetch(`${getApiBase()}/display/clear`, { method: "POST" });
+      const qs = channel > 1 ? `?channel=${channel}` : "";
+      await fetch(`${getApiBase()}/display/clear${qs}`, { method: "POST" });
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [channel]);
 
   const activeFiles = files[tab] ?? [];
 
@@ -125,7 +158,7 @@ export default function MediaPage() {
                   (f.id.startsWith("file_") ? f.id.slice(5) : f.id).split(".")[0],
                 )}
                 disabled={isSending}
-                onSelect={() => showMedia(f)}
+                onSelect={() => showMedia(f, channel)}
               />
             ))
           )}
@@ -134,14 +167,40 @@ export default function MediaPage() {
 
       {/* 우측: 미리보기 + 재생 제어 */}
       <div className="flex flex-1 flex-col gap-5 overflow-hidden">
-        <SectionHeader>송출 미리보기</SectionHeader>
+        <div className="flex items-center justify-between">
+          <SectionHeader>송출 미리보기</SectionHeader>
+          {/* 채널 선택 — 채널마다 독립 송출(CH1=기본). 송출 중이면 빨간 점 */}
+          <div className="flex items-center gap-2">
+            <span className="font-mbc text-xs text-white/40">채널</span>
+            {Array.from({ length: MAX_CHANNELS }, (_, i) => i + 1).map((ch) => {
+              const live = liveChannels.includes(ch);
+              return (
+                <button
+                  key={ch}
+                  onClick={() => setChannel(ch)}
+                  className={cn(
+                    "relative flex h-9 w-12 items-center justify-center rounded-xl border font-orbitron text-sm transition-all",
+                    channel === ch
+                      ? "border-red-400/50 bg-red-400/15 text-white"
+                      : "border-white/10 bg-white/[0.03] text-white/45 hover:bg-white/5",
+                  )}
+                >
+                  {ch}
+                  {live && (
+                    <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border border-black bg-red-500" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* 미리보기 (높이 고정) — 화면 공유 중이면 내 화면 로컬 프리뷰 */}
         <div className="relative h-[48vh] w-full shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black">
           {isSharing ? (
             <ScreenLocalPreview stream={localStream} />
           ) : (
-            <DisplayMirror />
+            <DisplayMirror channel={channel} />
           )}
         </div>
 

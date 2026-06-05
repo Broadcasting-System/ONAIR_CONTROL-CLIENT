@@ -10,7 +10,8 @@ const RTC_CONFIG: RTCConfiguration = {
 /** 컨트롤(노트북) 측 화면 공유 송신기.
  *  getDisplayMedia로 화면+소리를 캡처해 WebRTC(sendonly)로 송출 화면에 보낸다.
  *  시그널링은 전용 /api/display/ws 로 offer/answer/ice 교환. */
-export function useScreenShare() {
+export function useScreenShare(channel: number = 1) {
+  const chQs = channel > 1 ? `?channel=${channel}` : "";
   const [isSharing, setIsSharing] = useState(false);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -37,13 +38,13 @@ export function useScreenShare() {
   const stop = useCallback(async () => {
     cleanup();
     try {
-      await fetch(`${getApiBase()}/display/screen`, {
+      await fetch(`${getApiBase()}/display/screen${chQs}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: false }),
       });
     } catch {}
-  }, [cleanup]);
+  }, [cleanup, chQs]);
 
   const start = useCallback(async () => {
     if (pcRef.current) return; // 이미 공유 중
@@ -68,14 +69,14 @@ export function useScreenShare() {
 
     // 송출 화면을 screen 모드로 전환
     try {
-      await fetch(`${getApiBase()}/display/screen`, {
+      await fetch(`${getApiBase()}/display/screen${chQs}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: true }),
       });
     } catch {}
 
-    const ws = new WebSocket(backendWs("/api/display/ws"));
+    const ws = new WebSocket(backendWs("/api/display/ws", channel));
     wsRef.current = ws;
     const send = (m: object) => {
       if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(m));
@@ -114,7 +115,7 @@ export function useScreenShare() {
     };
 
     toast.success("화면 공유를 시작했습니다.");
-  }, [stop]);
+  }, [stop, chQs, channel]);
 
   return { isSharing, start, stop, localStream };
 }

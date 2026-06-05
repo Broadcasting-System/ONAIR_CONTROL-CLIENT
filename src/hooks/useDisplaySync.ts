@@ -37,11 +37,12 @@ export interface DisplayContent {
   [key: string]: unknown
 }
 
-export function useDisplaySync() {
+export function useDisplaySync(channel: number = 1) {
   const [content, setContent] = useState<DisplayContent | null>(null)
 
   useEffect(() => {
     const BASE = backendBase()
+    const chQs = channel > 1 ? `?channel=${channel}` : ''
 
     const resolveUrls = (data: DisplayContent) => {
       const { type, url, urls, fileId, hlsUrl } = data
@@ -69,7 +70,7 @@ export function useDisplaySync() {
 
     const fetchInitialStatus = async () => {
       try {
-        const res = await fetch(`${BASE}/api/display/status`)
+        const res = await fetch(`${BASE}/api/display/status${chQs}`)
         if (res.ok) {
           const data = await res.json() as DisplayContent
           if (data && data.type && data.type !== 'standby') {
@@ -99,7 +100,7 @@ export function useDisplaySync() {
     let reconnectTimer: NodeJS.Timeout
 
     const connect = () => {
-      const wsUrl = backendWs('/api/display/ws')
+      const wsUrl = backendWs('/api/display/ws', channel)
       ws = new WebSocket(wsUrl)
 
       ws.onmessage = (event) => {
@@ -143,7 +144,7 @@ export function useDisplaySync() {
       if (ws) ws.close()
       clearTimeout(reconnectTimer)
     }
-  }, [])
+  }, [channel])
 
   return { content }
 }

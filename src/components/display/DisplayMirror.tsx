@@ -84,8 +84,8 @@ const posFromPlayback = (
   return raw;
 };
 
-export const DisplayMirror = () => {
-  const { content } = useDisplaySync();
+export const DisplayMirror = ({ channel = 1 }: { channel?: number }) => {
+  const { content } = useDisplaySync(channel);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(() =>
     calculateSlideIndex(content),
   );
