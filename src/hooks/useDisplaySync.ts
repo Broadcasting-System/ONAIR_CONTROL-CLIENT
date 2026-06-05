@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { backendBase, backendWs } from '@/lib/backend'
 
-export type ContentType = 'image' | 'video' | 'presentation' | 'audio' | 'standby' | 'screen'
+export type ContentType = 'image' | 'video' | 'presentation' | 'audio' | 'standby' | 'screen' | 'timer'
 
 export interface Playback {
   playing: boolean
@@ -33,6 +33,9 @@ export interface DisplayContent {
   playback?: Playback
   slideIndex?: number
   overlay?: ImageOverlay
+  label?: string
+  durationSec?: number
+  mode?: 'down' | 'up'
   command?: 'display'
   [key: string]: unknown
 }
@@ -84,6 +87,9 @@ export function useDisplaySync(channel: number = 1) {
               playback: resolved.playback,
               slideIndex: resolved.slideIndex,
               overlay: resolved.overlay,
+              label: resolved.label,
+              durationSec: resolved.durationSec,
+              mode: resolved.mode,
             })
           }
         }
@@ -100,7 +106,7 @@ export function useDisplaySync(channel: number = 1) {
     let reconnectTimer: NodeJS.Timeout
 
     const connect = () => {
-      const wsUrl = backendWs('/api/display/ws', channel)
+      const wsUrl = backendWs('/api/display/ws', channel, 'control')
       ws = new WebSocket(wsUrl)
 
       ws.onmessage = (event) => {
@@ -126,6 +132,9 @@ export function useDisplaySync(channel: number = 1) {
               playback: resolved.playback,
               slideIndex: resolved.slideIndex,
               overlay: resolved.overlay,
+              label: resolved.label,
+              durationSec: resolved.durationSec,
+              mode: resolved.mode,
             })
           }
         } catch (err) {

@@ -101,9 +101,21 @@ export function useSpeakers() {
     }
   };
 
+  // 긴급정지용 — 토글이 아니라 강제 OFF
+  const allOff = useCallback(async () => {
+    setZones(zones.map((z) => ({ ...z, status: "off" })));
+    try {
+      await callControl(["전체"], "off");
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zones, setZones]);
+
   return {
     zones,
     toggleSpeaker,
+    allOff,
     loadStatus,
   };
 }

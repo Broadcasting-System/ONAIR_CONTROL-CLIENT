@@ -11,6 +11,8 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { useScreenShare } from "@/hooks/useScreenShare";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 import { useChannelStore, MAX_CHANNELS } from "@/stores/channelStore";
+import { useMe } from "@/hooks/useMe";
+import { useHealth } from "@/hooks/useHealth";
 import { FileType, UploadedFile } from "@/types/file";
 
 const TYPE_TABS: { key: FileType; label: string }[] = [
@@ -30,8 +32,9 @@ const fmt = (s: number) => {
 export default function MediaPage() {
   const channel = useChannelStore((s) => s.channel);
   const setChannel = useChannelStore((s) => s.setChannel);
+  const { canOperate } = useMe();
   const { files, fetchFiles, isLoading } = useFiles();
-  const { showMedia, isSending } = useDisplay();
+  const { showMedia, showTimer, isSending } = useDisplay();
   const { content } = useDisplaySync(channel);
   const { toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide, setOverlay } =
     usePlayer(channel);
@@ -39,41 +42,14 @@ export default function MediaPage() {
     useScreenShare(channel);
 
   const [tab, setTab] = useState<FileType>("video");
+  const [timerMode, setTimerMode] = useState(false);
   const [, setTick] = useState(0);
   const [dragPos, setDragPos] = useState<number | null>(null);
-  const [liveChannels, setLiveChannels] = useState<number[]>([]);
+  const { health } = useHealth();
 
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
-
-  // 어느 채널이 송출 중인지(standby 아님) 주기적으로 확인 → 채널 탭에 표시
-  useEffect(() => {
-    let cancelled = false;
-    const poll = async () => {
-      const BASE = getApiBase();
-      const checks = await Promise.all(
-        Array.from({ length: MAX_CHANNELS }, (_, i) => i + 1).map(async (ch) => {
-          try {
-            const qs = ch > 1 ? `?channel=${ch}` : "";
-            const res = await fetch(`${BASE}/display/status${qs}`);
-            if (!res.ok) return null;
-            const data = await res.json();
-            return data?.type && data.type !== "standby" ? ch : null;
-          } catch {
-            return null;
-          }
-        }),
-      );
-      if (!cancelled) setLiveChannels(checks.filter((c): c is number => c !== null));
-    };
-    poll();
-    const id = setInterval(poll, 2500);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, []);
 
   // 진행바 부드럽게 갱신
   useEffect(() => {
@@ -110,14 +86,23 @@ export default function MediaPage() {
       <div className="flex w-[420px] shrink-0 flex-col gap-5">
         <SectionHeader>미디어 선택</SectionHeader>
 
+        {!canOperate && (
+          <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 font-pretendard text-xs text-amber-200/80">
+            보기 전용 권한입니다. 송출하려면 관리자에게 운영 권한을 요청하세요.
+          </p>
+        )}
+
         <div className="flex flex-wrap gap-2">
           {TYPE_TABS.map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => {
+                setTab(t.key);
+                setTimerMode(false);
+              }}
               className={cn(
                 "rounded-xl border px-4 py-2 font-mbc text-sm transition-all",
-                tab === t.key
+                tab === t.key && !timerMode
                   ? "border-white/20 bg-white/10 text-white"
                   : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
               )}
@@ -125,11 +110,25 @@ export default function MediaPage() {
               {t.label}
             </button>
           ))}
+          {/* 타이머 — 파일이 아니라 카운트다운/업 송출 */}
+          <button
+            onClick={() => setTimerMode((v) => !v)}
+            disabled={!canOperate}
+            className={cn(
+              "rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40",
+              timerMode
+                ? "border-white/20 bg-white/10 text-white"
+                : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
+            )}
+          >
+            타이머
+          </button>
           {/* 화면 공유 — 파일 종류 옆에 탭처럼 (선택이 아니라 시작/중지 동작) */}
           <button
             onClick={isSharing ? stopShare : startShare}
+            disabled={!canOperate && !isSharing}
             className={cn(
-              "flex items-center gap-2 rounded-xl border px-4 py-2 font-mbc text-sm transition-all",
+              "flex items-center gap-2 rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40",
               isSharing
                 ? "border-red-500/50 bg-red-500/15 text-red-200 hover:bg-red-500/25"
                 : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
@@ -142,6 +141,17 @@ export default function MediaPage() {
           </button>
         </div>
 
+        {timerMode ? (
+          <TimerComposer
+            disabled={!canOperate}
+            onSend={(opts) =>
+              showTimer(channel, opts).catch(() => {
+                /* 서버가 403 등 → 무시(권한은 상단 안내) */
+              })
+            }
+            onClear={clearDisplay}
+          />
+        ) : (
         <div className="flex flex-1 flex-col gap-2 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a] p-3">
           {isLoading ? (
             <p className="p-4 font-pretendard text-white/40">불러오는 중…</p>
@@ -157,27 +167,40 @@ export default function MediaPage() {
                 active={content?.url?.includes(
                   (f.id.startsWith("file_") ? f.id.slice(5) : f.id).split(".")[0],
                 )}
-                disabled={isSending}
+                disabled={isSending || !canOperate}
                 onSelect={() => showMedia(f, channel)}
               />
             ))
           )}
         </div>
+        )}
       </div>
 
       {/* 우측: 미리보기 + 재생 제어 */}
       <div className="flex flex-1 flex-col gap-5 overflow-hidden">
         <div className="flex items-center justify-between">
           <SectionHeader>송출 미리보기</SectionHeader>
-          {/* 채널 선택 — 채널마다 독립 송출(CH1=기본). 송출 중이면 빨간 점 */}
+          {/* 채널 선택 — 채널마다 독립 송출(CH1=기본). 송출 화면 연결되면 초록 점 */}
           <div className="flex items-center gap-2">
+            {/* 스피커 매트릭스 연결 상태 */}
+            {health && !health.matrix.connected && (
+              <span
+                title={`스피커 매트릭스(${health.matrix.host}) 연결 끊김`}
+                className="mr-1 rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-1 font-mbc text-[11px] text-amber-200"
+              >
+                ⚠️ 매트릭스
+              </span>
+            )}
             <span className="font-mbc text-xs text-white/40">채널</span>
             {Array.from({ length: MAX_CHANNELS }, (_, i) => i + 1).map((ch) => {
-              const live = liveChannels.includes(ch);
+              const chHealth = health?.channels[String(ch)];
+              const live = chHealth?.live ?? false;
+              const names = chHealth?.displays.map((d) => d.name).join(", ");
               return (
                 <button
                   key={ch}
                   onClick={() => setChannel(ch)}
+                  title={live ? `송출 화면 연결됨: ${names}` : "송출 화면 없음"}
                   className={cn(
                     "relative flex h-9 w-12 items-center justify-center rounded-xl border font-orbitron text-sm transition-all",
                     channel === ch
@@ -186,9 +209,12 @@ export default function MediaPage() {
                   )}
                 >
                   {ch}
-                  {live && (
-                    <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border border-black bg-red-500" />
-                  )}
+                  <span
+                    className={cn(
+                      "absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border border-black",
+                      live ? "bg-emerald-400" : "bg-white/20",
+                    )}
+                  />
                 </button>
               );
             })}
@@ -412,6 +438,98 @@ function PresentationNav({
           className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10"
         >
           송출 끄기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** 타이머(카운트다운/업) 송출 입력 */
+function TimerComposer({
+  disabled,
+  onSend,
+  onClear,
+}: {
+  disabled?: boolean;
+  onSend: (opts: { label?: string; durationSec: number; mode: "down" | "up" }) => void;
+  onClear: () => void;
+}) {
+  const [min, setMin] = useState(5);
+  const [sec, setSec] = useState(0);
+  const [label, setLabel] = useState("");
+  const [mode, setMode] = useState<"down" | "up">("down");
+
+  const durationSec = Math.max(0, Math.floor(min) * 60 + Math.floor(sec));
+
+  return (
+    <div className="flex flex-1 flex-col gap-5 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5">
+      {/* 모드 */}
+      <div className="flex overflow-hidden rounded-xl border border-white/10">
+        {(["down", "up"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            className={cn(
+              "flex-1 py-2.5 font-mbc text-sm transition-colors",
+              mode === m ? "bg-white/15 text-white" : "bg-transparent text-white/40 hover:bg-white/5",
+            )}
+          >
+            {m === "down" ? "카운트다운" : "카운트업(경과)"}
+          </button>
+        ))}
+      </div>
+
+      {/* 라벨 */}
+      <div className="flex flex-col gap-1.5">
+        <span className="font-mbc text-xs text-white/40">라벨 (선택)</span>
+        <input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="예: 시험 종료까지"
+          className="h-11 rounded-xl border border-white/10 bg-[#141414] px-4 font-pretendard text-white placeholder:text-white/25 focus:border-white/30 focus:outline-none"
+        />
+      </div>
+
+      {/* 시간 (카운트다운일 때만) */}
+      {mode === "down" && (
+        <div className="flex items-end gap-3">
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mbc text-xs text-white/40">분</span>
+            <input
+              type="number"
+              min={0}
+              value={min}
+              onChange={(e) => setMin(Math.max(0, Number(e.target.value)))}
+              className="h-11 w-24 rounded-xl border border-white/10 bg-[#141414] px-4 font-orbitron text-white focus:border-white/30 focus:outline-none"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mbc text-xs text-white/40">초</span>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              value={sec}
+              onChange={(e) => setSec(Math.min(59, Math.max(0, Number(e.target.value))))}
+              className="h-11 w-24 rounded-xl border border-white/10 bg-[#141414] px-4 font-orbitron text-white focus:border-white/30 focus:outline-none"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="mt-auto flex gap-3">
+        <button
+          onClick={() => onSend({ label: label.trim() || undefined, durationSec, mode })}
+          disabled={disabled || (mode === "down" && durationSec <= 0)}
+          className="h-12 flex-1 rounded-xl border border-white/15 bg-white/10 font-mbc text-white hover:bg-white/15 disabled:opacity-40"
+        >
+          타이머 송출
+        </button>
+        <button
+          onClick={onClear}
+          className="h-12 rounded-xl border border-white/10 bg-white/5 px-5 font-mbc text-sm text-white/60 hover:bg-white/10"
+        >
+          끄기
         </button>
       </div>
     </div>

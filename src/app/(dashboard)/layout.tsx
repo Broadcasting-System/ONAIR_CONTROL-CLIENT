@@ -5,6 +5,13 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ToastHost } from "@/components/common/Toast";
+import { useMe } from "@/hooks/useMe";
+
+const ROLE_LABEL: Record<string, string> = {
+  admin: "관리자",
+  operator: "운영",
+  viewer: "보기 전용",
+};
 
 export default function DashboardLayout({
   children,
@@ -12,6 +19,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { me, role } = useMe();
 
   return (
     <div className="relative flex h-screen w-full bg-background text-foreground overflow-hidden font-sans">
@@ -24,7 +32,7 @@ export default function DashboardLayout({
       <aside className="relative flex w-[245px] flex-col bg-transparent pt-[56px] pl-[10px] z-20">
 
         <nav className="flex flex-col gap-4">
-          {NAVIGATION_ITEMS.map((item) => {
+          {NAVIGATION_ITEMS.filter((item) => !item.adminOnly || role === "admin").map((item) => {
             const isActive = pathname.startsWith(item.path);
             return (
               <Link
@@ -47,6 +55,30 @@ export default function DashboardLayout({
             );
           })}
         </nav>
+
+        {/* 현재 기기 역할 배지 */}
+        <div className="mt-auto mb-6 pr-[10px]">
+          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3">
+            <span
+              className={cn(
+                "h-2 w-2 shrink-0 rounded-full",
+                role === "admin"
+                  ? "bg-emerald-400"
+                  : role === "operator"
+                    ? "bg-sky-400"
+                    : "bg-white/30",
+              )}
+            />
+            <div className="min-w-0">
+              <p className="truncate font-mbc text-[13px] text-white/70">
+                {me?.name ?? "연결 중…"}
+              </p>
+              <p className="font-orbitron text-[10px] uppercase tracking-widest text-white/30">
+                {ROLE_LABEL[role] ?? role}
+              </p>
+            </div>
+          </div>
+        </div>
       </aside>
 
       <main className="relative flex-1 overflow-auto bg-transparent">

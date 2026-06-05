@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
+import { cn } from "@/lib/utils";
 import {
   useDisplaySync,
   DisplayContent,
@@ -83,6 +84,49 @@ const posFromPlayback = (
   }
   return raw;
 };
+
+/** 미리보기용 카운트다운/업 (송출 CountdownView 축소판) */
+function MirrorCountdown({
+  serverTimestamp,
+  durationSec = 0,
+  mode = "down",
+  label,
+}: {
+  serverTimestamp?: number;
+  durationSec?: number;
+  mode?: "down" | "up";
+  label?: string;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, []);
+  const start = serverTimestamp ?? now;
+  const elapsed = Math.max(0, (now - start) / 1000);
+  const secs = mode === "up" ? elapsed : Math.max(0, durationSec - elapsed);
+  const done = mode === "down" && secs <= 0;
+  const s = Math.max(0, Math.floor(secs));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const ss = s % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const text = h > 0 ? `${h}:${pad(m)}:${pad(ss)}` : `${m}:${pad(ss)}`;
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-black">
+      {label ? <span className="font-mbc text-lg text-white/70">{label}</span> : null}
+      <span
+        className={cn(
+          "font-orbitron text-[18%] font-extrabold tabular-nums",
+          done ? "animate-pulse text-red-400" : "text-white",
+        )}
+        style={{ fontSize: "min(22vh, 12vw)" }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
 
 export const DisplayMirror = ({ channel = 1 }: { channel?: number }) => {
   const { content } = useDisplaySync(channel);
@@ -273,6 +317,15 @@ export const DisplayMirror = ({ channel = 1 }: { channel?: number }) => {
           }
           alt="Mirror Slide"
           className="h-full w-full object-contain"
+        />
+      ) : null}
+
+      {content.type === "timer" ? (
+        <MirrorCountdown
+          serverTimestamp={content.serverTimestamp}
+          durationSec={content.durationSec}
+          mode={content.mode}
+          label={content.label}
         />
       ) : null}
 

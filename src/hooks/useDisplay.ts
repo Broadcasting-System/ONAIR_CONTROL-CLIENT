@@ -65,5 +65,20 @@ export function useDisplay() {
   };
 
 
-  return { showMedia, isSending, error };
+  const showTimer = async (
+    channel: number,
+    opts: { label?: string; durationSec: number; mode: "down" | "up" },
+  ) => {
+    const BASE = getApiBase();
+    const qs = channel > 1 ? `?channel=${channel}` : "";
+    const res = await fetch(`${BASE}/display/timer${qs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(opts),
+    });
+    if (!res.ok) throw new Error("타이머 송출 실패");
+    return res.json();
+  };
+
+  return { showMedia, showTimer, isSending, error };
 }

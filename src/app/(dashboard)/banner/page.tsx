@@ -11,6 +11,7 @@ import {
   ImagePayload,
   BannerOverlay,
   GifPayload,
+  TimerPayload,
   ScoreAnim,
   SCORE_ANIM_OPTIONS,
   updateBanner,
@@ -24,6 +25,7 @@ const SCENES: { key: BannerScene; label: string; sub: string }[] = [
   { key: "scoreboard", label: "점수보드", sub: "SCORE" },
   { key: "image", label: "이미지", sub: "IMAGE" },
   { key: "gif", label: "GIF", sub: "GIF" },
+  { key: "timer", label: "타이머", sub: "TIMER" },
   { key: "blank", label: "끄기", sub: "OFF" },
 ];
 
@@ -47,6 +49,11 @@ export default function BannerPage() {
     useState<ScoreboardPayload>(DEFAULT_SCOREBOARD);
   const [image, setImage] = useState<ImagePayload>({ url: "", fit: "cover" });
   const [gif, setGif] = useState<GifPayload>({ url: "" });
+  const [timer, setTimer] = useState<TimerPayload>({
+    durationSec: 300,
+    label: "",
+    mode: "down",
+  });
   const [displays, setDisplays] = useState(0);
 
   const { files, fetchFiles } = useFiles();
@@ -111,10 +118,12 @@ export default function BannerPage() {
         return image as unknown as Record<string, unknown>;
       case "gif":
         return gif as unknown as Record<string, unknown>;
+      case "timer":
+        return timer as unknown as Record<string, unknown>;
       default:
         return {};
     }
-  }, [scene, scoreboard, image, gif]);
+  }, [scene, scoreboard, image, gif, timer]);
 
   // ---- 변경 시 디바운스 송출 ----
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -122,6 +131,8 @@ export default function BannerPage() {
   );
   useEffect(() => {
     if (!didInit.current) return;
+    // 타이머는 편집 중 자동 재시작 방지 — 명시적 송출 버튼만 사용
+    if (scene === "timer") return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       updateBanner(scene, payload).catch((e) =>
@@ -196,6 +207,14 @@ export default function BannerPage() {
               value={gif}
               onChange={setGif}
               gifs={files.image ?? []}
+            />
+          )}
+          {scene === "timer" && (
+            <BannerTimerEditor
+              value={timer}
+              onChange={setTimer}
+              onSend={() => sendNow("timer", timer as unknown as Record<string, unknown>)}
+              onClear={() => clearBanner()}
             />
           )}
           {scene === "blank" && (
@@ -956,5 +975,100 @@ function TextInput({
         className,
       )}
     />
+  );
+}
+
+function BannerTimerEditor({
+  value,
+  onChange,
+  onSend,
+  onClear,
+}: {
+  value: TimerPayload;
+  onChange: (v: TimerPayload) => void;
+  onSend: () => void;
+  onClear: () => void;
+}) {
+  const min = Math.floor((value.durationSec ?? 0) / 60);
+  const sec = (value.durationSec ?? 0) % 60;
+  const mode = value.mode ?? "down";
+
+  return (
+    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
+      {/* 모드 */}
+      <div className="flex overflow-hidden rounded-xl border border-white/10">
+        {(["down", "up"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => onChange({ ...value, mode: m })}
+            className={cn(
+              "flex-1 py-2.5 font-mbc text-sm transition-colors",
+              mode === m ? "bg-white/15 text-white" : "bg-transparent text-white/40 hover:bg-white/5",
+            )}
+          >
+            {m === "down" ? "카운트다운" : "카운트업(경과)"}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <span className="font-mbc text-xs text-white/40">라벨 (선택)</span>
+        <input
+          value={value.label ?? ""}
+          onChange={(e) => onChange({ ...value, label: e.target.value })}
+          placeholder="예: 경기 시작까지"
+          className="h-11 rounded-xl border border-white/10 bg-black/40 px-4 font-pretendard text-white placeholder:text-white/20 focus:border-white/30 focus:outline-none"
+        />
+      </div>
+
+      {mode === "down" && (
+        <div className="flex items-end gap-3">
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mbc text-xs text-white/40">분</span>
+            <input
+              type="number"
+              min={0}
+              value={min}
+              onChange={(e) =>
+                onChange({ ...value, durationSec: Math.max(0, Number(e.target.value)) * 60 + sec })
+              }
+              className="h-11 w-24 rounded-xl border border-white/10 bg-black/40 px-4 font-orbitron text-white focus:border-white/30 focus:outline-none"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mbc text-xs text-white/40">초</span>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              value={sec}
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  durationSec: min * 60 + Math.min(59, Math.max(0, Number(e.target.value))),
+                })
+              }
+              className="h-11 w-24 rounded-xl border border-white/10 bg-black/40 px-4 font-orbitron text-white focus:border-white/30 focus:outline-none"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-3">
+        <button
+          onClick={onSend}
+          disabled={mode === "down" && (value.durationSec ?? 0) <= 0}
+          className="h-12 flex-1 rounded-xl border border-white/15 bg-white/10 font-mbc text-white hover:bg-white/15 disabled:opacity-40"
+        >
+          타이머 송출
+        </button>
+        <button
+          onClick={onClear}
+          className="h-12 rounded-xl border border-white/10 bg-white/5 px-5 font-mbc text-sm text-white/60 hover:bg-white/10"
+        >
+          끄기
+        </button>
+      </div>
+    </div>
   );
 }

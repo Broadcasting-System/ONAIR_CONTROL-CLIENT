@@ -1,7 +1,14 @@
 import { getApiBase } from "@/lib/apiBase";
 import { displayAppBase } from "@/lib/backend";
 
-export type BannerScene = "blank" | "image" | "gif" | "scoreboard";
+export type BannerScene = "blank" | "image" | "gif" | "scoreboard" | "timer";
+
+export type TimerPayload = {
+  durationSec: number;
+  label?: string;
+  mode?: "down" | "up";
+  color?: string;
+};
 
 export type ScoreAnim =
   | "slamshine"

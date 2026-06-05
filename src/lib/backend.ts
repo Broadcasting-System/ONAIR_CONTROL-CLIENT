@@ -19,16 +19,17 @@ export function backendBase(): string {
   return "http://127.0.0.1:8000";
 }
 
-export function backendWs(path: string, channel?: number): string {
+export function backendWs(path: string, channel?: number, role?: string): string {
   const override = process.env.NEXT_PUBLIC_WS_URL;
   const base =
     override && override.trim() && path === "/api/display/ws"
       ? override
       : backendBase().replace(/^http/, "ws") + path;
-  if (channel && channel > 1) {
-    return base + (base.includes("?") ? "&" : "?") + `channel=${channel}`;
-  }
-  return base;
+  const params: string[] = [];
+  if (channel && channel > 1) params.push(`channel=${channel}`);
+  if (role) params.push(`role=${role}`);
+  if (params.length === 0) return base;
+  return base + (base.includes("?") ? "&" : "?") + params.join("&");
 }
 
 /** 현수막 송출(디스플레이 앱) 주소. 포트는 NEXT_PUBLIC_BANNER_DISPLAY_PORT(기본 3000). */

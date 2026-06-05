@@ -10,6 +10,7 @@ import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useFiles } from "@/hooks/useFiles";
+import { useMe } from "@/hooks/useMe";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 
 export default function MainPage() {
@@ -26,6 +27,7 @@ export default function MainPage() {
   const { zones, toggleSpeaker } = useSpeakers();
   const { statuses } = useNetworkStatus();
   const { files, fetchFiles } = useFiles();
+  const { canOperate } = useMe();
 
   useEffect(() => {
     fetchFiles();
@@ -64,7 +66,7 @@ export default function MainPage() {
             <Button
               label={isTtsSending ? "송출 중..." : "TTS 송출하기"}
               onClick={handleSend}
-              disabled={!text.trim() || isTtsSending}
+              disabled={!text.trim() || isTtsSending || !canOperate}
               className="h-[64px]"
             />
           </div>

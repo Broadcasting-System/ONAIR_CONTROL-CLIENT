@@ -76,7 +76,7 @@ export function useScreenShare(channel: number = 1) {
       });
     } catch {}
 
-    const ws = new WebSocket(backendWs("/api/display/ws", channel));
+    const ws = new WebSocket(backendWs("/api/display/ws", channel, "signal"));
     wsRef.current = ws;
     const send = (m: object) => {
       if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(m));
@@ -91,6 +91,13 @@ export function useScreenShare(channel: number = 1) {
     };
 
     const pendingIce: RTCIceCandidateInit[] = [];
+    const sendOffer = async (iceRestart = false) => {
+      try {
+        const offer = await pc.createOffer(iceRestart ? { iceRestart: true } : undefined);
+        await pc.setLocalDescription(offer);
+        send({ command: "webrtc", from: "control", kind: "offer", sdp: offer });
+      } catch (e) { console.error("offer 생성 실패", e); }
+    };
     ws.onmessage = async (ev) => {
       let m: { command?: string; from?: string; kind?: string; sdp?: RTCSessionDescriptionInit; candidate?: RTCIceCandidateInit };
       try { m = JSON.parse(ev.data); } catch { return; }
@@ -104,15 +111,12 @@ export function useScreenShare(channel: number = 1) {
       } else if (m.kind === "ice" && m.candidate) {
         if (pc.remoteDescription) { try { await pc.addIceCandidate(m.candidate); } catch {} }
         else pendingIce.push(m.candidate);
+      } else if (m.kind === "hello") {
+        // 송출이 (재)연결됨 → offer를 ICE 재시작과 함께 재전송해 재협상
+        await sendOffer(true);
       }
     };
-    ws.onopen = async () => {
-      try {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        send({ command: "webrtc", from: "control", kind: "offer", sdp: offer });
-      } catch (e) { console.error("offer 생성 실패", e); }
-    };
+    ws.onopen = () => { void sendOffer(false); };
 
     toast.success("화면 공유를 시작했습니다.");
   }, [stop, chQs, channel]);
