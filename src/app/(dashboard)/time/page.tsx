@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 
+import { getApiBase } from "@/lib/apiBase";
 import GroupTab from "@/components/time/GroupTab";
 import DaySelector from "@/components/time/DaySelector";
 import BellCard from "@/components/time/BellCard";
@@ -43,10 +44,26 @@ export default function TimePage() {
   const { files, fetchFiles } = useFiles();
   const [editingBellId, setEditingBellId] = useState<string | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  // 현재 실제 송출 중(라이브)인 그룹 — 시보 전송 1개만 활성이므로 운영자에게 표시
+  const [liveGroupId, setLiveGroupId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
+
+  useEffect(() => {
+    const fetchActive = async () => {
+      try {
+        const res = await fetch(`${getApiBase()}/time/active`);
+        if (res.ok) setLiveGroupId((await res.json()).activeGroupId ?? null);
+      } catch {
+        /* ignore */
+      }
+    };
+    fetchActive();
+    const id = setInterval(fetchActive, 4000);
+    return () => clearInterval(id);
+  }, []);
 
   const audioFiles: AudioFile[] = (files.audio || []).map((file) => ({
     id: file.id,
@@ -94,6 +111,16 @@ export default function TimePage() {
   return (
     <div className="flex flex-col h-full w-full pb-10">
       <div className="flex flex-1 flex-col mt-4 h-full overflow-hidden relative">
+        <div className="flex-shrink-0 mb-2 w-full flex justify-center">
+          <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5">
+            <span className="font-mbc text-xs text-emerald-200/90">
+              {liveGroupId
+                ? `현재 송출 중: GROUP ${liveGroupId}`
+                : "송출 중인 시보 없음"}
+              <span className="ml-1 text-emerald-200/40">· 전송하면 그 그룹만 동작</span>
+            </span>
+          </div>
+        </div>
         <div className="flex-shrink-0 mb-6 w-full flex justify-center">
           <GroupTab
             groups={groups}
