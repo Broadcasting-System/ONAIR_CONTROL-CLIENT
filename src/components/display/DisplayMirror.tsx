@@ -85,27 +85,140 @@ const posFromPlayback = (
   return raw;
 };
 
-/** 미리보기용 유튜브 — 항상 음소거(프리뷰), 재생/정지는 postMessage로 서버 상태 반영,
- *  hover 시 뜨는 유튜브 제목/컨트롤 UI는 투명 오버레이로 차단. */
-function MirrorYouTube({ videoId, playing }: { videoId: string; playing: boolean }) {
-  const ref = useRef<HTMLIFrameElement>(null);
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// YouTube IFrame API 로더(한 번만)
+let ytApiPromise: Promise<void> | null = null;
+function loadYouTubeApi(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if ((window as any).YT?.Player) return Promise.resolve();
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise<void>((resolve) => {
+    const prev = (window as any).onYouTubeIframeAPIReady;
+    (window as any).onYouTubeIframeAPIReady = () => {
+      prev?.();
+      resolve();
+    };
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+  });
+  return ytApiPromise;
+}
+function ytPos(pb?: Playback | null): number {
+  if (!pb) return 0;
+  if (pb.playing) return Math.max(0, pb.offset + (Date.now() - pb.anchorTs) / 1000);
+  return Math.max(0, pb.offset);
+}
+
+/** 미리보기용 유튜브 — 실제 송출과 동일한 IFrame API + 서버 시각 동기화(같은 시점 표시).
+ *  프리뷰라 항상 음소거. hover 유튜브 UI는 투명 오버레이로 차단. */
+function MirrorYouTube({ videoId, playback }: { videoId: string; playback?: Playback | null }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
+  const readyRef = useRef(false);
+  const pbRef = useRef(playback);
+  pbRef.current = playback;
+
+  const apply = (initial: boolean) => {
+    const p = playerRef.current;
+    const pb = pbRef.current;
+    if (!p || !pb) return;
+    try {
+      let want = ytPos(pb);
+      if (pb.loop) {
+        const d = p.getDuration?.() || 0;
+        if (d > 0) want = want % d;
+      }
+      const cur = p.getCurrentTime?.() ?? 0;
+      if (initial ? want > 1 : Math.abs(cur - want) > 1.5) p.seekTo(want, true);
+      if (pb.playing) p.playVideo?.();
+      else p.pauseVideo?.();
+      p.mute?.(); // 미리보기는 항상 음소거
+    } catch {
+      /* not ready */
+    }
+  };
+
   useEffect(() => {
-    const win = ref.current?.contentWindow;
-    if (!win) return;
-    win.postMessage(
-      JSON.stringify({ event: "command", func: playing ? "playVideo" : "pauseVideo", args: [] }),
-      "*",
-    );
-  }, [playing]);
+    let cancelled = false;
+    let sync: ReturnType<typeof setInterval> | undefined;
+    let mountEl: HTMLDivElement | null = null;
+    loadYouTubeApi().then(() => {
+      if (cancelled || !hostRef.current) return;
+      const YT = (window as any).YT;
+      mountEl = document.createElement("div");
+      mountEl.className = "h-full w-full";
+      hostRef.current.appendChild(mountEl);
+      readyRef.current = false;
+      playerRef.current = new YT.Player(mountEl, {
+        videoId,
+        width: "100%",
+        height: "100%",
+        playerVars: {
+          autoplay: 1,
+          controls: 0,
+          mute: 1,
+          rel: 0,
+          modestbranding: 1,
+          playsinline: 1,
+          fs: 0,
+          disablekb: 1,
+          iv_load_policy: 3,
+          cc_load_policy: 0,
+        },
+        events: {
+          onReady: () => {
+            readyRef.current = true;
+            apply(true);
+          },
+          onStateChange: (e: any) => {
+            const S = (window as any).YT?.PlayerState;
+            if (e.data === (S?.ENDED ?? 0) && pbRef.current?.loop) {
+              try {
+                e.target.seekTo(0, true);
+                e.target.playVideo();
+              } catch {
+                /* noop */
+              }
+            }
+          },
+        },
+      });
+      sync = setInterval(() => {
+        const p = playerRef.current;
+        const pb = pbRef.current;
+        if (!readyRef.current || !p || !pb?.playing || pb.loop) return;
+        try {
+          const want = ytPos(pb);
+          const cur = p.getCurrentTime?.() ?? 0;
+          if (Math.abs(cur - want) > 2) p.seekTo(want, true);
+        } catch {
+          /* noop */
+        }
+      }, 4000);
+    });
+    return () => {
+      cancelled = true;
+      if (sync) clearInterval(sync);
+      try {
+        playerRef.current?.destroy?.();
+      } catch {
+        /* noop */
+      }
+      playerRef.current = null;
+      readyRef.current = false;
+      if (hostRef.current) hostRef.current.innerHTML = "";
+    };
+  }, [videoId]);
+
+  useEffect(() => {
+    if (readyRef.current) apply(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playback]);
+
   return (
-    <div className="relative h-full w-full">
-      <iframe
-        ref={ref}
-        className="h-full w-full"
-        src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&cc_load_policy=0&iv_load_policy=3`}
-        allow="autoplay; encrypted-media"
-        title="YouTube 미리보기"
-      />
+    <div className="relative h-full w-full bg-black">
+      <div ref={hostRef} className="h-full w-full" />
       <div className="absolute inset-0 z-10" />
     </div>
   );
@@ -356,10 +469,7 @@ export const DisplayMirror = ({ channel = 1 }: { channel?: number }) => {
       ) : null}
 
       {content.type === "youtube" && content.videoId ? (
-        <MirrorYouTube
-          videoId={content.videoId}
-          playing={content.playback?.playing ?? true}
-        />
+        <MirrorYouTube videoId={content.videoId} playback={content.playback} />
       ) : null}
 
       <div className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-full border border-red-500/50 bg-red-600/90 px-3 py-1.5 shadow-lg">
