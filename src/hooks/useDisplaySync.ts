@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { backendBase, backendWs } from '@/lib/backend'
 
-export type ContentType = 'image' | 'video' | 'presentation' | 'audio' | 'standby' | 'screen' | 'timer'
+export type ContentType = 'image' | 'video' | 'presentation' | 'audio' | 'standby' | 'screen' | 'timer' | 'youtube'
 
 export interface Playback {
   playing: boolean
@@ -36,6 +36,7 @@ export interface DisplayContent {
   label?: string
   durationSec?: number
   mode?: 'down' | 'up'
+  videoId?: string
   command?: 'display'
   [key: string]: unknown
 }
@@ -90,6 +91,7 @@ export function useDisplaySync(channel: number = 1) {
               label: resolved.label,
               durationSec: resolved.durationSec,
               mode: resolved.mode,
+              videoId: resolved.videoId,
             })
           }
         }
@@ -135,6 +137,7 @@ export function useDisplaySync(channel: number = 1) {
               label: resolved.label,
               durationSec: resolved.durationSec,
               mode: resolved.mode,
+              videoId: resolved.videoId,
             })
           }
         } catch (err) {

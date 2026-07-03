@@ -329,6 +329,15 @@ export const DisplayMirror = ({ channel = 1 }: { channel?: number }) => {
         />
       ) : null}
 
+      {content.type === "youtube" && content.videoId ? (
+        <iframe
+          className="h-full w-full"
+          src={`https://www.youtube.com/embed/${content.videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1`}
+          allow="autoplay; encrypted-media"
+          title="YouTube 미리보기"
+        />
+      ) : null}
+
       <div className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-full border border-red-500/50 bg-red-600/90 px-3 py-1.5 shadow-lg">
         <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
         <span className="text-[10px] font-black uppercase tracking-tighter text-white">

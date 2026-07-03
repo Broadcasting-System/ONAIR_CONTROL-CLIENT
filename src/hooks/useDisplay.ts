@@ -80,5 +80,17 @@ export function useDisplay() {
     return res.json();
   };
 
-  return { showMedia, showTimer, isSending, error };
+  const showYouTube = async (channel: number, videoId: string, loop = false) => {
+    const BASE = getApiBase();
+    const qs = channel > 1 ? `?channel=${channel}` : "";
+    const res = await fetch(`${BASE}/display/youtube${qs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ videoId, loop }),
+    });
+    if (!res.ok) throw new Error("유튜브 송출 실패");
+    return res.json();
+  };
+
+  return { showMedia, showTimer, showYouTube, isSending, error };
 }

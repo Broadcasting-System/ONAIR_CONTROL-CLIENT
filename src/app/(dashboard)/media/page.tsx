@@ -13,6 +13,8 @@ import { DisplayMirror } from "@/components/display/DisplayMirror";
 import { useChannelStore, MAX_CHANNELS } from "@/stores/channelStore";
 import { useMe } from "@/hooks/useMe";
 import { useHealth } from "@/hooks/useHealth";
+import { parseYouTubeId } from "@/lib/youtube";
+import { toast } from "@/components/common/Toast";
 import { FileType, UploadedFile } from "@/types/file";
 
 const TYPE_TABS: { key: FileType; label: string }[] = [
@@ -34,7 +36,7 @@ export default function MediaPage() {
   const setChannel = useChannelStore((s) => s.setChannel);
   const { canOperate } = useMe();
   const { files, fetchFiles, isLoading } = useFiles();
-  const { showMedia, showTimer, isSending } = useDisplay();
+  const { showMedia, showTimer, showYouTube, isSending } = useDisplay();
   const { content } = useDisplaySync(channel);
   const { toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide, setOverlay } =
     usePlayer(channel);
@@ -43,6 +45,7 @@ export default function MediaPage() {
 
   const [tab, setTab] = useState<FileType>("video");
   const [timerMode, setTimerMode] = useState(false);
+  const [ytMode, setYtMode] = useState(false);
   const [, setTick] = useState(0);
   const [dragPos, setDragPos] = useState<number | null>(null);
   const { health } = useHealth();
@@ -57,7 +60,10 @@ export default function MediaPage() {
     return () => clearInterval(id);
   }, []);
 
-  const pb = content?.type === "video" ? content.playback : undefined;
+  const pb =
+    content?.type === "video" || content?.type === "youtube"
+      ? content.playback
+      : undefined;
   const duration = pb?.duration ?? content?.duration ?? 0;
   const rawPos = pb
     ? pb.playing
@@ -99,10 +105,11 @@ export default function MediaPage() {
               onClick={() => {
                 setTab(t.key);
                 setTimerMode(false);
+                setYtMode(false);
               }}
               className={cn(
                 "rounded-xl border px-4 py-2 font-mbc text-sm transition-all",
-                tab === t.key && !timerMode
+                tab === t.key && !timerMode && !ytMode
                   ? "border-white/20 bg-white/10 text-white"
                   : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
               )}
@@ -110,9 +117,28 @@ export default function MediaPage() {
               {t.label}
             </button>
           ))}
+          {/* 유튜브 — 링크 입력 송출 */}
+          <button
+            onClick={() => {
+              setYtMode((v) => !v);
+              setTimerMode(false);
+            }}
+            disabled={!canOperate}
+            className={cn(
+              "rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40",
+              ytMode
+                ? "border-red-500/40 bg-red-500/15 text-red-100"
+                : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
+            )}
+          >
+            유튜브
+          </button>
           {/* 타이머 — 파일이 아니라 카운트다운/업 송출 */}
           <button
-            onClick={() => setTimerMode((v) => !v)}
+            onClick={() => {
+              setTimerMode((v) => !v);
+              setYtMode(false);
+            }}
             disabled={!canOperate}
             className={cn(
               "rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40",
@@ -148,6 +174,16 @@ export default function MediaPage() {
               showTimer(channel, opts).catch(() => {
                 /* 서버가 403 등 → 무시(권한은 상단 안내) */
               })
+            }
+            onClear={clearDisplay}
+          />
+        ) : ytMode ? (
+          <YouTubeComposer
+            disabled={!canOperate}
+            onSend={(videoId, loop) =>
+              showYouTube(channel, videoId, loop).catch(() =>
+                toast.error("유튜브 송출에 실패했습니다 (권한 또는 잘못된 링크)."),
+              )
             }
             onClear={clearDisplay}
           />
@@ -337,6 +373,59 @@ export default function MediaPage() {
                 </button>
               </div>
             </div>
+          ) : content?.type === "youtube" && pb ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-mbc text-sm text-red-300">▶ 유튜브 송출 중</span>
+              <button
+                onClick={() => toggle()}
+                className="flex h-11 w-24 items-center justify-center rounded-xl border border-white/15 bg-white/10 font-mbc text-white hover:bg-white/15"
+              >
+                {pb.playing ? "일시정지" : "재생"}
+              </button>
+              <button
+                onClick={() => setLoop(!pb.loop)}
+                className={cn(
+                  "rounded-xl border px-4 py-2 font-mbc text-sm transition-colors",
+                  pb.loop
+                    ? "border-green-500/40 bg-green-500/15 text-green-300 hover:bg-green-500/25"
+                    : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10",
+                )}
+              >
+                반복 {pb.loop ? "ON" : "OFF"}
+              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setMuted(!pb.muted)}
+                  className={cn(
+                    "rounded-lg border px-3 py-2 font-mbc text-sm transition-colors",
+                    pb.muted
+                      ? "border-red-400/40 bg-red-400/10 text-red-300"
+                      : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10",
+                  )}
+                >
+                  {pb.muted ? "소리 켜기" : "소리 끄기"}
+                </button>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={pb.muted ? 0 : pb.volume}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setVolume(v);
+                    if (v > 0 && pb.muted) setMuted(false);
+                  }}
+                  className="w-36 accent-white"
+                />
+              </div>
+              <button
+                onClick={clearDisplay}
+                className="ml-auto rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10"
+              >
+                송출 끄기
+              </button>
+            </div>
           ) : content?.type === "presentation" && content.urls?.length ? (
             <PresentationNav
               total={content.urls.length}
@@ -524,6 +613,75 @@ function TimerComposer({
           className="h-12 flex-1 rounded-xl border border-white/15 bg-white/10 font-mbc text-white hover:bg-white/15 disabled:opacity-40"
         >
           타이머 송출
+        </button>
+        <button
+          onClick={onClear}
+          className="h-12 rounded-xl border border-white/10 bg-white/5 px-5 font-mbc text-sm text-white/60 hover:bg-white/10"
+        >
+          끄기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** 유튜브 링크 입력 → 송출 */
+function YouTubeComposer({
+  disabled,
+  onSend,
+  onClear,
+}: {
+  disabled?: boolean;
+  onSend: (videoId: string, loop: boolean) => void;
+  onClear: () => void;
+}) {
+  const [url, setUrl] = useState("");
+  const [loop, setLoop] = useState(false);
+  const videoId = parseYouTubeId(url);
+  const valid = !!videoId;
+
+  return (
+    <div className="flex flex-1 flex-col gap-5 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5">
+      <div className="flex flex-col gap-1.5">
+        <span className="font-mbc text-xs text-white/40">유튜브 링크</span>
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://youtu.be/… 또는 https://www.youtube.com/watch?v=…"
+          className="h-11 rounded-xl border border-white/10 bg-[#141414] px-4 font-pretendard text-white placeholder:text-white/25 focus:border-white/30 focus:outline-none"
+        />
+        {url.trim() && !valid && (
+          <span className="font-pretendard text-xs text-red-300/80">
+            유효한 유튜브 링크가 아닙니다.
+          </span>
+        )}
+        {valid && (
+          <span className="font-pretendard text-xs text-white/30">인식됨: {videoId}</span>
+        )}
+      </div>
+
+      <label className="flex cursor-pointer items-center gap-2">
+        <input
+          type="checkbox"
+          checked={loop}
+          onChange={(e) => setLoop(e.target.checked)}
+          className="h-4 w-4 accent-red-400"
+        />
+        <span className="font-mbc text-sm text-white/60">반복 재생</span>
+      </label>
+
+      <p className="font-pretendard text-xs text-white/25">
+        자동재생 정책상 <b className="text-white/40">음소거로 시작</b>합니다. 송출 후 아래 재생 제어의
+        “소리 켜기”로 소리를 켜세요.
+      </p>
+
+      <div className="mt-auto flex gap-3">
+        <button
+          onClick={() => videoId && onSend(videoId, loop)}
+          disabled={disabled || !valid}
+          className="h-12 flex-1 rounded-xl border border-red-500/40 bg-red-500/15 font-mbc text-red-100 hover:bg-red-500/25 disabled:opacity-40"
+        >
+          유튜브 송출
         </button>
         <button
           onClick={onClear}
