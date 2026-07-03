@@ -85,6 +85,32 @@ const posFromPlayback = (
   return raw;
 };
 
+/** 미리보기용 유튜브 — 항상 음소거(프리뷰), 재생/정지는 postMessage로 서버 상태 반영,
+ *  hover 시 뜨는 유튜브 제목/컨트롤 UI는 투명 오버레이로 차단. */
+function MirrorYouTube({ videoId, playing }: { videoId: string; playing: boolean }) {
+  const ref = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    const win = ref.current?.contentWindow;
+    if (!win) return;
+    win.postMessage(
+      JSON.stringify({ event: "command", func: playing ? "playVideo" : "pauseVideo", args: [] }),
+      "*",
+    );
+  }, [playing]);
+  return (
+    <div className="relative h-full w-full">
+      <iframe
+        ref={ref}
+        className="h-full w-full"
+        src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&cc_load_policy=0&iv_load_policy=3`}
+        allow="autoplay; encrypted-media"
+        title="YouTube 미리보기"
+      />
+      <div className="absolute inset-0 z-10" />
+    </div>
+  );
+}
+
 /** 미리보기용 카운트다운/업 (송출 CountdownView 축소판) */
 function MirrorCountdown({
   serverTimestamp,
@@ -330,11 +356,9 @@ export const DisplayMirror = ({ channel = 1 }: { channel?: number }) => {
       ) : null}
 
       {content.type === "youtube" && content.videoId ? (
-        <iframe
-          className="h-full w-full"
-          src={`https://www.youtube.com/embed/${content.videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1`}
-          allow="autoplay; encrypted-media"
-          title="YouTube 미리보기"
+        <MirrorYouTube
+          videoId={content.videoId}
+          playing={content.playback?.playing ?? true}
         />
       ) : null}
 
