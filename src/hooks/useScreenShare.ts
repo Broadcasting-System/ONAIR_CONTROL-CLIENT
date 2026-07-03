@@ -48,14 +48,32 @@ export function useScreenShare(channel: number = 1) {
 
   const start = useCallback(async () => {
     if (pcRef.current) return; // 이미 공유 중
+
+    // 화면 캡처 API는 보안 컨텍스트(HTTPS 또는 localhost)에서만 제공된다.
+    // HTTP+IP로 접속하면 navigator.mediaDevices 자체가 없다 → 명확히 안내.
+    if (
+      typeof window !== "undefined" &&
+      (!window.isSecureContext || !navigator.mediaDevices?.getDisplayMedia)
+    ) {
+      toast.error(
+        "이 주소(HTTP)에서는 화면 공유를 쓸 수 없습니다. HTTPS 또는 localhost로 접속해야 합니다.",
+      );
+      return;
+    }
+
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true,
       });
-    } catch {
-      toast.error("화면 공유가 취소되었거나 권한이 없습니다.");
+    } catch (e) {
+      const name = (e as Error)?.name;
+      if (name === "NotAllowedError") {
+        toast.error("화면 공유가 취소되었거나 권한이 거부되었습니다.");
+      } else {
+        toast.error("화면 공유를 시작할 수 없습니다: " + (name || "알 수 없는 오류"));
+      }
       return;
     }
     streamRef.current = stream;
