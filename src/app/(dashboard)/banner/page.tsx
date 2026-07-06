@@ -12,6 +12,7 @@ import {
   BannerOverlay,
   GifPayload,
   TimerPayload,
+  DefaultBannerPayload,
   ScoreAnim,
   SCORE_ANIM_OPTIONS,
   updateBanner,
@@ -22,12 +23,19 @@ import {
 } from "@/lib/bannerApi";
 
 const SCENES: { key: BannerScene; label: string; sub: string }[] = [
+  { key: "default", label: "기본", sub: "DEFAULT" },
   { key: "scoreboard", label: "점수보드", sub: "SCORE" },
   { key: "image", label: "이미지", sub: "IMAGE" },
   { key: "gif", label: "GIF", sub: "GIF" },
   { key: "timer", label: "타이머", sub: "TIMER" },
   { key: "blank", label: "끄기", sub: "OFF" },
 ];
+
+const DEFAULT_BANNER: DefaultBannerPayload = {
+  mainText: "2025학년도 2학기 동계캠프",
+  subText1: "2025년, BSSM 해커톤",
+  subText2: "부산소프트웨어마이스터고 가락관   2025. 12. 29.(월) ~ 31.(수)",
+};
 
 const DEFAULT_SCOREBOARD: ScoreboardPayload = {
   title: "2학년 빅발리볼 3위 결정전",
@@ -44,7 +52,7 @@ const DEFAULT_SCOREBOARD: ScoreboardPayload = {
 };
 
 export default function BannerPage() {
-  const [scene, setScene] = useState<BannerScene>("scoreboard");
+  const [scene, setScene] = useState<BannerScene>("default");
   const [scoreboard, setScoreboard] =
     useState<ScoreboardPayload>(DEFAULT_SCOREBOARD);
   const [image, setImage] = useState<ImagePayload>({ url: "", fit: "cover" });
@@ -54,6 +62,7 @@ export default function BannerPage() {
     label: "",
     mode: "down",
   });
+  const [defaultBanner, setDefaultBanner] = useState<DefaultBannerPayload>(DEFAULT_BANNER);
   const [displays, setDisplays] = useState(0);
 
   const { files, fetchFiles } = useFiles();
@@ -90,6 +99,8 @@ export default function BannerPage() {
       if (s.scene === "image")
         setImage({ fit: "cover", ...(s.payload as object) } as ImagePayload);
       if (s.scene === "gif") setGif(s.payload as unknown as GifPayload);
+      if (s.scene === "default")
+        setDefaultBanner({ ...DEFAULT_BANNER, ...(s.payload as object) } as DefaultBannerPayload);
       didInit.current = true;
     });
   }, []);
@@ -120,10 +131,12 @@ export default function BannerPage() {
         return gif as unknown as Record<string, unknown>;
       case "timer":
         return timer as unknown as Record<string, unknown>;
+      case "default":
+        return defaultBanner as unknown as Record<string, unknown>;
       default:
         return {};
     }
-  }, [scene, scoreboard, image, gif, timer]);
+  }, [scene, scoreboard, image, gif, timer, defaultBanner]);
 
   // ---- 변경 시 디바운스 송출 ----
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -185,6 +198,9 @@ export default function BannerPage() {
       <div className="flex flex-1 gap-8 overflow-hidden">
         {/* 좌측: 컨트롤 */}
         <div className="w-[460px] shrink-0 overflow-auto">
+          {scene === "default" && (
+            <DefaultBannerEditor value={defaultBanner} onChange={setDefaultBanner} />
+          )}
           {scene === "scoreboard" && (
             <ScoreboardEditor
               value={scoreboard}
@@ -975,6 +991,41 @@ function TextInput({
         className,
       )}
     />
+  );
+}
+
+function DefaultBannerEditor({
+  value,
+  onChange,
+}: {
+  value: DefaultBannerPayload;
+  onChange: (v: DefaultBannerPayload) => void;
+}) {
+  const field = (
+    label: string,
+    key: keyof DefaultBannerPayload,
+    placeholder: string,
+  ) => (
+    <div className="flex flex-col gap-1.5">
+      <span className="font-mbc text-xs text-white/40">{label}</span>
+      <input
+        value={value[key]}
+        onChange={(e) => onChange({ ...value, [key]: e.target.value })}
+        placeholder={placeholder}
+        className="h-11 rounded-xl border border-white/10 bg-black/40 px-4 font-pretendard text-white placeholder:text-white/20 focus:border-white/30 focus:outline-none"
+      />
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
+      <p className="font-pretendard text-xs text-white/30">
+        고정 배경(동계캠프 디자인) 위에 아래 3개 텍스트만 바뀌어 실시간 송출됩니다.
+      </p>
+      {field("메인 텍스트", "mainText", "예: 2025학년도 2학기 동계캠프")}
+      {field("서브 텍스트 1", "subText1", "예: 2025년, BSSM 해커톤")}
+      {field("서브 텍스트 2", "subText2", "예: 장소   날짜")}
+    </div>
   );
 }
 
