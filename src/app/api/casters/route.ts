@@ -7,6 +7,14 @@ export const runtime = "nodejs";
 
 const CASTERS_FILE = path.join(process.cwd(), "src", "constants", "casters.ts");
 const START_RE = /(\/\* AUTO-GENERATED:CASTERS:START[^\n]*\*\/\n)([\s\S]*?)(\/\* AUTO-GENERATED:CASTERS:END \*\/)/;
+// 마커가 유실/훼손됐을 때의 폴백: CASTERS 배열 선언 블록 자체를 찾는다.
+const BLOCK_RE = /export\s+const\s+CASTERS\s*:\s*Caster\[\]\s*=\s*\[[\s\S]*?\];/;
+// 마커를 새로 심거나 복구할 때 쓰는 표준 마커 텍스트.
+const START_MARKER =
+  "/* AUTO-GENERATED:CASTERS:START — 편집 UI가 이 블록을 재작성. 직접 수정 가능하나 형식(한 줄 1객체) 유지 권장 */";
+const END_MARKER = "/* AUTO-GENERATED:CASTERS:END */";
+// 짝이 안 맞는 등 흩어진 마커 잔재를 제거하기 위한 패턴(줄 단위).
+const STRAY_MARKER_RE = /^[ \t]*\/\* AUTO-GENERATED:CASTERS:(?:START|END)[^\n]*\*\/[ \t]*\n?/gm;
 
 type Caster = {
   id: string;
@@ -75,18 +83,36 @@ export async function PUT(req: Request) {
 
   try {
     const src = await fs.readFile(CASTERS_FILE, "utf-8");
-    if (!START_RE.test(src)) {
+
+    let next: string;
+    let healed = false;
+    if (START_RE.test(src)) {
+      // 정상 경로: 마커 사이 블록만 교체 (마커는 그대로 보존)
+      next = src.replace(START_RE, (_m, head, _body, tail) => `${head}${serializeBlock(casters)}${tail}`);
+    } else if (BLOCK_RE.test(src)) {
+      // 마커 유실/훼손 → 잔재 마커 제거 후 CASTERS 블록을 마커와 함께 재작성(self-heal).
+      // 이후 저장부터는 다시 정상 경로를 탄다.
+      next = src
+        .replace(STRAY_MARKER_RE, "")
+        .replace(BLOCK_RE, `${START_MARKER}\n${serializeBlock(casters)}${END_MARKER}`);
+      healed = true;
+    } else {
+      // CASTERS 배열 선언 자체가 없음 = 심각한 훼손. 자동 복구 대신 안내.
       return NextResponse.json(
-        { ok: false, error: "casters.ts에서 AUTO-GENERATED 마커를 찾을 수 없습니다." },
+        {
+          ok: false,
+          error:
+            "casters.ts에서 CASTERS 블록을 찾지 못했습니다. 파일이 훼손됐을 수 있어요 (git으로 복구를 권장).",
+        },
         { status: 500 },
       );
     }
-    const next = src.replace(START_RE, (_m, head, _body, tail) => `${head}${serializeBlock(casters)}${tail}`);
+
     // 원자적 쓰기 (임시파일 → rename)
     const tmp = CASTERS_FILE + ".tmp";
     await fs.writeFile(tmp, next, "utf-8");
     await fs.rename(tmp, CASTERS_FILE);
-    return NextResponse.json({ ok: true, count: casters.length });
+    return NextResponse.json({ ok: true, count: casters.length, healed });
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "파일 쓰기 실패" },
