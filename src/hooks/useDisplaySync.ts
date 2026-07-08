@@ -106,8 +106,12 @@ export function useDisplaySync(channel: number = 1) {
 
     let ws: WebSocket | null = null
     let reconnectTimer: NodeJS.Timeout
+    // 채널이 바뀌어 이 effect가 정리되면 true. 옛 소켓의 onclose가 뒤늦게 떠도
+    // 옛 채널로 재연결하지 않도록 막는다(안 그러면 CH1 내용이 CH2 화면에 다시 들어옴).
+    let cancelled = false
 
     const connect = () => {
+      if (cancelled) return
       const wsUrl = backendWs('/api/display/ws', channel, 'control')
       ws = new WebSocket(wsUrl)
 
@@ -146,6 +150,7 @@ export function useDisplaySync(channel: number = 1) {
       }
 
       ws.onclose = () => {
+        if (cancelled) return
         reconnectTimer = setTimeout(connect, 3000)
       }
     }
@@ -153,6 +158,7 @@ export function useDisplaySync(channel: number = 1) {
     connect()
 
     return () => {
+      cancelled = true
       if (ws) ws.close()
       clearTimeout(reconnectTimer)
     }
