@@ -99,19 +99,15 @@ export function SpeakerFloorMap({
         ))}
       </div>
 
-      {/* 지도 (확대/축소 없음) — 상자를 층 모양에 맞춰 높이에 꽉 채움.
+      {/* 지도 (확대/축소 없음) — 패널 가로폭을 꽉 채워 방을 최대한 넓게(남는 가로 여백 사용).
           높이는 화면에 맞춰 반응형(작은 화면 최소치~큰 화면 최대치). */}
       <div
-        className="flex min-h-0 items-center justify-center"
+        className="min-h-0"
         style={{ height: "clamp(440px, calc(100vh - 330px), 760px)" }}
       >
         <div
-          className="relative h-full overflow-hidden rounded-2xl border border-white/10 bg-black/30"
-          style={{
-            aspectRatio: `${cb.w} / ${cb.h}`,
-            maxWidth: "100%",
-            padding: PAD,
-          }}
+          className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30"
+          style={{ padding: PAD }}
         >
           <div ref={stageRef} className="relative h-full w-full">
             {elements.map((el) => {
@@ -125,14 +121,25 @@ export function SpeakerFloorMap({
               // 실제 렌더 픽셀 크기 (글자 표시/크기 판단용)
               const pxW = (w / 100) * px.w;
               const pxH = (h / 100) * px.h;
-              // 매핑된 방(제어 대상)은 항상 라벨, 미매핑 잡실(계단 등)은 작으면 숨김.
-              const showLabel = mapped || px.w === 0 || (pxW >= 24 && pxH >= 15);
-              const fontPx = Math.max(
-                9,
-                Math.min(15, Math.round((pxH || 40) * 0.32)),
-              );
               // 매핑된 방은 (짧은) 스피커 이름 — 잘림↓, 같은 존은 같은 이름으로 묶임.
               const label = mapped ? ROOM_TO_SPEAKER[el.name] : el.name;
+              // 매핑된 방(제어 대상)은 항상 라벨, 미매핑 잡실(계단 등)은 작으면 숨김.
+              const showLabel = mapped || px.w === 0 || (pxW >= 20 && pxH >= 14);
+              // 줄 수를 바꿔가며 상자에 딱 맞는 최대 폰트를 계산 → 어떤 상자든 글자 안 잘림.
+              const chars = Math.max(1, label.length);
+              const availW = Math.max(1, pxW - 4);
+              const availH = Math.max(1, pxH - 4);
+              let fit = 6;
+              for (let lines = 1; lines <= chars; lines++) {
+                const perLine = Math.ceil(chars / lines);
+                const f = Math.min(
+                  availW / (perLine * 0.98),
+                  availH / (lines * 1.15),
+                );
+                if (f > fit) fit = f;
+              }
+              const fontPx =
+                px.w === 0 ? 12 : Math.max(7, Math.min(16, Math.floor(fit)));
               return (
                 <div
                   key={el.id}
