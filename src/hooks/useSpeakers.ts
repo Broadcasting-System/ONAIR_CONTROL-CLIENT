@@ -63,16 +63,18 @@ export function useSpeakers() {
     // (빠르게 여러 방을 연속 클릭할 때 예전 배열로 덮어써져 토글이 사라지는 경쟁 상태 방지)
     const store = useSpeakerStore.getState;
     const current = store().zones;
+    // 제어 실패 시 로컬 추측으로 되돌리지 않고 서버 실제 상태로 재동기화한다.
+    // (서버는 명령을 기록한 뒤 매트릭스로 전송하므로, 로컬 롤백은 서버와 어긋나
+    //  "지도엔 켜짐, 새로고침하면 꺼짐" 같은 불일치를 만든다.)
 
     if (target === "all") {
       const allOn = current.every((z) => z.status === "on");
       const newStatus = allOn ? "off" : "on";
-      const snapshot = current;
       store().setZones(current.map((z) => ({ ...z, status: newStatus })));
       try {
         await callControl(["전체"], newStatus);
       } catch {
-        store().setZones(snapshot);
+        await loadStatus();
       }
       return;
     }
@@ -83,28 +85,26 @@ export function useSpeakers() {
       const classZones = current.filter((z) => isClass(z.name));
       const allOn = classZones.every((z) => z.status === "on");
       const newStatus = allOn ? "off" : "on";
-      const snapshot = current;
       store().setZones(
         current.map((z) => (isClass(z.name) ? { ...z, status: newStatus } : z)),
       );
       try {
         await callControl(classZones.map((z) => z.name), newStatus);
       } catch {
-        store().setZones(snapshot);
+        await loadStatus();
       }
       return;
     }
 
-    // 개별 스피커 토글 — 존 하나만 함수형으로 갱신/롤백해 다른 클릭과 충돌하지 않음
+    // 개별 스피커 토글 — 존 하나만 함수형으로 갱신해 다른 클릭과 충돌하지 않음
     const zone = current.find((z) => z.id === target);
     if (!zone) return;
-    const oldStatus = zone.status;
-    const newStatus = oldStatus === "on" ? "off" : "on";
+    const newStatus = zone.status === "on" ? "off" : "on";
     store().updateZoneStatus(target, newStatus);
     try {
       await callControl([zone.name], newStatus);
     } catch {
-      store().updateZoneStatus(target, oldStatus);
+      await loadStatus();
     }
   };
 
