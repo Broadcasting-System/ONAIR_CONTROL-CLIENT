@@ -138,8 +138,9 @@ export function SpeakerFloorMap({
                 );
                 if (f > fit) fit = f;
               }
+              // 글자수 적은 방(강당·교무실 등)이 너무 커지지 않게 상한을 낮춤.
               const fontPx =
-                px.w === 0 ? 12 : Math.max(7, Math.min(16, Math.floor(fit)));
+                px.w === 0 ? 12 : Math.max(7, Math.min(13, Math.floor(fit)));
               return (
                 <div
                   key={el.id}
