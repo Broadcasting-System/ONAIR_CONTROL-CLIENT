@@ -59,16 +59,20 @@ export function useSpeakers() {
   };
 
   const toggleSpeaker = async (target: "all" | "grade" | string) => {
-    const previousZones = zones;
+    // 클로저에 갇힌 zones가 아니라 항상 스토어의 최신 상태를 읽는다.
+    // (빠르게 여러 방을 연속 클릭할 때 예전 배열로 덮어써져 토글이 사라지는 경쟁 상태 방지)
+    const store = useSpeakerStore.getState;
+    const current = store().zones;
 
     if (target === "all") {
-      const allOn = zones.every((z) => z.status === "on");
+      const allOn = current.every((z) => z.status === "on");
       const newStatus = allOn ? "off" : "on";
-      setZones(zones.map((z) => ({ ...z, status: newStatus })));
+      const snapshot = current;
+      store().setZones(current.map((z) => ({ ...z, status: newStatus })));
       try {
         await callControl(["전체"], newStatus);
       } catch {
-        setZones(previousZones);
+        store().setZones(snapshot);
       }
       return;
     }
@@ -76,28 +80,31 @@ export function useSpeakers() {
     if (target === "grade") {
       // 반(班) zone = "1-1", "2-3", "3-4" 처럼 (학년)-(반) 형식만 대상
       const isClass = (name: string) => /^\d+-\d+/.test(name);
-      const classZones = zones.filter((z) => isClass(z.name));
+      const classZones = current.filter((z) => isClass(z.name));
       const allOn = classZones.every((z) => z.status === "on");
       const newStatus = allOn ? "off" : "on";
-      setZones(
-        zones.map((z) => (isClass(z.name) ? { ...z, status: newStatus } : z)),
+      const snapshot = current;
+      store().setZones(
+        current.map((z) => (isClass(z.name) ? { ...z, status: newStatus } : z)),
       );
       try {
         await callControl(classZones.map((z) => z.name), newStatus);
       } catch {
-        setZones(previousZones);
+        store().setZones(snapshot);
       }
       return;
     }
 
-    const zone = zones.find((z) => z.id === target);
+    // 개별 스피커 토글 — 존 하나만 함수형으로 갱신/롤백해 다른 클릭과 충돌하지 않음
+    const zone = current.find((z) => z.id === target);
     if (!zone) return;
-    const newStatus = zone.status === "on" ? "off" : "on";
-    setZones(zones.map((z) => (z.id === target ? { ...z, status: newStatus } : z)));
+    const oldStatus = zone.status;
+    const newStatus = oldStatus === "on" ? "off" : "on";
+    store().updateZoneStatus(target, newStatus);
     try {
       await callControl([zone.name], newStatus);
     } catch {
-      setZones(previousZones);
+      store().updateZoneStatus(target, oldStatus);
     }
   };
 
@@ -109,7 +116,6 @@ export function useSpeakers() {
     } catch {
       /* ignore */
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zones, setZones]);
 
   return {
