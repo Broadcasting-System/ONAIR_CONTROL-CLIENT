@@ -119,7 +119,7 @@ export default function MainPage() {
               ))}
             </div>
           </div>
-          <div className="flex-1 flex flex-col rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl">
+          <div className="flex-1 flex flex-col rounded-[24px] border border-sidebar-border bg-sidebar p-6 backdrop-blur-md shadow-2xl">
             <div className="min-h-0 flex-1">
               {speakerView === "grid" ? (
                 <div className="grid grid-cols-5 gap-4">
@@ -137,7 +137,7 @@ export default function MainPage() {
                 <SpeakerFloorMap zones={zones} onToggle={toggleSpeaker} />
               )}
             </div>
-            <div className="mt-6 flex gap-12 justify-center">
+            <div className="mt-4 flex gap-12 justify-center">
               <div className="w-[360px]">
                 <Button label="전체" onClick={() => toggleSpeaker("all")} className="h-[64px]" />
               </div>
