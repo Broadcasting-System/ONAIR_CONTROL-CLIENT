@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { useEffect, useMemo, useRef, useState } from "react";
 import bssmFloorMap from "@/constants/bssmFloorMap.json";
 import { ROOM_TO_SPEAKER, OFFMAP_SPEAKERS } from "@/constants/speakerMap";
 import { SpeakerZone } from "@/types/speaker";
@@ -22,7 +21,8 @@ const FLOORS = (bssmFloorMap as unknown as { floors: Floors }).floors;
 const FLOOR_KEYS = Object.keys(FLOORS);
 
 /** 지도 위 스피커 on/off 뷰. 방 클릭 → 해당 스피커 토글, 켜짐=초록.
- *  상태/토글은 useSpeakers(zones/onToggle)를 그대로 받아 재사용(백엔드 무변경). */
+ *  확대/축소 없음 — 컨테이너 크기에 맞춰 비율 유지하며 최대로 채움(contain).
+ *  좌표 여백을 제거(정규화)해 지도를 최대한 크게, 글자 잘림을 최소화. */
 export function SpeakerFloorMap({
   zones,
   onToggle,
@@ -37,16 +37,44 @@ export function SpeakerFloorMap({
     [zones],
   );
 
-  // 층별 실제 비율(bounding box)로 스테이지 종횡비 설정 → 층마다 모양 보존
-  const bbox = useMemo(() => {
-    let w = 0;
-    let h = 0;
+  // 층별 실제 콘텐츠 경계(min~max) — 바깥 여백을 없애 지도를 꽉 채움
+  const cb = useMemo(() => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const e of elements) {
-      w = Math.max(w, e.x + e.width);
-      h = Math.max(h, e.y + e.height);
+      minX = Math.min(minX, e.x);
+      minY = Math.min(minY, e.y);
+      maxX = Math.max(maxX, e.x + e.width);
+      maxY = Math.max(maxY, e.y + e.height);
     }
-    return { w: w || 100, h: h || 100 };
+    if (!Number.isFinite(minX)) return { minX: 0, minY: 0, w: 100, h: 100 };
+    return { minX, minY, w: maxX - minX || 100, h: maxY - minY || 100 };
   }, [elements]);
+
+  // 컨테이너 크기 측정 → 비율 유지하며 최대 크기(letterbox contain)
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const cr = entries[0].contentRect;
+      setBox({ w: cr.width, h: cr.height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const stage = useMemo(() => {
+    if (!box.w || !box.h) return { w: 0, h: 0 };
+    const ar = cb.w / cb.h;
+    let w = box.w;
+    let h = w / ar;
+    if (h > box.h) {
+      h = box.h;
+      w = h * ar;
+    }
+    return { w, h };
+  }, [cb, box]);
 
   const roomOn = (name: string) => {
     const sp = ROOM_TO_SPEAKER[name];
@@ -82,79 +110,78 @@ export function SpeakerFloorMap({
         ))}
       </div>
 
-      {/* 지도 (줌/팬) */}
+      {/* 지도 (확대/축소 없음, 컨테이너에 맞춤) */}
       <div
-        className="relative flex-1 overflow-hidden rounded-2xl border border-white/10 bg-black/30"
-        style={{ minHeight: 360 }}
+        ref={wrapRef}
+        className="relative flex flex-1 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-3"
+        style={{ minHeight: 400 }}
       >
-        <TransformWrapper minScale={0.4} maxScale={5} centerOnInit limitToBounds={false}>
-          <TransformComponent
-            wrapperStyle={{ width: "100%", height: "100%" }}
-            contentStyle={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              className="relative"
-              style={{
-                width: "min(96%, 880px)",
-                aspectRatio: `${bbox.w} / ${bbox.h}`,
-              }}
-            >
-              {elements.map((el) => {
-                const mapped = !!ROOM_TO_SPEAKER[el.name];
-                const on = roomOn(el.name);
-                return (
-                  <div
-                    key={el.id}
-                    onClick={() => clickRoom(el.name)}
-                    title={el.name}
-                    style={{
-                      position: "absolute",
-                      left: `${el.x}%`,
-                      top: `${el.y}%`,
-                      width: `${el.width}%`,
-                      height: `${el.height}%`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      textAlign: "center",
-                      padding: 2,
-                      overflow: "hidden",
-                      lineHeight: 1.15,
-                      fontSize: "clamp(7px, 1vw, 12px)",
-                      border: "1px solid",
-                      cursor: mapped ? "pointer" : "default",
-                      borderColor: mapped
-                        ? on
-                          ? "#22c55e"
-                          : "rgba(255,255,255,0.25)"
-                        : "rgba(255,255,255,0.08)",
-                      background: mapped
-                        ? on
-                          ? "rgba(34,197,94,0.4)"
-                          : "rgba(255,255,255,0.05)"
-                        : "rgba(255,255,255,0.02)",
-                      color: mapped
-                        ? on
-                          ? "#eafff1"
-                          : "#d1d5db"
-                        : "rgba(255,255,255,0.28)",
-                      fontWeight: mapped ? 600 : 400,
-                      transition: "background 0.15s, border-color 0.15s",
-                    }}
-                  >
-                    <span style={{ pointerEvents: "none" }}>{el.name}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </TransformComponent>
-        </TransformWrapper>
+        <div className="relative" style={{ width: stage.w, height: stage.h }}>
+          {stage.w > 0 &&
+            elements.map((el) => {
+              const mapped = !!ROOM_TO_SPEAKER[el.name];
+              const on = roomOn(el.name);
+              // 정규화된 위치/크기 (콘텐츠 경계 기준 0~100%)
+              const left = ((el.x - cb.minX) / cb.w) * 100;
+              const top = ((el.y - cb.minY) / cb.h) * 100;
+              const w = (el.width / cb.w) * 100;
+              const h = (el.height / cb.h) * 100;
+              // 실제 렌더 픽셀 크기 — 너무 작으면 글자 숨김(잘림 방지)
+              const pxW = (w / 100) * stage.w;
+              const pxH = (h / 100) * stage.h;
+              // 매핑된 방(제어 대상)은 항상 라벨 표시, 미매핑 잡실(계단 등)은 작으면 숨김.
+              const showLabel = mapped || (pxW >= 24 && pxH >= 15);
+              const fontPx = Math.max(8, Math.min(13, Math.round(pxH * 0.26)));
+              // 매핑된 방은 (짧은) 스피커 이름으로 표시 — 잘림↓, 같은 존은 같은 이름으로 묶임.
+              const label = mapped ? ROOM_TO_SPEAKER[el.name] : el.name;
+              return (
+                <div
+                  key={el.id}
+                  onClick={() => clickRoom(el.name)}
+                  title={el.name}
+                  style={{
+                    position: "absolute",
+                    left: `${left}%`,
+                    top: `${top}%`,
+                    width: `${w}%`,
+                    height: `${h}%`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    padding: 1,
+                    overflow: "hidden",
+                    lineHeight: 1.12,
+                    fontSize: fontPx,
+                    borderRadius: 3,
+                    border: "1px solid",
+                    cursor: mapped ? "pointer" : "default",
+                    borderColor: mapped
+                      ? on
+                        ? "#22c55e"
+                        : "rgba(255,255,255,0.42)"
+                      : "rgba(255,255,255,0.16)",
+                    background: mapped
+                      ? on
+                        ? "rgba(34,197,94,0.45)"
+                        : "rgba(255,255,255,0.07)"
+                      : "rgba(255,255,255,0.035)",
+                    color: mapped
+                      ? on
+                        ? "#eafff1"
+                        : "#eef1f5"
+                      : "rgba(255,255,255,0.42)",
+                    fontWeight: mapped ? 600 : 400,
+                    transition: "background 0.15s, border-color 0.15s",
+                  }}
+                >
+                  {showLabel && (
+                    <span style={{ pointerEvents: "none" }}>{label}</span>
+                  )}
+                </div>
+              );
+            })}
+        </div>
       </div>
 
       {/* 기타 — 지도에 없는 스피커 (복도·SRC 등) */}
