@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Button from "@/components/common/Button";
 import TextInput from "@/components/common/TextInput";
 import StatusCard from "@/components/StatusCard";
 import SectionHeader from "@/components/common/SectionHeader";
+import { SpeakerFloorMap } from "@/components/speaker/SpeakerFloorMap";
+import { cn } from "@/lib/utils";
 
 import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
@@ -25,6 +27,7 @@ export default function MainPage() {
     setEndSound,
   } = useTts();
   const { zones, toggleSpeaker } = useSpeakers();
+  const [speakerView, setSpeakerView] = useState<"grid" | "map">("grid");
   const { statuses } = useNetworkStatus();
   const { files, fetchFiles } = useFiles();
   const { canOperate } = useMe();
@@ -97,20 +100,44 @@ export default function MainPage() {
         </section>
 
         <section className="flex-1 flex flex-col">
-          <SectionHeader>스피커 관리</SectionHeader>
-          <div className="flex-1 flex flex-col rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl">
-            <div className="grid grid-cols-5 gap-4 mb-8">
-              {zones.map((zone) => (
-                <StatusCard
-                  key={zone.id}
-                  label={zone.name}
-                  status={zone.status}
-                  variant="speaker"
-                  onClick={() => toggleSpeaker(zone.id)}
-                />
+          <div className="flex items-center justify-between">
+            <SectionHeader>스피커 관리</SectionHeader>
+            <div className="mb-4 flex gap-1 rounded-lg bg-white/5 p-1">
+              {(["grid", "map"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setSpeakerView(v)}
+                  className={cn(
+                    "rounded-md px-4 py-1 font-mbc text-sm transition-colors",
+                    speakerView === v
+                      ? "bg-white/20 text-white"
+                      : "text-white/50 hover:text-white/80",
+                  )}
+                >
+                  {v === "grid" ? "표" : "지도"}
+                </button>
               ))}
             </div>
-            <div className="mt-auto flex gap-12 justify-center">
+          </div>
+          <div className="flex-1 flex flex-col rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl">
+            <div className="min-h-0 flex-1">
+              {speakerView === "grid" ? (
+                <div className="grid grid-cols-5 gap-4">
+                  {zones.map((zone) => (
+                    <StatusCard
+                      key={zone.id}
+                      label={zone.name}
+                      status={zone.status}
+                      variant="speaker"
+                      onClick={() => toggleSpeaker(zone.id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <SpeakerFloorMap zones={zones} onToggle={toggleSpeaker} />
+              )}
+            </div>
+            <div className="mt-6 flex gap-12 justify-center">
               <div className="w-[360px]">
                 <Button label="전체" onClick={() => toggleSpeaker("all")} className="h-[64px]" />
               </div>
