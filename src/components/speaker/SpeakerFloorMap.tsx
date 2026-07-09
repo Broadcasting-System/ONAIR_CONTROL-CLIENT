@@ -143,7 +143,8 @@ export function SpeakerFloorMap({
                 px.w === 0 ? 12 : Math.max(7, Math.min(13, Math.floor(fit)));
               return (
                 <div
-                  key={el.id}
+                  key={`${floor}-${el.id}`}
+                  className="floor-piece"
                   onClick={() => clickRoom(el.name)}
                   title={el.name}
                   style={{
@@ -180,6 +181,8 @@ export function SpeakerFloorMap({
                       : "rgba(255,255,255,0.42)",
                     fontWeight: mapped ? 600 : 400,
                     transition: "background 0.15s, border-color 0.15s",
+                    // 층 전환 시 대각선(좌상단→우하단) 순서로 샤라락 등장
+                    animationDelay: `${Math.min(220, Math.round((left + top) * 1.1))}ms`,
                   }}
                 >
                   {showLabel && (
