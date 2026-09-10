@@ -10,3 +10,13 @@ export function useHalls() {
   });
   return { halls: query.data?.halls ?? [], isLoading: query.isLoading, isError: query.isError };
 }
+
+/** 모든 공간 장비(믹서·매트릭스)의 연결 요약 — 메인 화면 카드용 */
+export function useHallsStatus() {
+  const query = useQuery({
+    queryKey: ["hallsStatus"],
+    queryFn: hallApi.status,
+    refetchInterval: 10_000,
+  });
+  return { summary: query.data, isError: query.isError };
+}

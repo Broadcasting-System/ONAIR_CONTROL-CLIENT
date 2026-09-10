@@ -68,6 +68,20 @@ export interface VideoMatrixState extends DeviceStatus {
 }
 
 /** 드라이버 종류 → 화면 표시 이름 */
+/** GET /halls/status — 메인 화면 카드용 장비 연결 요약 */
+export interface HallsStatus {
+  devices: {
+    hall: string;
+    hallName: string;
+    kind: "mixer" | "matrix";
+    driver: string;
+    connected: boolean;
+    detail: string;
+  }[];
+  connected: number;
+  total: number;
+}
+
 export const DRIVER_LABEL: Record<string, string> = {
   mock: "모의 장비",
   hiqnet: "HiQnet",

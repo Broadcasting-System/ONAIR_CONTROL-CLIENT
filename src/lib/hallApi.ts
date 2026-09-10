@@ -1,8 +1,9 @@
 import { del, post, request, seg } from "@/lib/http";
-import type { HallSummary, MixerState, VideoMatrixState } from "@/types/hall";
+import type { HallSummary, HallsStatus, MixerState, VideoMatrixState } from "@/types/hall";
 
 export const hallApi = {
   list: () => request<{ halls: HallSummary[] }>("/halls"),
+  status: () => request<HallsStatus>("/halls/status"),
 
   mixer: (hall: string) => request<MixerState>(`/halls/${seg(hall)}/mixer`),
   recallScene: (hall: string, pc: number) =>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Button from "@/components/common/Button";
 import TextInput from "@/components/common/TextInput";
 import StatusCard from "@/components/StatusCard";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useHallsStatus } from "@/hooks/useHalls";
 import { useFiles } from "@/hooks/useFiles";
 import { useMe } from "@/hooks/useMe";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
@@ -29,8 +31,25 @@ export default function MainPage() {
   const { zones, toggleSpeaker } = useSpeakers();
   const [speakerView, setSpeakerView] = useState<"grid" | "map">("grid");
   const { statuses } = useNetworkStatus();
+  const { summary: hallSummary, isError: hallError } = useHallsStatus();
   const { files, fetchFiles } = useFiles();
   const { canOperate } = useMe();
+  const router = useRouter();
+
+  // 강당·홀 장비(믹서·매트릭스) 연결 요약 — 장비가 설정된 학교에서만 보인다
+  const hallCard = hallError
+    ? { status: "critical" as const, text: "ERROR" }
+    : hallSummary && hallSummary.total > 0
+      ? {
+          status:
+            hallSummary.connected === hallSummary.total
+              ? ("good" as const)
+              : hallSummary.connected > 0
+                ? ("caution" as const)
+                : ("critical" as const),
+          text: `${hallSummary.connected}/${hallSummary.total}`,
+        }
+      : null;
 
   useEffect(() => {
     fetchFiles();
@@ -95,6 +114,15 @@ export default function MainPage() {
               {statuses.map((item) => (
                 <StatusCard key={item.label} label={item.label} status={item.status} variant="network" />
               ))}
+              {hallCard && (
+                <StatusCard
+                  label="강당·홀"
+                  status={hallCard.status}
+                  text={hallCard.text}
+                  variant="network"
+                  onClick={() => router.push("/mixer")}
+                />
+              )}
             </div>
           </div>
         </section>
