@@ -43,8 +43,12 @@ export function useTts() {
           endSound,
         }),
       });
-      const data: BroadcastResponse = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message ?? "방송 전송 실패");
+      const data: BroadcastResponse & { detail?: unknown } = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        // 서버는 실패 사유를 detail로 준다(예: 방송 중·스피커 매핑 중)
+        const reason = typeof data.detail === "string" ? data.detail : data.message;
+        throw new Error(reason || "방송 전송 실패");
+      }
       setText("");
       toast.success("TTS 방송이 송출되었습니다.");
     } catch (e) {

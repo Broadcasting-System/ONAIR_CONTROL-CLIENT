@@ -1,6 +1,8 @@
 import { useSpeakerStore } from "@/stores/speakerStore";
-import { SPEAKER_ITEMS } from "@/constants/speakers";
 import { useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { speakerApi } from "@/lib/speakerApi";
+import { SPEAKER_MATRIX_KEY } from "@/hooks/useSpeakerMatrix";
 import { SpeakerZone } from "@/types/speaker";
 import { getApiBase } from "@/lib/apiBase";
 
@@ -17,29 +19,31 @@ interface SpeakerControlResponse {
 
 export function useSpeakers() {
   const { zones, setZones } = useSpeakerStore();
+  const queryClient = useQueryClient();
 
   const loadStatus = useCallback(async () => {
     const BASE = getApiBase();
     try {
+      // 구역 이름은 서버 구역표(스피커 매핑)에서 — 학교마다 다르다
+      const matrix = await queryClient.fetchQuery({
+        queryKey: SPEAKER_MATRIX_KEY,
+        queryFn: speakerApi.matrix,
+        staleTime: 30_000,
+      });
+      const names = Array.from(new Set(matrix.cells.flat().filter(Boolean)));
       const res = await fetch(`${BASE}/speakers/status`);
-      if (!res.ok) throw new Error("스피커 상태 로드 실패");
-      const data: SpeakersStatusResponse = await res.json();
-      const activeSet = new Set(data.active_devices);
-      const initialZones: SpeakerZone[] = SPEAKER_ITEMS.map((item, idx) => ({
+      const data: SpeakersStatusResponse | null = res.ok ? await res.json() : null;
+      const activeSet = new Set(data?.active_devices ?? []);
+      const nextZones: SpeakerZone[] = names.map((name, idx) => ({
         id: String(idx),
-        name: item.label,
-        status: activeSet.has(item.label) ? "on" : "off",
+        name,
+        status: activeSet.has(name) ? "on" : "off",
       }));
-      setZones(initialZones);
+      setZones(nextZones);
     } catch {
-      const fallback: SpeakerZone[] = SPEAKER_ITEMS.map((item, idx) => ({
-        id: String(idx),
-        name: item.label,
-        status: "off",
-      }));
-      setZones(fallback);
+      setZones([]);
     }
-  }, [setZones]);
+  }, [setZones, queryClient]);
 
   useEffect(() => {
     if (zones.length === 0) {

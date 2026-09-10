@@ -8,6 +8,7 @@ import { toast } from "@/components/common/Toast";
 import { useMe, Role } from "@/hooks/useMe";
 import PageTabs from "@/components/common/PageTabs";
 import AccessLogPanel from "@/components/devices/AccessLogPanel";
+import SpeakerMappingPanel from "@/components/devices/SpeakerMappingPanel";
 import { useTabParam } from "@/hooks/useTabParam";
 
 interface Device {
@@ -24,9 +25,10 @@ const ROLES: { value: Role; label: string }[] = [
   { value: "viewer", label: "보기 전용" },
 ];
 
-const DEVICE_TAB_KEYS = ["devices", "logs"] as const;
+const DEVICE_TAB_KEYS = ["devices", "speakers", "logs"] as const;
 const DEVICE_TABS = [
   { key: "devices" as const, label: "기기" },
+  { key: "speakers" as const, label: "스피커 매핑" },
   { key: "logs" as const, label: "접근 로그" },
 ];
 
@@ -102,6 +104,8 @@ export default function DevicesPage() {
 
       {tab === "logs" ? (
         <AccessLogPanel />
+      ) : tab === "speakers" ? (
+        <SpeakerMappingPanel />
       ) : (
       <>
       {/* 내 기기 안내 */}

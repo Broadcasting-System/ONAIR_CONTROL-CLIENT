@@ -1,21 +1,28 @@
 import { memo } from "react";
 import { Bell } from "@/types/time";
 import { cn } from "@/lib/utils";
-import { SPEAKER_ITEMS } from "@/constants/speakers";
 
-const ALL_SPEAKERS = SPEAKER_ITEMS.map((s) => s.label);
+/** 구역 이름(예: "3-2")에서 학년 번호 목록 */
+function gradesOf(all: string[]): number[] {
+  const set = new Set<number>();
+  for (const name of all) {
+    const m = /^(\d+)-\d/.exec(name);
+    if (m) set.add(Number(m[1]));
+  }
+  return Array.from(set).sort((a, b) => a - b);
+}
 
 /** 선택한 장소를 짧게 요약: 학교 전체 / 1학년 묶음 / 개별 나열 */
-function summarizeSpeakers(sel: string[] | undefined): string {
+function summarizeSpeakers(sel: string[] | undefined, all: string[]): string {
   if (!sel || sel.length === 0) return "장소 미선택";
   const set = new Set(sel);
-  if (ALL_SPEAKERS.length > 0 && ALL_SPEAKERS.every((l) => set.has(l))) {
+  if (all.length > 0 && all.every((l) => set.has(l))) {
     return "학교 전체";
   }
   const tokens: string[] = [];
   const used = new Set<string>();
-  for (const g of [1, 2, 3]) {
-    const grade = ALL_SPEAKERS.filter((l) => new RegExp(`^${g}-\\d`).test(l));
+  for (const g of gradesOf(all)) {
+    const grade = all.filter((l) => new RegExp(`^${g}-\\d`).test(l));
     if (grade.length > 0 && grade.every((l) => set.has(l))) {
       tokens.push(`${g}학년`);
       grade.forEach((l) => used.add(l));
@@ -27,11 +34,13 @@ function summarizeSpeakers(sel: string[] | undefined): string {
 
 interface BellCardProps {
   bell: Bell;
+  /** 학교 전체 구역 이름 (요약 표시용) */
+  allSpeakers: string[];
   isSelected: boolean;
   onClick: () => void;
 }
 
-const BellCard = memo(({ bell, isSelected, onClick }: BellCardProps) => {
+const BellCard = memo(({ bell, allSpeakers, isSelected, onClick }: BellCardProps) => {
   return (
     <button
       onClick={onClick}
@@ -48,7 +57,7 @@ const BellCard = memo(({ bell, isSelected, onClick }: BellCardProps) => {
       <div className="flex flex-col items-end gap-[4px] text-[14px]">
         <span className="font-medium text-[#d1d1d1] leading-none">{bell.time}</span>
         <span className="font-medium text-white/45 leading-none truncate max-w-[170px]">
-          {summarizeSpeakers(bell.speakers)}
+          {summarizeSpeakers(bell.speakers, allSpeakers)}
         </span>
       </div>
     </button>

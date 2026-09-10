@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import { getApiBase } from "@/lib/apiBase";
 import GroupTab from "@/components/time/GroupTab";
@@ -12,18 +12,13 @@ import Button from "@/components/common/Button";
 import { useTimeGroups } from "@/hooks/useTimeGroups";
 import { useFiles } from "@/hooks/useFiles";
 import { Speaker, Bell, AudioFile } from "@/types/time";
-import { SPEAKER_ITEMS } from "@/constants/speakers";
+import { useSpeakerMatrix } from "@/hooks/useSpeakerMatrix";
 import { DAYS } from "@/constants/days";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import PageTabs from "@/components/common/PageTabs";
 import SchedulerPanel from "@/components/time/SchedulerPanel";
 import { useMe } from "@/hooks/useMe";
 import { useTabParam } from "@/hooks/useTabParam";
-
-const SPEAKERS: Speaker[] = SPEAKER_ITEMS.map((s) => ({
-  id: s.label,
-  name: s.label,
-}));
 
 const TIME_TAB_KEYS = ["table", "schedule"] as const;
 const TIME_TABS = [
@@ -53,6 +48,11 @@ export default function TimePage() {
 
   const { files, fetchFiles } = useFiles();
   const { isAdmin } = useMe();
+  const { names: speakerNames } = useSpeakerMatrix();
+  const speakers: Speaker[] = useMemo(
+    () => speakerNames.map((name) => ({ id: name, name })),
+    [speakerNames],
+  );
   const [tab, setTab] = useTabParam(TIME_TAB_KEYS, "table");
   const [editingBellId, setEditingBellId] = useState<string | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -165,6 +165,7 @@ export default function TimePage() {
                   <BellCard
                     key={bell.id}
                     bell={bell}
+                    allSpeakers={speakerNames}
                     isSelected={editingBellId === bell.id}
                     onClick={() => setEditingBellId(bell.id)}
                   />
@@ -178,7 +179,7 @@ export default function TimePage() {
               {editingBellId !== null ? (
                 <BellEditor
                   bell={editingBell}
-                  speakers={SPEAKERS}
+                  speakers={speakers}
                   audioFiles={audioFiles}
                   onSave={handleSaveBell}
                   onDelete={editingBell ? handleDeleteBell : undefined}
