@@ -157,23 +157,29 @@ export default function MainPage() {
                       label={zone.name}
                       status={zone.status}
                       variant="speaker"
-                      onClick={() => toggleSpeaker(zone.id)}
+                      onClick={canOperate ? () => toggleSpeaker(zone.id) : undefined}
                     />
                   ))}
                 </div>
               ) : (
-                <SpeakerFloorMap zones={zones} onToggle={toggleSpeaker} />
+                <SpeakerFloorMap zones={zones} onToggle={canOperate ? toggleSpeaker : () => {}} />
               )}
             </div>
             <div className="mt-4 flex gap-12 justify-center">
               <div className="w-[360px]">
-                <Button label="전체" onClick={() => toggleSpeaker("all")} className="h-[64px]" />
+                <Button
+                  label="전체"
+                  onClick={() => toggleSpeaker("all")}
+                  disabled={!canOperate}
+                  className="h-[64px]"
+                />
               </div>
               <div className="w-[360px]">
                 <Button
                   label="학년 전체"
                   color="#1e3a8a"
                   onClick={() => toggleSpeaker("grade")}
+                  disabled={!canOperate}
                   className="h-[64px]"
                 />
               </div>
