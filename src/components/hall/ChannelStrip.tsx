@@ -39,6 +39,8 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
   const [dragLevel, setDragLevel] = useState<number | null>(null);
 
   const level = dragLevel ?? channel.level ?? 0;
+  // HiQnet 등은 콘솔이 값을 알려주기 전까지 레벨을 모른다 — 0%로 오해하지 않게 따로 표시
+  const known = dragLevel !== null || channel.level != null;
   const muted = !!channel.mute;
   const meter = channel.meter ?? 0;
 
@@ -114,7 +116,7 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
           <div
             className={cn(
               "absolute left-1/2 h-[18px] w-[34px] -translate-x-1/2 translate-y-1/2 rounded-[5px] bg-gradient-to-b from-[#e7e7e7] to-[#9a9a9a] shadow-[0_2px_6px_rgba(0,0,0,0.6)]",
-              muted && "opacity-40",
+              (muted || !known) && "opacity-40",
             )}
             style={{ bottom: `${level}%` }}
           >
@@ -124,7 +126,12 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
         {master && <Meter value={Math.max(0, meter - 6)} wide />}
       </div>
 
-      <span className={cn("font-orbitron text-sm text-white", muted && "opacity-40")}>{level}%</span>
+      <span
+        className={cn("font-orbitron text-sm text-white", (muted || !known) && "opacity-40")}
+        title={known ? undefined : "콘솔에서 아직 값을 받지 못했습니다"}
+      >
+        {known ? `${level}%` : "—"}
+      </span>
       <button
         type="button"
         disabled={disabled}
