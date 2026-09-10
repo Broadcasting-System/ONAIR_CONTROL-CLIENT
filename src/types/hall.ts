@@ -72,6 +72,7 @@ export const DRIVER_LABEL: Record<string, string> = {
   mock: "모의 장비",
   hiqnet: "HiQnet",
   "midi-bridge": "MIDI",
+  "serial-bridge": "RS-232",
   "oshm88-bridge": "RS-232",
   unavailable: "미연결",
 };
