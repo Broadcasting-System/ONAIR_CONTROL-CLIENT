@@ -197,6 +197,8 @@ function MirrorYouTube({ videoId, playback }: { videoId: string; playback?: Play
         }
       }, 4000);
     });
+    // 정리 시점엔 ref가 바뀌어 있을 수 있어 지금의 DOM 노드를 잡아 둔다
+    const host = hostRef.current;
     return () => {
       cancelled = true;
       if (sync) clearInterval(sync);
@@ -207,13 +209,12 @@ function MirrorYouTube({ videoId, playback }: { videoId: string; playback?: Play
       }
       playerRef.current = null;
       readyRef.current = false;
-      if (hostRef.current) hostRef.current.innerHTML = "";
+      if (host) host.innerHTML = "";
     };
   }, [videoId]);
 
   useEffect(() => {
     if (readyRef.current) apply(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playback]);
 
   return (
