@@ -1,5 +1,5 @@
-import { del, post, request, seg } from "@/lib/http";
-import type { HallSummary, HallsStatus, MixerState, VideoMatrixState } from "@/types/hall";
+import { del, post, put, request, seg } from "@/lib/http";
+import type { HallSummary, HallsStatus, MixerConfig, MixerState, VideoMatrixState } from "@/types/hall";
 
 export const hallApi = {
   list: () => request<{ halls: HallSummary[] }>("/halls"),
@@ -22,4 +22,10 @@ export const hallApi = {
     post<{ id: string; name: string }>(`/halls/${seg(hall)}/matrix/presets`, { name }),
   deletePreset: (hall: string, presetId: string) =>
     del<{ success: boolean }>(`/halls/${seg(hall)}/matrix/presets/${seg(presetId)}`),
+
+  // 관리자 설정 편집 — 이름·씬 목록·채널 구성 (장비 연결 방식은 서버 파일에서)
+  updateMixerConfig: (hall: string, config: MixerConfig) =>
+    put<{ success: boolean }>(`/halls/${seg(hall)}/mixer/config`, config),
+  updateMatrixConfig: (hall: string, inputs: string[], outputs: string[]) =>
+    put<{ success: boolean }>(`/halls/${seg(hall)}/matrix/config`, { inputs, outputs }),
 };

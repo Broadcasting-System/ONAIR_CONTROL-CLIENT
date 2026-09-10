@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import SectionHeader from "@/components/common/SectionHeader";
 import ChannelStrip from "@/components/hall/ChannelStrip";
+import { ConfigButton, MixerConfigModal } from "@/components/hall/HallConfigModal";
 import { HallSwitcher, LockToggle, Notice, Panel, StatusChip } from "@/components/hall/HallControls";
 import { useHalls } from "@/hooks/useHalls";
 import { useMe } from "@/hooks/useMe";
@@ -23,7 +24,8 @@ export default function MixerPage() {
   }, [current, hallId, setHallId]);
 
   const { state, error, recallScene, isRecalling, setLevel, setMute } = useMixer(current?.id ?? null);
-  const { canOperate } = useMe();
+  const { canOperate, isAdmin } = useMe();
+  const [editing, setEditing] = useState(false);
 
   const connected = !!state?.connected;
   const channelMode = connected && !!state?.capabilities.includes("channel");
@@ -44,6 +46,7 @@ export default function MixerPage() {
         <SectionHeader className="mb-0">오디오 믹서</SectionHeader>
         <HallSwitcher halls={halls} value={current?.id} onChange={setHallId} />
         <div className="ml-auto flex items-center gap-2.5">
+          {isAdmin && state && <ConfigButton onClick={() => setEditing(true)} />}
           <StatusChip
             tone={connected ? "good" : "off"}
             label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "-"} ${connected ? "online" : "offline"}`}
@@ -131,6 +134,10 @@ export default function MixerPage() {
           )}
         </div>
       </Panel>
+
+      {editing && state && current && (
+        <MixerConfigModal hallId={current.id} state={state} onClose={() => setEditing(false)} />
+      )}
     </div>
   );
 }

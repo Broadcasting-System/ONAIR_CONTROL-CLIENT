@@ -67,7 +67,6 @@ export interface VideoMatrixState extends DeviceStatus {
   presets: MatrixPreset[];
 }
 
-/** 드라이버 종류 → 화면 표시 이름 */
 /** GET /halls/status — 메인 화면 카드용 장비 연결 요약 */
 export interface HallsStatus {
   devices: {
@@ -82,6 +81,14 @@ export interface HallsStatus {
   total: number;
 }
 
+/** PUT /halls/{hall}/mixer/config — 씬 목록·채널 구성 편집 (관리자) */
+export interface MixerConfig {
+  scenes: MixerScene[];
+  channels: { id: string; name: string }[];
+  masterName?: string;
+}
+
+/** 드라이버 종류 → 화면 표시 이름 */
 export const DRIVER_LABEL: Record<string, string> = {
   mock: "모의 장비",
   hiqnet: "HiQnet",

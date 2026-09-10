@@ -489,7 +489,14 @@ export default function MediaPage() {
           ) : content && content.type !== "standby" ? (
             <div className="flex items-center justify-between">
               <p className="font-pretendard text-white/50">
-                현재 송출: {content.type} (재생 제어는 영상·PDF만 지원)
+                CH{channel} 송출 중: {TYPE_LABEL[content.type] ?? content.type}
+                <span className="ml-2 text-white/30">
+                  {content.type === "timer"
+                    ? "— 새 타이머를 보내면 바로 바뀝니다"
+                    : content.type === "screen"
+                      ? "— 공유한 기기에서 중지하세요"
+                      : "— 재생 제어는 영상·PPT만 지원"}
+                </span>
               </p>
               <button
                 onClick={clearDisplay}

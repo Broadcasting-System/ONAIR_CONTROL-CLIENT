@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import SectionHeader from "@/components/common/SectionHeader";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { ConfigButton, MatrixLabelsModal } from "@/components/hall/HallConfigModal";
 import { HallSwitcher, LockToggle, Notice, Panel, StatusChip } from "@/components/hall/HallControls";
 import { useHalls } from "@/hooks/useHalls";
 import { useMe } from "@/hooks/useMe";
@@ -27,6 +28,7 @@ export default function VideoMatrixPage() {
   const { canOperate, isAdmin } = useMe();
   const [confirmAll, setConfirmAll] = useState<MatrixPort | null>(null);
   const [presetName, setPresetName] = useState("");
+  const [editing, setEditing] = useState(false);
 
   const connected = !!state?.connected;
   const operable = canOperate && !locked && connected;
@@ -51,6 +53,7 @@ export default function VideoMatrixPage() {
         <HallSwitcher halls={halls} value={current?.id} onChange={setHallId} />
         {state?.model && <span className="font-pretendard text-sm text-white/35">{state.model}</span>}
         <div className="ml-auto flex items-center gap-2.5">
+          {isAdmin && state && <ConfigButton label="이름 편집" onClick={() => setEditing(true)} />}
           <StatusChip
             tone={connected ? "good" : "off"}
             label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "-"} ${connected ? "online" : "offline"}`}
@@ -215,6 +218,10 @@ export default function VideoMatrixPage() {
         message={`모든 출력 화면을 '${confirmAll?.name ?? ""}' 입력으로 바꿉니다. 계속하시겠습니까?`}
         confirmText="전환"
       />
+
+      {editing && state && current && (
+        <MatrixLabelsModal hallId={current.id} state={state} onClose={() => setEditing(false)} />
+      )}
     </div>
   );
 }
