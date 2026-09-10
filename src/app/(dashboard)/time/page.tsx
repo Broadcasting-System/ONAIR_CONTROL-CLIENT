@@ -17,13 +17,15 @@ import { DAYS } from "@/constants/days";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import PageTabs from "@/components/common/PageTabs";
 import SchedulerPanel from "@/components/time/SchedulerPanel";
+import EnergyPanel from "@/components/time/EnergyPanel";
 import { useMe } from "@/hooks/useMe";
 import { useTabParam } from "@/hooks/useTabParam";
 
-const TIME_TAB_KEYS = ["table", "schedule"] as const;
+const TIME_TAB_KEYS = ["table", "schedule", "energy"] as const;
 const TIME_TABS = [
   { key: "table" as const, label: "시간표" },
   { key: "schedule" as const, label: "예약 현황" },
+  { key: "energy" as const, label: "야간 절전" },
 ];
 
 export default function TimePage() {
@@ -128,6 +130,10 @@ export default function TimePage() {
       {isAdmin && tab === "schedule" ? (
         <div className="mt-6 flex min-h-0 flex-1 flex-col">
           <SchedulerPanel />
+        </div>
+      ) : isAdmin && tab === "energy" ? (
+        <div className="mt-6 flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <EnergyPanel />
         </div>
       ) : (
       <div className="flex flex-1 flex-col mt-4 h-full overflow-hidden relative">
