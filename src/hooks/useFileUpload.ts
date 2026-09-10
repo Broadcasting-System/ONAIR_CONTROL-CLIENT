@@ -2,11 +2,23 @@ import { useState } from "react";
 import { FileType, UploadedFile } from "@/types/file";
 import { getApiBase } from "@/lib/apiBase";
 
+// 서버 POST /files/upload 응답
 interface UploadResponse {
   id: string;
   type: FileType;
-  originalName: string;
-  url: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize?: number;
+}
+
+/** 서버가 준 한국어 사유(detail) — 크기 초과(413)·형식 오류 등을 그대로 보여준다 */
+function serverDetail(xhr: XMLHttpRequest): string | null {
+  try {
+    const detail = JSON.parse(xhr.responseText)?.detail;
+    return typeof detail === "string" ? detail : null;
+  } catch {
+    return null;
+  }
 }
 
 export const useFileUpload = () => {
@@ -48,13 +60,16 @@ export const useFileUpload = () => {
                   resolve({
                     id: data.id,
                     type: data.type,
-                    fileName: data.originalName,
-                    fileUrl: data.url,
-                    fileSize: 0,
+                    fileName: data.fileName,
+                    fileUrl: data.fileUrl,
+                    fileSize: data.fileSize ?? 0,
                     uploadedAt: "",
                   });
                 } else {
-                  reject(new Error("업로드 실패"));
+                  const reason =
+                    serverDetail(xhr) ??
+                    (xhr.status === 413 ? "파일이 너무 큽니다." : `업로드 실패 (HTTP ${xhr.status})`);
+                  reject(new Error(`${file.name}: ${reason}`));
                 }
               };
 

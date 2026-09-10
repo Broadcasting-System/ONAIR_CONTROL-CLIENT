@@ -11,6 +11,7 @@ import PreviewModal from "@/components/file/PreviewModal";
 import InputModal from "@/components/common/InputModal";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { Pencil } from "lucide-react";
+import { toast } from "@/components/common/Toast";
 
 export default function FilesPage() {
   const { files, fetchFiles, deleteFile, renameFile } = useFiles();
@@ -31,8 +32,14 @@ export default function FilesPage() {
   }, [fetchFiles]);
 
   const handleUpload = async (fileList: FileList, type: 'image' | 'video' | 'audio' | 'presentation') => {
-    await upload(fileList, type);
-    fetchFiles();
+    try {
+      await upload(fileList, type);
+    } catch (e) {
+      // 실패 사유(크기 초과·형식·변환 실패)를 알려주고, 성공한 나머지 파일은 목록에 반영
+      toast.error((e as Error).message);
+    } finally {
+      fetchFiles();
+    }
   };
 
   const handleContextMenu = (e: React.MouseEvent, file: UploadedFile) => {
