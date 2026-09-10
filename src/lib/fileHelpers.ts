@@ -17,7 +17,8 @@ export const getAcceptedFormats = (type: FileType): string => {
     case "audio":
       return "audio/mpeg,audio/wav";
     case "presentation":
-      return "application/pdf";
+      // 서버가 PPT·PPTX 도 PDF로 변환한다 (LibreOffice)
+      return "application/pdf,.pptx,.ppt";
     default:
       return "*/*";
   }
