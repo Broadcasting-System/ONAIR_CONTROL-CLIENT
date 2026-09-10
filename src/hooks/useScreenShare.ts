@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { backendWs } from "@/lib/backend";
 import { getApiBase } from "@/lib/apiBase";
 import { toast } from "@/components/common/Toast";
@@ -7,16 +7,29 @@ const RTC_CONFIG: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
 
+async function postScreen(channel: number, active: boolean) {
+  const chQs = channel > 1 ? `?channel=${channel}` : "";
+  await fetch(`${getApiBase()}/display/screen${chQs}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ active }),
+  });
+}
+
 /** 컨트롤(노트북) 측 화면 공유 송신기.
  *  getDisplayMedia로 화면+소리를 캡처해 WebRTC(sendonly)로 송출 화면에 보낸다.
- *  시그널링은 전용 /api/display/ws 로 offer/answer/ice 교환. */
+ *  시그널링은 전용 /api/display/ws 로 offer/answer/ice 교환.
+ *
+ *  공유는 '시작한 채널'에 묶인다. 공유 중에 컨트롤에서 다른 채널을 골라도
+ *  중지·정리는 시작한 채널에 대해 이뤄진다(sharingChannel). */
 export function useScreenShare(channel: number = 1) {
-  const chQs = channel > 1 ? `?channel=${channel}` : "";
-  const [isSharing, setIsSharing] = useState(false);
+  const [sharingChannel, setSharingChannel] = useState<number | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const shareChannelRef = useRef<number | null>(null);
+  const startingRef = useRef(false);
 
   const cleanup = useCallback(() => {
     if (pcRef.current) {
@@ -24,30 +37,35 @@ export function useScreenShare(channel: number = 1) {
       pcRef.current = null;
     }
     if (wsRef.current) {
-      try { wsRef.current.close(); } catch {}
-      wsRef.current = null;
+      const ws = wsRef.current;
+      wsRef.current = null; // onclose에서 '예상치 못한 끊김'으로 오인하지 않도록 먼저 비운다
+      try { ws.close(); } catch {}
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
+    shareChannelRef.current = null;
     setLocalStream(null);
-    setIsSharing(false);
+    setSharingChannel(null);
   }, []);
 
   const stop = useCallback(async () => {
+    const ch = shareChannelRef.current;
     cleanup();
+    if (ch === null) return;
     try {
-      await fetch(`${getApiBase()}/display/screen${chQs}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: false }),
-      });
+      await postScreen(ch, false);
     } catch {}
-  }, [cleanup, chQs]);
+  }, [cleanup]);
+
+  // 페이지를 떠나면 공유도 끝낸다 — 캡처·연결이 남아 송출 화면이 '연결 중'에 멈추지 않게.
+  const stopRef = useRef(stop);
+  stopRef.current = stop;
+  useEffect(() => () => { void stopRef.current(); }, []);
 
   const start = useCallback(async () => {
-    if (pcRef.current) return; // 이미 공유 중
+    if (pcRef.current || startingRef.current) return; // 이미 공유 중(또는 화면 선택 창이 떠 있음)
 
     // 화면 캡처 API는 보안 컨텍스트(HTTPS 또는 localhost)에서만 제공된다.
     // HTTP+IP로 접속하면 navigator.mediaDevices 자체가 없다 → 명확히 안내.
@@ -61,6 +79,8 @@ export function useScreenShare(channel: number = 1) {
       return;
     }
 
+    const ch = channel; // 시작 시점의 채널에 고정
+    startingRef.current = true;
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getDisplayMedia({
@@ -75,26 +95,26 @@ export function useScreenShare(channel: number = 1) {
         toast.error("화면 공유를 시작할 수 없습니다: " + (name || "알 수 없는 오류"));
       }
       return;
+    } finally {
+      startingRef.current = false;
     }
     streamRef.current = stream;
+    shareChannelRef.current = ch;
     setLocalStream(stream);
-    setIsSharing(true);
+    setSharingChannel(ch);
     // 브라우저 '공유 중지'를 누르면 자동 종료
     stream.getVideoTracks()[0]?.addEventListener("ended", () => {
-      stop();
+      if (streamRef.current !== stream) return;
+      void stop();
       toast.info("화면 공유를 종료했습니다.");
     });
 
     // 송출 화면을 screen 모드로 전환
     try {
-      await fetch(`${getApiBase()}/display/screen${chQs}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: true }),
-      });
+      await postScreen(ch, true);
     } catch {}
 
-    const ws = new WebSocket(backendWs("/api/display/ws", channel, "signal"));
+    const ws = new WebSocket(backendWs("/api/display/ws", ch, "signal"));
     wsRef.current = ws;
     const send = (m: object) => {
       if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(m));
@@ -135,9 +155,23 @@ export function useScreenShare(channel: number = 1) {
       }
     };
     ws.onopen = () => { void sendOffer(false); };
+    ws.onclose = () => {
+      // 우리가 닫은 게 아니라 서버 재시작 등으로 끊겼다 → '공유 중'으로 남지 않게 정리
+      if (wsRef.current !== ws) return;
+      void stop();
+      toast.error("송출 서버와 연결이 끊겨 화면 공유를 종료했습니다. 다시 시작해주세요.");
+    };
 
-    toast.success("화면 공유를 시작했습니다.");
-  }, [stop, chQs, channel]);
+    toast.success(`CH${ch}에 화면 공유를 시작했습니다.`);
+  }, [stop, channel]);
 
-  return { isSharing, start, stop, localStream };
+  return {
+    /** 이 컨트롤에서 화면 공유 중인지 (어느 채널이든) */
+    isSharing: sharingChannel !== null,
+    /** 공유를 시작한 채널 — 선택 채널과 다를 수 있다 */
+    sharingChannel,
+    start,
+    stop,
+    localStream,
+  };
 }

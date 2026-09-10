@@ -5,6 +5,8 @@ export interface ChannelHealth {
   count: number;
   live: boolean;
   displays: { name: string; ip: string; ageSec: number; stale: boolean }[];
+  /** 지금 이 채널이 송출 중인 종류 (standby = 대기) */
+  type?: string;
 }
 
 export interface Health {

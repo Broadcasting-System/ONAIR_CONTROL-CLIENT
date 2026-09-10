@@ -400,7 +400,22 @@ export const DisplayMirror = ({ channel = 1 }: { channel?: number }) => {
     }
   }, [content?.type, content?.playback]);
 
-  if (!content || content.type === "standby" || content.type === "screen") {
+  if (content?.type === "screen") {
+    // 다른 컨트롤(노트북)이 이 채널로 화면을 공유 중 — 영상은 P2P라 여기선 볼 수 없다
+    return (
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black">
+        <span className="flex items-center gap-2 rounded-full border border-red-500/50 bg-red-600/90 px-3 py-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+          <span className="text-[11px] font-black tracking-tight text-white">화면 공유 중</span>
+        </span>
+        <p className="text-xs font-medium text-white/40 tracking-tight">
+          공유 중인 기기의 화면이 송출되고 있습니다
+        </p>
+      </div>
+    );
+  }
+
+  if (!content || content.type === "standby") {
     return (
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black">
         <h3 className="text-4xl font-black italic tracking-wider text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">

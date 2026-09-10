@@ -47,6 +47,14 @@ export function useDisplaySync(channel: number = 1) {
   useEffect(() => {
     const BASE = backendBase()
     const chQs = channel > 1 ? `?channel=${channel}` : ''
+    // 채널을 바꾸면 이전 채널 내용을 즉시 비운다 — 새 채널이 대기 상태면 서버가 standby를
+    // 보내기 전까지 이전 채널 영상·진행바가 남아 '다른 채널을 조작하는' 착각을 일으켰다.
+    setContent(null)
+    // 채널이 바뀌어 이 effect가 정리되면 true. 옛 소켓의 onclose가 뒤늦게 떠도
+    // 옛 채널로 재연결하지 않도록 막는다(안 그러면 CH1 내용이 CH2 화면에 다시 들어옴).
+    let cancelled = false
+    // WebSocket이 먼저 상태를 줬으면 늦게 도착한 초기 fetch 결과로 덮어쓰지 않는다.
+    let gotSocketState = false
 
     const resolveUrls = (data: DisplayContent) => {
       const { type, url, urls, fileId, hlsUrl } = data
@@ -77,11 +85,15 @@ export function useDisplaySync(channel: number = 1) {
         const res = await fetch(`${BASE}/api/display/status${chQs}`)
         if (res.ok) {
           const data = await res.json() as DisplayContent
-          if (data && data.type && data.type !== 'standby') {
+          if (cancelled || gotSocketState) return
+          if (!data || !data.type || data.type === 'standby') {
+            setContent(null)
+          } else {
             const resolved = resolveUrls(data)
             setContent({
               type: resolved.type,
               url: resolved.url,
+              fileId: resolved.fileId,
               urls: resolved.urls,
               duration: resolved.duration,
               serverTimestamp: resolved.serverTimestamp,
@@ -106,9 +118,6 @@ export function useDisplaySync(channel: number = 1) {
 
     let ws: WebSocket | null = null
     let reconnectTimer: NodeJS.Timeout
-    // 채널이 바뀌어 이 effect가 정리되면 true. 옛 소켓의 onclose가 뒤늦게 떠도
-    // 옛 채널로 재연결하지 않도록 막는다(안 그러면 CH1 내용이 CH2 화면에 다시 들어옴).
-    let cancelled = false
 
     const connect = () => {
       if (cancelled) return
@@ -116,12 +125,14 @@ export function useDisplaySync(channel: number = 1) {
       ws = new WebSocket(wsUrl)
 
       ws.onmessage = (event) => {
+        if (cancelled) return
         try {
           const parsed = JSON.parse(event.data) as unknown
           if (typeof parsed !== 'object' || parsed === null) return
 
           const message = parsed as DisplayContent
           if (message.command === 'display') {
+            gotSocketState = true
             if (message.type === 'standby') {
               setContent(null)
               return
@@ -132,6 +143,7 @@ export function useDisplaySync(channel: number = 1) {
             setContent({
               type: resolved.type,
               url: resolved.url,
+              fileId: resolved.fileId,
               urls: resolved.urls,
               duration: resolved.duration,
               serverTimestamp: resolved.serverTimestamp,

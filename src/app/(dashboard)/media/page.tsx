@@ -24,6 +24,16 @@ const TYPE_TABS: { key: FileType; label: string }[] = [
   { key: "audio", label: "오디오" },
 ];
 
+const TYPE_LABEL: Record<string, string> = {
+  video: "영상",
+  image: "이미지",
+  presentation: "PPT",
+  audio: "오디오",
+  youtube: "유튜브",
+  timer: "타이머",
+  screen: "화면 공유",
+};
+
 const fmt = (s: number) => {
   if (!Number.isFinite(s) || s < 0) s = 0;
   const m = Math.floor(s / 60);
@@ -40,8 +50,20 @@ export default function MediaPage() {
   const { content } = useDisplaySync(channel);
   const { toggle, seek, setVolume, setMuted, setFit, setLoop, setSlide, setOverlay } =
     usePlayer(channel);
-  const { isSharing, start: startShare, stop: stopShare, localStream } =
-    useScreenShare(channel);
+  const {
+    isSharing,
+    sharingChannel,
+    start: startShare,
+    stop: stopShare,
+    localStream,
+  } = useScreenShare(channel);
+  // 공유는 시작한 채널에 묶인다 — 다른 채널을 보고 있으면 그 채널의 송출 화면을 보여준다
+  const sharingHere = sharingChannel === channel;
+
+  // 새로고침 전에 고르던 채널 복원 (SSR과 어긋나지 않게 마운트 후)
+  useEffect(() => {
+    void useChannelStore.persist.rehydrate();
+  }, []);
 
   const [tab, setTab] = useState<FileType>("video");
   const [timerMode, setTimerMode] = useState(false);
@@ -153,6 +175,11 @@ export default function MediaPage() {
           <button
             onClick={isSharing ? stopShare : startShare}
             disabled={!canOperate && !isSharing}
+            title={
+              isSharing
+                ? `CH${sharingChannel}의 화면 공유를 중지합니다`
+                : `CH${channel}에 내 화면을 송출합니다`
+            }
             className={cn(
               "flex items-center gap-2 rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40",
               isSharing
@@ -163,12 +190,17 @@ export default function MediaPage() {
             {isSharing && (
               <span className="h-2 w-2 animate-pulse rounded-full bg-red-400" />
             )}
-            {isSharing ? "공유 중지" : "화면 공유"}
+            {isSharing
+              ? sharingHere
+                ? "공유 중지"
+                : `CH${sharingChannel} 공유 중지`
+              : "화면 공유"}
           </button>
         </div>
 
         {timerMode ? (
           <TimerComposer
+            channel={channel}
             disabled={!canOperate}
             onSend={(opts) =>
               showTimer(channel, opts).catch(() => {
@@ -179,6 +211,7 @@ export default function MediaPage() {
           />
         ) : ytMode ? (
           <YouTubeComposer
+            channel={channel}
             disabled={!canOperate}
             onSend={(videoId, loop) =>
               showYouTube(channel, videoId, loop).catch(() =>
@@ -200,9 +233,11 @@ export default function MediaPage() {
               <MediaRow
                 key={f.id}
                 file={f}
-                active={content?.url?.includes(
-                  (f.id.startsWith("file_") ? f.id.slice(5) : f.id).split(".")[0],
-                )}
+                active={
+                  content?.fileId
+                    ? content.fileId === f.id
+                    : !!f.fileUrl && content?.url === f.fileUrl
+                }
                 disabled={isSending || !canOperate}
                 onSelect={() => showMedia(f, channel)}
               />
@@ -232,16 +267,25 @@ export default function MediaPage() {
               const chHealth = health?.channels[String(ch)];
               const live = chHealth?.live ?? false;
               const names = chHealth?.displays.map((d) => d.name).join(", ");
+              const onAir = !!chHealth?.type && chHealth.type !== "standby";
+              const title = [
+                live ? `송출 화면 연결됨: ${names}` : "송출 화면 없음",
+                onAir ? `송출 중: ${TYPE_LABEL[chHealth!.type!] ?? chHealth!.type}` : "대기",
+              ].join(" · ");
               return (
                 <button
                   key={ch}
                   onClick={() => setChannel(ch)}
-                  title={live ? `송출 화면 연결됨: ${names}` : "송출 화면 없음"}
+                  title={title}
+                  aria-pressed={channel === ch}
                   className={cn(
                     "relative flex h-9 w-12 items-center justify-center rounded-xl border font-orbitron text-sm transition-all",
                     channel === ch
                       ? "border-red-400/50 bg-red-400/15 text-white"
                       : "border-white/10 bg-white/[0.03] text-white/45 hover:bg-white/5",
+                    // 송출 중인 채널은 아래쪽에 빨간 막대 — 선택과 별개로 '지금 나가는 채널'이 보이게
+                    onAir &&
+                      "after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:rounded-full after:bg-red-400",
                   )}
                 >
                   {ch}
@@ -259,7 +303,7 @@ export default function MediaPage() {
 
         {/* 미리보기 (높이 고정) — 화면 공유 중이면 내 화면 로컬 프리뷰 */}
         <div className="relative h-[48vh] w-full shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black">
-          {isSharing ? (
+          {sharingHere ? (
             <ScreenLocalPreview stream={localStream} />
           ) : (
             <DisplayMirror channel={channel} />
@@ -437,7 +481,7 @@ export default function MediaPage() {
             />
           ) : content?.type === "image" ? (
             <ImageOverlayEditor
-              key={content.url}
+              key={`${channel}:${content.url}`}
               overlay={content.overlay}
               onChange={setOverlay}
               onClear={clearDisplay}
@@ -535,10 +579,12 @@ function PresentationNav({
 
 /** 타이머(카운트다운/업) 송출 입력 */
 function TimerComposer({
+  channel,
   disabled,
   onSend,
   onClear,
 }: {
+  channel: number;
   disabled?: boolean;
   onSend: (opts: { label?: string; durationSec: number; mode: "down" | "up" }) => void;
   onClear: () => void;
@@ -612,7 +658,7 @@ function TimerComposer({
           disabled={disabled || (mode === "down" && durationSec <= 0)}
           className="h-12 flex-1 rounded-xl border border-white/15 bg-white/10 font-mbc text-white hover:bg-white/15 disabled:opacity-40"
         >
-          타이머 송출
+          CH{channel}에 타이머 송출
         </button>
         <button
           onClick={onClear}
@@ -627,10 +673,12 @@ function TimerComposer({
 
 /** 유튜브 링크 입력 → 송출 */
 function YouTubeComposer({
+  channel,
   disabled,
   onSend,
   onClear,
 }: {
+  channel: number;
   disabled?: boolean;
   onSend: (videoId: string, loop: boolean) => void;
   onClear: () => void;
@@ -681,7 +729,7 @@ function YouTubeComposer({
           disabled={disabled || !valid}
           className="h-12 flex-1 rounded-xl border border-red-500/40 bg-red-500/15 font-mbc text-red-100 hover:bg-red-500/25 disabled:opacity-40"
         >
-          유튜브 송출
+          CH{channel}에 유튜브 송출
         </button>
         <button
           onClick={onClear}
