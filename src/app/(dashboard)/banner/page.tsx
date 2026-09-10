@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SectionHeader from "@/components/common/SectionHeader";
+import { toast } from "@/components/common/Toast";
 import { cn } from "@/lib/utils";
 import { useFiles } from "@/hooks/useFiles";
 import { UploadedFile } from "@/types/file";
@@ -77,6 +78,9 @@ export default function BannerPage() {
     setPreviewUrl(getDisplayPreviewUrl());
   }, []);
   const didInit = useRef(false);
+  // 마지막으로 서버에 보낸(또는 서버에서 받은) 장면 — 같은 내용은 다시 보내지 않는다.
+  // (페이지를 열기만 해도 현재 현수막을 다시 보내 타임스탬프·디스코드 알림이 새로 생기던 문제)
+  const lastSentRef = useRef("");
 
   // ---- 초기 상태 동기화 ----
   useEffect(() => {
@@ -86,21 +90,35 @@ export default function BannerPage() {
         return;
       }
       setScene(s.scene);
+      let loaded: unknown = {};
       if (s.scene === "scoreboard") {
         const p = (s.payload ?? {}) as Partial<ScoreboardPayload>;
-        setScoreboard({
+        const next: ScoreboardPayload = {
           ...DEFAULT_SCOREBOARD,
           ...p,
           // 팀은 깊은 병합 — 옛 데이터에 set이 없으면 0으로 채움
           teamA: { score: 0, set: 0, ...(p.teamA ?? {}) },
           teamB: { score: 0, set: 0, ...(p.teamB ?? {}) },
-        });
+        };
+        setScoreboard(next);
+        loaded = next;
       }
-      if (s.scene === "image")
-        setImage({ fit: "cover", ...(s.payload as object) } as ImagePayload);
-      if (s.scene === "gif") setGif(s.payload as unknown as GifPayload);
-      if (s.scene === "default")
-        setDefaultBanner({ ...DEFAULT_BANNER, ...(s.payload as object) } as DefaultBannerPayload);
+      if (s.scene === "image") {
+        const next = { fit: "cover", ...(s.payload as object) } as ImagePayload;
+        setImage(next);
+        loaded = next;
+      }
+      if (s.scene === "gif") {
+        const next = s.payload as unknown as GifPayload;
+        setGif(next);
+        loaded = next;
+      }
+      if (s.scene === "default") {
+        const next = { ...DEFAULT_BANNER, ...(s.payload as object) } as DefaultBannerPayload;
+        setDefaultBanner(next);
+        loaded = next;
+      }
+      lastSentRef.current = JSON.stringify({ scene: s.scene, payload: loaded });
       didInit.current = true;
     });
   }, []);
@@ -146,11 +164,16 @@ export default function BannerPage() {
     if (!didInit.current) return;
     // 타이머는 편집 중 자동 재시작 방지 — 명시적 송출 버튼만 사용
     if (scene === "timer") return;
+    const key = JSON.stringify({ scene, payload });
+    if (key === lastSentRef.current) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      updateBanner(scene, payload).catch((e) =>
-        console.error("송출 실패", e),
-      );
+      lastSentRef.current = key;
+      updateBanner(scene, payload).catch((e) => {
+        lastSentRef.current = "";
+        console.error("송출 실패", e);
+        toast.error("현수막 송출에 실패했습니다. 권한이나 서버 연결을 확인하세요.");
+      });
     }, 200);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -159,7 +182,10 @@ export default function BannerPage() {
 
   const sendNow = useCallback(
     (s: BannerScene, p: Record<string, unknown>) => {
-      updateBanner(s, p).catch((e) => console.error("송출 실패", e));
+      updateBanner(s, p).catch((e) => {
+        console.error("송출 실패", e);
+        toast.error("현수막 송출에 실패했습니다. 권한이나 서버 연결을 확인하세요.");
+      });
     },
     [],
   );

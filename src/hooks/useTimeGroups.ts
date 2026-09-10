@@ -17,6 +17,22 @@ const INITIAL_GROUPS: Group[] = Array.from({ length: 5 }, (_, i) => ({
   ],
 }));
 
+/** 서버 오류 사유를 사람이 읽을 문장으로 (FastAPI 검증 오류 목록 포함) */
+async function errorText(res: Response): Promise<string> {
+  try {
+    const detail = (await res.json())?.detail;
+    if (typeof detail === "string") return detail;
+    if (Array.isArray(detail))
+      return detail
+        .map((d) => String(d?.msg ?? "").replace(/^Value error, /, ""))
+        .filter(Boolean)
+        .join("\n");
+  } catch {
+    /* 본문 없음 */
+  }
+  return "";
+}
+
 export const useTimeGroups = () => {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [activeGroupId, setActiveGroupId] = useState<number>(1);
@@ -129,7 +145,9 @@ export const useTimeGroups = () => {
     replaceBells([]);
   }, [replaceBells]);
 
-  const fetchTimeTable = useCallback(async () => {
+  /** 서버 시간표로 화면을 맞춘다. sync 를 주면 방금 보낸 그룹·요일만 맞춘다 —
+   *  다른 그룹이나 P 탭에서 편집 중이던(아직 안 보낸) 내용이 서버 값으로 덮이지 않게. */
+  const fetchTimeTable = useCallback(async (sync?: { group: number; days: string[] }) => {
     try {
       const BASE = getApiBase();
       const endpoint = `${BASE}/time`;
@@ -139,7 +157,8 @@ export const useTimeGroups = () => {
       if (json.success && json.data) {
         const serverData = json.data;
         // 그룹별 특별모드 플래그 동기화
-        setSpecialActive(() => {
+        setSpecialActive((prev) => {
+          if (sync) return { ...prev, [sync.group]: !!serverData[sync.group]?.isSpecialActive };
           const map: Record<number, boolean> = {};
           for (const key of Object.keys(serverData)) {
             map[Number(key)] = !!serverData[key]?.isSpecialActive;
@@ -148,17 +167,19 @@ export const useTimeGroups = () => {
         });
         setGroups((prev) =>
           prev.map((g) => {
+            if (sync && g.id !== sync.group) return g;
             const groupData = serverData[g.id];
             if (!groupData || !groupData.schedules) return g;
 
-            // Override days with what's in the server's schedules array for this group
+            // 서버에 저장된 요일 스케줄로 교체 (sync 면 보낸 요일만)
             const serverSchedules: DaySchedule[] = groupData.schedules;
             return {
               ...g,
-              days: g.days.map(d => {
-                const found = serverSchedules.find(s => s.dayType === d.dayType);
+              days: g.days.map((d) => {
+                if (sync && !sync.days.includes(d.dayType)) return d;
+                const found = serverSchedules.find((s) => s.dayType === d.dayType);
                 return found ? found : d;
-              })
+              }),
             };
           })
         );
@@ -192,14 +213,18 @@ export const useTimeGroups = () => {
       });
 
       if (!res.ok) {
-        const msg = await res.text().catch(() => "");
-        toast.error("시보 전송에 실패했습니다." + (msg ? `\n${msg.slice(0, 160)}` : ""));
+        const msg = await errorText(res);
+        toast.error("시보 전송에 실패했습니다." + (msg ? `\n${msg.slice(0, 200)}` : ""));
         return;
       }
 
-      // On success, refresh the whole timetable to stay in sync
-      fetchTimeTable();
-      toast.success("시보가 전송되었습니다.");
+      fetchTimeTable({ group: activeGroupId, days: payload.schedule.map((d) => d.dayType) });
+      // 전송 = 이 그룹이 지금부터 울리는 그룹이 된다 (P 탭이면 특별 모드도 켜짐) — 그대로 알려준다
+      toast.success(
+        activeDay === "P"
+          ? `GROUP ${activeGroupId} 특별(P) 시보를 적용했습니다 — 지금부터 매일 P 시보가 울립니다.`
+          : `GROUP ${activeGroupId} 평일 시보를 적용했습니다 — 지금부터 이 그룹이 울립니다.`,
+      );
     } catch (err: unknown) {
       console.error(err);
       toast.error("시보 전송 중 오류가 발생했습니다.");
@@ -217,11 +242,11 @@ export const useTimeGroups = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ groupId: activeGroupId, active }),
         });
-        if (!res.ok) throw new Error(await res.text().catch(() => ""));
+        if (!res.ok) throw new Error(await errorText(res));
         toast.success(
           active
-            ? `특별(P) 모드 ON — GROUP ${activeGroupId} P 시보가 매일 동작합니다.`
-            : `특별(P) 모드 OFF — GROUP ${activeGroupId} 평일 시보로 복귀합니다.`,
+            ? `특별(P) 모드 ON — GROUP ${activeGroupId}이(가) 지금 울리는 그룹이 되고, P 시보가 매일 동작합니다.`
+            : `특별(P) 모드 OFF — GROUP ${activeGroupId}이(가) 지금 울리는 그룹이 되고, 평일 시보로 복귀합니다.`,
         );
       } catch (err) {
         // 롤백
