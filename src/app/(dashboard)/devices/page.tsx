@@ -6,6 +6,9 @@ import { getApiBase } from "@/lib/apiBase";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/common/Toast";
 import { useMe, Role } from "@/hooks/useMe";
+import PageTabs from "@/components/common/PageTabs";
+import AccessLogPanel from "@/components/devices/AccessLogPanel";
+import { useTabParam } from "@/hooks/useTabParam";
 
 interface Device {
   ip: string;
@@ -21,12 +24,19 @@ const ROLES: { value: Role; label: string }[] = [
   { value: "viewer", label: "보기 전용" },
 ];
 
+const DEVICE_TAB_KEYS = ["devices", "logs"] as const;
+const DEVICE_TABS = [
+  { key: "devices" as const, label: "기기" },
+  { key: "logs" as const, label: "접근 로그" },
+];
+
 export default function DevicesPage() {
   const { me } = useMe();
   const [devices, setDevices] = useState<Device[]>([]);
   const [denied, setDenied] = useState(false);
   const [newIp, setNewIp] = useState("");
   const [newRole, setNewRole] = useState<Role>("operator");
+  const [tab, setTab] = useTabParam(DEVICE_TAB_KEYS, "devices");
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -85,8 +95,15 @@ export default function DevicesPage() {
 
   return (
     <div className="flex h-full flex-col gap-6">
-      <SectionHeader>기기 관리</SectionHeader>
+      <div className="flex items-center justify-between">
+        <SectionHeader className="mb-0">기기 관리</SectionHeader>
+        <PageTabs tabs={DEVICE_TABS} value={tab} onChange={setTab} />
+      </div>
 
+      {tab === "logs" ? (
+        <AccessLogPanel />
+      ) : (
+      <>
       {/* 내 기기 안내 */}
       {me && (
         <div className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
@@ -198,6 +215,8 @@ export default function DevicesPage() {
           </tbody>
         </table>
       </div>
+      </>
+      )}
     </div>
   );
 }

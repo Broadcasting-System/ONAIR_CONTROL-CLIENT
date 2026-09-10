@@ -15,11 +15,21 @@ import { Speaker, Bell, AudioFile } from "@/types/time";
 import { SPEAKER_ITEMS } from "@/constants/speakers";
 import { DAYS } from "@/constants/days";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import PageTabs from "@/components/common/PageTabs";
+import SchedulerPanel from "@/components/time/SchedulerPanel";
+import { useMe } from "@/hooks/useMe";
+import { useTabParam } from "@/hooks/useTabParam";
 
 const SPEAKERS: Speaker[] = SPEAKER_ITEMS.map((s) => ({
   id: s.label,
   name: s.label,
 }));
+
+const TIME_TAB_KEYS = ["table", "schedule"] as const;
+const TIME_TABS = [
+  { key: "table" as const, label: "시간표" },
+  { key: "schedule" as const, label: "예약 현황" },
+];
 
 export default function TimePage() {
   const {
@@ -42,6 +52,8 @@ export default function TimePage() {
   } = useTimeGroups();
 
   const { files, fetchFiles } = useFiles();
+  const { isAdmin } = useMe();
+  const [tab, setTab] = useTabParam(TIME_TAB_KEYS, "table");
   const [editingBellId, setEditingBellId] = useState<string | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   // 현재 실제 송출 중(라이브)인 그룹 — 시보 전송 1개만 활성이므로 운영자에게 표시
@@ -110,6 +122,14 @@ export default function TimePage() {
 
   return (
     <div className="flex flex-col h-full w-full pb-10">
+      {isAdmin && (
+        <PageTabs tabs={TIME_TABS} value={tab} onChange={setTab} className="mx-auto mt-2" />
+      )}
+      {isAdmin && tab === "schedule" ? (
+        <div className="mt-6 flex min-h-0 flex-1 flex-col">
+          <SchedulerPanel />
+        </div>
+      ) : (
       <div className="flex flex-1 flex-col mt-4 h-full overflow-hidden relative">
         <div className="flex-shrink-0 mb-2 w-full flex justify-center">
           <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5">
@@ -203,6 +223,7 @@ export default function TimePage() {
           </div>
         </div>
       </div>
+      )}
 
       <ConfirmModal
         isOpen={isResetModalOpen}
