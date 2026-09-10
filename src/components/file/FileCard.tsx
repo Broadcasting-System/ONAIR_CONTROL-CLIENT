@@ -27,6 +27,8 @@ export default function FileCard({
           fileName.match(/\.(mp4|webm)$/i) ? (
             <video src={thumbnailUrl} className="w-full h-full object-cover" muted playsInline />
           ) : (
+            // 썸네일은 학교마다 주소가 다른 ONAIR 서버에서 온다 — next/image 원격 도메인 설정을 둘 수 없어 <img> 사용
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={thumbnailUrl} alt={fileName} className="w-full h-full object-cover" />
           )
         ) : fileName.match(/\.(pdf)$/i) ? (

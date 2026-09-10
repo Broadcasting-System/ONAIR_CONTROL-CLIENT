@@ -132,6 +132,7 @@ export default function FilesPage() {
           fileUrl={previewFile.fileUrl}
           type={previewFile.type}
           fileName={previewFile.fileName}
+          urls={previewFile.urls}
         />
       )}
 
