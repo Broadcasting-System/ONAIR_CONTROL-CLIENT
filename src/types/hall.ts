@@ -112,6 +112,35 @@ export interface LearnedParam {
   at: number;
 }
 
+/** 브릿지 노트북의 장치 (bridge.json 의 devices) */
+export interface BridgeDevice {
+  kind: string; // "serial" | "midi"
+  port?: string;
+  baud?: number;
+  out?: string;
+  in?: string | null;
+  open: boolean;
+}
+
+/** GET /halls/bridges — 브릿지 노트북 하나 */
+export interface BridgeInfo {
+  url: string;
+  users: { hall: string; hallName: string; kind: "mixer" | "matrix"; driver: string; device: string }[];
+  online: boolean;
+  detail: string;
+  latencyMs: number | null;
+  name: string | null;
+  version: string | null;
+  devices: Record<string, BridgeDevice>;
+  /** 설정은 쓰는데 브릿지에 없는 장치 */
+  missing: string[];
+}
+
+export interface BridgesStatus {
+  tokenConfigured: boolean;
+  bridges: BridgeInfo[];
+}
+
 /** 드라이버 종류 → 화면 표시 이름 */
 export const DRIVER_LABEL: Record<string, string> = {
   mock: "모의 장비",
