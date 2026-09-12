@@ -97,30 +97,43 @@ export default function MixerPage() {
       <Panel
         title="채널"
         hint="페이더를 끌거나 방향키로 조절 · MUTE로 즉시 차단"
-        className="flex min-h-[420px] flex-1 flex-col"
+        className="flex min-h-[640px] flex-1 flex-col"
       >
         <div className="relative flex min-h-0 flex-1">
-          <div className={cn("flex min-h-0 flex-1 gap-2.5 overflow-x-auto", !channelMode && "opacity-30")}>
-            {(state?.channels ?? []).map((ch) => (
-              <ChannelStrip
-                key={ch.id}
-                channel={ch}
-                subLabel={`CH ${ch.id.padStart(2, "0")}`}
-                disabled={!operable || !channelMode}
-                onLevel={(v) => setLevel(ch.id, v)}
-                onMute={(m) => setMute(ch.id, m)}
-              />
-            ))}
-            <div className="flex-1" />
+          {/* 콘솔 본체 — 채널 스트립이 한 장의 매트한 판 위에 칸막이로 나뉜다 */}
+          <div
+            className={cn(
+              "flex min-h-0 flex-1 overflow-x-auto rounded-2xl border border-black/80 px-2 py-4",
+              "bg-[linear-gradient(180deg,#1d1d20_0%,#141416_55%,#101012_100%)]",
+              "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_-1px_0_rgba(0,0,0,0.6),0_20px_40px_-16px_rgba(0,0,0,0.8)]",
+              !channelMode && "opacity-30",
+            )}
+          >
+            <div className="flex divide-x divide-white/[0.05]">
+              {(state?.channels ?? []).map((ch) => (
+                <ChannelStrip
+                  key={ch.id}
+                  channel={ch}
+                  subLabel={`CH ${ch.id.padStart(2, "0")}`}
+                  disabled={!operable || !channelMode}
+                  onLevel={(v) => setLevel(ch.id, v)}
+                  onMute={(m) => setMute(ch.id, m)}
+                />
+              ))}
+            </div>
+            <div className="min-w-4 flex-1" />
             {state?.master && (
-              <ChannelStrip
-                master
-                channel={state.master}
-                subLabel={state.master.label ?? "MASTER"}
-                disabled={!operable || !channelMode}
-                onLevel={(v) => setLevel(state.master!.id, v)}
-                onMute={(m) => setMute(state.master!.id, m)}
-              />
+              // 마스터 구획 — 굵은 칸막이로 채널과 분리
+              <div className="flex border-l-2 border-black/80 pl-2 shadow-[-1px_0_0_rgba(255,255,255,0.05)]">
+                <ChannelStrip
+                  master
+                  channel={state.master}
+                  subLabel={state.master.label ?? "MASTER"}
+                  disabled={!operable || !channelMode}
+                  onLevel={(v) => setLevel(state.master!.id, v)}
+                  onMute={(m) => setMute(state.master!.id, m)}
+                />
+              </div>
             )}
           </div>
           {!channelMode && state && (

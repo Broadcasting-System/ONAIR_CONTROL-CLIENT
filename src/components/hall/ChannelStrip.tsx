@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { MixerChannel } from "@/types/hall";
 
@@ -8,19 +8,29 @@ import type { MixerChannel } from "@/types/hall";
 const SEND_INTERVAL_MS = 150;
 const KEY_STEP = 5;
 
-// LED 미터 칸 수. 62% 위는 노랑, 84% 위는 빨강 (콘솔 미터와 같은 구간)
-const SEGMENTS = 24;
-const segColor = (at: number) => (at > 84 ? "#FF3B3B" : at > 62 ? "#FFD600" : "#00FF57");
-
-// 페이더 옆 눈금 — Si 계열 페이더의 대략적인 dB 위치 (0dB ≈ 75%)
-const SCALE: { at: number; label: string; zero?: boolean }[] = [
-  { at: 100, label: "+10" },
+// 페이더 눈금 — Si 계열 페이더의 대략적인 dB 위치 (0dB ≈ 75%). 숫자는 큰 눈금에만.
+const MAJOR: { at: number; label: string; zero?: boolean }[] = [
+  { at: 100, label: "10" },
   { at: 75, label: "0", zero: true },
-  { at: 58, label: "-10" },
-  { at: 42, label: "-20" },
-  { at: 24, label: "-40" },
-  { at: 0, label: "-∞" },
+  { at: 58, label: "10" },
+  { at: 42, label: "20" },
+  { at: 24, label: "40" },
+  { at: 0, label: "∞" },
 ];
+const MINOR = Array.from({ length: 21 }, (_, i) => i * 5);
+
+// 미터 색 — 아래는 청록·초록, 0dB 부근 노랑, 맨 위 빨강
+const METER_GRADIENT = "linear-gradient(to top,#14d9a4 0%,#00FF57 52%,#FFD600 76%,#FF3B3B 92%)";
+// 가는 가로 줄로 칸을 나눠 하드웨어 LED 미터처럼
+const METER_STRIPES = "repeating-linear-gradient(to top,transparent 0 3px,rgba(0,0,0,0.62) 3px 4px)";
+
+/** 채널 종류별 손잡이 불빛 — 실제 콘솔처럼 색으로 구분 (마이크·재생·기타·마스터) */
+function capColor(name: string, master?: boolean): string {
+  if (master) return "#FF3B3B";
+  if (/무선|유선|마이크|mic|강단|보컬|사회/i.test(name)) return "#5AC8FA";
+  if (/pc|음원|반주|bgm|노트북|영상|유튜브|재생/i.test(name)) return "#00FF57";
+  return "#FFB23F";
+}
 
 interface ChannelStripProps {
   channel: MixerChannel;
@@ -40,26 +50,25 @@ function usePeak(value: number) {
   return peak;
 }
 
-function LedMeter({ value, peak }: { value: number; peak: number }) {
-  const peakSeg = Math.ceil((peak / 100) * SEGMENTS) - 1;
+/** 캡슐 안에 줄무늬로 차오르는 미터 (꺼진 칸도 희미하게 보인다) */
+function TubeMeter({ value, peak }: { value: number; peak: number }) {
+  const layer: CSSProperties = { backgroundImage: `${METER_STRIPES},${METER_GRADIENT}` };
   return (
-    <div className="flex h-full w-[7px] flex-col-reverse gap-[2px]" aria-hidden>
-      {Array.from({ length: SEGMENTS }, (_, i) => {
-        const at = ((i + 1) / SEGMENTS) * 100;
-        const lit = value >= at - 100 / SEGMENTS / 2 || (i === peakSeg && peak > 4);
-        const color = segColor(at);
-        return (
-          <span
-            key={i}
-            className="min-h-0 flex-1 rounded-[1.5px] transition-opacity duration-100"
-            style={{
-              background: color,
-              opacity: lit ? 1 : 0.09,
-              boxShadow: lit ? `0 0 6px ${color}80` : undefined,
-            }}
-          />
-        );
-      })}
+    <div
+      className="relative w-[9px] overflow-hidden rounded-full bg-black shadow-[inset_0_1px_3px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.06)]"
+      aria-hidden
+    >
+      <div className="absolute inset-0 opacity-[0.13]" style={layer} />
+      <div
+        className="absolute inset-0 transition-[clip-path] duration-150 [filter:drop-shadow(0_0_4px_rgba(0,255,120,0.55))]"
+        style={{ ...layer, clipPath: `inset(${100 - value}% 0 0 0)` }}
+      />
+      {peak > 3 && (
+        <div
+          className="absolute inset-x-0 h-[2px] bg-white/90 shadow-[0_0_6px_rgba(255,255,255,0.9)] transition-[bottom] duration-300"
+          style={{ bottom: `${peak}%` }}
+        />
+      )}
     </div>
   );
 }
@@ -75,8 +84,8 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
   const muted = !!channel.mute;
   const meter = muted ? 0 : channel.meter ?? 0;
   const peak = usePeak(meter);
-  // 소리가 실제로 나가는 채널 — 위쪽 불빛
   const live = known && !muted && meter > 6;
+  const color = capColor(channel.name, master);
 
   const levelAt = (clientY: number) => {
     const rect = trackRef.current?.getBoundingClientRect();
@@ -93,48 +102,67 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
   };
 
   return (
-    <div
-      className={cn(
-        "relative flex shrink-0 flex-col items-center gap-3 overflow-hidden rounded-[18px] border px-3 pb-3 pt-4 transition-colors",
-        "bg-[linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(0,0,0,0.32)_34%,rgba(0,0,0,0.5)_100%)]",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
-        muted ? "border-[#FF3B3B]/30" : master ? "border-white/15" : "border-white/[0.07]",
-        master ? "w-[172px]" : "w-[112px]",
-      )}
-    >
-      {/* 위쪽 불빛: 신호가 나가는 중 */}
-      <span
-        className={cn(
-          "absolute inset-x-5 top-0 h-[2px] rounded-b-full bg-[#00FF57] shadow-[0_0_12px_#00FF57] transition-opacity duration-300",
-          live ? "opacity-100" : "opacity-0",
-        )}
-      />
-
-      <div className="flex w-full flex-col items-center gap-1">
-        <span className="max-w-full truncate font-mbc text-[16px] leading-tight text-white" title={channel.name}>
-          {channel.name}
-        </span>
+    <div className={cn("flex shrink-0 flex-col items-center gap-3 px-3 py-1", master ? "w-[150px]" : "w-[108px]")}>
+      {/* MUTE — 위에 LED */}
+      <div className="flex w-full flex-col items-center gap-1.5">
         <span
           className={cn(
-            "rounded-[4px] px-1.5 py-px font-orbitron text-[9.5px] tracking-[0.18em]",
-            master ? "bg-[#FF3B3B]/15 text-[#ff8a8a]" : "bg-white/[0.05] text-white/35",
+            "h-[5px] w-[5px] rounded-full transition-all",
+            muted ? "bg-[#FF3B3B] shadow-[0_0_8px_2px_rgba(255,59,59,0.8)]" : "bg-[#3a1414]",
+          )}
+          aria-hidden
+        />
+        <button
+          type="button"
+          disabled={disabled}
+          aria-pressed={muted}
+          onClick={() => onMute(!muted)}
+          className={cn(
+            "h-8 w-full rounded-md border border-black font-orbitron text-[10.5px] font-semibold tracking-[0.2em] transition-all",
+            "shadow-[inset_0_1px_0_rgba(255,255,255,0.13),0_3px_6px_rgba(0,0,0,0.55)] active:translate-y-px disabled:cursor-not-allowed",
+            muted
+              ? "bg-[linear-gradient(180deg,#5a1c1c,#3a1010)] text-[#ff8a8a]"
+              : "bg-[linear-gradient(180deg,#3b3b3f,#242427)] text-white/55 enabled:hover:text-white/85",
           )}
         >
-          {subLabel}
+          MUTE
+        </button>
+      </div>
+
+      {/* 값 LCD */}
+      <div
+        className={cn(
+          "flex h-10 w-full flex-col items-center justify-center rounded-md border border-black bg-[#07100d] shadow-[inset_0_2px_6px_rgba(0,0,0,0.95),0_1px_0_rgba(255,255,255,0.06)]",
+          muted && "bg-[#140707]",
+        )}
+        title={known ? undefined : "콘솔에서 아직 값을 받지 못했습니다"}
+      >
+        <span
+          className={cn(
+            "font-orbitron text-[17px] leading-none tabular-nums",
+            muted
+              ? "text-[#ff6b6b] [text-shadow:0_0_8px_rgba(255,59,59,0.7)]"
+              : known
+                ? "text-[#7CF5D4] [text-shadow:0_0_8px_rgba(124,245,212,0.6)]"
+                : "text-[#7CF5D4]/25",
+          )}
+        >
+          {known ? String(level).padStart(2, "0") : "--"}
         </span>
       </div>
 
       {/* 미터 · 눈금 · 페이더 */}
-      <div className={cn("flex min-h-0 w-full flex-1 items-stretch justify-center gap-1.5 py-1", muted && "opacity-60")}>
-        <LedMeter value={meter} peak={peak} />
+      <div className={cn("flex min-h-0 w-full flex-1 items-stretch justify-center gap-1.5 py-2", muted && "opacity-55")}>
+        <TubeMeter value={meter} peak={peak} />
 
-        <div className="relative w-[22px]" aria-hidden>
-          {SCALE.map((s) => (
+        {/* dB 숫자 */}
+        <div className="relative w-4" aria-hidden>
+          {MAJOR.map((s) => (
             <span
               key={s.at}
               className={cn(
                 "absolute right-0 translate-y-1/2 font-orbitron text-[8px] leading-none tabular-nums",
-                s.zero ? "text-white/75" : "text-white/25",
+                s.zero ? "text-white/80" : "text-white/25",
               )}
               style={{ bottom: `${s.at}%` }}
             >
@@ -153,7 +181,7 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
           aria-valuenow={level}
           aria-disabled={disabled}
           className={cn(
-            "relative w-11 touch-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-red-400/50",
+            "relative w-12 touch-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-red-400/50",
             disabled ? "cursor-not-allowed" : "cursor-ns-resize",
           )}
           onPointerDown={(e) => {
@@ -183,80 +211,66 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
             send(Math.max(0, Math.min(100, level + delta)), true);
           }}
         >
-          {/* 눈금선 */}
-          {SCALE.map((s) => (
-            <span
-              key={s.at}
-              className={cn(
-                "absolute left-1 right-1 h-px translate-y-1/2",
-                s.zero ? "bg-white/35" : "bg-white/[0.07]",
-              )}
-              style={{ bottom: `${s.at}%` }}
-            />
-          ))}
+          {/* 홈 양쪽 눈금 대시 — 큰 눈금은 길게 */}
+          {MINOR.map((at) => {
+            const major = MAJOR.find((m) => m.at === at || Math.abs(m.at - at) < 1.5);
+            return (
+              <span key={at} className="absolute inset-x-0 flex translate-y-1/2 justify-between" style={{ bottom: `${at}%` }} aria-hidden>
+                <span className={cn("h-px", major?.zero ? "w-3 bg-white/60" : major ? "w-2.5 bg-white/30" : "w-1.5 bg-white/12")} />
+                <span className={cn("h-px", major?.zero ? "w-3 bg-white/60" : major ? "w-2.5 bg-white/30" : "w-1.5 bg-white/12")} />
+              </span>
+            );
+          })}
           {/* 페이더 홈 */}
-          <div className="absolute inset-y-0 left-1/2 w-[6px] -translate-x-1/2 rounded-full bg-black shadow-[inset_0_1px_3px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.07)]" />
-          {/* 올라온 만큼 */}
+          <div className="absolute inset-y-[-4px] left-1/2 w-[5px] -translate-x-1/2 rounded-full bg-black shadow-[inset_0_1px_3px_rgba(0,0,0,1),0_0_0_1px_rgba(255,255,255,0.08),0_1px_0_rgba(255,255,255,0.06)]" />
+
+          {/* 손잡이 — 매트 금속 몸통 + 가운데 빛나는 색 띠 */}
           <div
             className={cn(
-              "absolute bottom-0 left-1/2 w-[2px] -translate-x-1/2 rounded-full",
-              master ? "bg-gradient-to-t from-transparent to-[#ff6a6a]" : "bg-gradient-to-t from-transparent to-white/60",
-              (!known || muted) && "opacity-30",
-            )}
-            style={{ height: `${level}%` }}
-          />
-          {/* 손잡이 */}
-          <div
-            className={cn(
-              "absolute left-1/2 h-[28px] -translate-x-1/2 translate-y-1/2 rounded-[6px] border border-white/50",
-              "bg-[linear-gradient(180deg,#fafafa_0%,#c9c9c9_42%,#8c8c8c_50%,#bdbdbd_58%,#e6e6e6_100%)]",
-              "shadow-[0_6px_14px_rgba(0,0,0,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] transition-shadow",
-              master ? "w-[46px]" : "w-[40px]",
-              dragLevel !== null && "shadow-[0_0_0_2px_rgba(255,90,90,0.55),0_8px_20px_rgba(0,0,0,0.8)]",
-              (muted || !known) && "opacity-45",
+              "absolute left-1/2 -translate-x-1/2 translate-y-1/2 rounded-[5px] border border-black/70",
+              "bg-[linear-gradient(180deg,#f4f4f5_0%,#dcdcde_30%,#b4b4b8_48%,#8d8d92_52%,#c2c2c6_70%,#9a9a9f_100%)]",
+              "shadow-[0_10px_16px_-4px_rgba(0,0,0,0.85),0_2px_3px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(0,0,0,0.25)]",
+              master ? "h-[36px] w-[54px]" : "h-[32px] w-[44px]",
+              dragLevel !== null && "scale-[1.04]",
+              (muted || !known) && "saturate-0",
             )}
             style={{ bottom: `${level}%` }}
           >
-            <span className="absolute inset-x-[6px] top-[6px] h-px bg-black/20" />
+            <span className="absolute inset-x-[5px] top-[5px] h-px bg-black/15" />
             <span
-              className={cn(
-                "absolute inset-x-[5px] top-1/2 h-[2px] -translate-y-1/2 rounded-full",
-                master ? "bg-[#d83a3a]" : "bg-[#262626]",
-              )}
+              className="absolute inset-x-[4px] top-1/2 h-[4px] -translate-y-1/2 rounded-full transition-shadow"
+              style={{
+                background: color,
+                boxShadow: live || dragLevel !== null ? `0 0 10px 1px ${color}, 0 0 2px ${color}` : `0 0 3px ${color}66`,
+                opacity: muted || !known ? 0.35 : 1,
+              }}
             />
-            <span className="absolute inset-x-[6px] bottom-[6px] h-px bg-black/20" />
+            <span className="absolute inset-x-[5px] bottom-[5px] h-px bg-black/20" />
           </div>
         </div>
 
-        {master && <LedMeter value={Math.max(0, meter - 5)} peak={Math.max(0, peak - 5)} />}
+        {master && <TubeMeter value={Math.max(0, meter - 5)} peak={Math.max(0, peak - 5)} />}
       </div>
 
-      {/* 값 표시 */}
+      {/* 이름표 */}
       <div
         className={cn(
-          "flex h-7 w-full items-baseline justify-center gap-0.5 rounded-md border border-black/80 bg-black/70 pt-[5px] font-orbitron tabular-nums shadow-[inset_0_1px_4px_rgba(0,0,0,0.9)]",
-          muted ? "text-[#ff6b6b]" : known ? "text-[#9EFAE1]" : "text-white/30",
+          "flex w-full flex-col items-center gap-0.5 rounded-md border px-1.5 py-1.5",
+          master ? "border-[#FF3B3B]/35 bg-[#FF3B3B]/[0.08]" : "border-white/[0.06] bg-black/45",
         )}
-        title={known ? undefined : "콘솔에서 아직 값을 받지 못했습니다"}
       >
-        <span className="text-[14px] leading-none">{known ? level : "—"}</span>
-        {known && <span className="text-[9px] leading-none opacity-60">%</span>}
+        <span className="max-w-full truncate font-mbc text-[15px] leading-tight text-white" title={channel.name}>
+          {channel.name}
+        </span>
+        <span className="flex items-center gap-1 font-orbitron text-[9px] tracking-[0.16em] text-white/35">
+          <span
+            className="h-[5px] w-[5px] rounded-full transition-shadow"
+            style={{ background: color, boxShadow: live ? `0 0 6px ${color}` : "none", opacity: live ? 1 : 0.35 }}
+            aria-hidden
+          />
+          {subLabel}
+        </span>
       </div>
-
-      <button
-        type="button"
-        disabled={disabled}
-        aria-pressed={muted}
-        onClick={() => onMute(!muted)}
-        className={cn(
-          "h-9 w-full rounded-lg border font-orbitron text-[11px] font-semibold tracking-[0.2em] transition-all disabled:cursor-not-allowed",
-          muted
-            ? "border-[#FF3B3B] bg-[#FF3B3B] text-white shadow-[0_0_18px_-2px_#FF3B3B,inset_0_1px_0_rgba(255,255,255,0.35)]"
-            : "border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.02] text-white/45 enabled:hover:border-white/25 enabled:hover:text-white/85",
-        )}
-      >
-        MUTE
-      </button>
     </div>
   );
 }
