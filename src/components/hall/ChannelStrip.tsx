@@ -1,12 +1,26 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { MixerChannel } from "@/types/hall";
 
 // 드래그 중 장비로 보내는 최소 간격(ms) — 너무 잦으면 장비·네트워크가 밀린다.
 const SEND_INTERVAL_MS = 150;
 const KEY_STEP = 5;
+
+// LED 미터 칸 수. 62% 위는 노랑, 84% 위는 빨강 (콘솔 미터와 같은 구간)
+const SEGMENTS = 24;
+const segColor = (at: number) => (at > 84 ? "#FF3B3B" : at > 62 ? "#FFD600" : "#00FF57");
+
+// 페이더 옆 눈금 — Si 계열 페이더의 대략적인 dB 위치 (0dB ≈ 75%)
+const SCALE: { at: number; label: string; zero?: boolean }[] = [
+  { at: 100, label: "+10" },
+  { at: 75, label: "0", zero: true },
+  { at: 58, label: "-10" },
+  { at: 42, label: "-20" },
+  { at: 24, label: "-40" },
+  { at: 0, label: "-∞" },
+];
 
 interface ChannelStripProps {
   channel: MixerChannel;
@@ -17,18 +31,35 @@ interface ChannelStripProps {
   onMute: (muted: boolean) => void;
 }
 
-function Meter({ value, wide }: { value: number; wide?: boolean }) {
+/** 피크 홀드 — 올라가면 바로 따라가고, 내려갈 때는 천천히 떨어진다 */
+function usePeak(value: number) {
+  const [peak, setPeak] = useState(value);
+  useEffect(() => {
+    setPeak((p) => (value >= p ? value : Math.max(value, p - 7)));
+  }, [value]);
+  return peak;
+}
+
+function LedMeter({ value, peak }: { value: number; peak: number }) {
+  const peakSeg = Math.ceil((peak / 100) * SEGMENTS) - 1;
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-full bg-[linear-gradient(to_top,#00FF57_0_62%,#FFD600_62%_84%,#FF3B3B_84%)]",
-        wide ? "w-2.5" : "w-2",
-      )}
-    >
-      <div
-        className="absolute inset-x-0 top-0 bg-[#141414] transition-[height] duration-150"
-        style={{ height: `${100 - value}%` }}
-      />
+    <div className="flex h-full w-[7px] flex-col-reverse gap-[2px]" aria-hidden>
+      {Array.from({ length: SEGMENTS }, (_, i) => {
+        const at = ((i + 1) / SEGMENTS) * 100;
+        const lit = value >= at - 100 / SEGMENTS / 2 || (i === peakSeg && peak > 4);
+        const color = segColor(at);
+        return (
+          <span
+            key={i}
+            className="min-h-0 flex-1 rounded-[1.5px] transition-opacity duration-100"
+            style={{
+              background: color,
+              opacity: lit ? 1 : 0.09,
+              boxShadow: lit ? `0 0 6px ${color}80` : undefined,
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -42,7 +73,10 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
   // HiQnet 등은 콘솔이 값을 알려주기 전까지 레벨을 모른다 — 0%로 오해하지 않게 따로 표시
   const known = dragLevel !== null || channel.level != null;
   const muted = !!channel.mute;
-  const meter = channel.meter ?? 0;
+  const meter = muted ? 0 : channel.meter ?? 0;
+  const peak = usePeak(meter);
+  // 소리가 실제로 나가는 채널 — 위쪽 불빛
+  const live = known && !muted && meter > 6;
 
   const levelAt = (clientY: number) => {
     const rect = trackRef.current?.getBoundingClientRect();
@@ -61,15 +95,54 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
   return (
     <div
       className={cn(
-        "flex flex-col items-center gap-2.5 rounded-2xl bg-black/40 px-2.5 py-3",
-        master ? "w-[150px] border border-white/10" : "w-[104px]",
+        "relative flex shrink-0 flex-col items-center gap-3 overflow-hidden rounded-[18px] border px-3 pb-3 pt-4 transition-colors",
+        "bg-[linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(0,0,0,0.32)_34%,rgba(0,0,0,0.5)_100%)]",
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
+        muted ? "border-[#FF3B3B]/30" : master ? "border-white/15" : "border-white/[0.07]",
+        master ? "w-[172px]" : "w-[112px]",
       )}
     >
-      <span className="whitespace-nowrap font-mbc text-[15px] text-white">{channel.name}</span>
-      <span className="-mt-2 font-orbitron text-[10px] tracking-[0.14em] text-white/30">{subLabel}</span>
+      {/* 위쪽 불빛: 신호가 나가는 중 */}
+      <span
+        className={cn(
+          "absolute inset-x-5 top-0 h-[2px] rounded-b-full bg-[#00FF57] shadow-[0_0_12px_#00FF57] transition-opacity duration-300",
+          live ? "opacity-100" : "opacity-0",
+        )}
+      />
 
-      <div className="flex min-h-0 w-full flex-1 items-stretch justify-center gap-3">
-        <Meter value={meter} wide={master} />
+      <div className="flex w-full flex-col items-center gap-1">
+        <span className="max-w-full truncate font-mbc text-[16px] leading-tight text-white" title={channel.name}>
+          {channel.name}
+        </span>
+        <span
+          className={cn(
+            "rounded-[4px] px-1.5 py-px font-orbitron text-[9.5px] tracking-[0.18em]",
+            master ? "bg-[#FF3B3B]/15 text-[#ff8a8a]" : "bg-white/[0.05] text-white/35",
+          )}
+        >
+          {subLabel}
+        </span>
+      </div>
+
+      {/* 미터 · 눈금 · 페이더 */}
+      <div className={cn("flex min-h-0 w-full flex-1 items-stretch justify-center gap-1.5 py-1", muted && "opacity-60")}>
+        <LedMeter value={meter} peak={peak} />
+
+        <div className="relative w-[22px]" aria-hidden>
+          {SCALE.map((s) => (
+            <span
+              key={s.at}
+              className={cn(
+                "absolute right-0 translate-y-1/2 font-orbitron text-[8px] leading-none tabular-nums",
+                s.zero ? "text-white/75" : "text-white/25",
+              )}
+              style={{ bottom: `${s.at}%` }}
+            >
+              {s.label}
+            </span>
+          ))}
+        </div>
+
         <div
           ref={trackRef}
           role="slider"
@@ -80,7 +153,7 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
           aria-valuenow={level}
           aria-disabled={disabled}
           className={cn(
-            "relative w-10 touch-none outline-none",
+            "relative w-11 touch-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-red-400/50",
             disabled ? "cursor-not-allowed" : "cursor-ns-resize",
           )}
           onPointerDown={(e) => {
@@ -110,37 +183,76 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
             send(Math.max(0, Math.min(100, level + delta)), true);
           }}
         >
-          <div className="absolute inset-y-0 left-1/2 w-1.5 -translate-x-1/2 rounded-full bg-white/10" />
-          {/* 0dB 근처 기준선 */}
-          <div className="absolute bottom-[75%] left-1/2 h-px w-5 -translate-x-1/2 bg-white/30" />
+          {/* 눈금선 */}
+          {SCALE.map((s) => (
+            <span
+              key={s.at}
+              className={cn(
+                "absolute left-1 right-1 h-px translate-y-1/2",
+                s.zero ? "bg-white/35" : "bg-white/[0.07]",
+              )}
+              style={{ bottom: `${s.at}%` }}
+            />
+          ))}
+          {/* 페이더 홈 */}
+          <div className="absolute inset-y-0 left-1/2 w-[6px] -translate-x-1/2 rounded-full bg-black shadow-[inset_0_1px_3px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.07)]" />
+          {/* 올라온 만큼 */}
           <div
             className={cn(
-              "absolute left-1/2 h-[18px] w-[34px] -translate-x-1/2 translate-y-1/2 rounded-[5px] bg-gradient-to-b from-[#e7e7e7] to-[#9a9a9a] shadow-[0_2px_6px_rgba(0,0,0,0.6)]",
-              (muted || !known) && "opacity-40",
+              "absolute bottom-0 left-1/2 w-[2px] -translate-x-1/2 rounded-full",
+              master ? "bg-gradient-to-t from-transparent to-[#ff6a6a]" : "bg-gradient-to-t from-transparent to-white/60",
+              (!known || muted) && "opacity-30",
+            )}
+            style={{ height: `${level}%` }}
+          />
+          {/* 손잡이 */}
+          <div
+            className={cn(
+              "absolute left-1/2 h-[28px] -translate-x-1/2 translate-y-1/2 rounded-[6px] border border-white/50",
+              "bg-[linear-gradient(180deg,#fafafa_0%,#c9c9c9_42%,#8c8c8c_50%,#bdbdbd_58%,#e6e6e6_100%)]",
+              "shadow-[0_6px_14px_rgba(0,0,0,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] transition-shadow",
+              master ? "w-[46px]" : "w-[40px]",
+              dragLevel !== null && "shadow-[0_0_0_2px_rgba(255,90,90,0.55),0_8px_20px_rgba(0,0,0,0.8)]",
+              (muted || !known) && "opacity-45",
             )}
             style={{ bottom: `${level}%` }}
           >
-            <div className="absolute inset-x-1 top-2 h-0.5 bg-[#333]" />
+            <span className="absolute inset-x-[6px] top-[6px] h-px bg-black/20" />
+            <span
+              className={cn(
+                "absolute inset-x-[5px] top-1/2 h-[2px] -translate-y-1/2 rounded-full",
+                master ? "bg-[#d83a3a]" : "bg-[#262626]",
+              )}
+            />
+            <span className="absolute inset-x-[6px] bottom-[6px] h-px bg-black/20" />
           </div>
         </div>
-        {master && <Meter value={Math.max(0, meter - 6)} wide />}
+
+        {master && <LedMeter value={Math.max(0, meter - 5)} peak={Math.max(0, peak - 5)} />}
       </div>
 
-      <span
-        className={cn("font-orbitron text-sm text-white", (muted || !known) && "opacity-40")}
+      {/* 값 표시 */}
+      <div
+        className={cn(
+          "flex h-7 w-full items-baseline justify-center gap-0.5 rounded-md border border-black/80 bg-black/70 pt-[5px] font-orbitron tabular-nums shadow-[inset_0_1px_4px_rgba(0,0,0,0.9)]",
+          muted ? "text-[#ff6b6b]" : known ? "text-[#9EFAE1]" : "text-white/30",
+        )}
         title={known ? undefined : "콘솔에서 아직 값을 받지 못했습니다"}
       >
-        {known ? `${level}%` : "—"}
-      </span>
+        <span className="text-[14px] leading-none">{known ? level : "—"}</span>
+        {known && <span className="text-[9px] leading-none opacity-60">%</span>}
+      </div>
+
       <button
         type="button"
         disabled={disabled}
+        aria-pressed={muted}
         onClick={() => onMute(!muted)}
         className={cn(
-          "h-8 w-full rounded-lg border font-orbitron text-[11px] tracking-[0.14em] transition-all disabled:cursor-not-allowed",
+          "h-9 w-full rounded-lg border font-orbitron text-[11px] font-semibold tracking-[0.2em] transition-all disabled:cursor-not-allowed",
           muted
-            ? "border-[#FF3B3B] bg-[#FF3B3B] text-white shadow-[0_0_12px_-2px_#FF3B3B]"
-            : "border-white/10 bg-white/[0.04] text-white/50 hover:text-white/80",
+            ? "border-[#FF3B3B] bg-[#FF3B3B] text-white shadow-[0_0_18px_-2px_#FF3B3B,inset_0_1px_0_rgba(255,255,255,0.35)]"
+            : "border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.02] text-white/45 enabled:hover:border-white/25 enabled:hover:text-white/85",
         )}
       >
         MUTE
