@@ -6,43 +6,37 @@ import SectionHeader from "@/components/common/SectionHeader";
 import StatusCard from "@/components/StatusCard";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { cn } from "@/lib/utils";
-import { toast } from "@/components/common/Toast";
 import {
   Caster,
-  CASTERS,
   casterSubtitle,
   defaultCasterBio,
+  groupCastersByCohort,
 } from "@/constants/casters";
-
-function groupByCohort(list: Caster[]) {
-  const map = new Map<number, Caster[]>();
-  for (const c of list) {
-    if (!map.has(c.cohort)) map.set(c.cohort, []);
-    map.get(c.cohort)!.push(c);
-  }
-  return Array.from(map.entries())
-    .sort((a, b) => a[0] - b[0])
-    .map(([cohort, members]) => ({ cohort, members }));
-}
+import { useCasters } from "@/hooks/useCasters";
 
 function CasterInner() {
   const params = useSearchParams();
   const editMode = params.get("edit") === "1";
 
-  const [list, setList] = useState<Caster[]>(() => CASTERS.map((c) => ({ ...c })));
-  const [selectedId, setSelectedId] = useState<string>(
-    () => (CASTERS.find((c) => c.name === "류승찬") ?? CASTERS[0])?.id ?? "",
-  );
-  const [saving, setSaving] = useState(false);
+  const { casters, error, save, isSaving } = useCasters();
+  // 편집 중인 사본. null이면 서버 명단을 그대로 보여 준다 (저장·되돌리기 후 다시 null)
+  const [draft, setDraft] = useState<Caster[] | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const groups = groupByCohort(list);
-  const selected = list.find((c) => c.id === selectedId) ?? list[0];
+  const list = draft ?? casters ?? [];
+  const groups = groupCastersByCohort(list);
+  const selected =
+    list.find((c) => c.id === selectedId) ??
+    (selectedId === null ? list.find((c) => c.name === "류승찬") : undefined) ??
+    list[0];
+
+  // 서버 명단을 복사해 편집을 시작 (명단을 아직 못 불러왔으면 빈 목록을 저장하지 않도록 casters 필수)
+  const edit = (fn: (prev: Caster[]) => Caster[]) =>
+    setDraft((prev) => fn(prev ?? (casters ?? []).map((c) => ({ ...c }))));
 
   const update = (patch: Partial<Caster>) =>
-    setList((prev) =>
-      prev.map((c) => (c.id === selected?.id ? { ...c, ...patch } : c)),
-    );
+    edit((prev) => prev.map((c) => (c.id === selected?.id ? { ...c, ...patch } : c)));
 
   const addMember = () => {
     const id =
@@ -55,37 +49,24 @@ function CasterInner() {
       cohort: selected?.cohort ?? 6,
       role: "member",
     };
-    setList((prev) => [...prev, nc]);
+    edit((prev) => [...prev, nc]);
     setSelectedId(id);
   };
 
   const removeSelected = () => {
     const remaining = list.filter((c) => c.id !== selected?.id);
-    setList(remaining);
+    setDraft(remaining);
     setSelectedId(remaining[0]?.id ?? "");
     setConfirmDelete(false);
   };
 
   const revert = () => {
-    setList(CASTERS.map((c) => ({ ...c })));
+    setDraft(null);
   };
 
-  const save = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/casters", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ casters: list }),
-      });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok || !j.ok) throw new Error(j.error || `저장 실패 (${res.status})`);
-      // 소스(casters.ts)가 갱신됨 → HMR 반영 확실히 하려 새로고침 (?edit=1 유지)
-      window.location.reload();
-    } catch (e) {
-      toast.error("저장 실패: " + (e instanceof Error ? e.message : String(e)));
-      setSaving(false);
-    }
+  const onSave = () => {
+    // 성공하면 훅이 서버가 정리한 명단으로 캐시를 갈아 끼우므로 사본은 버린다
+    save(list, { onSuccess: () => setDraft(null) });
   };
 
   return (
@@ -128,7 +109,7 @@ function CasterInner() {
           </div>
         ))}
 
-        {editMode && (
+        {editMode && casters && (
           <button
             onClick={addMember}
             className="mt-1 rounded-xl border border-dashed border-white/20 py-3 font-mbc text-sm text-white/60 transition-colors hover:border-white/40 hover:text-white"
@@ -141,7 +122,13 @@ function CasterInner() {
       {/* 우측: 선택된 부원 상세 / 편집 */}
       <div className="flex flex-1 flex-col overflow-y-auto pr-4 pt-1">
         {!selected ? (
-          <p className="font-pretendard text-white/40">부원이 없습니다.</p>
+          <p className="font-pretendard text-white/40">
+            {casters
+              ? "부원이 없습니다."
+              : error
+                ? `방송부 명단을 불러오지 못했습니다: ${error.message}`
+                : "불러오는 중…"}
+          </p>
         ) : !editMode ? (
           // ---------- 읽기 모드 ----------
           <>
@@ -220,22 +207,22 @@ function CasterInner() {
 
             <div className="mt-2 flex items-center gap-3">
               <button
-                onClick={save}
-                disabled={saving}
+                onClick={onSave}
+                disabled={isSaving}
                 className="rounded-xl border border-green-500/40 bg-green-500/15 px-6 py-3 font-mbc text-green-200 transition-colors hover:bg-green-500/25 disabled:opacity-50"
               >
-                {saving ? "저장 중…" : "저장 (소스 반영)"}
+                {isSaving ? "저장 중…" : "저장"}
               </button>
               <button
                 onClick={revert}
-                disabled={saving}
+                disabled={isSaving}
                 className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-mbc text-white/60 hover:bg-white/10 disabled:opacity-50"
               >
                 되돌리기
               </button>
               <button
                 onClick={() => setConfirmDelete(true)}
-                disabled={saving}
+                disabled={isSaving}
                 className="ml-auto rounded-xl border border-red-400/40 bg-red-400/10 px-5 py-3 font-mbc text-red-300 hover:bg-red-400/20 disabled:opacity-50"
               >
                 이 부원 삭제
@@ -250,7 +237,7 @@ function CasterInner() {
         onClose={() => setConfirmDelete(false)}
         onConfirm={removeSelected}
         title="부원 삭제"
-        message={`${selected?.name ?? ""} 부원을 명단에서 삭제합니다. (저장해야 소스에 반영됩니다)`}
+        message={`${selected?.name ?? ""} 부원을 명단에서 삭제합니다. (저장해야 반영됩니다)`}
         confirmText="삭제"
         isDestructive
       />
