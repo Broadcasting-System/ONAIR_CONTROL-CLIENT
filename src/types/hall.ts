@@ -27,10 +27,15 @@ export interface MixerScene {
   name: string;
 }
 
+/** HiQnet 파라미터 표기: "VD.o1.o2.o3/파라미터" 또는 켜짐 스위치처럼 반대인 경우 {addr, pid, invert} */
+export type HiqnetParam = string | { addr: string; pid: number; invert?: boolean };
+
 export interface MixerChannel {
   id: string;
   name: string;
   label?: string;
+  /** 설정 파일에 적힌 콘솔 주소 (HiQnet 연결일 때) */
+  hiqnet?: { fader?: HiqnetParam; mute?: HiqnetParam };
   level: number | null;
   mute: boolean | null;
   meter: number | null;
@@ -81,11 +86,30 @@ export interface HallsStatus {
   total: number;
 }
 
+/** 화면에서 보내는 채널 주소 — 빈 문자열이면 지운다 */
+export interface HiqnetAddress {
+  fader: string;
+  mute: string;
+  muteInvert: boolean;
+}
+
 /** PUT /halls/{hall}/mixer/config — 씬 목록·채널 구성 편집 (관리자) */
 export interface MixerConfig {
   scenes: MixerScene[];
-  channels: { id: string; name: string }[];
+  channels: { id: string; name: string; hiqnet?: HiqnetAddress }[];
   masterName?: string;
+  masterHiqnet?: HiqnetAddress;
+}
+
+/** GET /halls/{hall}/mixer/learn — 콘솔에서 사람이 움직인 파라미터 */
+export interface LearnedParam {
+  param: string;
+  kind: "fader" | "mute";
+  min: number;
+  max: number;
+  last: number;
+  changes: number;
+  at: number;
 }
 
 /** 드라이버 종류 → 화면 표시 이름 */

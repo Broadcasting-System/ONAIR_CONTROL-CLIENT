@@ -1,5 +1,5 @@
 import { del, post, put, request, seg } from "@/lib/http";
-import type { HallSummary, HallsStatus, MixerConfig, MixerState, VideoMatrixState } from "@/types/hall";
+import type { HallSummary, HallsStatus, LearnedParam, MixerConfig, MixerState, VideoMatrixState } from "@/types/hall";
 
 export const hallApi = {
   list: () => request<{ halls: HallSummary[] }>("/halls"),
@@ -28,4 +28,10 @@ export const hallApi = {
     put<{ success: boolean }>(`/halls/${seg(hall)}/mixer/config`, config),
   updateMatrixConfig: (hall: string, inputs: string[], outputs: string[]) =>
     put<{ success: boolean }>(`/halls/${seg(hall)}/matrix/config`, { inputs, outputs }),
+
+  // 믹서 주소 찾기 — 콘솔에서 움직인 파라미터를 기록
+  learnStart: (hall: string) => post<{ watching: number }>(`/halls/${seg(hall)}/mixer/learn/start`),
+  learnResults: (hall: string) =>
+    request<{ active: boolean; moved: LearnedParam[] }>(`/halls/${seg(hall)}/mixer/learn`),
+  learnStop: (hall: string) => post<{ success: boolean }>(`/halls/${seg(hall)}/mixer/learn/stop`),
 };
