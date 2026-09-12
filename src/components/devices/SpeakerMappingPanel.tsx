@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { RadioTower } from "lucide-react";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import LearnWizard from "@/components/devices/LearnWizard";
 import { toast } from "@/components/common/Toast";
 import { SPEAKER_MATRIX_KEY } from "@/hooks/useSpeakerMatrix";
 import { speakerApi, type SpeakerMatrix } from "@/lib/speakerApi";
@@ -318,6 +320,7 @@ function ConnectionCard() {
   const { data } = useQuery({ queryKey: CONN_KEY, queryFn: speakerApi.connection, refetchInterval: 10_000 });
   const [form, setForm] = useState<{ driver: string; host: string; port: string } | null>(null);
   const [testResult, setTestResult] = useState<string>("");
+  const [learning, setLearning] = useState(false);
 
   useEffect(() => {
     if (data && form === null) setForm({ driver: data.driver, host: data.host, port: String(data.port) });
@@ -387,9 +390,21 @@ function ConnectionCard() {
         저장
       </PanelButton>
       {testResult && <span className="self-center font-pretendard text-sm text-white/55">{testResult}</span>}
-      <span className="ml-auto self-center font-pretendard text-xs text-white/30">
-        {data.source === "saved" ? "화면에서 저장한 값 사용 중" : "서버 .env 값 사용 중"}
-      </span>
+      <div className="ml-auto flex items-center gap-3 self-center">
+        <button
+          type="button"
+          onClick={() => setLearning(true)}
+          className="flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3.5 py-2 font-mbc text-sm text-red-100 transition-colors hover:bg-red-500/20"
+          title="처음 보는 스피커 선택기를 캡처해서 자동으로 연결합니다"
+        >
+          <RadioTower size={15} />
+          새 장비 배우기
+        </button>
+        <span className="font-pretendard text-xs text-white/30">
+          {data.source === "saved" ? "화면에서 저장한 값 사용 중" : "서버 .env 값 사용 중"}
+        </span>
+      </div>
+      {learning && <LearnWizard onClose={() => setLearning(false)} />}
     </div>
   );
 }
