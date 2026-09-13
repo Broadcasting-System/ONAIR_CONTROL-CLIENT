@@ -86,11 +86,13 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
   const peak = usePeak(meter);
   const live = known && !muted && meter > 6;
   const color = capColor(channel.name, master);
+  // 관리자가 정한 최대 레벨 — 이 위로는 끌어도, 방향키로도 못 올린다 (서버도 막는다)
+  const limit = Math.max(0, Math.min(100, channel.max ?? 100));
 
   const levelAt = (clientY: number) => {
     const rect = trackRef.current?.getBoundingClientRect();
     if (!rect) return level;
-    return Math.round(Math.max(0, Math.min(1, (rect.bottom - clientY) / rect.height)) * 100);
+    return Math.min(limit, Math.round(Math.max(0, Math.min(1, (rect.bottom - clientY) / rect.height)) * 100));
   };
 
   const send = (value: number, force = false) => {
@@ -149,6 +151,11 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
         >
           {known ? String(level).padStart(2, "0") : "--"}
         </span>
+        {limit < 100 && (
+          <span className="mt-0.5 font-orbitron text-[7px] leading-none tracking-[0.18em] text-[#FF3B3B]/75">
+            MAX {limit}
+          </span>
+        )}
       </div>
 
       {/* 미터 · 눈금 · 페이더 */}
@@ -177,7 +184,7 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
           tabIndex={disabled ? -1 : 0}
           aria-label={`${channel.name} 레벨`}
           aria-valuemin={0}
-          aria-valuemax={100}
+          aria-valuemax={limit}
           aria-valuenow={level}
           aria-disabled={disabled}
           className={cn(
@@ -208,7 +215,7 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
             const delta = e.key === "ArrowUp" ? KEY_STEP : e.key === "ArrowDown" ? -KEY_STEP : 0;
             if (!delta) return;
             e.preventDefault();
-            send(Math.max(0, Math.min(100, level + delta)), true);
+            send(Math.max(0, Math.min(limit, level + delta)), true);
           }}
         >
           {/* 홈 양쪽 눈금 대시 — 큰 눈금은 길게 */}
@@ -223,6 +230,22 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
           })}
           {/* 페이더 홈 */}
           <div className="absolute inset-y-[-4px] left-1/2 w-[5px] -translate-x-1/2 rounded-full bg-black shadow-[inset_0_1px_3px_rgba(0,0,0,1),0_0_0_1px_rgba(255,255,255,0.08),0_1px_0_rgba(255,255,255,0.06)]" />
+
+          {/* 최대 레벨 — 빗금 친 윗부분은 못 올라가는 구역 */}
+          {limit < 100 && (
+            <>
+              <div
+                className="pointer-events-none absolute inset-x-[-3px] top-[-4px] rounded-t-lg bg-[repeating-linear-gradient(135deg,rgba(255,59,59,0.16)_0_4px,transparent_4px_8px)]"
+                style={{ bottom: `${limit}%` }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-x-[-5px] h-[2px] translate-y-1/2 rounded-full bg-[#FF3B3B] shadow-[0_0_6px_#FF3B3B]"
+                style={{ bottom: `${limit}%` }}
+                aria-hidden
+              />
+            </>
+          )}
 
           {/* 손잡이 — 매트 금속 몸통 + 가운데 빛나는 색 띠 */}
           <div

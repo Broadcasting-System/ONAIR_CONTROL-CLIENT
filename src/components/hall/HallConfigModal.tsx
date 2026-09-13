@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, Crosshair, Plus, Settings2, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Crosshair, Eye, EyeOff, Plus, Settings2, Trash2, X } from "lucide-react";
 import Button from "@/components/common/Button";
 import { toast } from "@/components/common/Toast";
 import { hallApi } from "@/lib/hallApi";
 import { cn } from "@/lib/utils";
-import type { HiqnetAddress, HiqnetParam, MixerChannel, MixerState, VideoMatrixState } from "@/types/hall";
+import type { HiqnetAddress, HiqnetParam, MixerChannel, MixerMode, MixerState, VideoMatrixState } from "@/types/hall";
 
 /** 강당·홀 장비의 이름·씬 목록·채널 구성(과 HiQnet 주소)을 화면에서 고치는 관리자용 창.
  *  드라이버·장비 IP 같은 연결 방식은 현장 설정이라 서버의 config/halls.json 에서 다룬다. */
@@ -167,6 +167,33 @@ function RowTools({
   );
 }
 
+/** 최대 레벨 칸 — 이 값 위로는 화면에서 못 올린다. 100 = 제한 없음, 75 ≈ 0dB */
+function MaxField({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
+  const bad = !Number.isInteger(value) || value < 0 || value > 100;
+  return (
+    <div
+      className="flex shrink-0 items-center gap-1"
+      title="이 값 위로는 화면에서 올릴 수 없습니다 · 100 = 제한 없음 · 75 ≈ 0dB"
+    >
+      <span className="font-orbitron text-[9.5px] tracking-[0.14em] text-white/35">MAX</span>
+      <input
+        type="number"
+        min={0}
+        max={100}
+        value={Number.isFinite(value) ? value : ""}
+        aria-label={label}
+        onChange={(e) => onChange(Math.floor(Number(e.target.value)))}
+        className={cn(
+          inputCls,
+          "w-[68px] px-2 font-orbitron",
+          bad ? badBorder : okBorder,
+          !bad && value < 100 && "text-[#ff8a8a]",
+        )}
+      />
+    </div>
+  );
+}
+
 function AddButton({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button
@@ -245,7 +272,12 @@ function AddressFields({
   );
 }
 
-type ChannelRow = { id: string; name: string } & HiqnetAddress;
+type ChannelRow = { id: string; name: string; max: number; hidden: boolean } & HiqnetAddress;
+
+const MODES: { value: MixerMode; label: string; hint: string }[] = [
+  { value: "channels", label: "채널 조작", hint: "페이더·뮤트·씬 전환을 화면에서 합니다" },
+  { value: "scenes", label: "씬 전환만", hint: "화면엔 씬 버튼만 · 채널은 콘솔에서 직접 만집니다" },
+];
 
 export function MixerConfigModal({
   hallId,
@@ -259,11 +291,21 @@ export function MixerConfigModal({
   const qc = useQueryClient();
   // HiQnet 연결이면 채널마다 콘솔 주소를 붙일 수 있다
   const hiqnet = state.driver.includes("hiqnet");
-  const [scenes, setScenes] = useState(() => state.scenes.map((s) => ({ pc: s.pc, name: s.name })));
+  const [mode, setMode] = useState<MixerMode>(state.mode ?? "channels");
+  const [scenes, setScenes] = useState(() =>
+    state.scenes.map((s) => ({ pc: s.pc, name: s.name, confirm: !!s.confirm })),
+  );
   const [channels, setChannels] = useState<ChannelRow[]>(() =>
-    state.channels.map((c) => ({ id: c.id, name: c.name, ...toAddress(c.hiqnet) })),
+    state.channels.map((c) => ({
+      id: c.id,
+      name: c.name,
+      max: c.max ?? 100,
+      hidden: !!c.hidden,
+      ...toAddress(c.hiqnet),
+    })),
   );
   const [masterName, setMasterName] = useState(state.master?.name ?? "");
+  const [masterMax, setMasterMax] = useState(state.master?.max ?? 100);
   const [masterAddr, setMasterAddr] = useState<HiqnetAddress>(() => toAddress(state.master?.hiqnet));
   const [saving, setSaving] = useState(false);
 
@@ -334,10 +376,11 @@ export function MixerConfigModal({
   const badPc = (pc: number) => !Number.isInteger(pc) || pc < 1 || pc > 128 || dupPcs.has(String(pc));
   const badId = (id: string) => !/^[0-9A-Za-z_-]{1,8}$/.test(id.trim()) || dupIds.has(id.trim());
   const addrOk = (a: HiqnetAddress) => !badAddr(a.fader) && !badAddr(a.mute);
+  const badMax = (v: number) => !Number.isInteger(v) || v < 0 || v > 100;
   const valid =
     scenes.every((s) => !badPc(s.pc) && s.name.trim()) &&
-    channels.every((c) => !badId(c.id) && c.name.trim() && (!hiqnet || addrOk(c))) &&
-    (!state.master || (masterName.trim() && (!hiqnet || addrOk(masterAddr))));
+    channels.every((c) => !badId(c.id) && c.name.trim() && !badMax(c.max) && (!hiqnet || addrOk(c))) &&
+    (!state.master || (masterName.trim() && !badMax(masterMax) && (!hiqnet || addrOk(masterAddr))));
 
   const cleanAddr = (a: HiqnetAddress): HiqnetAddress => ({
     fader: a.fader.trim(),
@@ -349,13 +392,17 @@ export function MixerConfigModal({
     setSaving(true);
     try {
       await hallApi.updateMixerConfig(hallId, {
-        scenes: scenes.map((s) => ({ pc: s.pc, name: s.name.trim() })),
+        mode,
+        scenes: scenes.map((s) => ({ pc: s.pc, name: s.name.trim(), confirm: s.confirm })),
         channels: channels.map((c) => ({
           id: c.id.trim(),
           name: c.name.trim(),
+          max: c.max,
+          hidden: c.hidden,
           ...(hiqnet ? { hiqnet: cleanAddr(c) } : {}),
         })),
         masterName: state.master ? masterName.trim() : undefined,
+        masterMax: state.master ? masterMax : undefined,
         masterHiqnet: state.master && hiqnet ? cleanAddr(masterAddr) : undefined,
       });
       await Promise.all([
@@ -381,7 +428,7 @@ export function MixerConfigModal({
   return (
     <Shell
       title={`${state.hall.name} 믹서 설정`}
-      hint="씬 번호는 콘솔에 저장된 Cue(Program) 번호입니다 · 채널 번호를 바꾸면 그 채널의 장비 주소 연결이 풀립니다"
+      hint="씬 번호는 콘솔에 저장된 Cue(Program) 번호입니다 · 채널 번호를 바꾸면 그 채널의 장비 주소 연결이 풀립니다 · MAX 100 = 제한 없음 (75 ≈ 0dB)"
       onClose={onClose}
       onSave={save}
       saving={saving}
@@ -389,13 +436,37 @@ export function MixerConfigModal({
       wide={hiqnet}
     >
       <div className="flex flex-col gap-8">
+        <Section title="방송부 조작 범위">
+          <div className="grid grid-cols-2 gap-2.5">
+            {MODES.map((m) => (
+              <button
+                key={m.value}
+                type="button"
+                onClick={() => setMode(m.value)}
+                aria-pressed={mode === m.value}
+                className={cn(
+                  "flex flex-col items-start gap-1 rounded-xl border px-4 py-3 text-left transition-colors",
+                  mode === m.value
+                    ? "border-[#FF3B3B]/50 bg-[#FF3B3B]/10"
+                    : "border-white/10 bg-black/25 hover:bg-white/[0.06]",
+                )}
+              >
+                <span className={cn("font-mbc text-sm", mode === m.value ? "text-white" : "text-white/70")}>
+                  {m.label}
+                </span>
+                <span className="font-pretendard text-xs text-white/40">{m.hint}</span>
+              </button>
+            ))}
+          </div>
+        </Section>
+
         <Section
           title={`씬 (${scenes.length})`}
           action={
             <AddButton
               label="씬 추가"
               disabled={scenes.length >= 128}
-              onClick={() => setScenes((l) => [...l, { pc: nextPc(), name: "" }])}
+              onClick={() => setScenes((l) => [...l, { pc: nextPc(), name: "", confirm: false }])}
             />
           }
         >
@@ -422,6 +493,20 @@ export function MixerConfigModal({
                 onChange={(e) => setScenes((l) => l.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
                 className={cn(inputCls, "flex-1", s.name.trim() ? okBorder : badBorder)}
               />
+              <label
+                className="flex shrink-0 cursor-pointer items-center gap-1.5 px-1 font-pretendard text-xs text-white/50"
+                title="누르면 '정말 바꿀까요?'를 한 번 더 묻습니다"
+              >
+                <input
+                  type="checkbox"
+                  checked={s.confirm}
+                  onChange={(e) =>
+                    setScenes((l) => l.map((x, j) => (j === i ? { ...x, confirm: e.target.checked } : x)))
+                  }
+                  className="h-3.5 w-3.5 accent-red-400"
+                />
+                확인
+              </label>
               <RowTools
                 index={i}
                 count={scenes.length}
@@ -442,7 +527,12 @@ export function MixerConfigModal({
             <AddButton
               label="채널 추가"
               disabled={channels.length >= 64}
-              onClick={() => setChannels((l) => [...l, { id: nextId(), name: "", fader: "", mute: "", muteInvert: false }])}
+              onClick={() =>
+                setChannels((l) => [
+                  ...l,
+                  { id: nextId(), name: "", max: 100, hidden: false, fader: "", mute: "", muteInvert: false },
+                ])
+              }
             />
           }
         >
@@ -485,8 +575,26 @@ export function MixerConfigModal({
                   placeholder="채널 이름 (예: 무선 1)"
                   aria-label={`채널 ${i + 1} 이름`}
                   onChange={(e) => setChannels((l) => l.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
-                  className={cn(inputCls, "flex-1", c.name.trim() ? okBorder : badBorder)}
+                  className={cn(inputCls, "flex-1", c.name.trim() ? okBorder : badBorder, c.hidden && "opacity-40")}
                 />
+                <MaxField
+                  value={c.max}
+                  label={`${c.name || c.id} 최대 레벨`}
+                  onChange={(v) => setChannels((l) => l.map((x, j) => (j === i ? { ...x, max: v } : x)))}
+                />
+                <button
+                  type="button"
+                  aria-pressed={c.hidden}
+                  aria-label={`${c.name || c.id} ${c.hidden ? "보이기" : "숨기기"}`}
+                  title={c.hidden ? "숨김 — 조작 화면에 안 보입니다 (주소는 남아 있음)" : "조작 화면에서 숨기기"}
+                  onClick={() => setChannels((l) => l.map((x, j) => (j === i ? { ...x, hidden: !x.hidden } : x)))}
+                  className={cn(
+                    "flex h-10 w-9 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-white/10",
+                    c.hidden ? "text-[#FFB23F]" : "text-white/45 hover:text-white",
+                  )}
+                >
+                  {c.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
                 <RowTools
                   index={i}
                   count={channels.length}
@@ -515,13 +623,16 @@ export function MixerConfigModal({
 
         {state.master && (
           <Section title="마스터">
-            <input
-              value={masterName}
-              maxLength={12}
-              aria-label="마스터 이름"
-              onChange={(e) => setMasterName(e.target.value)}
-              className={cn(inputCls, masterName.trim() ? okBorder : badBorder)}
-            />
+            <div className="flex items-center gap-2">
+              <input
+                value={masterName}
+                maxLength={12}
+                aria-label="마스터 이름"
+                onChange={(e) => setMasterName(e.target.value)}
+                className={cn(inputCls, "flex-1", masterName.trim() ? okBorder : badBorder)}
+              />
+              <MaxField value={masterMax} label="마스터 최대 레벨" onChange={setMasterMax} />
+            </div>
             {hiqnet && (
               <AddressFields
                 value={masterAddr}

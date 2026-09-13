@@ -25,7 +25,12 @@ interface DeviceStatus {
 export interface MixerScene {
   pc: number;
   name: string;
+  /** 누를 때 한 번 더 묻기 (비상방송·행사 등) */
+  confirm?: boolean;
 }
+
+/** 방송부 조작 범위 — channels=페이더·뮤트·씬, scenes=씬 전환만 */
+export type MixerMode = "channels" | "scenes";
 
 /** HiQnet 파라미터 표기: "VD.o1.o2.o3/파라미터" 또는 켜짐 스위치처럼 반대인 경우 {addr, pid, invert} */
 export type HiqnetParam = string | { addr: string; pid: number; invert?: boolean };
@@ -36,12 +41,17 @@ export interface MixerChannel {
   label?: string;
   /** 설정 파일에 적힌 콘솔 주소 (HiQnet 연결일 때) */
   hiqnet?: { fader?: HiqnetParam; mute?: HiqnetParam };
+  /** 화면에서 올릴 수 있는 최대 레벨(0~100). 없으면 제한 없음 */
+  max?: number;
+  /** 설정엔 남기되 조작 화면에서 뺀 채널 */
+  hidden?: boolean;
   level: number | null;
   mute: boolean | null;
   meter: number | null;
 }
 
 export interface MixerState extends DeviceStatus {
+  mode: MixerMode;
   scenes: MixerScene[];
   currentScene: number | null;
   channels: MixerChannel[];
@@ -95,9 +105,11 @@ export interface HiqnetAddress {
 
 /** PUT /halls/{hall}/mixer/config — 씬 목록·채널 구성 편집 (관리자) */
 export interface MixerConfig {
+  mode?: MixerMode;
   scenes: MixerScene[];
-  channels: { id: string; name: string; hiqnet?: HiqnetAddress }[];
+  channels: { id: string; name: string; max?: number; hidden?: boolean; hiqnet?: HiqnetAddress }[];
   masterName?: string;
+  masterMax?: number;
   masterHiqnet?: HiqnetAddress;
 }
 
