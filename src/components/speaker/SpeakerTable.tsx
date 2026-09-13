@@ -20,14 +20,16 @@ export function SpeakerTable({
   canOperate,
   hovered,
   onHover,
-  onJumpFloor,
+  onReveal,
 }: {
   zones: SpeakerZone[];
   onToggle: (id: string) => void;
   canOperate: boolean;
   hovered: string | null;
+  /** 마우스를 올리면 지도 강조 + 그 스피커가 있는 층으로 지도 이동 */
   onHover: (speaker: string | null) => void;
-  onJumpFloor: (floor: string) => void;
+  /** 누른 스피커가 지금 층에 없으면 지도를 그 층으로 넘긴다 (터치 화면용) */
+  onReveal: (speaker: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const [onlyOn, setOnlyOn] = useState(false);
@@ -138,8 +140,7 @@ export function SpeakerTable({
                           onClick={() => {
                             if (dead || !canOperate) return;
                             onToggle(z.id);
-                            const f = cov?.floors[0];
-                            if (f) onJumpFloor(f);
+                            onReveal(z.name);
                           }}
                           onMouseEnter={() => !dead && onHover(z.name)}
                           onMouseLeave={() => onHover(null)}
