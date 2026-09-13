@@ -1,6 +1,7 @@
 import { del, post, put, request, seg } from "@/lib/http";
 import type {
-  BridgesStatus, HallSummary, HallsStatus, LearnedParam, MixerConfig, MixerState, VideoMatrixState,
+  BridgesStatus, ConnectionTestResult, DiscoverResult, HallSummary, HallsStatus, LearnedParam, MidiPorts,
+  MixerConfig, MixerConnection, MixerState, VideoMatrixState,
 } from "@/types/hall";
 
 export const hallApi = {
@@ -26,7 +27,7 @@ export const hallApi = {
   deletePreset: (hall: string, presetId: string) =>
     del<{ success: boolean }>(`/halls/${seg(hall)}/matrix/presets/${seg(presetId)}`),
 
-  // 관리자 설정 편집 — 이름·씬 목록·채널 구성 (장비 연결 방식은 서버 파일에서)
+  // 관리자 설정 편집 — 이름·씬 목록·채널 구성 (믹서 연결 방식은 아래 '현장 세팅')
   updateMixerConfig: (hall: string, config: MixerConfig) =>
     put<{ success: boolean }>(`/halls/${seg(hall)}/mixer/config`, config),
   updateMatrixConfig: (hall: string, inputs: string[], outputs: string[]) =>
@@ -37,4 +38,25 @@ export const hallApi = {
   learnResults: (hall: string) =>
     request<{ active: boolean; moved: LearnedParam[] }>(`/halls/${seg(hall)}/mixer/learn`),
   learnStop: (hall: string) => post<{ success: boolean }>(`/halls/${seg(hall)}/mixer/learn/stop`),
+
+  // 현장 세팅 (관리자) — 연결 방식, 저장 전 시험, 콘솔 찾기, 노트북 MIDI 포트
+  updateMixerConnection: (hall: string, conn: MixerConnection) =>
+    put<{ success: boolean }>(`/halls/${seg(hall)}/mixer/connection`, conn),
+  testMixerConnection: (hall: string, conn: MixerConnection) =>
+    post<ConnectionTestResult>(`/halls/${seg(hall)}/mixer/connection/test`, conn),
+  discoverConsoles: (body: { via: "server" | "bridge"; bridgeUrl?: string; seconds?: number }) =>
+    post<DiscoverResult>("/halls/discover", body),
+  bridgeMidiPorts: (url: string) => post<MidiPorts>("/halls/bridge/midi-ports", { url }),
+  bridgeConfigureMidi: (url: string, device: string, out: string, inPort?: string | null) =>
+    put<{ out: string; in: string | null; open: boolean }>("/halls/bridge/midi", {
+      url,
+      device,
+      out,
+      in: inPort ?? null,
+    }),
+  // 세팅 확인용 — 조작 범위·숨김과 상관없이 움직여 보고, 씬은 방송부 알림 없이 부른다
+  tryChannel: (hall: string, channel: string, body: { level?: number; mute?: boolean }) =>
+    post<{ success: boolean }>(`/halls/${seg(hall)}/mixer/test/channels/${seg(channel)}`, body),
+  tryScene: (hall: string, pc: number) =>
+    post<{ success: boolean; scene: string }>(`/halls/${seg(hall)}/mixer/test/scene`, { pc }),
 };

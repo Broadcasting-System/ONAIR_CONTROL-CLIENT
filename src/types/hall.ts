@@ -52,6 +52,8 @@ export interface MixerChannel {
 
 export interface MixerState extends DeviceStatus {
   mode: MixerMode;
+  /** 콘솔까지 어떻게 붙는지 (설정 화면용) */
+  connection: MixerConnection;
   scenes: MixerScene[];
   currentScene: number | null;
   channels: MixerChannel[];
@@ -94,6 +96,68 @@ export interface HallsStatus {
   }[];
   connected: number;
   total: number;
+}
+
+/** 콘솔 연결 방식 — mock=모의 장비, hiqnet=랜선(채널 조작), midi-bridge=MIDI 씬 전환만 */
+export type ConsoleDriverKind = "mock" | "hiqnet" | "midi-bridge";
+
+/** PUT /halls/{hall}/mixer/connection — 현장 세팅에서 정하는 연결 방식 */
+export interface MixerConnection {
+  driver: ConsoleDriverKind;
+  hiqnet: {
+    host: string;
+    port: number;
+    device: number;
+    /** direct = 서버가 콘솔에 바로, bridge = 강당 노트북이 중계 */
+    via: "direct" | "bridge";
+    relayPort: number;
+  };
+  /** 강당 노트북(브릿지) 주소와 그 노트북의 MIDI 장치 이름 */
+  bridge: { url: string; device: string };
+  /** 씬 전환을 노트북의 USB-MIDI 로 */
+  midi: { enabled: boolean; channel: number; oneBased: boolean };
+  /** 서버 .env 에 BRIDGE_TOKEN 이 있는지 (값은 안 보낸다) */
+  tokenConfigured?: boolean;
+}
+
+/** POST /halls/{hall}/mixer/connection/test — 단계별 결과 */
+export interface ConnectionStep {
+  key: string;
+  label: string;
+  ok: boolean;
+  detail: string;
+  /** 실패했을 때 현장에서 할 일 */
+  hint: string;
+}
+
+export interface ConnectionTestResult {
+  ok: boolean;
+  steps: ConnectionStep[];
+}
+
+/** POST /halls/discover — 네트워크에서 찾은 HiQnet 콘솔 */
+export interface FoundConsole {
+  ip: string;
+  device: number;
+  serial: string;
+  mac?: string | null;
+  mask?: string | null;
+  dhcp?: boolean | null;
+  /** 찾은 컴퓨터(서버 또는 노트북)가 콘솔과 같은 대역인지. 모르면 null */
+  sameSubnet: boolean | null;
+}
+
+export interface DiscoverResult {
+  consoles: FoundConsole[];
+  /** 찾은 컴퓨터의 IPv4 주소들 */
+  interfaces: string[];
+  via: "server" | "bridge";
+}
+
+/** 노트북에 꽂힌 MIDI 포트 이름 */
+export interface MidiPorts {
+  out: string[];
+  in: string[];
 }
 
 /** 화면에서 보내는 채널 주소 — 빈 문자열이면 지운다 */

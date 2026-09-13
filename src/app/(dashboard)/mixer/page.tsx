@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import SectionHeader from "@/components/common/SectionHeader";
 import ChannelStrip from "@/components/hall/ChannelStrip";
-import { ConfigButton, MixerConfigModal } from "@/components/hall/HallConfigModal";
+import { ConfigButton } from "@/components/hall/HallConfigModal";
 import { HallSwitcher, LockToggle, Notice, Panel, StatusChip } from "@/components/hall/HallControls";
 import { useHalls } from "@/hooks/useHalls";
 import { useMe } from "@/hooks/useMe";
@@ -28,7 +29,7 @@ export default function MixerPage() {
 
   const { state, error, recallScene, isRecalling, setLevel, setMute } = useMixer(current?.id ?? null);
   const { canOperate, isAdmin } = useMe();
-  const [editing, setEditing] = useState(false);
+  const router = useRouter();
   // '확인' 표시한 씬은 누르면 한 번 더 묻는다
   const [pendingScene, setPendingScene] = useState<MixerScene | null>(null);
 
@@ -59,7 +60,7 @@ export default function MixerPage() {
         <SectionHeader className="mb-0">오디오 믹서</SectionHeader>
         <HallSwitcher halls={halls} value={current?.id} onChange={setHallId} />
         <div className="ml-auto flex items-center gap-2.5">
-          {isAdmin && state && <ConfigButton onClick={() => setEditing(true)} />}
+          {isAdmin && <ConfigButton label="현장 세팅" onClick={() => router.push("/mixer/setup")} />}
           <StatusChip
             tone={connected ? "good" : "off"}
             label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "-"} ${connected ? "online" : "offline"}`}
@@ -188,9 +189,6 @@ export default function MixerPage() {
         confirmText="씬 전환"
       />
 
-      {editing && state && current && (
-        <MixerConfigModal hallId={current.id} state={state} onClose={() => setEditing(false)} />
-      )}
     </div>
   );
 }
