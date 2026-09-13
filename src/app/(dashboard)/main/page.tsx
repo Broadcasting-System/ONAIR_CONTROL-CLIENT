@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/common/Button";
 import TextInput from "@/components/common/TextInput";
 import StatusCard from "@/components/StatusCard";
 import SectionHeader from "@/components/common/SectionHeader";
 import { SpeakerFloorMap } from "@/components/speaker/SpeakerFloorMap";
-import { cn } from "@/lib/utils";
 
 import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
@@ -29,7 +28,6 @@ export default function MainPage() {
     setEndSound,
   } = useTts();
   const { zones, toggleSpeaker } = useSpeakers();
-  const [speakerView, setSpeakerView] = useState<"grid" | "map">("grid");
   const { statuses } = useNetworkStatus();
   const { summary: hallSummary, isError: hallError } = useHallsStatus();
   const { files, fetchFiles } = useFiles();
@@ -58,7 +56,9 @@ export default function MainPage() {
   const audioFiles = files.audio ?? [];
 
   return (
-    <div className="grid grid-cols-12 gap-16 h-full">
+    <div className="flex w-full min-w-0 flex-col gap-14">
+      {/* 위: TTS·모니터링 | 네트워크 상태 */}
+      <div className="grid w-full grid-cols-12 gap-16">
       <div className="col-span-5 flex flex-col gap-10 h-full">
         <section>
           <SectionHeader>TTS</SectionHeader>
@@ -107,7 +107,7 @@ export default function MainPage() {
       </div>
 
       <div className="col-span-7 flex flex-col gap-14 h-full">
-        <section>
+        <section className="flex-1">
           <SectionHeader>네트워크 상태</SectionHeader>
           <div className="rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl bg-gradient-to-br from-white/5 to-transparent">
             <div className="grid grid-cols-2 gap-8">
@@ -127,66 +127,59 @@ export default function MainPage() {
           </div>
         </section>
 
-        <section className="flex-1 flex flex-col">
-          <div className="flex items-center justify-between">
-            <SectionHeader>스피커 관리</SectionHeader>
-            <div className="mb-4 flex gap-1 rounded-lg bg-white/5 p-1">
-              {(["grid", "map"] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setSpeakerView(v)}
-                  className={cn(
-                    "rounded-md px-4 py-1 font-mbc text-sm transition-colors",
-                    speakerView === v
-                      ? "bg-white/20 text-white"
-                      : "text-white/50 hover:text-white/80",
-                  )}
-                >
-                  {v === "grid" ? "표" : "지도"}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex-1 flex flex-col rounded-[24px] border border-sidebar-border bg-sidebar p-6 backdrop-blur-md shadow-2xl">
-            <div className="min-h-0 flex-1">
-              {speakerView === "grid" ? (
-                <div className="grid grid-cols-5 gap-4">
-                  {zones.map((zone) => (
-                    <StatusCard
-                      key={zone.id}
-                      label={zone.name}
-                      status={zone.status}
-                      variant="speaker"
-                      onClick={canOperate ? () => toggleSpeaker(zone.id) : undefined}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <SpeakerFloorMap zones={zones} onToggle={canOperate ? toggleSpeaker : () => {}} />
-              )}
-            </div>
-            <div className="mt-4 flex gap-12 justify-center">
-              <div className="w-[360px]">
+      </div>
+      </div>
+
+      {/* 아래: 스피커 관리 — 지도와 표를 나란히. 상태는 하나라 어느 쪽에서 켜도 같이 반영된다. */}
+      <section>
+        <SectionHeader>스피커 관리</SectionHeader>
+        <div className="rounded-[24px] border border-sidebar-border bg-sidebar p-6 backdrop-blur-md shadow-2xl">
+          <div className="grid grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
+            {/* 지도 */}
+            <SpeakerFloorMap
+              zones={zones}
+              onToggle={canOperate ? toggleSpeaker : () => {}}
+            />
+
+            {/* 표 */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <span className="font-mbc text-sm text-white/50">전체 스피커</span>
+                <span className="font-orbitron text-[11px] text-white/30">
+                  {zones.filter((z) => z.status === "on").length} / {zones.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 overflow-y-auto pr-1"
+                   style={{ maxHeight: "clamp(360px, calc(100vh - 430px), 680px)" }}>
+                {zones.map((zone) => (
+                  <StatusCard
+                    key={zone.id}
+                    label={zone.name}
+                    status={zone.status}
+                    variant="speaker"
+                    onClick={canOperate ? () => toggleSpeaker(zone.id) : undefined}
+                  />
+                ))}
+              </div>
+              <div className="flex flex-col gap-3">
                 <Button
                   label="전체"
                   onClick={() => toggleSpeaker("all")}
                   disabled={!canOperate}
-                  className="h-[64px]"
+                  className="h-[56px]"
                 />
-              </div>
-              <div className="w-[360px]">
                 <Button
                   label="학년 전체"
                   color="#1e3a8a"
                   onClick={() => toggleSpeaker("grade")}
                   disabled={!canOperate}
-                  className="h-[64px]"
+                  className="h-[56px]"
                 />
               </div>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   );
 }
