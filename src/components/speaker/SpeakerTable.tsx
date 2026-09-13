@@ -101,7 +101,7 @@ export function SpeakerTable({
       {/* 목록 */}
       <div
         className="min-h-0 flex-1 overflow-y-auto pr-1"
-        style={{ maxHeight: "clamp(300px, calc(100vh - 560px), 620px)" }}
+        style={{ maxHeight: "clamp(320px, calc(100vh - 420px), 760px)" }}
       >
         {shown === 0 ? (
           <p className="py-8 text-center font-pretendard text-[13px] text-white/30">

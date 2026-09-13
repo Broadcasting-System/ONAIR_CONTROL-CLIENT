@@ -117,7 +117,7 @@ export function SpeakerFloorMap({
       {/* 지도 (확대/축소 없음) */}
       <div
         className="min-h-0"
-        style={{ height: "clamp(440px, calc(100vh - 430px), 760px)" }}
+        style={{ height: "clamp(480px, calc(100vh - 250px), 900px)" }}
       >
         <div
           className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30"

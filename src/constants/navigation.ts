@@ -17,6 +17,7 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
     title: "LIVE",
     items: [
       { label: "메인 세팅", subLabel: "MAIN", path: "/main" },
+      { label: "스피커 지도", subLabel: "SPEAKER MAP", path: "/speakers", isNew: true },
       { label: "미디어 송출", subLabel: "MEDIA", path: "/media" },
       { label: "현수막", subLabel: "BANNER", path: "/banner" },
     ],
