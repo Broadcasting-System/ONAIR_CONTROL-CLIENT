@@ -1,54 +1,36 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import bssmFloorMap from "@/constants/bssmFloorMap.json";
 import {
-  ROOM_TO_SPEAKER,
-  CELL_TO_SPEAKER,
-  SPEAKER_GROUPS,
-  OFFMAP_SPEAKERS,
-} from "@/constants/speakerMap";
+  FLOORS,
+  FLOOR_KEYS,
+  isOutline,
+  speakersOfCell,
+} from "@/lib/speakerCoverage";
 import { SpeakerZone } from "@/types/speaker";
 import { cn } from "@/lib/utils";
 
-interface FloorElement {
-  id: number;
-  name: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  interactive: boolean | null;
-}
-type Floors = Record<string, { label: string; elements: FloorElement[] }>;
-
-const FLOORS = (bssmFloorMap as unknown as { floors: Floors }).floors;
-const FLOOR_KEYS = Object.keys(FLOORS);
 const PAD = 12; // 지도 상자 안쪽 여백(px)
-
-/** 한 칸을 담당하는 스피커들. [0]=직접 담당, 뒤는 그 스피커를 묶는 그룹(SRC1-1 등).
- *  복도는 방 이름이 전부 "복도"라 이름으로 구분이 안 되므로 "층:id" 를 먼저 본다. */
-function speakersOf(floor: string, el: FloorElement): string[] {
-  const direct = CELL_TO_SPEAKER[`${floor}:${el.id}`] ?? ROOM_TO_SPEAKER[el.name];
-  if (!direct) return [];
-  const groups = Object.entries(SPEAKER_GROUPS)
-    .filter(([, members]) => members.includes(direct))
-    .map(([name]) => name);
-  return [direct, ...groups];
-}
 
 /** 지도 위 스피커 on/off 뷰.
  *  - 칸에 쓰는 글씨는 **지명**(교장실·보건실…), 그 아래 작은 글씨가 담당 **스피커 이름**.
  *  - 스피커 하나가 여러 방을 덮으면 그 방들이 함께 켜진다(그게 최소 단위).
- *  확대/축소 없음 — 지도 상자를 층 모양에 맞춰 채우고 좌표 여백을 제거해 방을 최대한 크게. */
+ *  - highlight 로 넘어온 스피커의 칸은 노란 테두리로 잠깐 강조된다(표에서 마우스 올릴 때). */
 export function SpeakerFloorMap({
   zones,
   onToggle,
+  floor,
+  onFloorChange,
+  highlight,
+  onHover,
 }: {
   zones: SpeakerZone[];
   onToggle: (id: string) => void;
+  floor: string;
+  onFloorChange: (floor: string) => void;
+  highlight?: string | null;
+  onHover?: (speaker: string | null) => void;
 }) {
-  const [floor, setFloor] = useState(FLOOR_KEYS[0]);
   const elements = useMemo(() => FLOORS[floor]?.elements ?? [], [floor]);
   const zoneByName = useMemo(
     () => new Map(zones.map((z) => [z.name, z])),
@@ -88,13 +70,14 @@ export function SpeakerFloorMap({
     return () => ro.disconnect();
   }, [floor]);
 
-  // 층 전체 켜짐 수(층 탭 배지)
+  // 층 탭에 붙일 켜짐 수
   const liveByFloor = useMemo(() => {
     const out: Record<string, number> = {};
     for (const k of FLOOR_KEYS) {
       const live = new Set<string>();
       for (const el of FLOORS[k].elements) {
-        for (const sp of speakersOf(k, el)) {
+        if (isOutline(el)) continue;
+        for (const sp of speakersOfCell(k, el)) {
           if (zoneByName.get(sp)?.status === "on") live.add(sp);
         }
       }
@@ -103,19 +86,14 @@ export function SpeakerFloorMap({
     return out;
   }, [zoneByName]);
 
-  // 지도에 방이 없는 스피커(있으면) — 지금은 전부 매핑돼 비어 있다.
-  const offZones = OFFMAP_SPEAKERS
-    .map((n) => zones.find((z) => z.name === n))
-    .filter((z): z is SpeakerZone => !!z);
-
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex h-full min-w-0 flex-col gap-3">
       {/* 층 탭 */}
       <div className="flex shrink-0 gap-2">
         {FLOOR_KEYS.map((k) => (
           <button
             key={k}
-            onClick={() => setFloor(k)}
+            onClick={() => onFloorChange(k)}
             className={cn(
               "flex items-center gap-2 rounded-lg px-4 py-1 font-mbc text-sm transition-colors",
               floor === k
@@ -139,7 +117,7 @@ export function SpeakerFloorMap({
       {/* 지도 (확대/축소 없음) */}
       <div
         className="min-h-0"
-        style={{ height: "clamp(440px, calc(100vh - 330px), 760px)" }}
+        style={{ height: "clamp(440px, calc(100vh - 430px), 760px)" }}
       >
         <div
           className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30"
@@ -147,40 +125,43 @@ export function SpeakerFloorMap({
         >
           <div ref={stageRef} className="relative h-full w-full">
             {elements.map((el) => {
-              // 이름 없는 칸(건물 외곽선·미사용 구역)은 흐린 테두리만
-              const isOutline = !el.name || el.name === "X";
               const left = ((el.x - cb.minX) / cb.w) * 100;
               const top = ((el.y - cb.minY) / cb.h) * 100;
               const w = (el.width / cb.w) * 100;
               const h = (el.height / cb.h) * 100;
               const pxW = (w / 100) * px.w;
               const pxH = (h / 100) * px.h;
+              const pos = {
+                position: "absolute" as const,
+                left: `${left}%`,
+                top: `${top}%`,
+                width: `${w}%`,
+                height: `${h}%`,
+                animationDelay: `${Math.min(220, Math.round((left + top) * 1.1))}ms`,
+              };
 
-              if (isOutline) {
+              // 이름 없는 칸(건물 외곽선·미사용 구역)은 흐린 테두리만
+              if (isOutline(el)) {
                 return (
                   <div
                     key={`${floor}-${el.id}`}
                     className="floor-piece"
                     style={{
-                      position: "absolute",
-                      left: `${left}%`,
-                      top: `${top}%`,
-                      width: `${w}%`,
-                      height: `${h}%`,
+                      ...pos,
                       borderRadius: 6,
                       border: "1px solid rgba(255,255,255,0.07)",
                       background: "rgba(255,255,255,0.012)",
-                      animationDelay: `${Math.min(220, Math.round((left + top) * 1.1))}ms`,
                     }}
                   />
                 );
               }
 
-              const sps = speakersOf(floor, el);
+              const sps = speakersOfCell(floor, el);
               const spk = sps[0];
               const zone = spk ? zoneByName.get(spk) : undefined;
               const on = sps.some((s) => zoneByName.get(s)?.status === "on");
               const err = zone?.status === "error";
+              const lit = !!highlight && sps.includes(highlight);
 
               // 담당 스피커 이름은 자리가 넉넉할 때만 아래 줄에 작게
               const showSpk = !!spk && spk !== el.name && pxH >= 34 && pxW >= 44;
@@ -203,13 +184,15 @@ export function SpeakerFloorMap({
                   key={`${floor}-${el.id}`}
                   className="floor-piece"
                   onClick={() => { if (zone) onToggle(zone.id); }}
-                  title={spk ? `${el.name}  →  스피커 ${sps.join(" / ")}` : `${el.name}  (스피커 없음)`}
+                  onMouseEnter={() => spk && onHover?.(spk)}
+                  onMouseLeave={() => onHover?.(null)}
+                  title={
+                    spk
+                      ? `${el.name}  →  스피커 ${sps.join(" / ")}`
+                      : `${el.name}  (스피커 없음)`
+                  }
                   style={{
-                    position: "absolute",
-                    left: `${left}%`,
-                    top: `${top}%`,
-                    width: `${w}%`,
-                    height: `${h}%`,
+                    ...pos,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -221,13 +204,15 @@ export function SpeakerFloorMap({
                     borderRadius: 5,
                     border: "1px solid",
                     cursor: spk ? "pointer" : "default",
-                    borderColor: !spk
-                      ? "rgba(255,255,255,0.10)"
-                      : err
-                        ? "#FF3B3B"
-                        : on
-                          ? "#22e06b"
-                          : "rgba(255,255,255,0.42)",
+                    borderColor: lit
+                      ? "#FFD600"
+                      : !spk
+                        ? "rgba(255,255,255,0.10)"
+                        : err
+                          ? "#FF3B3B"
+                          : on
+                            ? "#22e06b"
+                            : "rgba(255,255,255,0.42)",
                     background: !spk
                       ? "rgba(255,255,255,0.025)"
                       : on
@@ -239,10 +224,13 @@ export function SpeakerFloorMap({
                         ? "#d9ffe8"
                         : "#e9e7ee",
                     fontWeight: spk ? 600 : 400,
-                    boxShadow: on ? "0 0 16px -4px #22e06b" : undefined,
-                    transition: "background 0.15s, border-color 0.15s, box-shadow 0.15s",
-                    // 층 전환 시 대각선(좌상단→우하단) 순서로 샤라락 등장
-                    animationDelay: `${Math.min(220, Math.round((left + top) * 1.1))}ms`,
+                    boxShadow: lit
+                      ? "0 0 0 2px #FFD600"
+                      : on
+                        ? "0 0 16px -4px #22e06b"
+                        : undefined,
+                    transition:
+                      "background 0.15s, border-color 0.15s, box-shadow 0.15s",
                   }}
                 >
                   {fontPx > 0 && (
@@ -281,31 +269,6 @@ export function SpeakerFloorMap({
           </div>
         </div>
       </div>
-
-      {/* 기타 — 지도에 방이 없는 스피커 */}
-      {offZones.length > 0 && (
-        <div className="shrink-0">
-          <div className="mb-1 font-mbc text-[11px] text-white/40">
-            기타 (지도 밖)
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {offZones.map((z) => (
-              <button
-                key={z.id}
-                onClick={() => onToggle(z.id)}
-                className={cn(
-                  "rounded-md border px-2.5 py-1 font-pretendard text-xs transition-colors",
-                  z.status === "on"
-                    ? "border-green-500 bg-green-500/25 text-green-100"
-                    : "border-white/15 bg-white/5 text-white/60 hover:bg-white/10",
-                )}
-              >
-                {z.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

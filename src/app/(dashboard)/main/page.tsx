@@ -6,7 +6,7 @@ import Button from "@/components/common/Button";
 import TextInput from "@/components/common/TextInput";
 import StatusCard from "@/components/StatusCard";
 import SectionHeader from "@/components/common/SectionHeader";
-import { SpeakerFloorMap } from "@/components/speaker/SpeakerFloorMap";
+import { SpeakerPanel } from "@/components/speaker/SpeakerPanel";
 
 import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
@@ -134,50 +134,11 @@ export default function MainPage() {
       <section>
         <SectionHeader>스피커 관리</SectionHeader>
         <div className="rounded-[24px] border border-sidebar-border bg-sidebar p-6 backdrop-blur-md shadow-2xl">
-          <div className="grid grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
-            {/* 지도 */}
-            <SpeakerFloorMap
-              zones={zones}
-              onToggle={canOperate ? toggleSpeaker : () => {}}
-            />
-
-            {/* 표 */}
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <span className="font-mbc text-sm text-white/50">전체 스피커</span>
-                <span className="font-orbitron text-[11px] text-white/30">
-                  {zones.filter((z) => z.status === "on").length} / {zones.length}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 overflow-y-auto pr-1"
-                   style={{ maxHeight: "clamp(360px, calc(100vh - 430px), 680px)" }}>
-                {zones.map((zone) => (
-                  <StatusCard
-                    key={zone.id}
-                    label={zone.name}
-                    status={zone.status}
-                    variant="speaker"
-                    onClick={canOperate ? () => toggleSpeaker(zone.id) : undefined}
-                  />
-                ))}
-              </div>
-              <div className="flex flex-col gap-3">
-                <Button
-                  label="전체"
-                  onClick={() => toggleSpeaker("all")}
-                  disabled={!canOperate}
-                  className="h-[56px]"
-                />
-                <Button
-                  label="학년 전체"
-                  color="#1e3a8a"
-                  onClick={() => toggleSpeaker("grade")}
-                  disabled={!canOperate}
-                  className="h-[56px]"
-                />
-              </div>
-            </div>
-          </div>
+          <SpeakerPanel
+            zones={zones}
+            onToggle={toggleSpeaker}
+            canOperate={canOperate}
+          />
         </div>
       </section>
     </div>
