@@ -16,6 +16,7 @@ import type {
   MixerConnection,
   MixerState,
 } from "@/types/hall";
+import NotebookPicker from "./NotebookPicker";
 import { ActionButton, Badge, Card, Field, OptionCard, Switch, TestResults, badBorder, inputCls, okBorder } from "./ui";
 
 const IPV4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
@@ -266,7 +267,10 @@ export default function ConnectionStep({
       )}
 
       {usesBridge && (
-        <Card title="강당 노트북" hint="콘솔 옆 노트북에서 run_bridge.bat 이 켜져 있어야 해요.">
+        <Card
+          title="강당 노트북"
+          hint="콘솔 옆 노트북에 'ONAIR Bridge' 창이 켜져 있어야 해요. 켜진 노트북은 아래에 저절로 나타나요."
+        >
           <Field label="노트북 주소" hint="Tailscale IP 와 포트 — 예: http://100.64.12.3:8765" className="max-w-[420px]">
             <input
               value={conn.bridge.url}
@@ -275,10 +279,13 @@ export default function ConnectionStep({
               className={cn(inputCls, "font-orbitron", urlBad ? badBorder : okBorder)}
             />
           </Field>
+          <NotebookPicker
+            value={conn.bridge.url}
+            onPick={(u) => setBridge({ url: u })}
+            need={viaBridge ? "hiqnet-relay" : "midi-ports"}
+          />
           {!saved.tokenConfigured && (
-            <Notice>
-              서버 .env 에 BRIDGE_TOKEN 이 없어요. 노트북 bridge.json 의 token 과 같은 값을 넣고 서버를 다시 켜세요.
-            </Notice>
+            <Notice>서버가 브릿지 토큰을 만들지 못했어요. 서버 data 폴더에 쓸 수 있는지 확인하고 서버를 다시 켜세요.</Notice>
           )}
         </Card>
       )}

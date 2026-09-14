@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import SectionHeader from "@/components/common/SectionHeader";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { ConfigButton, MatrixLabelsModal } from "@/components/hall/HallConfigModal";
@@ -26,6 +27,7 @@ export default function VideoMatrixPage() {
   const { state, error, route, routeAll, applyPreset, savePreset, isSavingPreset, deletePreset } =
     useVideoMatrix(current?.id ?? null);
   const { canOperate, isAdmin } = useMe();
+  const router = useRouter();
   const [confirmAll, setConfirmAll] = useState<MatrixPort | null>(null);
   const [presetName, setPresetName] = useState("");
   const [editing, setEditing] = useState(false);
@@ -53,6 +55,7 @@ export default function VideoMatrixPage() {
         <HallSwitcher halls={halls} value={current?.id} onChange={setHallId} />
         {state?.model && <span className="font-pretendard text-sm text-white/35">{state.model}</span>}
         <div className="ml-auto flex items-center gap-2.5">
+          {isAdmin && <ConfigButton label="현장 세팅" onClick={() => router.push("/matrix/setup")} />}
           {isAdmin && state && <ConfigButton label="이름 편집" onClick={() => setEditing(true)} />}
           <StatusChip
             tone={connected ? "good" : "off"}

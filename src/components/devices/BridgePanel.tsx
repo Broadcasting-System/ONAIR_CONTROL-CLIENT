@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import NotebookKit from "@/components/devices/NotebookKit";
 import { hallApi } from "@/lib/hallApi";
 import { cn } from "@/lib/utils";
-import type { BridgeDevice, BridgeInfo } from "@/types/hall";
+import type { AnnouncedBridge, BridgeDevice, BridgeInfo } from "@/types/hall";
 
 const USE_LABEL: Record<string, string> = { mixer: "오디오 믹서", matrix: "영상 매트릭스" };
 const DEVICE_LABEL: Record<string, string> = { serial: "RS-232", midi: "MIDI" };
@@ -77,7 +79,7 @@ function BridgeCard({ bridge }: { bridge: BridgeInfo }) {
         <p className="rounded-lg border border-[#FF3B3B]/25 bg-[#FF3B3B]/[0.06] px-3.5 py-2.5 font-pretendard text-sm text-[#ffb3b3]">
           {bridge.detail || "브릿지에 연결할 수 없습니다."}
           <span className="mt-1 block text-xs text-white/40">
-            노트북이 켜져 있는지, Tailscale에 로그인했는지, 브릿지 프로그램(run_bridge.bat)이 실행 중인지 확인하세요.
+            노트북이 켜져 있는지, Tailscale 에 로그인했는지, &lsquo;ONAIR Bridge&rsquo; 창이 떠 있는지 확인하세요.
           </span>
         </p>
       )}
@@ -116,14 +118,14 @@ function BridgeCard({ bridge }: { bridge: BridgeInfo }) {
                 <tr key={`missing-${name}`} className="border-t border-white/5 bg-[#FF3B3B]/[0.05]">
                   <td className="px-4 py-2.5 font-mono text-xs text-[#ff8a8a]">{name}</td>
                   <td colSpan={3} className="px-4 py-2.5 text-right text-xs text-[#ff8a8a]">
-                    ONAIR 설정은 이 장치를 쓰는데 브릿지의 bridge.json 에 없습니다
+                    ONAIR 설정은 이 장치를 쓰는데 노트북에 아직 없어요 — 현장 세팅에서 포트를 고르세요
                   </td>
                 </tr>
               ))}
               {devices.length === 0 && bridge.missing.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-4 py-6 text-center text-xs text-white/30">
-                    브릿지에 등록된 장치가 없습니다.
+                    노트북에 등록된 장치가 없습니다.
                   </td>
                 </tr>
               )}
@@ -135,7 +137,42 @@ function BridgeCard({ bridge }: { bridge: BridgeInfo }) {
   );
 }
 
-/** 기기 관리 › 강당 장비 — 강당·다목적홀 옆 노트북(브릿지) 연결 상태 */
+const setupLink =
+  "rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mbc text-xs text-white/70 transition-colors hover:bg-white/10 hover:text-white";
+
+/** 켜져 있다고 알려 왔지만 아직 어떤 장비도 쓰지 않는 노트북 */
+function AnnouncedCard({ a }: { a: AnnouncedBridge }) {
+  const devices = Object.keys(a.devices).length;
+  return (
+    <section className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-dashed border-white/15 bg-[#0a0a0a] px-5 py-4">
+      <Dot on={a.online} />
+      <div className="min-w-0">
+        <h3 className="truncate font-mbc text-base text-white">{a.name || a.hostname || "노트북"}</h3>
+        <p className="truncate font-mono text-xs text-white/35">
+          {a.url}
+          {a.version ? ` · v${a.version}` : ""}
+          {a.hostname ? ` · ${a.hostname}` : ""}
+        </p>
+      </div>
+      <span className="font-pretendard text-xs text-white/40">
+        {a.online ? `${a.ago}초 전 알림` : `${Math.round(a.ago / 60)}분 전 마지막 알림`} · 장치 {devices}개
+      </span>
+      <div className="ml-auto flex gap-2">
+        <Link href="/mixer/setup" className={setupLink}>
+          믹서 현장 세팅
+        </Link>
+        <Link href="/matrix/setup" className={setupLink}>
+          매트릭스 현장 세팅
+        </Link>
+      </div>
+      <p className="w-full font-pretendard text-xs text-white/35">
+        아직 어떤 장비도 이 노트북을 쓰지 않아요. 현장 세팅의 &lsquo;켜진 노트북&rsquo;에서 이 노트북을 고르세요.
+      </p>
+    </section>
+  );
+}
+
+/** 기기 관리 › 강당 장비 — 노트북 설치 파일, 새로 켜진 노트북, 장비가 쓰는 노트북(브릿지)의 연결 상태 */
 export default function BridgePanel() {
   const { data, error, isLoading } = useQuery({
     queryKey: ["bridges"],
@@ -144,10 +181,13 @@ export default function BridgePanel() {
   });
 
   const bridges = data?.bridges ?? [];
+  const fresh = (data?.announced ?? []).filter((a) => !a.inUse);
   const online = bridges.filter((b) => b.online).length;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
+      <NotebookKit />
+
       <div className="flex items-center justify-between gap-6">
         <p className="font-pretendard text-xs text-white/30">
           RS-232·MIDI 장비는 옆에 둔 노트북(브릿지)을 거쳐 조작합니다. 5초마다 연결을 확인합니다.
@@ -162,11 +202,10 @@ export default function BridgePanel() {
         )}
       </div>
 
-      {data && !data.tokenConfigured && bridges.length > 0 && (
+      {data && !data.tokenConfigured && (
         <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-pretendard text-sm text-amber-100/90">
-          서버 <code className="text-amber-200">.env</code>의 <code className="text-amber-200">BRIDGE_TOKEN</code>이 비어
-          있습니다. 브릿지 노트북 <code className="text-amber-200">bridge.json</code>의 token과 같은 값을 넣고 서버를 다시
-          켜세요.
+          서버가 브릿지 토큰을 만들지 못했습니다. 서버 <code className="text-amber-200">data</code> 폴더에 쓸 수 있는지 확인하고
+          서버를 다시 켜세요.
         </p>
       )}
 
@@ -175,14 +214,21 @@ export default function BridgePanel() {
       )}
       {isLoading && <p className="font-pretendard text-sm text-white/30">확인하는 중…</p>}
 
+      {fresh.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <h3 className="font-mbc text-sm text-white/60">새로 켜진 노트북</h3>
+          {fresh.map((a) => (
+            <AnnouncedCard key={a.url} a={a} />
+          ))}
+        </div>
+      )}
+
       {data && bridges.length === 0 && (
         <div className="rounded-2xl border border-white/5 bg-[#0a0a0a] px-6 py-8">
-          <h3 className="font-mbc text-lg text-white">브릿지를 쓰는 장비가 없습니다</h3>
-          <p className="mt-2 max-w-[62ch] font-pretendard text-sm leading-relaxed text-white/45">
-            지금은 모든 강당 장비가 모의 장비이거나 이더넷(HiQnet)으로 연결돼 있습니다. RS-232 영상 매트릭스나 MIDI 씬 전환을
-            쓰려면 <code className="text-white/65">bridge/README.md</code> 순서대로 노트북을 준비하고,
-            <code className="text-white/65"> config/halls.json</code>의 장비에 <code className="text-white/65">bridge.url</code>을
-            적으세요.
+          <h3 className="font-mbc text-lg text-white">노트북을 쓰는 장비가 아직 없습니다</h3>
+          <p className="mt-2 max-w-[64ch] font-pretendard text-sm leading-relaxed text-white/45">
+            위 설치 파일로 노트북을 준비한 뒤, 오디오 믹서 › 현장 세팅 또는 영상 매트릭스 › 현장 세팅에서 &lsquo;켜진
+            노트북&rsquo;을 고르면 여기에 연결 상태가 보입니다.
           </p>
         </div>
       )}

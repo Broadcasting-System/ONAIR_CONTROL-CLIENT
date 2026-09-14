@@ -79,6 +79,8 @@ export interface MatrixPreset {
 export interface VideoMatrixState extends DeviceStatus {
   /** device = 장비에서 읽음, assumed = 서버가 마지막으로 보낸 명령 기준 추정 */
   stateSource: "device" | "assumed" | "unknown";
+  /** 노트북·명령 문법 (현장 세팅 화면용) */
+  connection: MatrixConnection;
   inputs: MatrixPort[];
   outputs: MatrixOutput[];
   presets: MatrixPreset[];
@@ -214,7 +216,75 @@ export interface BridgeInfo {
 
 export interface BridgesStatus {
   tokenConfigured: boolean;
+  /** env = .env 에 적은 값, file·generated = 서버가 만들어 둔 값 */
+  tokenSource?: string;
   bridges: BridgeInfo[];
+  /** 켜져 있다고 알려 온 노트북 (최근 10분) */
+  announced?: AnnouncedBridge[];
+}
+
+/** 30초마다 '켜져 있다'고 알려 오는 노트북 — 서버는 알림이 온 주소로 노트북을 찾아간다 */
+export interface AnnouncedBridge {
+  url: string;
+  name: string;
+  hostname: string;
+  version: string;
+  features: string[];
+  devices: Record<string, BridgeDevice>;
+  lastSeen: number;
+  /** 마지막 알림이 몇 초 전인지 */
+  ago: number;
+  online: boolean;
+  /** ONAIR 설정의 어떤 장비가 이미 이 노트북을 쓰는지 */
+  inUse: boolean;
+}
+
+/** GET /halls/bridge/kit-info — 노트북 설치 파일 받기 화면 */
+export interface BridgeKitInfo {
+  /** 노트북이 찾아올 이 서버의 주소 추정 (Tailscale IP). 모르면 빈 문자열 */
+  suggestedServer: string;
+  tokenSource: string;
+  version: string;
+  names: string[];
+}
+
+/** 노트북에 꽂힌 시리얼(COM) 포트 */
+export interface SerialPortInfo {
+  port: string;
+  description: string;
+  manufacturer: string;
+  /** FTDI · Prolific · CH340 · CP210x (알 때만) */
+  chip: string;
+  usb: boolean;
+}
+
+/** 영상 매트릭스 연결 방식 — mock=모의 장비, serial-bridge=다목적홀 노트북의 USB-RS232 */
+export type MatrixDriverKind = "mock" | "serial-bridge";
+
+export interface MatrixConnection {
+  driver: MatrixDriverKind;
+  /** 노트북(브릿지) 주소와 그 노트북의 시리얼 장치 이름 */
+  bridge: { url: string; device: string };
+  protocol: {
+    /** 입력→출력 명령 틀. {input} {output} 자리에 번호가 들어간다 (예: {input}V{output}.) */
+    route: string;
+    terminator: "\r\n" | "\r" | "\n" | "";
+    /** 응답이 이 패턴과 맞아야 성공. 비우면 응답을 기다리지 않는다 */
+    replyOk: string;
+    timeout: number;
+  };
+  /** 명령표가 없을 때 차례로 보내 볼 문법 후보 */
+  candidates?: { route: string; note: string }[];
+  tokenConfigured?: boolean;
+}
+
+/** POST /halls/{hall}/matrix/test/route — 보낸 명령과 장비 응답 */
+export interface MatrixTryResult {
+  sent: string;
+  reply: string;
+  replyHex: string;
+  /** 응답 확인 패턴과 맞았는지. 패턴이 없으면 null */
+  matched: boolean | null;
 }
 
 /** 드라이버 종류 → 화면 표시 이름 */

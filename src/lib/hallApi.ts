@@ -1,8 +1,12 @@
-import { del, post, put, request, seg } from "@/lib/http";
+import { del, download, post, put, request, seg } from "@/lib/http";
 import type {
-  BridgesStatus, ConnectionTestResult, DiscoverResult, HallSummary, HallsStatus, LearnedParam, MidiPorts,
-  MixerConfig, MixerConnection, MixerState, VideoMatrixState,
+  BridgeDevice, BridgeKitInfo, BridgesStatus, ConnectionTestResult, DiscoverResult, HallSummary, HallsStatus,
+  LearnedParam, MatrixConnection, MatrixTryResult, MidiPorts, MixerConfig, MixerConnection, MixerState,
+  SerialPortInfo, VideoMatrixState,
 } from "@/types/hall";
+
+/** 서버로 보낼 매트릭스 연결 값 (후보 목록 같은 화면용 값은 뺀다) */
+const matrixBody = (c: MatrixConnection) => ({ driver: c.driver, bridge: c.bridge, protocol: c.protocol });
 
 export const hallApi = {
   list: () => request<{ halls: HallSummary[] }>("/halls"),
@@ -59,4 +63,22 @@ export const hallApi = {
     post<{ success: boolean }>(`/halls/${seg(hall)}/mixer/test/channels/${seg(channel)}`, body),
   tryScene: (hall: string, pc: number) =>
     post<{ success: boolean; scene: string }>(`/halls/${seg(hall)}/mixer/test/scene`, { pc }),
+
+  // 영상 매트릭스 현장 세팅 (관리자) — 노트북 COM 포트, 명령 문법, 저장 전 시험
+  bridgeSerialPorts: (url: string) => post<{ ports: SerialPortInfo[] }>("/halls/bridge/serial-ports", { url }),
+  bridgeConfigureSerial: (url: string, device: string, port: string, baud: number) =>
+    put<BridgeDevice>("/halls/bridge/serial", { url, device, port, baud }),
+  updateMatrixConnection: (hall: string, conn: MatrixConnection) =>
+    put<{ success: boolean }>(`/halls/${seg(hall)}/matrix/connection`, matrixBody(conn)),
+  testMatrixConnection: (hall: string, conn: MatrixConnection) =>
+    post<ConnectionTestResult>(`/halls/${seg(hall)}/matrix/connection/test`, matrixBody(conn)),
+  tryMatrixRoute: (hall: string, conn: MatrixConnection, output: number, input: number) =>
+    post<MatrixTryResult>(`/halls/${seg(hall)}/matrix/test/route`, { ...matrixBody(conn), output, input }),
+
+  // 노트북(브릿지) 설치 파일 (관리자) — 이 컴퓨터로 받기, 또는 노트북 브라우저로 받을 30분짜리 주소
+  bridgeKitInfo: () => request<BridgeKitInfo>("/halls/bridge/kit-info"),
+  downloadBridgeKit: (name: string, server: string) =>
+    download("/halls/bridge/kit", { name, server }, `ONAIR-bridge-${name}.zip`),
+  bridgeKitLink: (name: string, server: string) =>
+    post<{ url: string; expiresAt: number }>("/halls/bridge/kit-link", { name, server }),
 };
