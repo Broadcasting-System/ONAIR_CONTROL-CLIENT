@@ -272,9 +272,15 @@ export interface MatrixConnection {
     /** 응답이 이 패턴과 맞아야 성공. 비우면 응답을 기다리지 않는다 */
     replyOk: string;
     timeout: number;
+    /** 현재 라우팅 조회 명령 (예: Status.) — 비우면 서버가 마지막 명령으로 추정한다 */
+    query: string;
+    /** 조회 응답 해석 규칙 — (?P<input>…) 과 (?P<output>…) 이 있어야 한다 */
+    queryRegex: string;
   };
   /** 명령표가 없을 때 차례로 보내 볼 문법 후보 */
   candidates?: { route: string; note: string }[];
+  /** 조회 명령·해석 규칙 후보 */
+  queryCandidates?: { query: string; regex: string; note: string }[];
   tokenConfigured?: boolean;
 }
 

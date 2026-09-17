@@ -91,6 +91,21 @@ function badRegex(pattern: string): boolean {
   }
 }
 
+/** 조회 명령·해석 규칙이 틀렸으면 이유 (서버 검사와 같다) */
+function queryProblem(query: string, regex: string): string | null {
+  const q = query.trim();
+  const r = regex.trim();
+  if (!q && !r) return null;
+  if (!q || !r) return "조회 명령과 해석 규칙은 둘 다 적어야 해요 (안 쓰려면 둘 다 비우세요)";
+  if (q.length > 40 || /[^\x20-\x7e]/.test(q)) return "조회 명령은 영문·숫자·기호 40자 이하로 적어 주세요";
+  if (r.length > 120) return "해석 규칙은 120자 이하로 적어 주세요";
+  if (!/\(\?P?<input>/.test(r) || !/\(\?P?<output>/.test(r))
+    return "해석 규칙에 (?P<input>…) 과 (?P<output>…) 이 둘 다 있어야 해요";
+  // 파이썬 표기 (?P<이름>) 을 브라우저 표기로 바꿔 형식만 확인한다
+  if (badRegex(r.replace(/\(\?P</g, "(?<"))) return "해석 규칙 형식이 올바르지 않아요";
+  return null;
+}
+
 /** 영상 매트릭스 현장 세팅 — 노트북·COM 포트·명령 문법을 정하고, 저장 전에 한 번씩 보내 본다 */
 export default function MatrixConnectionForm({
   hallId,
@@ -106,6 +121,7 @@ export default function MatrixConnectionForm({
   const qc = useQueryClient();
   const saved = state.connection;
   const candidates = saved.candidates ?? [];
+  const queryCandidates = saved.queryCandidates ?? [];
   const [conn, setConn] = useState<MatrixConnection>(() => clone(saved));
   const [result, setResult] = useState<ConnectionTestResult | null>(null);
   const [testing, setTesting] = useState(false);
@@ -127,7 +143,8 @@ export default function MatrixConnectionForm({
   const route = conn.protocol.route.trim();
   const tplProblem = routeProblem(route);
   const replyBad = badRegex(conn.protocol.replyOk.trim());
-  const canSubmit = !urlBad && !tplProblem && !replyBad;
+  const qProblem = queryProblem(conn.protocol.query, conn.protocol.queryRegex);
+  const canSubmit = !urlBad && !tplProblem && !replyBad && !qProblem;
   const dirty = !same(conn, saved);
 
   useEffect(() => onDirty(dirty), [dirty, onDirty]);
@@ -151,7 +168,13 @@ export default function MatrixConnectionForm({
   const payload = (tpl?: string): MatrixConnection => ({
     driver: conn.driver,
     bridge: { ...conn.bridge, url },
-    protocol: { ...conn.protocol, route: (tpl ?? route).trim(), replyOk: conn.protocol.replyOk.trim() },
+    protocol: {
+      ...conn.protocol,
+      route: (tpl ?? route).trim(),
+      replyOk: conn.protocol.replyOk.trim(),
+      query: conn.protocol.query.trim(),
+      queryRegex: conn.protocol.queryRegex.trim(),
+    },
   });
 
   const runTest = async () => {
@@ -322,6 +345,11 @@ export default function MatrixConnectionForm({
           <p className="-mt-1 font-pretendard text-xs text-white/30">
             속도를 모르면 9600 → 19200 → 38400 → 57600 → 115200 순으로 바꿔 가며 아래 &apos;보내 보기&apos;를 해 보세요.
           </p>
+          <Notice tone="info">
+            이 학교 매트릭스의 RS-232 는 <b>DB9 수(핀)</b> 예요. USB-RS232 케이블(수)과 사이에 <b>암-암 스트레이트(1:1)
+            젠더</b>를 끼워야 해요. 같은 계열 매뉴얼 기준으로 스트레이트가 맞고, 안 되면 크로스(널모뎀) 젠더로 바꿔
+            보세요.
+          </Notice>
         </Card>
       )}
 
@@ -477,6 +505,73 @@ export default function MatrixConnectionForm({
               </div>
             </div>
           )}
+        </Card>
+      )}
+
+      {serial && (
+        <Card
+          title="현재 상태 읽기 (선택)"
+          hint="장비가 지금 라우팅을 알려 주면 화면에 '추정 상태' 대신 실제 상태가 나와요. 지원하지 않는 장비도 많아서 비워 둬도 괜찮아요."
+        >
+          <div className="flex flex-wrap items-end gap-3">
+            <Field label="조회 명령" hint="예: Status." className="w-[180px]">
+              <input
+                value={conn.protocol.query}
+                onChange={(e) => setProto({ query: e.target.value })}
+                placeholder="(안 씀)"
+                spellCheck={false}
+                className={cn(inputCls, "font-mono", qProblem ? badBorder : okBorder)}
+              />
+            </Field>
+            <Field
+              label="응답 해석 규칙"
+              hint="(?P<input>…) 과 (?P<output>…) 이 있어야 해요"
+              className="min-w-[280px] flex-1"
+            >
+              <input
+                value={conn.protocol.queryRegex}
+                onChange={(e) => setProto({ queryRegex: e.target.value })}
+                placeholder="(안 씀)"
+                spellCheck={false}
+                className={cn(inputCls, "font-mono", qProblem ? badBorder : okBorder)}
+              />
+            </Field>
+            <ActionButton
+              tone="ghost"
+              onClick={() => setProto({ query: "", queryRegex: "" })}
+              disabled={!conn.protocol.query && !conn.protocol.queryRegex}
+            >
+              비우기
+            </ActionButton>
+          </div>
+          {qProblem && <p className="-mt-2 font-pretendard text-xs text-red-300/85">{qProblem}</p>}
+          {queryCandidates.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-pretendard text-xs text-white/40">후보</span>
+              {queryCandidates.map((q) => {
+                const inUse = q.query === conn.protocol.query.trim() && q.regex === conn.protocol.queryRegex.trim();
+                return (
+                  <button
+                    key={q.note}
+                    type="button"
+                    onClick={() => setProto({ query: q.query, queryRegex: q.regex })}
+                    disabled={inUse}
+                    className={cn(
+                      "rounded-lg border px-3 py-1.5 text-left font-pretendard text-xs transition-colors",
+                      inUse
+                        ? "border-[#00FF57]/40 bg-[#00FF57]/[0.08] text-[#9dffc1]"
+                        : "border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/10",
+                    )}
+                  >
+                    <code className="font-mono text-[11px] text-white/85">{q.query}</code> · {q.note}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <p className="font-pretendard text-xs text-white/30">
+            넣고 <b>연결 시험</b>을 누르면 조회가 되는지 함께 확인해요. 해석에 실패하면 그대로 비우면 됩니다.
+          </p>
         </Card>
       )}
 
