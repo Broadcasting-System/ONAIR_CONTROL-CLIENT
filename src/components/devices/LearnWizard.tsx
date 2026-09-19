@@ -5,7 +5,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Check, Crosshair, RadioTower, Wifi, X } from "lucide-react";
 import { toast } from "@/components/common/Toast";
 import { SPEAKER_MATRIX_KEY } from "@/hooks/useSpeakerMatrix";
-import { learnApi, type LearnResult, type LearnStatus } from "@/lib/learnApi";
+import {
+  learnApi,
+  type LearnMode,
+  type LearnResult,
+  type LearnStatus,
+  type LearnTransport,
+  type SerialPortInfo,
+} from "@/lib/learnApi";
 import { cn } from "@/lib/utils";
 
 /** 장비 배우기 마법사 — 제조사 프로그램을 따라 누르며 신호를 캡처하고, 규칙을 찾아 연결한다.
@@ -15,6 +22,21 @@ type Phase = "intro" | "capture" | "review";
 
 const input =
   "h-10 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white placeholder:text-white/25 focus:border-white/30 focus:outline-none";
+
+/** 신호를 보는 세 가지 길 — 학교 장비가 어떻게 붙어 있느냐에 따라 고른다 */
+const MODES: { key: LearnMode; title: string; hint: string }[] = [
+  { key: "tcp", title: "랜으로 중계", hint: "제조사 프로그램이 IP로 장비에 붙을 때 (가장 쉬움)" },
+  { key: "serial", title: "시리얼로 중계", hint: "프로그램이 COM 포트로 붙을 때 (com0com 필요)" },
+  { key: "manual", title: "직접 붙여넣기", hint: "중계를 못 끼울 때 — 딴 패킷을 단계마다 넣기" },
+];
+
+const MODE_NOTE: Record<LearnMode, string> = {
+  tcp: "시작하면 이 PC가 제조사 프로그램과 장비 사이에 섭니다. 프로그램의 ‘장비 주소’를 화면에 뜨는 이 PC 주소로 바꾸면, 프로그램은 평소처럼 동작하고 ONAIR는 오가는 신호를 기록합니다.",
+  serial:
+    "com0com 으로 가상 COM 포트 쌍(예: COM10 ↔ COM11)을 만들고, 제조사 프로그램의 포트를 COM10으로 바꿉니다. ONAIR가 COM11을 잡아 장비의 진짜 COM 포트로 넘기면서 기록합니다.",
+  manual:
+    "중계를 못 끼울 때 쓰는 길입니다. 와이어샤크·스위치 미러링·제조사 프로그램 로그·장비 매뉴얼에서 얻은 패킷을 단계마다 16진수로 붙여넣으면, 규칙 찾기는 똑같이 동작합니다.",
+};
 
 function Shell({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (
@@ -83,10 +105,27 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
 
   // intro 입력
+  const [mode, setMode] = useState<LearnMode>("tcp");
+  const [transport, setTransport] = useState<LearnTransport>("tcp");
   const [host, setHost] = useState("");
   const [port, setPort] = useState(22000);
   const [zones, setZones] = useState(16);
   const [cols, setCols] = useState(16);
+  const [listenSerial, setListenSerial] = useState("");
+  const [baud, setBaud] = useState(9600);
+  const [ports, setPorts] = useState<SerialPortInfo[] | null>(null);
+  const [paste, setPaste] = useState("");
+
+  // 시리얼(장비가 COM 으로 붙는 학교) 이거나 manual 이면서 시리얼로 보낼 때
+  const useSerial = mode === "serial" || (mode === "manual" && transport === "serial");
+
+  const loadPorts = async () => {
+    const r = await run(() => learnApi.serialPorts());
+    if (r) {
+      setPorts(r.ports);
+      if (!host.trim() && r.ports[0]) setHost(r.ports[0].port);
+    }
+  };
 
   const [status, setStatus] = useState<LearnStatus | null>(null);
   const [stepIdx, setStepIdx] = useState(0);
@@ -136,10 +175,27 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
 
   const begin = async () => {
     if (!host.trim()) {
-      toast.error("스피커 선택기(장비) 주소를 입력하세요.");
+      toast.error(useSerial ? "장비가 붙은 COM 포트를 입력하세요 (예: COM3)." : "스피커 선택기(장비) 주소를 입력하세요.");
       return;
     }
-    const s = await run(() => learnApi.start({ host: host.trim(), port, zones, cols }), "중계를 시작했습니다.");
+    if (mode === "serial" && !listenSerial.trim()) {
+      toast.error("제조사 프로그램이 붙을 가상 COM 포트를 입력하세요 (예: COM11).");
+      return;
+    }
+    const s = await run(
+      () =>
+        learnApi.start({
+          mode,
+          transport: mode === "manual" ? transport : undefined,
+          host: host.trim(),
+          port: useSerial ? undefined : port,
+          zones,
+          cols,
+          listenSerial: mode === "serial" ? listenSerial.trim() : undefined,
+          baud: useSerial ? baud : undefined,
+        }),
+      mode === "manual" ? "붙여넣기 모드로 시작했습니다." : "중계를 시작했습니다.",
+    );
     if (!s) return;
     startedRef.current = true;
     setStatus(s);
@@ -158,6 +214,15 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
     if (!s) return;
     setStepIdx(i);
     await learnApi.mark(s.label).catch(() => {});
+  };
+
+  const addPacket = async () => {
+    const s = steps[stepIdx];
+    if (!s) return;
+    const next = await run(() => learnApi.packet(s.label, paste), "이 단계에 넣었습니다.");
+    if (!next) return;
+    setStatus(next);
+    setPaste("");
   };
 
   const finishCapture = async () => {
@@ -181,20 +246,121 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
       <StepDots phase={phase} />
 
       {phase === "intro" && (
-        <div className="flex flex-col gap-6">
-          <p className="max-w-[64ch] font-pretendard text-sm leading-relaxed text-white/60">
-            방송실 스피커 선택기와 <b className="text-white/80">같은 네트워크</b>에 있어야 합니다. 시작하면 이 PC가
-            제조사 프로그램과 장비 사이에 서서, 오가는 신호를 기록합니다. 제조사 프로그램은 평소처럼 동작합니다.
-          </p>
+        <div className="flex flex-col gap-5">
+          {/* 어떤 방법으로 신호를 볼 것인가 */}
+          <div className="grid grid-cols-3 gap-3">
+            {MODES.map((m) => (
+              <button
+                key={m.key}
+                type="button"
+                aria-pressed={mode === m.key}
+                onClick={() => setMode(m.key)}
+                className={cn(
+                  "flex flex-col items-start gap-1 rounded-xl border px-4 py-3 text-left transition-colors",
+                  mode === m.key
+                    ? "border-red-500/55 bg-red-500/10"
+                    : "border-white/10 bg-white/[0.02] hover:bg-white/[0.06]",
+                )}
+              >
+                <span className="font-mbc text-[15px] text-white">{m.title}</span>
+                <span className="font-pretendard text-xs leading-relaxed text-white/45">{m.hint}</span>
+              </button>
+            ))}
+          </div>
+          <p className="max-w-[70ch] font-pretendard text-sm leading-relaxed text-white/55">{MODE_NOTE[mode]}</p>
+
           <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className="font-mbc text-xs text-white/40">스피커 선택기 주소 (IP)</span>
-              <input value={host} onChange={(e) => setHost(e.target.value)} placeholder="192.168.0.200" className={cn(input, "font-orbitron")} />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="font-mbc text-xs text-white/40">포트</span>
-              <input type="number" value={port} onChange={(e) => setPort(Number(e.target.value))} className={cn(input, "font-orbitron")} />
-            </label>
+            {mode === "manual" && (
+              <label className="col-span-2 flex flex-col gap-1.5">
+                <span className="font-mbc text-xs text-white/40">배운 뒤 ONAIR가 장비에 보낼 방법</span>
+                <select
+                  value={transport}
+                  onChange={(e) => setTransport(e.target.value as LearnTransport)}
+                  className={cn(input, "cursor-pointer")}
+                >
+                  <option value="tcp">랜 · TCP</option>
+                  <option value="udp">랜 · UDP</option>
+                  <option value="serial">시리얼 (COM 포트)</option>
+                </select>
+              </label>
+            )}
+
+            {useSerial ? (
+              <>
+                <label className="flex flex-col gap-1.5">
+                  <span className="font-mbc text-xs text-white/40">장비가 붙은 COM 포트</span>
+                  <div className="flex gap-2">
+                    <input
+                      list="learn-com-ports"
+                      value={host}
+                      onChange={(e) => setHost(e.target.value)}
+                      placeholder="COM3"
+                      className={cn(input, "min-w-0 flex-1 font-orbitron")}
+                    />
+                    <datalist id="learn-com-ports">
+                      {(ports ?? []).map((p) => (
+                        <option key={p.port} value={p.port}>
+                          {p.chip || p.description}
+                        </option>
+                      ))}
+                    </datalist>
+                    <button
+                      type="button"
+                      onClick={loadPorts}
+                      disabled={busy}
+                      className="h-10 shrink-0 rounded-lg border border-white/10 bg-white/[0.04] px-3 font-mbc text-sm text-white/70 hover:bg-white/10 disabled:opacity-40"
+                    >
+                      목록
+                    </button>
+                  </div>
+                  {ports && (
+                    <span className="font-pretendard text-xs text-white/30">
+                      {ports.length ? ports.map((p) => p.port).join(" · ") : "이 PC에 COM 포트가 없어요"}
+                    </span>
+                  )}
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="font-mbc text-xs text-white/40">통신 속도 (bps)</span>
+                  <select
+                    value={baud}
+                    onChange={(e) => setBaud(Number(e.target.value))}
+                    className={cn(input, "cursor-pointer font-orbitron")}
+                  >
+                    {[9600, 19200, 38400, 57600, 115200, 4800, 2400].map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {mode === "serial" && (
+                  <label className="col-span-2 flex flex-col gap-1.5">
+                    <span className="font-mbc text-xs text-white/40">제조사 프로그램이 붙을 가상 COM 포트</span>
+                    <input
+                      value={listenSerial}
+                      onChange={(e) => setListenSerial(e.target.value)}
+                      placeholder="COM11"
+                      className={cn(input, "font-orbitron")}
+                    />
+                    <span className="font-pretendard text-xs text-white/30">
+                      com0com 으로 가상 포트 쌍(예: COM10 ↔ COM11)을 만든 뒤, 제조사 프로그램은 COM10, ONAIR는 COM11로.
+                    </span>
+                  </label>
+                )}
+              </>
+            ) : (
+              <>
+                <label className="flex flex-col gap-1.5">
+                  <span className="font-mbc text-xs text-white/40">스피커 선택기 주소 (IP)</span>
+                  <input value={host} onChange={(e) => setHost(e.target.value)} placeholder="192.168.0.200" className={cn(input, "font-orbitron")} />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="font-mbc text-xs text-white/40">포트</span>
+                  <input type="number" value={port} onChange={(e) => setPort(Number(e.target.value))} className={cn(input, "font-orbitron")} />
+                </label>
+              </>
+            )}
+
             <label className="flex flex-col gap-1.5">
               <span className="font-mbc text-xs text-white/40">구역(스피커) 개수</span>
               <input type="number" min={1} max={256} value={zones} onChange={(e) => setZones(Number(e.target.value))} className={cn(input, "font-orbitron")} />
@@ -204,6 +370,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
               <input type="number" min={1} max={64} value={cols} onChange={(e) => setCols(Number(e.target.value))} className={cn(input, "font-orbitron")} />
             </label>
           </div>
+
           <div className="flex justify-end gap-3">
             <button type="button" onClick={onClose} className="h-11 rounded-xl px-4 font-mbc text-sm text-white/50 hover:bg-white/5 hover:text-white">
               취소
@@ -215,7 +382,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
               className="flex h-11 items-center gap-2 rounded-xl border border-red-500/50 bg-red-500/15 px-5 font-mbc text-red-100 transition-colors hover:bg-red-500/25 disabled:opacity-40"
             >
               <Wifi size={16} />
-              중계 시작
+              {mode === "manual" ? "붙여넣기 시작" : "중계 시작"}
             </button>
           </div>
         </div>
@@ -223,26 +390,81 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
 
       {phase === "capture" && status && (
         <div className="flex flex-col gap-5">
-          {/* 제조사 프로그램에 적을 주소 */}
-          <div className="flex flex-col gap-2 rounded-xl border border-sky-500/25 bg-sky-500/[0.07] px-5 py-4">
-            <span className="font-mbc text-xs text-sky-200/70">제조사 프로그램의 ‘장비 주소’를 아래로 바꾸세요</span>
-            <div className="flex flex-wrap items-center gap-2">
-              {(status.localIps.length ? status.localIps : ["이 PC의 IP"]).map((ip) => (
-                <code key={ip} className="rounded-lg bg-black/50 px-3 py-1.5 font-orbitron text-sm text-white">
-                  {ip}:{status.listenPort}
-                </code>
-              ))}
-              <span
-                className={cn(
-                  "ml-1 flex items-center gap-1.5 font-pretendard text-xs",
-                  status.connections > 0 ? "text-emerald-300" : "text-white/40",
+          {/* 제조사 프로그램에 적을 주소 (중계일 때만) */}
+          {status.mode !== "manual" && (
+            <div className="flex flex-col gap-2 rounded-xl border border-sky-500/25 bg-sky-500/[0.07] px-5 py-4">
+              <span className="font-mbc text-xs text-sky-200/70">
+                {status.mode === "serial"
+                  ? "제조사 프로그램의 ‘포트’를 아래 가상 COM 포트로 바꾸세요"
+                  : "제조사 프로그램의 ‘장비 주소’를 아래로 바꾸세요"}
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                {status.mode === "serial" ? (
+                  <code className="rounded-lg bg-black/50 px-3 py-1.5 font-orbitron text-sm text-white">
+                    {status.serial?.listen} · {status.serial?.baud}bps
+                  </code>
+                ) : (
+                  (status.localIps.length ? status.localIps : ["이 PC의 IP"]).map((ip) => (
+                    <code key={ip} className="rounded-lg bg-black/50 px-3 py-1.5 font-orbitron text-sm text-white">
+                      {ip}:{status.listenPort}
+                    </code>
+                  ))
                 )}
-              >
-                <span className={cn("h-2 w-2 rounded-full", status.connections > 0 ? "bg-emerald-400 shadow-[0_0_8px_#00FF57]" : "bg-white/25")} />
-                {status.connections > 0 ? "프로그램 연결됨" : "프로그램 연결 대기"}
+                <span
+                  className={cn(
+                    "ml-1 flex items-center gap-1.5 font-pretendard text-xs",
+                    status.connections > 0 ? "text-emerald-300" : "text-white/40",
+                  )}
+                >
+                  <span className={cn("h-2 w-2 rounded-full", status.connections > 0 ? "bg-emerald-400 shadow-[0_0_8px_#00FF57]" : "bg-white/25")} />
+                  {status.connections > 0
+                    ? status.mode === "serial"
+                      ? "포트 열림"
+                      : "프로그램 연결됨"
+                    : status.mode === "serial"
+                      ? "포트 여는 중"
+                      : "프로그램 연결 대기"}
+                </span>
+                {status.mode === "serial" && (
+                  <span className="font-pretendard text-xs text-white/35">
+                    장비 쪽: {status.serial?.target}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 직접 붙여넣기 */}
+          {status.mode === "manual" && (
+            <div className="flex flex-col gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-5 py-4">
+              <span className="font-mbc text-xs text-amber-200/80">
+                이 단계의 패킷을 16진수로 붙여넣으세요 (예: 02 2d 00 01 … )
+              </span>
+              <div className="flex gap-2">
+                <input
+                  value={paste}
+                  onChange={(e) => setPaste(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void addPacket();
+                  }}
+                  placeholder="02 2d 00 …"
+                  spellCheck={false}
+                  className={cn(input, "min-w-0 flex-1 font-mono")}
+                />
+                <button
+                  type="button"
+                  onClick={addPacket}
+                  disabled={busy || !paste.trim()}
+                  className="h-10 shrink-0 rounded-lg border border-amber-400/40 bg-amber-400/15 px-4 font-mbc text-sm text-amber-100 hover:bg-amber-400/25 disabled:opacity-40"
+                >
+                  이 단계에 넣기
+                </button>
+              </div>
+              <span className="font-pretendard text-xs text-white/35">
+                띄어쓰기·줄바꿈·0x 는 알아서 걸러요. 단계를 옮기려면 아래 번호를 누르세요.
               </span>
             </div>
-          </div>
+          )}
 
           {/* 현재 단계 */}
           <div className="flex items-center gap-4 rounded-xl border border-red-400/30 bg-red-400/10 px-5 py-4">
