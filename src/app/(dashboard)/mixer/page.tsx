@@ -15,6 +15,12 @@ import { usePersistentState } from "@/hooks/usePersistentState";
 import { cn } from "@/lib/utils";
 import { DRIVER_LABEL, type MixerScene } from "@/types/hall";
 
+// 콘솔 본체 판 (매트한 금속판 느낌) 과 그 위에 놓이는 채널 한 칸
+const BOARD =
+  "rounded-2xl border border-black/80 bg-[linear-gradient(180deg,#1d1d20_0%,#141416_55%,#101012_100%)] " +
+  "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_-1px_0_rgba(0,0,0,0.6),0_20px_40px_-16px_rgba(0,0,0,0.8)]";
+const STRIP_BOX = "flex h-[360px] rounded-xl bg-white/[0.02] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]";
+
 export default function MixerPage() {
   const { halls: allHalls, isLoading: hallsLoading } = useHalls();
   const halls = allHalls.filter((h) => h.hasMixer);
@@ -121,35 +127,30 @@ export default function MixerPage() {
       ) : (
         <Panel
           title="채널"
-          hint="페이더를 끌거나 방향키로 조절 · MUTE로 즉시 차단 · 빨간 선 위로는 올릴 수 없습니다"
-          className="flex min-h-[640px] flex-1 flex-col"
+          hint={`페이더를 끌거나 방향키로 조절 · MUTE로 즉시 차단 · 빨간 선 위로는 올릴 수 없습니다 · ${channels.length}개`}
+          className="flex min-h-[520px] flex-1 flex-col"
         >
-          <div className="relative flex min-h-0 flex-1">
-            {/* 콘솔 본체 — 채널 스트립이 한 장의 매트한 판 위에 칸막이로 나뉜다 */}
-            <div
-              className={cn(
-                "flex min-h-0 flex-1 overflow-x-auto rounded-2xl border border-black/80 px-2 py-4",
-                "bg-[linear-gradient(180deg,#1d1d20_0%,#141416_55%,#101012_100%)]",
-                "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_-1px_0_rgba(0,0,0,0.6),0_20px_40px_-16px_rgba(0,0,0,0.8)]",
-                !channelMode && "opacity-30",
-              )}
-            >
-              <div className="flex divide-x divide-white/[0.05]">
+          <div className="relative flex min-h-0 flex-1 gap-3">
+            {/* 콘솔 본체 — 채널이 많으면 한 줄로 늘어놓지 않고 줄을 바꿔 쌓는다 */}
+            <div className={cn(BOARD, "min-w-0 flex-1 overflow-y-auto p-3", !channelMode && "opacity-30")}>
+              <div className="flex flex-wrap content-start gap-1.5">
                 {channels.map((ch) => (
-                  <ChannelStrip
-                    key={ch.id}
-                    channel={ch}
-                    subLabel={`CH ${ch.id.padStart(2, "0")}`}
-                    disabled={!operable || !channelMode}
-                    onLevel={(v) => setLevel(ch.id, v)}
-                    onMute={(m) => setMute(ch.id, m)}
-                  />
+                  <div key={ch.id} className={STRIP_BOX}>
+                    <ChannelStrip
+                      channel={ch}
+                      subLabel={`CH ${ch.id.padStart(2, "0")}`}
+                      disabled={!operable || !channelMode}
+                      onLevel={(v) => setLevel(ch.id, v)}
+                      onMute={(m) => setMute(ch.id, m)}
+                    />
+                  </div>
                 ))}
               </div>
-              <div className="min-w-4 flex-1" />
-              {state?.master && (
-                // 마스터 구획 — 굵은 칸막이로 채널과 분리
-                <div className="flex border-l-2 border-black/80 pl-2 shadow-[-1px_0_0_rgba(255,255,255,0.05)]">
+            </div>
+            {state?.master && (
+              // 마스터는 따로 떼어 오른쪽에 고정 — 채널이 몇 줄이 되든 항상 같은 자리
+              <div className={cn(BOARD, "flex shrink-0 items-start p-3", !channelMode && "opacity-30")}>
+                <div className={STRIP_BOX}>
                   <ChannelStrip
                     master
                     channel={state.master}
@@ -159,8 +160,8 @@ export default function MixerPage() {
                     onMute={(m) => setMute(state.master!.id, m)}
                   />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
             {!channelMode && state && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <p className="rounded-xl bg-black/70 px-6 py-4 text-center font-pretendard text-sm text-white/70">
