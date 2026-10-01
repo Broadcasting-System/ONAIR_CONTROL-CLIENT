@@ -20,7 +20,8 @@ import { DRIVER_LABEL, type MixerScene } from "@/types/hall";
 const BOARD =
   "rounded-2xl border border-black/80 bg-[linear-gradient(180deg,#1d1d20_0%,#141416_55%,#101012_100%)] " +
   "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_-1px_0_rgba(0,0,0,0.6),0_20px_40px_-16px_rgba(0,0,0,0.8)]";
-const STRIP_BOX = "flex h-[360px] rounded-xl bg-white/[0.02] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]";
+// 채널 한 칸은 스스로 모듈 틀을 갖는다 — 감싸는 칸은 자리만 잡는다
+const STRIP_BOX = "flex";
 
 export default function MixerPage() {
   const { halls: allHalls, isLoading: hallsLoading } = useHalls();
@@ -176,7 +177,7 @@ export default function MixerPage() {
                   // 이펙트 리턴 — 에코·울림 전체 양. 채널마다 보내는 양은 위 처리 화면의 FX SEND
                   // 라벨과 FX 채널이 한 덩어리로 줄을 바꾼다
                   <div className="flex gap-1.5">
-                    <div className="flex h-[360px] w-6 items-center justify-center" aria-hidden>
+                    <div className="flex w-6 items-center justify-center self-stretch" aria-hidden>
                       <span className="font-orbitron text-[9px] tracking-[0.32em] text-[#B48CFF]/60 [writing-mode:vertical-rl]">
                         FX RETURN
                       </span>
@@ -204,7 +205,7 @@ export default function MixerPage() {
                   <ChannelStrip
                     master
                     channel={state.master}
-                    subLabel={state.master.label ?? "MASTER"}
+                    subLabel="MAIN"
                     disabled={!operable || !channelMode}
                     onLevel={(v) => setLevel(state.master!.id, v)}
                     onMute={(m) => setMute(state.master!.id, m)}

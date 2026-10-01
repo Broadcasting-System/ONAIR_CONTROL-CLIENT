@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { MixerChannel } from "@/types/hall";
 
@@ -8,8 +8,8 @@ import type { MixerChannel } from "@/types/hall";
 const SEND_INTERVAL_MS = 150;
 const KEY_STEP = 5;
 
-// 페이더 눈금 — Si 계열 페이더의 대략적인 dB 위치 (0dB ≈ 75%). 숫자는 큰 눈금에만.
-const MAJOR: { at: number; label: string; zero?: boolean }[] = [
+// 페이더 눈금 — Si 계열 페이더의 대략적인 dB 위치 (0dB ≈ 75%)
+const SCALE: { at: number; label: string; zero?: boolean }[] = [
   { at: 100, label: "10" },
   { at: 75, label: "0", zero: true },
   { at: 58, label: "10" },
@@ -17,20 +17,24 @@ const MAJOR: { at: number; label: string; zero?: boolean }[] = [
   { at: 24, label: "40" },
   { at: 0, label: "∞" },
 ];
-const MINOR = Array.from({ length: 21 }, (_, i) => i * 5);
+const METER_DOTS = 18;
 
-// 미터 색 — 아래는 청록·초록, 0dB 부근 노랑, 맨 위 빨강
-const METER_GRADIENT = "linear-gradient(to top,#14d9a4 0%,#00FF57 52%,#FFD600 76%,#FF3B3B 92%)";
-// 가는 가로 줄로 칸을 나눠 하드웨어 LED 미터처럼
-const METER_STRIPES = "repeating-linear-gradient(to top,transparent 0 3px,rgba(0,0,0,0.62) 3px 4px)";
+// 한 채널은 한 색 — 종류별로 고르고, 뮤트되면 그 한 색이 빨강이 된다
+const COLOR = {
+  mic: "#5AC8FA",
+  play: "#4ADE80",
+  etc: "#F5B04A",
+  fx: "#A98BFF",
+  master: "#E6E8EE",
+  muted: "#FF5A5A",
+};
 
-/** 채널 종류별 손잡이 불빛 — 실제 콘솔처럼 색으로 구분 (마이크·재생·이펙트·기타·마스터) */
-function capColor(name: string, master?: boolean, fx?: boolean): string {
-  if (master) return "#FF3B3B";
-  if (fx) return "#B48CFF";
-  if (/무선|유선|마이크|mic|강단|보컬|사회/i.test(name)) return "#5AC8FA";
-  if (/pc|음원|반주|bgm|노트북|영상|유튜브|재생/i.test(name)) return "#00FF57";
-  return "#FFB23F";
+function channelColor(name: string, master?: boolean, fx?: boolean): string {
+  if (master) return COLOR.master;
+  if (fx) return COLOR.fx;
+  if (/무선|유선|마이크|mic|강단|보컬|사회/i.test(name)) return COLOR.mic;
+  if (/pc|음원|반주|bgm|노트북|영상|유튜브|재생/i.test(name)) return COLOR.play;
+  return COLOR.etc;
 }
 
 interface ChannelStripProps {
@@ -38,9 +42,9 @@ interface ChannelStripProps {
   subLabel: string;
   disabled: boolean;
   master?: boolean;
-  /** 이펙트 리턴 (보라색) */
+  /** 이펙트 리턴 */
   fx?: boolean;
-  /** 이름표를 SEL 키로 — 누르면 위 처리 화면에 이 채널이 열린다 */
+  /** SEL 키 — 누르면 위 처리 화면에 이 채널이 열린다 (입력 채널만) */
   selected?: boolean;
   onSelect?: () => void;
   onLevel: (level: number) => void;
@@ -56,29 +60,107 @@ function usePeak(value: number) {
   return peak;
 }
 
-/** 캡슐 안에 줄무늬로 차오르는 미터 (꺼진 칸도 희미하게 보인다) */
-function TubeMeter({ value, peak }: { value: number; peak: number }) {
-  const layer: CSSProperties = { backgroundImage: `${METER_STRIPES},${METER_GRADIENT}` };
+/** 점 미터 — 채널 색 하나로, 위로 갈수록 밝아지고 맨 위 두 칸(과입력)이 가장 밝다 */
+function DotMeter({ value, peak, color }: { value: number; peak: number; color: string }) {
   return (
-    <div
-      className="relative w-[9px] overflow-hidden rounded-full bg-black shadow-[inset_0_1px_3px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.06)]"
-      aria-hidden
-    >
-      <div className="absolute inset-0 opacity-[0.13]" style={layer} />
-      <div
-        className="absolute inset-0 transition-[clip-path] duration-150 [filter:drop-shadow(0_0_4px_rgba(0,255,120,0.55))]"
-        style={{ ...layer, clipPath: `inset(${100 - value}% 0 0 0)` }}
-      />
-      {peak > 3 && (
-        <div
-          className="absolute inset-x-0 h-[2px] bg-white/90 shadow-[0_0_6px_rgba(255,255,255,0.9)] transition-[bottom] duration-300"
-          style={{ bottom: `${peak}%` }}
-        />
-      )}
+    <div className="flex flex-col-reverse justify-between py-[3px]" aria-hidden>
+      {Array.from({ length: METER_DOTS }, (_, i) => {
+        const at = ((i + 1) / METER_DOTS) * 100;
+        const lit = value >= at || Math.abs(peak - at) < 100 / METER_DOTS / 2;
+        const hot = at > 88;
+        return (
+          <span
+            key={i}
+            className="h-[5px] w-[5px] rounded-full transition-[background,box-shadow] duration-150"
+            style={
+              lit
+                ? { background: color, opacity: hot ? 1 : 0.55 + at / 250, boxShadow: `0 0 ${hot ? 8 : 4}px ${color}` }
+                : { background: "rgba(255,255,255,0.07)" }
+            }
+          />
+        );
+      })}
     </div>
   );
 }
 
+/** 미니 게인 링 — 처리 화면을 열지 않아도 게인이 얼마인지 보인다 */
+function GainRing({ value, color }: { value: number | null; color: string }) {
+  const known = value != null;
+  const v = value ?? 0;
+  const dots = Array.from({ length: 13 }, (_, i) => {
+    const a = ((135 + (i / 12) * 270) * Math.PI) / 180;
+    return { x: 23 + 19 * Math.cos(a), y: 23 + 19 * Math.sin(a), lit: known && (i / 12) * 100 <= v };
+  });
+  const a = ((135 + (v / 100) * 270) * Math.PI) / 180;
+  return (
+    <svg viewBox="0 0 46 46" className="h-[46px] w-[46px]" aria-hidden>
+      {dots.map((d, i) => (
+        <circle
+          key={i}
+          cx={d.x}
+          cy={d.y}
+          r={1.6}
+          fill={d.lit ? color : "rgba(255,255,255,0.1)"}
+          style={d.lit ? { filter: `drop-shadow(0 0 2px ${color})` } : undefined}
+        />
+      ))}
+      <circle cx={23} cy={23} r={12} fill="#1c1c20" stroke="#000" />
+      {known && (
+        <line
+          x1={23}
+          y1={23}
+          x2={23 + 10 * Math.cos(a)}
+          y2={23 + 10 * Math.sin(a)}
+          stroke={color}
+          strokeWidth={2}
+          strokeLinecap="round"
+        />
+      )}
+    </svg>
+  );
+}
+
+function Key({
+  label,
+  on,
+  color,
+  disabled,
+  onClick,
+  ariaLabel,
+}: {
+  label: string;
+  on: boolean;
+  color: string;
+  disabled?: boolean;
+  onClick: () => void;
+  ariaLabel?: string;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-pressed={on}
+      aria-label={ariaLabel}
+      onClick={onClick}
+      className={cn(
+        "flex h-6 flex-1 items-center justify-center gap-1 rounded-[5px] border border-black font-orbitron text-[8.5px] tracking-[0.14em] transition-all",
+        "bg-[linear-gradient(180deg,#303035,#1e1e22)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_3px_6px_rgba(0,0,0,0.55)]",
+        "active:translate-y-px disabled:cursor-not-allowed",
+        on ? "text-white" : "text-white/42 enabled:hover:text-white/75",
+      )}
+    >
+      <span
+        className="h-[5px] w-[5px] rounded-full transition-all"
+        style={on ? { background: color, boxShadow: `0 0 8px ${color}` } : { background: "rgba(255,255,255,0.12)" }}
+        aria-hidden
+      />
+      {label}
+    </button>
+  );
+}
+
+/** 채널 한 칸 — 처리 화면과 같은 모듈 틀 + 실제 콘솔의 검정 페이더. 한 채널은 한 색. */
 export default function ChannelStrip({
   channel,
   subLabel,
@@ -100,10 +182,11 @@ export default function ChannelStrip({
   const muted = !!channel.mute;
   const meter = muted ? 0 : channel.meter ?? 0;
   const peak = usePeak(meter);
-  const live = known && !muted && meter > 6;
-  const color = capColor(channel.name, master, fx);
+  const color = muted ? COLOR.muted : channelColor(channel.name, master, fx);
   // 관리자가 정한 최대 레벨 — 이 위로는 끌어도, 방향키로도 못 올린다 (서버도 막는다)
   const limit = Math.max(0, Math.min(100, channel.max ?? 100));
+  const gain = typeof channel.params?.gain === "number" ? channel.params.gain : null;
+  const inputChannel = !master && !fx;
 
   const levelAt = (clientY: number) => {
     const rect = trackRef.current?.getBoundingClientRect();
@@ -120,72 +203,68 @@ export default function ChannelStrip({
   };
 
   return (
-    <div className={cn("flex shrink-0 flex-col items-center gap-3 px-3 py-1", master ? "w-[150px]" : "w-[108px]")}>
-      {/* MUTE — 위에 LED */}
-      <div className="flex w-full flex-col items-center gap-1.5">
-        <span
-          className={cn(
-            "h-[5px] w-[5px] rounded-full transition-all",
-            muted ? "bg-[#FF3B3B] shadow-[0_0_8px_2px_rgba(255,59,59,0.8)]" : "bg-[#3a1414]",
-          )}
-          aria-hidden
-        />
-        <button
-          type="button"
-          disabled={disabled}
-          aria-pressed={muted}
-          onClick={() => onMute(!muted)}
-          className={cn(
-            "h-8 w-full rounded-md border border-black font-orbitron text-[10.5px] font-semibold tracking-[0.2em] transition-all",
-            "shadow-[inset_0_1px_0_rgba(255,255,255,0.13),0_3px_6px_rgba(0,0,0,0.55)] active:translate-y-px disabled:cursor-not-allowed",
-            muted
-              ? "bg-[linear-gradient(180deg,#5a1c1c,#3a1010)] text-[#ff8a8a]"
-              : "bg-[linear-gradient(180deg,#3b3b3f,#242427)] text-white/55 enabled:hover:text-white/85",
-          )}
-        >
-          MUTE
-        </button>
-      </div>
+    <div
+      className={cn(
+        "relative flex shrink-0 flex-col items-center gap-2.5 rounded-xl border border-black/80 px-[9px] pb-2.5 pt-3",
+        "bg-[linear-gradient(180deg,#141418,#0d0d10)] transition-shadow",
+        master ? "w-[124px]" : "w-[110px]",
+      )}
+      style={{
+        boxShadow: selected
+          ? `inset 0 0 0 1px ${color}99, 0 0 20px -6px ${color}`
+          : "inset 0 1px 0 rgba(255,255,255,0.05), inset 0 0 0 1px rgba(255,255,255,0.025)",
+      }}
+    >
+      {/* 위쪽 색 헤어라인 */}
+      <span
+        className="absolute inset-x-2.5 top-0 h-px"
+        style={{ background: `linear-gradient(90deg,${color},transparent)` }}
+        aria-hidden
+      />
 
-      {/* 값 LCD */}
-      <div
-        className={cn(
-          "flex h-10 w-full flex-col items-center justify-center rounded-md border border-black bg-[#07100d] shadow-[inset_0_2px_6px_rgba(0,0,0,0.95),0_1px_0_rgba(255,255,255,0.06)]",
-          muted && "bg-[#140707]",
-        )}
-        title={known ? undefined : "콘솔에서 아직 값을 받지 못했습니다"}
-      >
-        <span
-          className={cn(
-            "font-orbitron text-[17px] leading-none tabular-nums",
-            muted
-              ? "text-[#ff6b6b] [text-shadow:0_0_8px_rgba(255,59,59,0.7)]"
-              : known
-                ? "text-[#7CF5D4] [text-shadow:0_0_8px_rgba(124,245,212,0.6)]"
-                : "text-[#7CF5D4]/25",
-          )}
-        >
-          {known ? String(level).padStart(2, "0") : "--"}
-        </span>
-        {limit < 100 && (
-          <span className="mt-0.5 font-orbitron text-[7px] leading-none tracking-[0.18em] text-[#FF3B3B]/75">
-            MAX {limit}
+      {/* 머리줄 — 채널 번호와 상태 */}
+      <div className="flex h-3.5 w-full items-center gap-[5px]">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+        <span className="whitespace-nowrap font-orbitron text-[9px] tracking-[0.16em] text-white/60">{subLabel}</span>
+        {(selected || muted) && (
+          <span
+            className="ml-auto shrink-0 rounded-[3px] border px-[3px] font-orbitron text-[7px] leading-[11px]"
+            style={{ color, borderColor: `${color}80` }}
+          >
+            {muted ? "MUTE" : "SEL"}
           </span>
         )}
       </div>
 
-      {/* 미터 · 눈금 · 페이더 */}
-      <div className={cn("flex min-h-0 w-full flex-1 items-stretch justify-center gap-1.5 py-2", muted && "opacity-55")}>
-        <TubeMeter value={meter} peak={peak} />
+      {/* 미니 게인 링 (입력 채널) — 누르면 처리 화면이 열린다 */}
+      {inputChannel ? (
+        <button
+          type="button"
+          onClick={onSelect}
+          disabled={!onSelect}
+          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-default"
+          title={gain != null ? `GAIN ${Math.round(gain)}` : "GAIN — 처리 화면에서 조절"}
+          aria-label={`${channel.name} 게인 · 처리 화면 열기`}
+        >
+          <GainRing value={gain} color={color} />
+        </button>
+      ) : (
+        <div className="grid h-[46px] place-items-center font-orbitron text-[8px] tracking-[0.2em] text-white/28">
+          {fx ? "RETURN" : channel.label ?? "STEREO"}
+        </div>
+      )}
 
-        {/* dB 숫자 */}
-        <div className="relative w-4" aria-hidden>
-          {MAJOR.map((s) => (
+      {/* 점 미터 · 눈금 · 페이더 (실제 콘솔의 검정 손잡이) */}
+      <div className="flex h-[220px] w-full shrink-0 justify-center gap-[5px]">
+        <DotMeter value={meter} peak={peak} color={color} />
+
+        <div className="relative w-3.5" aria-hidden>
+          {SCALE.map((s) => (
             <span
               key={s.at}
               className={cn(
-                "absolute right-0 translate-y-1/2 font-orbitron text-[8px] leading-none tabular-nums",
-                s.zero ? "text-white/80" : "text-white/25",
+                "absolute right-0 translate-y-1/2 font-orbitron text-[7px] leading-none tabular-nums",
+                s.zero ? "text-white/75" : "text-white/32",
               )}
               style={{ bottom: `${s.at}%` }}
             >
@@ -204,7 +283,7 @@ export default function ChannelStrip({
           aria-valuenow={level}
           aria-disabled={disabled}
           className={cn(
-            "relative w-12 touch-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-red-400/50",
+            "relative w-9 touch-none rounded-md outline-none focus-visible:ring-2 focus-visible:ring-white/30",
             disabled ? "cursor-not-allowed" : "cursor-ns-resize",
           )}
           onPointerDown={(e) => {
@@ -234,116 +313,71 @@ export default function ChannelStrip({
             send(Math.max(0, Math.min(limit, level + delta)), true);
           }}
         >
-          {/* 홈 양쪽 눈금 대시 — 큰 눈금은 길게 */}
-          {MINOR.map((at) => {
-            const major = MAJOR.find((m) => m.at === at || Math.abs(m.at - at) < 1.5);
-            return (
-              <span key={at} className="absolute inset-x-0 flex translate-y-1/2 justify-between" style={{ bottom: `${at}%` }} aria-hidden>
-                <span className={cn("h-px", major?.zero ? "w-3 bg-white/60" : major ? "w-2.5 bg-white/30" : "w-1.5 bg-white/12")} />
-                <span className={cn("h-px", major?.zero ? "w-3 bg-white/60" : major ? "w-2.5 bg-white/30" : "w-1.5 bg-white/12")} />
-              </span>
-            );
-          })}
           {/* 페이더 홈 */}
-          <div className="absolute inset-y-[-4px] left-1/2 w-[5px] -translate-x-1/2 rounded-full bg-black shadow-[inset_0_1px_3px_rgba(0,0,0,1),0_0_0_1px_rgba(255,255,255,0.08),0_1px_0_rgba(255,255,255,0.06)]" />
+          <div className="absolute inset-y-[-2px] left-1/2 w-1 -translate-x-1/2 rounded-sm bg-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]" />
 
-          {/* 최대 레벨 — 빗금 친 윗부분은 못 올라가는 구역 */}
+          {/* 최대 레벨 — 흰 점선 위로는 못 올린다 */}
           {limit < 100 && (
-            <>
-              <div
-                className="pointer-events-none absolute inset-x-[-3px] top-[-4px] rounded-t-lg bg-[repeating-linear-gradient(135deg,rgba(255,59,59,0.16)_0_4px,transparent_4px_8px)]"
-                style={{ bottom: `${limit}%` }}
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute inset-x-[-5px] h-[2px] translate-y-1/2 rounded-full bg-[#FF3B3B] shadow-[0_0_6px_#FF3B3B]"
-                style={{ bottom: `${limit}%` }}
-                aria-hidden
-              />
-            </>
+            <div
+              className="pointer-events-none absolute inset-x-[-6px] border-t border-dashed border-white/55"
+              style={{ bottom: `${limit}%` }}
+              aria-hidden
+            >
+              <span className="absolute -top-[11px] right-[-2px] font-orbitron text-[6.5px] tracking-[0.1em] text-white/55">
+                MAX
+              </span>
+            </div>
           )}
 
-          {/* 손잡이 — 매트 금속 몸통 + 가운데 빛나는 색 띠 */}
+          {/* 손잡이 — 검정 몸통 + 흰 줄 */}
           <div
             className={cn(
-              "absolute left-1/2 -translate-x-1/2 translate-y-1/2 rounded-[5px] border border-black/70",
-              "bg-[linear-gradient(180deg,#f4f4f5_0%,#dcdcde_30%,#b4b4b8_48%,#8d8d92_52%,#c2c2c6_70%,#9a9a9f_100%)]",
-              "shadow-[0_10px_16px_-4px_rgba(0,0,0,0.85),0_2px_3px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(0,0,0,0.25)]",
-              master ? "h-[36px] w-[54px]" : "h-[32px] w-[44px]",
+              "absolute left-1/2 h-[38px] w-[34px] -translate-x-1/2 translate-y-1/2 rounded border border-black transition-transform",
+              "bg-[linear-gradient(180deg,#3a3a3e_0%,#1f1f22_45%,#141416_55%,#2a2a2e_100%)]",
+              "shadow-[0_8px_12px_-4px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.2)]",
               dragLevel !== null && "scale-[1.04]",
-              (muted || !known) && "saturate-0",
             )}
             style={{ bottom: `${level}%` }}
           >
-            <span className="absolute inset-x-[5px] top-[5px] h-px bg-black/15" />
             <span
-              className="absolute inset-x-[4px] top-1/2 h-[4px] -translate-y-1/2 rounded-full transition-shadow"
-              style={{
-                background: color,
-                boxShadow: live || dragLevel !== null ? `0 0 10px 1px ${color}, 0 0 2px ${color}` : `0 0 3px ${color}66`,
-                opacity: muted || !known ? 0.35 : 1,
-              }}
+              className="absolute inset-x-1 top-1/2 h-[2px] -translate-y-1/2 rounded-[1px]"
+              style={{ background: muted || !known ? "rgba(255,255,255,0.35)" : "#f2f2f2" }}
             />
-            <span className="absolute inset-x-[5px] bottom-[5px] h-px bg-black/20" />
           </div>
         </div>
 
-        {master && <TubeMeter value={Math.max(0, meter - 5)} peak={Math.max(0, peak - 5)} />}
+        {master && <DotMeter value={Math.max(0, meter - 5)} peak={Math.max(0, peak - 5)} color={color} />}
       </div>
 
-      {/* 이름표 — 처리 화면이 있으면 SEL 키를 겸한다 (실제 콘솔의 채널 선택 키) */}
-      <NamePlate onSelect={onSelect} selected={selected} master={master} fx={fx} name={channel.name}>
-        <span className="max-w-full truncate font-mbc text-[15px] leading-tight text-white" title={channel.name}>
-          {channel.name}
-        </span>
-        <span className="flex items-center gap-1 font-orbitron text-[9px] tracking-[0.16em] text-white/35">
-          <span
-            className="h-[5px] w-[5px] rounded-full transition-shadow"
-            style={{ background: color, boxShadow: live ? `0 0 6px ${color}` : "none", opacity: live ? 1 : 0.35 }}
-            aria-hidden
-          />
-          {selected ? <span className="text-[#7CF5D4]">SEL</span> : subLabel}
-        </span>
-      </NamePlate>
-    </div>
-  );
-}
+      {/* 값 창 */}
+      <div
+        className="min-w-[58px] rounded-[3px] border border-black bg-[#07090b] px-1.5 py-[3px] text-center font-orbitron text-xs leading-none tabular-nums shadow-[inset_0_1px_4px_#000]"
+        style={{ color: known || muted ? color : `${color}40`, textShadow: known || muted ? `0 0 6px ${color}b3` : "none" }}
+        title={known ? undefined : "콘솔에서 아직 값을 받지 못했습니다"}
+      >
+        {muted ? "MUTE" : known ? String(level).padStart(2, "0") : "--"}
+      </div>
 
-function NamePlate({
-  onSelect,
-  selected,
-  master,
-  fx,
-  name,
-  children,
-}: {
-  onSelect?: () => void;
-  selected?: boolean;
-  master?: boolean;
-  fx?: boolean;
-  name: string;
-  children: React.ReactNode;
-}) {
-  const base = cn(
-    "flex w-full flex-col items-center gap-0.5 rounded-md border px-1.5 py-1.5 transition-all",
-    selected
-      ? "border-[#7CF5D4]/60 bg-[#7CF5D4]/[0.12] shadow-[0_0_14px_-3px_rgba(124,245,212,0.7)]"
-      : master
-        ? "border-[#FF3B3B]/35 bg-[#FF3B3B]/[0.08]"
-        : fx
-          ? "border-[#B48CFF]/30 bg-[#B48CFF]/[0.07]"
-          : "border-white/[0.06] bg-black/45",
-  );
-  if (!onSelect) return <div className={base}>{children}</div>;
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={!!selected}
-      aria-label={`${name} 채널 선택 (게인·EQ·컴프·이펙트)`}
-      className={cn(base, "outline-none hover:border-[#7CF5D4]/40 focus-visible:ring-2 focus-visible:ring-[#7CF5D4]/50")}
-    >
-      {children}
-    </button>
+      {/* SEL · MUTE */}
+      <div className="flex w-full gap-[5px]">
+        {inputChannel && onSelect && (
+          <Key
+            label="SEL"
+            on={!!selected}
+            color={color}
+            onClick={onSelect}
+            ariaLabel={`${channel.name} 채널 선택 (게인·EQ·컴프·이펙트)`}
+          />
+        )}
+        <Key label="MUTE" on={muted} color={color} disabled={disabled} onClick={() => onMute(!muted)} />
+      </div>
+
+      <span
+        className={cn("max-w-full truncate font-mbc text-[15px] leading-tight", muted ? "text-white/55" : "text-white")}
+        title={channel.name}
+      >
+        {channel.name}
+      </span>
+    </div>
   );
 }
