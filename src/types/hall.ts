@@ -10,8 +10,28 @@ export interface HallSummary extends HallRef {
   hasVideoMatrix: boolean;
 }
 
-/** 드라이버가 할 수 있는 일. scene=씬 전환, channel=채널 조작, meter=입력 레벨, route=라우팅, query=장비 상태 조회 */
-export type Capability = "scene" | "channel" | "meter" | "route" | "query";
+/** 드라이버가 할 수 있는 일. scene=씬 전환, channel=채널 조작, meter=입력 레벨, processing=게인·EQ·컴프·이펙트,
+ * route=라우팅, query=장비 상태 조회 */
+export type Capability = "scene" | "channel" | "meter" | "processing" | "route" | "query";
+
+/** 채널 처리 값 — 손잡이(0~100%) 또는 켜기 스위치. 서버 app/drivers/console.PARAM_ROLES 와 같다 */
+export type ProcessingRole =
+  | "gain"
+  | "eq_on"
+  | "eq_low"
+  | "eq_lomid"
+  | "eq_himid"
+  | "eq_high"
+  | "comp_on"
+  | "comp_threshold"
+  | "comp_ratio"
+  | "comp_makeup"
+  | "fx1"
+  | "fx2"
+  | "fx3"
+  | "fx4";
+
+export const SWITCH_ROLES: ReadonlySet<string> = new Set(["mute", "eq_on", "comp_on"]);
 
 interface DeviceStatus {
   hall: HallRef;
@@ -39,8 +59,8 @@ export interface MixerChannel {
   id: string;
   name: string;
   label?: string;
-  /** 설정 파일에 적힌 콘솔 주소 (HiQnet 연결일 때) */
-  hiqnet?: { fader?: HiqnetParam; mute?: HiqnetParam };
+  /** 설정 파일에 적힌 콘솔 주소 (HiQnet 연결일 때) — 페이더·뮤트와 처리 값(게인·EQ…) */
+  hiqnet?: { fader?: HiqnetParam; mute?: HiqnetParam } & Partial<Record<ProcessingRole, HiqnetParam>>;
   /** 화면에서 올릴 수 있는 최대 레벨(0~100). 없으면 제한 없음 */
   max?: number;
   /** 설정엔 남기되 조작 화면에서 뺀 채널 */
@@ -48,6 +68,10 @@ export interface MixerChannel {
   level: number | null;
   mute: boolean | null;
   meter: number | null;
+  /** 장비 주소가 정해진 처리 값 (입력 채널만) */
+  roles?: ProcessingRole[];
+  /** 처리 값 — 장비가 아직 알려 주지 않았으면 null */
+  params?: Partial<Record<ProcessingRole, number | boolean | null>>;
 }
 
 export interface MixerState extends DeviceStatus {
@@ -58,6 +82,10 @@ export interface MixerState extends DeviceStatus {
   currentScene: number | null;
   channels: MixerChannel[];
   master: MixerChannel | null;
+  /** 이펙트 리턴 (Si FX 1~4) — 채널의 fx1~fx4 가 여기로 보내는 양 */
+  fx?: MixerChannel[];
+  /** 이 연결 방식에서 다룰 수 있는 처리 값 (없으면 처리 화면을 숨긴다) */
+  processingRoles?: ProcessingRole[];
 }
 
 export interface MatrixPort {

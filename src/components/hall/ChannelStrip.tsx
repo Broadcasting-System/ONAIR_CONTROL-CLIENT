@@ -24,9 +24,10 @@ const METER_GRADIENT = "linear-gradient(to top,#14d9a4 0%,#00FF57 52%,#FFD600 76
 // 가는 가로 줄로 칸을 나눠 하드웨어 LED 미터처럼
 const METER_STRIPES = "repeating-linear-gradient(to top,transparent 0 3px,rgba(0,0,0,0.62) 3px 4px)";
 
-/** 채널 종류별 손잡이 불빛 — 실제 콘솔처럼 색으로 구분 (마이크·재생·기타·마스터) */
-function capColor(name: string, master?: boolean): string {
+/** 채널 종류별 손잡이 불빛 — 실제 콘솔처럼 색으로 구분 (마이크·재생·이펙트·기타·마스터) */
+function capColor(name: string, master?: boolean, fx?: boolean): string {
   if (master) return "#FF3B3B";
+  if (fx) return "#B48CFF";
   if (/무선|유선|마이크|mic|강단|보컬|사회/i.test(name)) return "#5AC8FA";
   if (/pc|음원|반주|bgm|노트북|영상|유튜브|재생/i.test(name)) return "#00FF57";
   return "#FFB23F";
@@ -37,6 +38,11 @@ interface ChannelStripProps {
   subLabel: string;
   disabled: boolean;
   master?: boolean;
+  /** 이펙트 리턴 (보라색) */
+  fx?: boolean;
+  /** 이름표를 SEL 키로 — 누르면 위 처리 화면에 이 채널이 열린다 */
+  selected?: boolean;
+  onSelect?: () => void;
   onLevel: (level: number) => void;
   onMute: (muted: boolean) => void;
 }
@@ -73,7 +79,17 @@ function TubeMeter({ value, peak }: { value: number; peak: number }) {
   );
 }
 
-export default function ChannelStrip({ channel, subLabel, disabled, master, onLevel, onMute }: ChannelStripProps) {
+export default function ChannelStrip({
+  channel,
+  subLabel,
+  disabled,
+  master,
+  fx,
+  selected,
+  onSelect,
+  onLevel,
+  onMute,
+}: ChannelStripProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const lastSent = useRef(0);
   const [dragLevel, setDragLevel] = useState<number | null>(null);
@@ -85,7 +101,7 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
   const meter = muted ? 0 : channel.meter ?? 0;
   const peak = usePeak(meter);
   const live = known && !muted && meter > 6;
-  const color = capColor(channel.name, master);
+  const color = capColor(channel.name, master, fx);
   // 관리자가 정한 최대 레벨 — 이 위로는 끌어도, 방향키로도 못 올린다 (서버도 막는다)
   const limit = Math.max(0, Math.min(100, channel.max ?? 100));
 
@@ -275,13 +291,8 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
         {master && <TubeMeter value={Math.max(0, meter - 5)} peak={Math.max(0, peak - 5)} />}
       </div>
 
-      {/* 이름표 */}
-      <div
-        className={cn(
-          "flex w-full flex-col items-center gap-0.5 rounded-md border px-1.5 py-1.5",
-          master ? "border-[#FF3B3B]/35 bg-[#FF3B3B]/[0.08]" : "border-white/[0.06] bg-black/45",
-        )}
-      >
+      {/* 이름표 — 처리 화면이 있으면 SEL 키를 겸한다 (실제 콘솔의 채널 선택 키) */}
+      <NamePlate onSelect={onSelect} selected={selected} master={master} fx={fx} name={channel.name}>
         <span className="max-w-full truncate font-mbc text-[15px] leading-tight text-white" title={channel.name}>
           {channel.name}
         </span>
@@ -291,9 +302,48 @@ export default function ChannelStrip({ channel, subLabel, disabled, master, onLe
             style={{ background: color, boxShadow: live ? `0 0 6px ${color}` : "none", opacity: live ? 1 : 0.35 }}
             aria-hidden
           />
-          {subLabel}
+          {selected ? <span className="text-[#7CF5D4]">SEL</span> : subLabel}
         </span>
-      </div>
+      </NamePlate>
     </div>
+  );
+}
+
+function NamePlate({
+  onSelect,
+  selected,
+  master,
+  fx,
+  name,
+  children,
+}: {
+  onSelect?: () => void;
+  selected?: boolean;
+  master?: boolean;
+  fx?: boolean;
+  name: string;
+  children: React.ReactNode;
+}) {
+  const base = cn(
+    "flex w-full flex-col items-center gap-0.5 rounded-md border px-1.5 py-1.5 transition-all",
+    selected
+      ? "border-[#7CF5D4]/60 bg-[#7CF5D4]/[0.12] shadow-[0_0_14px_-3px_rgba(124,245,212,0.7)]"
+      : master
+        ? "border-[#FF3B3B]/35 bg-[#FF3B3B]/[0.08]"
+        : fx
+          ? "border-[#B48CFF]/30 bg-[#B48CFF]/[0.07]"
+          : "border-white/[0.06] bg-black/45",
+  );
+  if (!onSelect) return <div className={base}>{children}</div>;
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={!!selected}
+      aria-label={`${name} 채널 선택 (게인·EQ·컴프·이펙트)`}
+      className={cn(base, "outline-none hover:border-[#7CF5D4]/40 focus-visible:ring-2 focus-visible:ring-[#7CF5D4]/50")}
+    >
+      {children}
+    </button>
   );
 }

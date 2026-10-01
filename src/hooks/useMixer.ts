@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { hallApi } from "@/lib/hallApi";
 import { toast } from "@/components/common/Toast";
-import type { MixerChannel, MixerState } from "@/types/hall";
+import type { MixerChannel, MixerState, ProcessingRole } from "@/types/hall";
 
 // 입력 레벨(VU)을 보여줄 수 있으면 자주, 아니면 상태 확인 정도로만 가져온다.
 const METER_POLL_MS = 800;
@@ -56,6 +56,23 @@ export function useMixer(hallId: string | null) {
         ...s,
         channels: s.channels.map(apply),
         master: s.master ? apply(s.master) : s.master,
+        fx: s.fx?.map(apply),
+      }));
+    },
+    onError: (e: Error) => {
+      toast.error(e.message);
+      refresh();
+    },
+  });
+
+  const paramMutation = useMutation({
+    mutationFn: ({ channel, role, value }: { channel: string; role: ProcessingRole; value: number | boolean }) =>
+      hallApi.setParam(hallId as string, channel, role, value),
+    onMutate: async ({ channel, role, value }) => {
+      await qc.cancelQueries({ queryKey: key });
+      patchCache((s) => ({
+        ...s,
+        channels: s.channels.map((c) => (c.id === channel ? { ...c, params: { ...c.params, [role]: value } } : c)),
       }));
     },
     onError: (e: Error) => {
@@ -72,5 +89,8 @@ export function useMixer(hallId: string | null) {
     isRecalling: sceneMutation.isPending,
     setLevel: (channel: string, level: number) => channelMutation.mutate({ channel, patch: { level } }),
     setMute: (channel: string, mute: boolean) => channelMutation.mutate({ channel, patch: { mute } }),
+    setParam: (channel: string, role: ProcessingRole, value: number | boolean) =>
+      paramMutation.mutate({ channel, role, value }),
+    refresh,
   };
 }

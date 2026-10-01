@@ -2,7 +2,7 @@ import { del, download, post, put, request, seg } from "@/lib/http";
 import type {
   BridgeDevice, BridgeKitInfo, BridgesStatus, ConnectionTestResult, DiscoverResult, HallSummary, HallsStatus,
   LearnedParam, MatrixConnection, MatrixTryResult, MidiPorts, MixerConfig, MixerConnection, MixerState,
-  SerialPortInfo, VideoMatrixState,
+  ProcessingRole, SerialPortInfo, VideoMatrixState,
 } from "@/types/hall";
 
 /** 서버로 보낼 매트릭스 연결 값 (후보 목록 같은 화면용 값은 뺀다) */
@@ -18,6 +18,17 @@ export const hallApi = {
     post<{ success: boolean; scene: string }>(`/halls/${seg(hall)}/mixer/scene`, { pc }),
   setChannel: (hall: string, channel: string, body: { level?: number; mute?: boolean }) =>
     post<{ success: boolean }>(`/halls/${seg(hall)}/mixer/channels/${seg(channel)}`, body),
+  // 게인·이펙트 보내기는 운영, EQ·컴프레서는 관리자 (서버가 경로로 막는다)
+  setParam: (hall: string, channel: string, role: ProcessingRole, value: number | boolean) =>
+    post<{ success: boolean }>(`/halls/${seg(hall)}/mixer/channels/${seg(channel)}/param/${seg(role)}`, { value }),
+  // 처리 화면에서 '찾기'로 얻은 콘솔 주소 한 칸 저장 (관리자) — 빈 문자열이면 지운다
+  setParamAddress: (hall: string, channel: string, role: string, param: string, invert = false) =>
+    put<{ success: boolean }>(`/halls/${seg(hall)}/mixer/channels/${seg(channel)}/address/${seg(role)}`, {
+      param,
+      invert,
+    }),
+  renameFx: (hall: string, fxId: string, name: string) =>
+    put<{ success: boolean }>(`/halls/${seg(hall)}/mixer/fx/${seg(fxId)}`, { name }),
 
   matrix: (hall: string) => request<VideoMatrixState>(`/halls/${seg(hall)}/matrix`),
   route: (hall: string, output: number, input: number) =>

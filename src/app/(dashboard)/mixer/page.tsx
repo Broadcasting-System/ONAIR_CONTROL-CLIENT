@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import SectionHeader from "@/components/common/SectionHeader";
+import ChannelProcessing from "@/components/hall/ChannelProcessing";
 import ChannelStrip from "@/components/hall/ChannelStrip";
 import { ConfigButton } from "@/components/hall/HallConfigModal";
 import { HallSwitcher, LockToggle, Notice, Panel, StatusChip } from "@/components/hall/HallControls";
@@ -33,11 +34,14 @@ export default function MixerPage() {
     if (current && current.id !== hallId) setHallId(current.id);
   }, [current, hallId, setHallId]);
 
-  const { state, error, recallScene, isRecalling, setLevel, setMute } = useMixer(current?.id ?? null);
+  const { state, error, recallScene, isRecalling, setLevel, setMute, setParam, refresh } = useMixer(current?.id ?? null);
   const { canOperate, isAdmin } = useMe();
   const router = useRouter();
   // '확인' 표시한 씬은 누르면 한 번 더 묻는다
   const [pendingScene, setPendingScene] = useState<MixerScene | null>(null);
+  // SEL 로 고른 입력 채널 — 위 처리 화면(게인·EQ·컴프·이펙트)에 열린다. 홀을 바꾸면 비운다
+  const [selected, setSelected] = useState<string | null>(null);
+  useEffect(() => setSelected(null), [current?.id]);
 
   const connected = !!state?.connected;
   // 관리자가 '씬 전환만'으로 정했으면 채널 조작 칸 자체를 보여주지 않는다
@@ -45,6 +49,9 @@ export default function MixerPage() {
   const channelMode = connected && !scenesOnly && !!state?.capabilities.includes("channel");
   const operable = canOperate && !locked;
   const channels = (state?.channels ?? []).filter((c) => !c.hidden);
+  const fxReturns = state?.fx ?? [];
+  const processing = channelMode && !!state?.capabilities.includes("processing") && !!state?.processingRoles?.length;
+  const selectedChannel = processing ? (channels.find((c) => c.id === selected) ?? null) : null;
 
   const pressScene = (scene: MixerScene) => {
     if (scene.confirm) setPendingScene(scene);
@@ -120,6 +127,24 @@ export default function MixerPage() {
         </div>
       </Panel>
 
+      {processing && state && current && (
+        <Panel
+          title="채널 처리"
+          hint="게인·이펙트 보내기는 운영 기기, EQ·컴프레서는 관리자 기기에서 · 손잡이는 위아래로 끌기 · 두 번 누르면 기본값"
+        >
+          <ChannelProcessing
+            hallId={current.id}
+            state={state}
+            channel={selectedChannel}
+            canOperate={operable}
+            canAdmin={isAdmin && !locked}
+            isAdmin={isAdmin}
+            onParam={(role, value) => selectedChannel && setParam(selectedChannel.id, role, value)}
+            onRefresh={refresh}
+          />
+        </Panel>
+      )}
+
       {scenesOnly ? (
         <Notice tone="info">
           이 믹서는 <b>씬 전환만</b> 쓰도록 설정되어 있어요. 채널 음량·뮤트는 콘솔에서 직접 조작하세요.
@@ -140,11 +165,35 @@ export default function MixerPage() {
                       channel={ch}
                       subLabel={`CH ${ch.id.padStart(2, "0")}`}
                       disabled={!operable || !channelMode}
+                      selected={processing && selected === ch.id}
+                      onSelect={processing ? () => setSelected((s) => (s === ch.id ? null : ch.id)) : undefined}
                       onLevel={(v) => setLevel(ch.id, v)}
                       onMute={(m) => setMute(ch.id, m)}
                     />
                   </div>
                 ))}
+                {fxReturns.length > 0 && (
+                  // 이펙트 리턴 — 에코·울림 전체 양. 채널마다 보내는 양은 위 처리 화면의 FX SEND
+                  <>
+                    <div className="flex h-[360px] w-6 items-center justify-center" aria-hidden>
+                      <span className="font-orbitron text-[9px] tracking-[0.32em] text-[#B48CFF]/60 [writing-mode:vertical-rl]">
+                        FX RETURN
+                      </span>
+                    </div>
+                    {fxReturns.map((f, i) => (
+                      <div key={f.id} className={STRIP_BOX}>
+                        <ChannelStrip
+                          fx
+                          channel={f}
+                          subLabel={`FX ${i + 1}`}
+                          disabled={!operable || !channelMode}
+                          onLevel={(v) => setLevel(f.id, v)}
+                          onMute={(m) => setMute(f.id, m)}
+                        />
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </div>
             {state?.master && (
