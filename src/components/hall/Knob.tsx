@@ -10,9 +10,11 @@ const START = 135;
 const SWEEP = 270;
 // 손잡이 둘레 LED 칸 수
 const DOTS = 19;
-// 위아래로 1px 끌 때 바뀌는 값 (Shift 를 누르면 미세 조정)
+// 1px 끌 때 바뀌는 값 — 오른쪽·위로 끌면 오른쪽으로 돈다 (Shift 를 누르면 미세 조정)
 const DRAG_STEP = 0.45;
 const DRAG_FINE = 0.08;
+// 손잡이 옆면 홈 — 값이 바뀌면 같이 돌아 실제로 돌리는 느낌을 준다
+const KNURLS = 18;
 
 const clamp = (v: number) => Math.max(0, Math.min(100, v));
 const angleOf = (v: number) => START + (clamp(v) / 100) * SWEEP;
@@ -50,7 +52,11 @@ export interface KnobProps {
   title?: string;
 }
 
-/** 콘솔 인코더 — LED 링 + 매트 금속 손잡이. 위아래로 끌거나 방향키로 돌린다. */
+/** 끈 거리 → 값. 좌우가 기본이고 위아래도 같이 받는다 */
+export const dragValue = (from: { x: number; y: number; v: number }, x: number, y: number, fine: boolean) =>
+  clamp(from.v + (x - from.x + (from.y - y)) * (fine ? DRAG_FINE : DRAG_STEP));
+
+/** 콘솔 인코더 — LED 링 + 매트 금속 손잡이. 좌우로 끌거나 방향키로 돌린다. */
 export default function Knob({
   label,
   value,
@@ -67,7 +73,7 @@ export default function Knob({
 }: KnobProps) {
   const gid = useId().replace(/:/g, "");
   const [drag, setDrag] = useState<number | null>(null);
-  const start = useRef<{ y: number; v: number } | null>(null);
+  const start = useRef<{ x: number; y: number; v: number } | null>(null);
   const lastSent = useRef(0);
 
   const known = drag !== null || value != null;
@@ -114,19 +120,18 @@ export default function Knob({
         aria-disabled={disabled}
         className={cn(
           "relative touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#7CF5D4]/50",
-          disabled ? "cursor-not-allowed" : "cursor-ns-resize",
+          disabled ? "cursor-not-allowed" : drag !== null ? "cursor-grabbing" : "cursor-grab",
         )}
         style={{ width: size, height: size }}
         onPointerDown={(e) => {
           if (disabled) return;
           e.currentTarget.setPointerCapture(e.pointerId);
-          start.current = { y: e.clientY, v };
+          start.current = { x: e.clientX, y: e.clientY, v };
           setDrag(v);
         }}
         onPointerMove={(e) => {
           if (!start.current) return;
-          const step = e.shiftKey ? DRAG_FINE : DRAG_STEP;
-          const next = clamp(start.current.v + (start.current.y - e.clientY) * step);
+          const next = dragValue(start.current, e.clientX, e.clientY, e.shiftKey);
           setDrag(next);
           send(next);
         }}
@@ -207,6 +212,20 @@ export default function Knob({
           <circle cx={c} cy={c + 1.5} r={bodyR} fill="rgba(0,0,0,0.7)" />
           <circle cx={c} cy={c} r={bodyR} fill={`url(#body-${gid})`} stroke="rgba(0,0,0,0.9)" strokeWidth={1} />
           <circle cx={c} cy={c} r={bodyR - 1.5} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
+          {/* 옆면 홈 — 값만큼 같이 돈다 */}
+          <g
+            style={{
+              transform: `rotate(${valueAngle}deg)`,
+              transformOrigin: `${c}px ${c}px`,
+              transition: drag !== null ? "none" : "transform 160ms ease-out",
+            }}
+          >
+            {Array.from({ length: KNURLS }, (_, i) => {
+              const [x1, y1] = polar(c, c, bodyR - 3.2, (i / KNURLS) * 360);
+              const [x2, y2] = polar(c, c, bodyR - 0.8, (i / KNURLS) * 360);
+              return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.13)" strokeWidth={1} />;
+            })}
+          </g>
           {known && (
             <line
               x1={ix}

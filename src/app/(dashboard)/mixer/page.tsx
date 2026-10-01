@@ -131,7 +131,7 @@ export default function MixerPage() {
       {processing && state && current && (
         <Panel
           title="채널 처리"
-          hint="게인·이펙트 보내기는 운영 기기, EQ·컴프레서는 관리자 기기에서 · 손잡이는 위아래로 끌기 · 두 번 누르면 기본값"
+          hint="게인·이펙트 보내기는 운영 기기, EQ·컴프레서는 관리자 기기에서 · 손잡이는 좌우로 끌어 돌리기 · 두 번 누르면 기본값"
         >
           <ChannelProcessing
             hallId={current.id}
@@ -168,6 +168,11 @@ export default function MixerPage() {
                       disabled={!operable || !channelMode}
                       selected={processing && selected === ch.id}
                       onSelect={processing ? () => setSelected((s) => (s === ch.id ? null : ch.id)) : undefined}
+                      onGain={
+                        processing && operable && ch.roles?.includes("gain")
+                          ? (v) => setParam(ch.id, "gain", v)
+                          : undefined
+                      }
                       onLevel={(v) => setLevel(ch.id, v)}
                       onMute={(m) => setMute(ch.id, m)}
                     />

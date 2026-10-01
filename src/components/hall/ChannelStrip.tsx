@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { dragValue } from "@/components/hall/Knob";
 import { cn } from "@/lib/utils";
 import type { MixerChannel } from "@/types/hall";
 
@@ -49,6 +50,8 @@ interface ChannelStripProps {
   onSelect?: () => void;
   onLevel: (level: number) => void;
   onMute: (muted: boolean) => void;
+  /** 게인 링을 좌우로 끌어 돌릴 때 (운영 권한 + 게인 주소 연결) — 없으면 보기만 */
+  onGain?: (gain: number) => void;
 }
 
 /** 피크 홀드 — 올라가면 바로 따라가고, 내려갈 때는 천천히 떨어진다 */
@@ -84,40 +87,131 @@ function DotMeter({ value, peak, color }: { value: number; peak: number; color: 
   );
 }
 
-/** 미니 게인 링 — 처리 화면을 열지 않아도 게인이 얼마인지 보인다 */
-function GainRing({ value, color }: { value: number | null; color: string }) {
-  const known = value != null;
-  const v = value ?? 0;
+/** 미니 게인 링 — 좌우로 끌면 실제 손잡이처럼 돌고, 짧게 누르면 처리 화면이 열린다 */
+function GainDial({
+  value,
+  color,
+  name,
+  onChange,
+  onTap,
+}: {
+  value: number | null;
+  color: string;
+  name: string;
+  onChange?: (v: number) => void;
+  onTap?: () => void;
+}) {
+  const start = useRef<{ x: number; y: number; v: number } | null>(null);
+  const moved = useRef(false);
+  const lastSent = useRef(0);
+  const [drag, setDrag] = useState<number | null>(null);
+  // 지금 값을 모르면 돌리지 않는다 — 0에서 시작해 게인이 갑자기 바뀌는 일을 막는다
+  const turnable = !!onChange && value != null;
+  const known = drag !== null || value != null;
+  const v = drag ?? value ?? 0;
+
+  const send = (next: number, force = false) => {
+    const now = Date.now();
+    if (onChange && (force || now - lastSent.current >= SEND_INTERVAL_MS)) {
+      lastSent.current = now;
+      onChange(Math.round(next * 10) / 10);
+    }
+  };
+
   const dots = Array.from({ length: 13 }, (_, i) => {
     const a = ((135 + (i / 12) * 270) * Math.PI) / 180;
     return { x: 23 + 19 * Math.cos(a), y: 23 + 19 * Math.sin(a), lit: known && (i / 12) * 100 <= v };
   });
-  const a = ((135 + (v / 100) * 270) * Math.PI) / 180;
+  const angle = 135 + (v / 100) * 270;
+
   return (
-    <svg viewBox="0 0 46 46" className="h-[46px] w-[46px]" aria-hidden>
-      {dots.map((d, i) => (
-        <circle
-          key={i}
-          cx={d.x}
-          cy={d.y}
-          r={1.6}
-          fill={d.lit ? color : "rgba(255,255,255,0.1)"}
-          style={d.lit ? { filter: `drop-shadow(0 0 2px ${color})` } : undefined}
-        />
-      ))}
-      <circle cx={23} cy={23} r={12} fill="#1c1c20" stroke="#000" />
-      {known && (
-        <line
-          x1={23}
-          y1={23}
-          x2={23 + 10 * Math.cos(a)}
-          y2={23 + 10 * Math.sin(a)}
-          stroke={color}
-          strokeWidth={2}
-          strokeLinecap="round"
-        />
+    <div
+      role="slider"
+      tabIndex={onTap || turnable ? 0 : -1}
+      aria-label={`${name} 게인`}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={known ? Math.round(v) : undefined}
+      title={turnable ? "좌우로 끌어 게인 조절 · 짧게 누르면 처리 화면" : "짧게 누르면 처리 화면 (게인·EQ·컴프·이펙트)"}
+      className={cn(
+        "touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/30",
+        turnable ? (drag !== null ? "cursor-grabbing" : "cursor-grab") : onTap ? "cursor-pointer" : "cursor-default",
       )}
-    </svg>
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        start.current = { x: e.clientX, y: e.clientY, v };
+        moved.current = false;
+      }}
+      onPointerMove={(e) => {
+        const s = start.current;
+        if (!s) return;
+        if (!moved.current && Math.abs(e.clientX - s.x) + Math.abs(e.clientY - s.y) < 4) return;
+        moved.current = true;
+        if (!turnable) return;
+        const next = dragValue(s, e.clientX, e.clientY, e.shiftKey);
+        setDrag(next);
+        send(next);
+      }}
+      onPointerUp={() => {
+        if (!start.current) return;
+        start.current = null;
+        if (!moved.current) onTap?.();
+        else if (drag !== null) send(drag, true);
+        setDrag(null);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onTap?.();
+          return;
+        }
+        if (!turnable) return;
+        const step = e.shiftKey ? 10 : 2;
+        const delta = e.key === "ArrowRight" || e.key === "ArrowUp" ? step : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -step : 0;
+        if (!delta) return;
+        e.preventDefault();
+        send(Math.max(0, Math.min(100, v + delta)), true);
+      }}
+    >
+      <svg viewBox="0 0 46 46" className="h-[46px] w-[46px]" aria-hidden>
+        {dots.map((d, i) => (
+          <circle
+            key={i}
+            cx={d.x}
+            cy={d.y}
+            r={1.6}
+            fill={d.lit ? color : "rgba(255,255,255,0.1)"}
+            style={d.lit ? { filter: `drop-shadow(0 0 2px ${color})` } : undefined}
+          />
+        ))}
+        <circle cx={23} cy={24} r={12} fill="rgba(0,0,0,0.7)" />
+        <circle cx={23} cy={23} r={12} fill="#1c1c20" stroke="#000" />
+        {/* 손잡이 — 홈과 바늘이 값만큼 같이 돈다 */}
+        <g
+          style={{
+            transform: `rotate(${angle}deg)`,
+            transformOrigin: "23px 23px",
+            transition: drag !== null ? "none" : "transform 160ms ease-out",
+          }}
+        >
+          {Array.from({ length: 12 }, (_, i) => {
+            const a = (i / 12) * Math.PI * 2;
+            return (
+              <line
+                key={i}
+                x1={23 + 9.5 * Math.cos(a)}
+                y1={23 + 9.5 * Math.sin(a)}
+                x2={23 + 11.5 * Math.cos(a)}
+                y2={23 + 11.5 * Math.sin(a)}
+                stroke="rgba(255,255,255,0.14)"
+                strokeWidth={1}
+              />
+            );
+          })}
+          {known && <line x1={27} y1={23} x2={33} y2={23} stroke={color} strokeWidth={2} strokeLinecap="round" />}
+        </g>
+      </svg>
+    </div>
   );
 }
 
@@ -171,6 +265,7 @@ export default function ChannelStrip({
   onSelect,
   onLevel,
   onMute,
+  onGain,
 }: ChannelStripProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const lastSent = useRef(0);
@@ -238,16 +333,7 @@ export default function ChannelStrip({
 
       {/* 미니 게인 링 (입력 채널) — 누르면 처리 화면이 열린다 */}
       {inputChannel ? (
-        <button
-          type="button"
-          onClick={onSelect}
-          disabled={!onSelect}
-          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-default"
-          title={gain != null ? `GAIN ${Math.round(gain)}` : "GAIN — 처리 화면에서 조절"}
-          aria-label={`${channel.name} 게인 · 처리 화면 열기`}
-        >
-          <GainRing value={gain} color={color} />
-        </button>
+        <GainDial value={gain} color={color} name={channel.name} onChange={onGain} onTap={onSelect} />
       ) : (
         <div className="grid h-[46px] place-items-center font-orbitron text-[8px] tracking-[0.2em] text-white/28">
           {fx ? "RETURN" : channel.label ?? "STEREO"}
@@ -369,7 +455,14 @@ export default function ChannelStrip({
             ariaLabel={`${channel.name} 채널 선택 (게인·EQ·컴프·이펙트)`}
           />
         )}
-        <Key label="MUTE" on={muted} color={color} disabled={disabled} onClick={() => onMute(!muted)} />
+        <Key
+          label="MUT"
+          on={muted}
+          color={color}
+          disabled={disabled}
+          onClick={() => onMute(!muted)}
+          ariaLabel={`${channel.name} 뮤트`}
+        />
       </div>
 
       <span
