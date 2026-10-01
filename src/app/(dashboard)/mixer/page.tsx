@@ -174,7 +174,8 @@ export default function MixerPage() {
                 ))}
                 {fxReturns.length > 0 && (
                   // 이펙트 리턴 — 에코·울림 전체 양. 채널마다 보내는 양은 위 처리 화면의 FX SEND
-                  <>
+                  // 라벨과 FX 채널이 한 덩어리로 줄을 바꾼다
+                  <div className="flex gap-1.5">
                     <div className="flex h-[360px] w-6 items-center justify-center" aria-hidden>
                       <span className="font-orbitron text-[9px] tracking-[0.32em] text-[#B48CFF]/60 [writing-mode:vertical-rl]">
                         FX RETURN
@@ -192,7 +193,7 @@ export default function MixerPage() {
                         />
                       </div>
                     ))}
-                  </>
+                  </div>
                 )}
               </div>
             </div>
