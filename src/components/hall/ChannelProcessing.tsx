@@ -320,10 +320,7 @@ export default function ChannelProcessing({
     return (
       <div className="flex h-[150px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 bg-black/30">
         <SlidersHorizontal size={22} className="text-white/25" />
-        <p className="font-pretendard text-sm text-white/45">
-          아래 채널의 <b className="font-orbitron text-[11px] tracking-[0.16em] text-[#7CF5D4]">SEL</b> 이름표를 누르면 그
-          채널의 게인 · EQ · 컴프레서 · 이펙트가 여기 열려요
-        </p>
+        <p className="font-orbitron text-[11px] tracking-[0.2em] text-white/40">SELECT A CHANNEL</p>
       </div>
     );
   }
@@ -434,12 +431,8 @@ export default function ChannelProcessing({
               unlinked={unlinked("gain")}
               onChange={(v) => onParam("gain", v)}
               footer={knobFooter("gain")}
-              title="마이크로 들어오는 소리의 기본 크기 — 너무 올리면 하울링이 납니다"
             />
           </div>
-          <p className="max-w-[120px] text-center font-pretendard text-[11px] leading-snug text-white/30">
-            너무 올리면 하울링이 나요
-          </p>
         </Module>
 
         {/* EQ */}
@@ -480,20 +473,13 @@ export default function ChannelProcessing({
           action={switchKey("comp_on", "COMP", C_DYN, canAdmin)}
           className="w-[280px]"
         >
-          <div className="flex items-start gap-3">
+          <div className="flex justify-center">
             <CompCurve
               threshold={num(p.comp_threshold, 70)}
               ratio={num(p.comp_ratio, 30)}
               makeup={num(p.comp_makeup, 0)}
               on={compOn}
             />
-            <p className="font-pretendard text-[11px] leading-snug text-white/35">
-              기준을 넘는 큰 소리를
-              <br />
-              비율만큼 눌러 줘요.
-              <br />
-              <span className="text-white/20">그림은 콘솔 값(%)으로 그린 대략적인 모양</span>
-            </p>
           </div>
           <div className="flex flex-wrap justify-around gap-2">
             {(
@@ -534,7 +520,6 @@ export default function ChannelProcessing({
                   unlinked={unlinked(role)}
                   onChange={(v) => onParam(role, v)}
                   footer={knobFooter(role)}
-                  title="이 채널 소리를 이펙트(에코·울림)로 얼마나 보낼지"
                 />
               );
             })}
@@ -569,9 +554,6 @@ export default function ChannelProcessing({
               ))}
             </div>
           ))}
-          <span className="font-pretendard text-[11px] text-white/35">
-            콘솔에서 FX 효과 종류(리버브·딜레이)를 정한 뒤 이름을 ‘에코’처럼 바꿔 두세요
-          </span>
         </div>
       )}
 

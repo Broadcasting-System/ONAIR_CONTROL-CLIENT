@@ -90,11 +90,8 @@ export default function MixerPage() {
       {error && <Notice>{error.message}</Notice>}
       {state && !connected && <Notice>믹서에 연결되지 않았습니다 — {state.detail}</Notice>}
       {!canOperate && <Notice tone="info">보기 전용 기기입니다. 조작은 운영 권한이 있는 기기에서 가능합니다.</Notice>}
-      {canOperate && locked && (
-        <Notice tone="info">잠겨 있어요. 조작하려면 오른쪽 위 잠금을 푸세요 — 페이지를 다시 열면 다시 잠깁니다.</Notice>
-      )}
 
-      <Panel title="씬" hint="누르면 콘솔 전체가 저장된 씬으로 바뀝니다 · 콘솔에서 바꿔도 여기 반영됩니다">
+      <Panel title="씬">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3.5">
           {(state?.scenes ?? []).map((scene) => {
             const active = state?.currentScene === scene.pc;
@@ -131,7 +128,6 @@ export default function MixerPage() {
       {processing && state && current && (
         <Panel
           title="채널 처리"
-          hint="게인·이펙트 보내기는 운영 기기, EQ·컴프레서는 관리자 기기에서 · 손잡이는 잡고 돌리기 · 두 번 누르면 기본값"
         >
           <ChannelProcessing
             hallId={current.id}
@@ -153,7 +149,6 @@ export default function MixerPage() {
       ) : (
         <Panel
           title="채널"
-          hint={`페이더를 끌거나 방향키로 조절 · MUTE로 즉시 차단 · 빨간 선 위로는 올릴 수 없습니다 · ${channels.length}개`}
           className="flex min-h-[520px] flex-1 flex-col"
         >
           <div className="relative flex min-h-0 flex-1 gap-3">
