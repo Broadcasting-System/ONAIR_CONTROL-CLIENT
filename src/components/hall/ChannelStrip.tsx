@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { dragValue } from "@/components/hall/Knob";
+import { beginTurn, turnTo, type Turn } from "@/components/hall/Knob";
 import { cn } from "@/lib/utils";
 import type { MixerChannel } from "@/types/hall";
 
@@ -101,7 +101,7 @@ function GainDial({
   onChange?: (v: number) => void;
   onTap?: () => void;
 }) {
-  const start = useRef<{ x: number; y: number; v: number } | null>(null);
+  const start = useRef<{ x: number; y: number; turn: Turn } | null>(null);
   const moved = useRef(false);
   const lastSent = useRef(0);
   const [drag, setDrag] = useState<number | null>(null);
@@ -132,14 +132,14 @@ function GainDial({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={known ? Math.round(v) : undefined}
-      title={turnable ? "좌우로 끌어 게인 조절 · 짧게 누르면 처리 화면" : "짧게 누르면 처리 화면 (게인·EQ·컴프·이펙트)"}
+      title={turnable ? "잡고 돌려서 게인 조절 · 짧게 누르면 처리 화면" : "짧게 누르면 처리 화면 (게인·EQ·컴프·이펙트)"}
       className={cn(
         "touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/30",
         turnable ? (drag !== null ? "cursor-grabbing" : "cursor-grab") : onTap ? "cursor-pointer" : "cursor-default",
       )}
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
-        start.current = { x: e.clientX, y: e.clientY, v };
+        start.current = { x: e.clientX, y: e.clientY, turn: beginTurn(e.currentTarget, e.clientX, e.clientY, v) };
         moved.current = false;
       }}
       onPointerMove={(e) => {
@@ -148,7 +148,7 @@ function GainDial({
         if (!moved.current && Math.abs(e.clientX - s.x) + Math.abs(e.clientY - s.y) < 4) return;
         moved.current = true;
         if (!turnable) return;
-        const next = dragValue(s, e.clientX, e.clientY, e.shiftKey);
+        const next = turnTo(s.turn, e.clientX, e.clientY, e.shiftKey);
         setDrag(next);
         send(next);
       }}

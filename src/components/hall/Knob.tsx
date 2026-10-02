@@ -10,9 +10,10 @@ const START = 135;
 const SWEEP = 270;
 // 손잡이 둘레 LED 칸 수
 const DOTS = 19;
-// 1px 끌 때 바뀌는 값 — 오른쪽·위로 끌면 오른쪽으로 돈다 (Shift 를 누르면 미세 조정)
-const DRAG_STEP = 0.45;
-const DRAG_FINE = 0.08;
+// 손잡이를 잡고 원을 그리듯 돌린다 — 마우스가 중심을 도는 각도만큼 같이 돈다 (Shift 는 1/4 속도)
+const FINE = 0.25;
+// 중심에 너무 가까우면 각도가 튀니 이 반지름 안의 움직임은 무시한다
+const DEAD_RADIUS = 6;
 // 손잡이 옆면 홈 — 값이 바뀌면 같이 돌아 실제로 돌리는 느낌을 준다
 const KNURLS = 18;
 
@@ -52,11 +53,35 @@ export interface KnobProps {
   title?: string;
 }
 
-/** 끈 거리 → 값. 좌우가 기본이고 위아래도 같이 받는다 */
-export const dragValue = (from: { x: number; y: number; v: number }, x: number, y: number, fine: boolean) =>
-  clamp(from.v + (x - from.x + (from.y - y)) * (fine ? DRAG_FINE : DRAG_STEP));
+export interface Turn {
+  cx: number;
+  cy: number;
+  /** 직전 포인터 각도(도) */
+  last: number;
+  v: number;
+}
 
-/** 콘솔 인코더 — LED 링 + 매트 금속 손잡이. 좌우로 끌거나 방향키로 돌린다. */
+/** 손잡이를 잡은 순간 — 중심과 지금 각도를 기억한다 */
+export function beginTurn(el: Element, x: number, y: number, v: number): Turn {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  return { cx, cy, last: (Math.atan2(y - cy, x - cx) * 180) / Math.PI, v };
+}
+
+/** 포인터가 중심을 돈 만큼 값을 바꾼다. 손잡이 270° 회전 = 0~100. 끝에 닿으면 실제 손잡이처럼 멈춘다 */
+export function turnTo(t: Turn, x: number, y: number, fine: boolean): number {
+  if (Math.hypot(x - t.cx, y - t.cy) < DEAD_RADIUS) return t.v;
+  const a = (Math.atan2(y - t.cy, x - t.cx) * 180) / Math.PI;
+  let d = a - t.last;
+  if (d > 180) d -= 360;
+  if (d < -180) d += 360;
+  t.last = a;
+  t.v = clamp(t.v + (d / SWEEP) * 100 * (fine ? FINE : 1));
+  return t.v;
+}
+
+/** 콘솔 인코더 — LED 링 + 매트 금속 손잡이. 잡고 원을 그리듯 돌리거나 방향키로 돌린다. */
 export default function Knob({
   label,
   value,
@@ -73,7 +98,7 @@ export default function Knob({
 }: KnobProps) {
   const gid = useId().replace(/:/g, "");
   const [drag, setDrag] = useState<number | null>(null);
-  const start = useRef<{ x: number; y: number; v: number } | null>(null);
+  const start = useRef<Turn | null>(null);
   const lastSent = useRef(0);
 
   const known = drag !== null || value != null;
@@ -126,12 +151,12 @@ export default function Knob({
         onPointerDown={(e) => {
           if (disabled) return;
           e.currentTarget.setPointerCapture(e.pointerId);
-          start.current = { x: e.clientX, y: e.clientY, v };
+          start.current = beginTurn(e.currentTarget, e.clientX, e.clientY, v);
           setDrag(v);
         }}
         onPointerMove={(e) => {
           if (!start.current) return;
-          const next = dragValue(start.current, e.clientX, e.clientY, e.shiftKey);
+          const next = turnTo(start.current, e.clientX, e.clientY, e.shiftKey);
           setDrag(next);
           send(next);
         }}
