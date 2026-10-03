@@ -29,9 +29,15 @@ export type ProcessingRole =
   | "fx1"
   | "fx2"
   | "fx3"
-  | "fx4";
+  | "fx4"
+  | "fx1_on"
+  | "fx2_on"
+  | "fx3_on"
+  | "fx4_on";
 
-export const SWITCH_ROLES: ReadonlySet<string> = new Set(["mute", "eq_on", "comp_on"]);
+export const SWITCH_ROLES: ReadonlySet<string> = new Set([
+  "mute", "eq_on", "comp_on", "fx1_on", "fx2_on", "fx3_on", "fx4_on",
+]);
 
 interface DeviceStatus {
   hall: HallRef;

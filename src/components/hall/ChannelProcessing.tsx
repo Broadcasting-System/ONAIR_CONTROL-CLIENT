@@ -40,6 +40,10 @@ const ROLE_NAME: Record<string, string> = {
   fx2: "FX 2 보내기 손잡이",
   fx3: "FX 3 보내기 손잡이",
   fx4: "FX 4 보내기 손잡이",
+  fx1_on: "FX 1 ON 버튼",
+  fx2_on: "FX 2 ON 버튼",
+  fx3_on: "FX 3 ON 버튼",
+  fx4_on: "FX 4 ON 버튼",
 };
 
 /** 가운데(50%)가 0 인 손잡이 표시 — +12 / −08 / 00 */
@@ -508,19 +512,23 @@ export default function ChannelProcessing({
           <div className="grid grid-cols-2 justify-items-center gap-x-2 gap-y-2">
             {FX_SENDS.map((role, i) => {
               const ret = fx.find((f) => f.id === role);
+              const onRole = `${role}_on` as ProcessingRole;
+              // ON 은 이 채널을 그 이펙트로 보내기를 켜고 끈다 — 마이크 에코 켜기/끄기
               return (
-                <Knob
-                  key={role}
-                  label={(ret?.name ?? `FX ${i + 1}`).toUpperCase()}
-                  value={value(role)}
-                  color={C_FX}
-                  size={56}
-                  defaultValue={0}
-                  disabled={!canOperate}
-                  unlinked={unlinked(role)}
-                  onChange={(v) => onParam(role, v)}
-                  footer={knobFooter(role)}
-                />
+                <div key={role} className="flex flex-col items-center gap-1">
+                  <Knob
+                    label={(ret?.name ?? `FX ${i + 1}`).toUpperCase()}
+                    value={value(role)}
+                    color={C_FX}
+                    size={56}
+                    defaultValue={0}
+                    disabled={!canOperate}
+                    unlinked={unlinked(role)}
+                    onChange={(v) => onParam(role, v)}
+                    footer={knobFooter(role)}
+                  />
+                  {switchKey(onRole, "ON", C_FX, canOperate)}
+                </div>
               );
             })}
           </div>
