@@ -134,7 +134,7 @@ export default function ChannelsStep({
       }
       if (!c.mute.trim()) {
         row.mute = si.mute;
-        row.muteInvert = false;
+        row.muteInvert = si.muteInvert;
         filled++;
       }
       return row;
@@ -144,7 +144,7 @@ export default function ChannelsStep({
       return;
     }
     setChannels(() => next);
-    toast.success(`빈 칸 ${filled}개를 Si 기본 주소로 채웠어요. 추정값이라 저장 후 시험으로 확인하세요.`);
+    toast.success(`빈 칸 ${filled}개를 Si 기본 주소로 채웠어요. 화면 채널 번호가 콘솔 채널 번호와 같아야 맞아요 — 저장 후 시험으로 확인하세요.`);
   };
 
   // ---- 시험: 저장된 설정으로 콘솔을 조금씩 움직여 본다 ----
@@ -453,7 +453,7 @@ function AddrInput({
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="1.0.0.22/37"
+        placeholder="1.0.0.21/61"
         aria-label={label}
         className={cn(
           "h-9 w-[122px] min-w-0 rounded-lg border bg-[#101010] px-2 font-mono text-xs text-white placeholder:text-white/20 focus:outline-none",

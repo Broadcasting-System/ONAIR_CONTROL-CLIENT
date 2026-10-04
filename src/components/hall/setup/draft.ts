@@ -116,9 +116,11 @@ export function draftProblems(d: Draft, hiqnet: boolean): string[] {
   return out;
 }
 
-/** Si 계열 기본 주소 (HiQontrol 분석 기준 추정) — CH N 페이더 = 1.0.0.22/(36+N), 뮤트 = 1.0.0.(47+N)/1 */
-export function siAddress(id: string): { fader: string; mute: string } | null {
+/** Si Expression 기본 주소 (펌웨어 2.2.1, 2026-10-03 다목적홀에서 실측) —
+ *  CH N 페이더 = 1.0.0.21/(60+N), 켜짐(ON) = 1.0.0.21/N (켜짐=1 이라 뮤트와 반대).
+ *  채널 번호는 콘솔의 채널 번호다 — 스테레오로 묶인 채널은 두 칸을 쓴다. */
+export function siAddress(id: string): { fader: string; mute: string; muteInvert: boolean } | null {
   const n = Number(id);
-  if (!Number.isInteger(n) || n < 1 || n > 32) return null;
-  return { fader: `1.0.0.22/${36 + n}`, mute: `1.0.0.${47 + n}/1` };
+  if (!Number.isInteger(n) || n < 1 || n > 60) return null;
+  return { fader: `1.0.0.21/${60 + n}`, mute: `1.0.0.21/${n}`, muteInvert: true };
 }

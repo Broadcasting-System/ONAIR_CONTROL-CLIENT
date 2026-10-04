@@ -235,7 +235,7 @@ export default function ConnectionStep({
             </button>
           </div>
           <p className="-mt-2 font-pretendard text-xs text-white/30">
-            장치 번호는 콘솔의 HiQnet 주소예요 (Si 기본 1). 찾기로 채우면 같이 들어갑니다.
+            장치 번호는 콘솔 SYSTEM 의 HiQnet Address 예요 (예: 28147). 콘솔 찾기로 채우면 같이 들어갑니다.
           </p>
 
           {advanced && (
