@@ -28,6 +28,7 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
       { label: "오디오 믹서", subLabel: "MIXER", path: "/mixer", isNew: true },
       { label: "영상 매트릭스", subLabel: "VIDEO MATRIX", path: "/matrix", isNew: true },
       { label: "조명", subLabel: "LIGHTING", path: "/lighting", isNew: true },
+      { label: "녹음", subLabel: "RECORDING", path: "/recording", isNew: true },
     ],
   },
   {
