@@ -5,30 +5,35 @@ import SectionHeader from "@/components/common/SectionHeader";
 import { getApiBase } from "@/lib/apiBase";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/common/Toast";
-import { useMe, Role } from "@/hooks/useMe";
+import { useMe } from "@/hooks/useMe";
 import PageTabs from "@/components/common/PageTabs";
 import AccessLogPanel from "@/components/devices/AccessLogPanel";
+import MembersPanel from "@/components/devices/MembersPanel";
 import SpeakerMappingPanel from "@/components/devices/SpeakerMappingPanel";
 import BridgePanel from "@/components/devices/BridgePanel";
 import { useTabParam } from "@/hooks/useTabParam";
+
+/** 예전 기기(Tailscale IP) 역할 — 서버는 admin=부장, operator=부원, viewer=졸업(보기)으로 읽는다 */
+type DeviceRole = "admin" | "operator" | "viewer";
 
 interface Device {
   ip: string;
   name: string;
   owner: string;
-  role: Role;
+  role: DeviceRole;
   label: string;
 }
 
-const ROLES: { value: Role; label: string }[] = [
-  { value: "admin", label: "관리자" },
-  { value: "operator", label: "운영" },
+const ROLES: { value: DeviceRole; label: string }[] = [
+  { value: "admin", label: "부장 권한" },
+  { value: "operator", label: "부원 권한" },
   { value: "viewer", label: "보기 전용" },
 ];
 
-const DEVICE_TAB_KEYS = ["devices", "speakers", "bridges", "logs"] as const;
+const DEVICE_TAB_KEYS = ["members", "devices", "speakers", "bridges", "logs"] as const;
 const DEVICE_TABS = [
-  { key: "devices" as const, label: "기기" },
+  { key: "members" as const, label: "부원" },
+  { key: "devices" as const, label: "기기(IP)" },
   { key: "speakers" as const, label: "스피커 매핑" },
   { key: "bridges" as const, label: "강당 장비" },
   { key: "logs" as const, label: "접근 로그" },
@@ -39,8 +44,8 @@ export default function DevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [denied, setDenied] = useState(false);
   const [newIp, setNewIp] = useState("");
-  const [newRole, setNewRole] = useState<Role>("operator");
-  const [tab, setTab] = useTabParam(DEVICE_TAB_KEYS, "devices");
+  const [newRole, setNewRole] = useState<DeviceRole>("operator");
+  const [tab, setTab] = useTabParam(DEVICE_TAB_KEYS, "members");
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -64,7 +69,7 @@ export default function DevicesPage() {
   }, [fetchDevices]);
 
   const save = useCallback(
-    async (ip: string, patch: { label?: string; role?: Role }) => {
+    async (ip: string, patch: { label?: string; role?: DeviceRole }) => {
       try {
         const res = await fetch(`${getApiBase()}/devices/${encodeURIComponent(ip)}`, {
           method: "PUT",
@@ -91,8 +96,8 @@ export default function DevicesPage() {
   if (denied) {
     return (
       <div className="flex flex-col gap-5">
-        <SectionHeader>기기 관리</SectionHeader>
-        <p className="font-pretendard text-white/40">관리자만 볼 수 있습니다.</p>
+        <SectionHeader>기기·부원 관리</SectionHeader>
+        <p className="font-pretendard text-white/40">부장 이상만 볼 수 있습니다.</p>
       </div>
     );
   }
@@ -100,11 +105,13 @@ export default function DevicesPage() {
   return (
     <div className="flex h-full flex-col gap-6">
       <div className="flex items-center justify-between">
-        <SectionHeader className="mb-0">기기 관리</SectionHeader>
+        <SectionHeader className="mb-0">기기·부원 관리</SectionHeader>
         <PageTabs tabs={DEVICE_TABS} value={tab} onChange={setTab} />
       </div>
 
-      {tab === "logs" ? (
+      {tab === "members" ? (
+        <MembersPanel />
+      ) : tab === "logs" ? (
         <AccessLogPanel />
       ) : tab === "speakers" ? (
         <SpeakerMappingPanel />
@@ -118,11 +125,12 @@ export default function DevicesPage() {
           <p className="font-mbc text-sm text-white/50">
             내 기기 IP{" "}
             <span className="font-orbitron text-white/80">{me.ip}</span>
-            <span className="ml-2 text-white/30">({me.role})</span>
+            <span className="ml-2 text-white/30">({me.roleLabel})</span>
           </p>
           <p className="mt-1 font-pretendard text-xs text-white/30">
-            이 IP를 서버 <code className="text-white/50">.env</code>의{" "}
-            <code className="text-white/50">ADMIN_IPS</code>에 넣으면 항상 관리자입니다.
+            예전 방식(Tailscale IP) 권한입니다. 이 IP를 서버 <code className="text-white/50">.env</code>의{" "}
+            <code className="text-white/50">ADMIN_IPS</code>에 넣으면 항상 부장 권한,{" "}
+            <code className="text-white/50">SUPERADMIN_IDS</code>에 넣으면 최고 관리자입니다. 새 부원은 &lsquo;부원&rsquo; 탭에서 초대하세요.
           </p>
         </div>
       )}
@@ -142,7 +150,7 @@ export default function DevicesPage() {
           <span className="font-mbc text-xs text-white/40">역할</span>
           <select
             value={newRole}
-            onChange={(e) => setNewRole(e.target.value as Role)}
+            onChange={(e) => setNewRole(e.target.value as DeviceRole)}
             className="h-10 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white focus:outline-none"
           >
             {ROLES.map((r) => (
@@ -200,7 +208,7 @@ export default function DevicesPage() {
                   <td className="px-4 py-2.5">
                     <select
                       value={d.role}
-                      onChange={(e) => save(d.ip, { role: e.target.value as Role })}
+                      onChange={(e) => save(d.ip, { role: e.target.value as DeviceRole })}
                       className={cn(
                         "h-9 rounded-lg border bg-[#141414] px-3 text-white focus:outline-none",
                         d.role === "admin"

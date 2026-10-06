@@ -134,7 +134,7 @@ export default function MixerPage() {
             state={state}
             channel={selectedChannel}
             canOperate={operable}
-            canAdmin={isAdmin && !locked}
+            canAdmin={operable}
             isAdmin={isAdmin}
             onParam={(role, value) => selectedChannel && setParam(selectedChannel.id, role, value)}
             onRefresh={refresh}

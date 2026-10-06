@@ -12,14 +12,8 @@ import { useTts } from "@/hooks/useTts";
 import { MAX_CHANNELS } from "@/stores/channelStore";
 import { clearBanner } from "@/lib/bannerApi";
 
-const ROLE_LABEL: Record<string, string> = {
-  admin: "관리자",
-  operator: "운영",
-  viewer: "보기 전용",
-};
-
 export default function RemotePage() {
-  const { me, role, canOperate } = useMe();
+  const { me, canOperate } = useMe();
   const { health } = useHealth(2000);
   const { toggleSpeaker, allOff } = useSpeakers();
   const { text, setText, handleSend, isSending } = useTts();
@@ -57,7 +51,7 @@ export default function RemotePage() {
         <div>
           <p className="font-mbc text-sm text-white/80">{me?.name ?? "연결 중…"}</p>
           <p className="font-orbitron text-[10px] uppercase tracking-widest text-white/30">
-            {ROLE_LABEL[role] ?? role} · 리모컨
+            {me?.roleLabel ?? "…"} · 리모컨
           </p>
         </div>
         {health && (
@@ -73,7 +67,7 @@ export default function RemotePage() {
 
       {!canOperate && (
         <p className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center font-pretendard text-xs text-amber-200/80">
-          보기 전용 권한입니다. 조작하려면 관리자에게 운영 권한을 요청하세요.
+          보기 전용입니다. 조작은 부원 이상만 할 수 있어요 — 부장에게 승인을 요청하세요.
         </p>
       )}
 

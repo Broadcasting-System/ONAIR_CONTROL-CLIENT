@@ -13,6 +13,8 @@ interface LogEntry {
   method: string;
   path: string;
   status: number;
+  /** 부원 관리 기록(method MEMBER)의 사람이 읽을 설명 */
+  detail?: string;
 }
 
 const METHOD_COLOR: Record<string, string> = {
@@ -20,6 +22,12 @@ const METHOD_COLOR: Record<string, string> = {
   PUT: "text-sky-300",
   PATCH: "text-amber-300",
   DELETE: "text-red-300",
+  MEMBER: "text-[#FF7B7B]",
+};
+
+const ROLE_LABEL: Record<string, string> = {
+  superadmin: "최고 관리자", lead: "부장", member: "부원", alumni: "졸업", teacher: "교사", guest: "미등록",
+  admin: "부장", operator: "부원", viewer: "보기",
 };
 
 // 경로 → 사람이 읽을 동작명
@@ -44,6 +52,7 @@ function describe(path: string, method: string): string {
   if (path.startsWith("/api/time")) return "시보 설정";
   if (path.startsWith("/api/files")) return method === "DELETE" ? "파일 삭제" : "파일 변경";
   if (path.startsWith("/api/devices")) return "기기 관리";
+  if (path.startsWith("/api/members")) return "부원 관리";
   return path;
 }
 
@@ -108,12 +117,12 @@ export default function AccessLogPanel() {
                   {l.device || l.ip}
                   {l.owner ? <span className="text-white/30"> · {l.owner}</span> : null}
                 </td>
-                <td className="px-4 py-2.5 text-white/50">{l.role}</td>
+                <td className="px-4 py-2.5 text-white/50">{ROLE_LABEL[l.role] ?? l.role}</td>
                 <td className="px-4 py-2.5">
                   <span className={cn("font-orbitron text-[11px]", METHOD_COLOR[l.method] ?? "text-white/40")}>
                     {l.method}
                   </span>{" "}
-                  <span className="text-white/80">{describe(l.path, l.method)}</span>
+                  <span className="text-white/80">{l.detail || describe(l.path, l.method)}</span>
                 </td>
                 <td className="px-4 py-2.5">
                   <span

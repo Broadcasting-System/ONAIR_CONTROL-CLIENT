@@ -191,8 +191,8 @@ function Module({
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
         <span className="font-orbitron text-[10.5px] tracking-[0.24em] text-white/70">{label}</span>
         {locked && (
-          <span className="flex items-center gap-1 font-pretendard text-[10.5px] text-white/35" title="관리자 기기에서만 바꿀 수 있어요">
-            <Lock size={10} /> 관리자
+          <span className="flex items-center gap-1 font-pretendard text-[10.5px] text-white/35" title="부원 이상이 잠금을 풀면 바꿀 수 있어요">
+            <Lock size={10} /> 보기만
           </span>
         )}
         <div className="ml-auto">{action}</div>
@@ -307,7 +307,7 @@ export default function ChannelProcessing({
   channel: MixerChannel | null;
   /** 게인·이펙트 보내기 (운영 + 잠금 해제) */
   canOperate: boolean;
-  /** EQ·컴프레서 (관리자 + 잠금 해제) */
+  /** EQ·컴프레서 (부원 이상 + 잠금 해제) */
   canAdmin: boolean;
   /** 주소 연결 버튼을 보일지 (관리자) */
   isAdmin: boolean;

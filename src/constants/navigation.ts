@@ -43,8 +43,8 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
     title: "ADMIN",
     adminOnly: true,
     items: [
-      // '접근 로그' 탭 포함 (구 접근 로그 메뉴)
-      { label: "기기 관리", subLabel: "DEVICES", path: "/devices", adminOnly: true },
+      // 부원(초대·승인·권한)·기기·접근 로그 탭 — 부장 이상
+      { label: "기기·부원 관리", subLabel: "DEVICES · MEMBERS", path: "/devices", adminOnly: true },
     ],
   },
 ];
