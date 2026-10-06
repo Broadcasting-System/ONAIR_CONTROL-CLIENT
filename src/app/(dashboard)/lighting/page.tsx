@@ -3,15 +3,21 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import PageTabs from "@/components/common/PageTabs";
 import SectionHeader from "@/components/common/SectionHeader";
 import { ConfigButton } from "@/components/hall/HallConfigModal";
 import { HallSwitcher, LockToggle, Notice, Panel, StatusChip } from "@/components/hall/HallControls";
 import LightStrip, { LightMasterStrip, presetOf } from "@/components/hall/LightStrip";
+import MusicLightPanel from "@/components/hall/MusicLight";
 import { useHalls } from "@/hooks/useHalls";
 import { useLighting } from "@/hooks/useLighting";
 import { useMe } from "@/hooks/useMe";
 import { usePersistentState } from "@/hooks/usePersistentState";
+import { useTabParam } from "@/hooks/useTabParam";
 import { cn } from "@/lib/utils";
+
+// 조작 = 조명 페이더·장면, 음악 조명 = MR 로 만든 조명 쇼·실시간 박자 따라가기
+const TABS = ["control", "music"] as const;
 
 // 믹서와 같은 콘솔 본체 판
 const BOARD =
@@ -26,6 +32,7 @@ export default function LightingPage() {
   // 믹서처럼 열 때마다 잠긴 상태로 시작한다 — 들어오자마자 조명이 바뀌는 일이 없게
   const [locked, setLocked] = useState(true);
   const current = halls.find((h) => h.id === hallId) ?? halls[0];
+  const [tab, setTab] = useTabParam(TABS, "control");
 
   useEffect(() => {
     if (current && current.id !== hallId) setHallId(current.id);
@@ -74,6 +81,14 @@ export default function LightingPage() {
       <header className="flex flex-wrap items-center gap-5">
         <SectionHeader className="mb-0">조명</SectionHeader>
         <HallSwitcher halls={halls} value={current?.id} onChange={setHallId} />
+        <PageTabs
+          tabs={[
+            { key: "control", label: "조작" },
+            { key: "music", label: "음악 조명" },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
         <div className="ml-auto flex items-center gap-2.5">
           <StatusChip
             tone={connected ? "good" : "off"}
@@ -88,7 +103,15 @@ export default function LightingPage() {
       {state && !connected && <Notice>조명에 연결되지 않았습니다 — {state.detail}</Notice>}
       {!canOperate && <Notice tone="info">보기 전용 기기입니다. 조작은 운영 권한이 있는 기기에서 가능합니다.</Notice>}
 
-      <Panel title="장면" hint="누르면 저장된 조명 상태로 바뀌어요">
+      {tab === "music" && canOperate && locked && (
+        <Notice tone="info">조작 잠금을 풀면 쇼를 틀고 큐를 바꿀 수 있어요.</Notice>
+      )}
+      {tab === "music" && current && state?.configured && (
+        <MusicLightPanel hallId={current.id} operable={canOperate && !locked} isAdmin={isAdmin} />
+      )}
+
+      {/* 음악 조명 탭에서는 조작 화면을 숨긴다 (페이더 상태는 그대로 유지) */}
+      <Panel title="장면" hint="누르면 저장된 조명 상태로 바뀌어요" className={cn(tab !== "control" && "hidden")}>
         <div className="flex flex-wrap items-center gap-2.5">
           {(state?.scenes ?? []).map((scene) => {
             const active = state?.current === scene.id;
@@ -195,7 +218,11 @@ export default function LightingPage() {
         </div>
       </Panel>
 
-      <Panel title="조명" hint="페이더로 밝기 · 아래 버튼으로 색" className="flex min-h-[520px] flex-1 flex-col">
+      <Panel
+        title="조명"
+        hint="페이더로 밝기 · 아래 버튼으로 색"
+        className={cn("flex min-h-[520px] flex-1 flex-col", tab !== "control" && "hidden")}
+      >
         {fixtures.length === 0 ? (
           <Notice tone="info">
             조명 목록이 비어 있습니다. 관리자가 조명 세팅에서 조명을 넣어 주세요.
