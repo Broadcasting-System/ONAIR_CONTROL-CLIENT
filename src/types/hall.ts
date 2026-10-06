@@ -9,6 +9,7 @@ export interface HallSummary extends HallRef {
   hasMixer: boolean;
   hasVideoMatrix: boolean;
   hasLighting?: boolean;
+  hasRecording?: boolean;
 }
 
 /** 드라이버가 할 수 있는 일. scene=씬 전환, channel=채널 조작, meter=입력 레벨, processing=게인·EQ·컴프·이펙트,
