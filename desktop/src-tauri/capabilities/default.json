@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "앱에 들어 있는 등록·설정 화면만 앱 명령을 쓸 수 있다. 서버에서 오는 컨트롤 화면(127.0.0.1 프록시)은 IPC 없음.",
+  "windows": ["main", "settings"],
+  "permissions": ["core:default"]
+}

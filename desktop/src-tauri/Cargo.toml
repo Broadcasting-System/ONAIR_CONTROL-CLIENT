@@ -1,0 +1,47 @@
+[package]
+name = "onair-desktop"
+version = "0.1.0"
+description = "ONAIR 데스크탑 앱 — 서버의 컨트롤 화면을 로컬 프록시로 띄우는 얇은 껍데기"
+authors = ["BSSM 방송부"]
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+# 모바일(iOS/Android) 빌드도 같은 lib 를 쓰도록 staticlib/cdylib 포함
+name = "onair_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7", features = [] }
+
+[dependencies]
+tauri = { version = "2.12", features = [] }
+tauri-plugin-deep-link = "2.6"
+tauri-plugin-log = "2.10"
+tauri-plugin-opener = "2.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"
+tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync", "time", "io-util"] }
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+bytes = "1"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "http2"] }
+tokio-tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
+url = "2"
+base64 = "0.22"
+rand = "0.8"
+thiserror = "2"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+# 데스크탑 전용: 키체인 저장, 중복 실행 방지(딥링크 전달)
+keyring = { version = "3.6", features = ["apple-native", "windows-native", "sync-secret-service"] }
+tauri-plugin-single-instance = { version = "2.5", features = ["deep-link"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#3a0a0a"/>
+      <stop offset="0.55" stop-color="#160707"/>
+      <stop offset="1" stop-color="#0b0b0b"/>
+    </radialGradient>
+    <radialGradient id="lamp" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffd0d0"/>
+      <stop offset="0.35" stop-color="#ff3b3b"/>
+      <stop offset="1" stop-color="#b80f0f"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ff3b3b" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ff3b3b" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bg)"/>
+  <rect x="64.5" y="64.5" width="895" height="895" rx="200" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="3"/>
+  <circle cx="512" cy="512" r="300" fill="url(#glow)"/>
+  <!-- 송출 전파 -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M372 372 A198 198 0 0 0 372 652" stroke="#ffffff" stroke-opacity="0.9" stroke-width="44"/>
+    <path d="M652 372 A198 198 0 0 1 652 652" stroke="#ffffff" stroke-opacity="0.9" stroke-width="44"/>
+    <path d="M278 278 A331 331 0 0 0 278 746" stroke="#ffffff" stroke-opacity="0.45" stroke-width="44"/>
+    <path d="M746 278 A331 331 0 0 1 746 746" stroke="#ffffff" stroke-opacity="0.45" stroke-width="44"/>
+  </g>
+  <!-- ON AIR 램프 -->
+  <circle cx="512" cy="512" r="92" fill="url(#lamp)"/>
+</svg>
