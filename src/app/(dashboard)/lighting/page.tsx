@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import SectionHeader from "@/components/common/SectionHeader";
+import { ConfigButton } from "@/components/hall/HallConfigModal";
 import { HallSwitcher, LockToggle, Notice, Panel, StatusChip } from "@/components/hall/HallControls";
 import LightStrip, { LightMasterStrip, presetOf } from "@/components/hall/LightStrip";
 import { useHalls } from "@/hooks/useHalls";
@@ -16,6 +19,7 @@ const BOARD =
   "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_-1px_0_rgba(0,0,0,0.6),0_20px_40px_-16px_rgba(0,0,0,0.8)]";
 
 export default function LightingPage() {
+  const router = useRouter();
   const { halls: allHalls, isLoading: hallsLoading } = useHalls();
   const halls = allHalls.filter((h) => h.hasLighting);
   const [hallId, setHallId] = usePersistentState<string | null>("onair.lighting.hall", null);
@@ -50,8 +54,16 @@ export default function LightingPage() {
       <div className="flex flex-col gap-5">
         <SectionHeader>조명</SectionHeader>
         <Notice tone="info">
-          아직 조명이 설정된 공간이 없습니다. 강당 노트북에 USB-DMX 변환기를 꽂은 뒤 관리자가 조명 세팅에서 조명 목록을 넣으면
-          여기에 나타납니다.
+          아직 조명이 설정된 공간이 없습니다. 강당 노트북에 조명 노드를 꽂은 뒤 관리자가 조명 세팅에서 연결하고 조명 목록을
+          넣으면 여기에 나타납니다.
+          {isAdmin && (
+            <>
+              {" "}
+              <Link href="/lighting/setup" className="font-mbc text-red-300 underline-offset-4 hover:underline">
+                조명 세팅 열기 →
+              </Link>
+            </>
+          )}
         </Notice>
       </div>
     );
@@ -67,6 +79,7 @@ export default function LightingPage() {
             tone={connected ? "good" : "off"}
             label={`${state?.driver === "mock" ? "모의 장비" : "DMX"} ${connected ? "online" : "offline"}`}
           />
+          {isAdmin && <ConfigButton label="현장 세팅" onClick={() => router.push("/lighting/setup")} />}
           <LockToggle checked={locked} onChange={setLocked} />
         </div>
       </header>
@@ -184,7 +197,17 @@ export default function LightingPage() {
 
       <Panel title="조명" hint="페이더로 밝기 · 아래 버튼으로 색" className="flex min-h-[520px] flex-1 flex-col">
         {fixtures.length === 0 ? (
-          <Notice tone="info">조명 목록이 비어 있습니다. 관리자가 조명 세팅에서 조명을 넣어 주세요.</Notice>
+          <Notice tone="info">
+            조명 목록이 비어 있습니다. 관리자가 조명 세팅에서 조명을 넣어 주세요.
+            {isAdmin && (
+              <>
+                {" "}
+                <Link href="/lighting/setup" className="font-mbc text-red-300 underline-offset-4 hover:underline">
+                  조명 세팅 열기 →
+                </Link>
+              </>
+            )}
+          </Notice>
         ) : (
           <div className="flex min-h-0 flex-1 gap-3">
             {/* 조명이 많으면 줄을 바꿔 쌓는다 */}
