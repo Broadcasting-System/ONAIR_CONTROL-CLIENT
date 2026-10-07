@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ToastHost, toast } from "@/components/common/Toast";
 import { useMe } from "@/hooks/useMe";
-import { memberApi } from "@/lib/memberApi";
+import { mailApi, memberApi } from "@/lib/memberApi";
+import { cohortPrefix, mailIdProblem, personalEmailProblem, suggestMailId } from "@/lib/romanize";
 import { cn } from "@/lib/utils";
 
 /** 튜너 눈금에 찍힌 네 단계 — 키 연결은 앱에서 끝내고 이 화면으로 온다 */
@@ -82,6 +83,18 @@ const goCls =
 const ghostCls =
   "inline-flex h-11 items-center justify-center rounded-[10px] border border-white/15 bg-transparent px-[18px] font-pretendard text-[15px] font-bold text-white/80 hover:text-white disabled:opacity-40";
 const noteCls = "font-pretendard text-sm leading-relaxed text-white/60";
+const hintCls = "mt-2 font-pretendard text-[13px] leading-snug text-white/50";
+const errCls = "mt-2 font-pretendard text-[13px] leading-snug text-[#ff9b9b]";
+
+/** 입력이 멈춘 뒤에만 서버에 묻는다 */
+function useDebounced<T>(value: T, ms: number): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return v;
+}
 
 /** 첫 화면 — 초대받은 기기의 등록 신청과 승인 기다리기 */
 export default function WelcomePage() {
@@ -92,6 +105,10 @@ export default function WelcomePage() {
   const [name, setName] = useState("");
   const [cohort, setCohort] = useState("");
   const [intro, setIntro] = useState("");
+  const [personalEmail, setPersonalEmail] = useState("");
+  const [mailId, setMailId] = useState("");
+  // 사람이 메일 주소를 직접 고쳤으면 이름을 바꿔도 다시 채우지 않는다
+  const [mailEdited, setMailEdited] = useState(false);
 
   const status = me?.status;
   const pending = status === "pending";
@@ -114,11 +131,25 @@ export default function WelcomePage() {
     setName(me?.name ?? "");
     setCohort(me?.cohort ? String(me.cohort) : "");
     setIntro(me?.intro ?? "");
+    setPersonalEmail(me?.personalEmail ?? "");
+    setMailId(me?.mailId || suggestMailId(me?.name ?? ""));
+    setMailEdited(!!me?.mailId);
     setEditing(true);
   };
 
+  const changeName = (v: string) => {
+    setName(v);
+    if (!mailEdited) setMailId(suggestMailId(v));
+  };
+
   const submit = useMutation({
-    mutationFn: () => memberApi.register({ name: name.trim(), cohort: Number(cohort), intro: intro.trim() }),
+    mutationFn: () =>
+      memberApi.register({
+        name: name.trim(),
+        cohort: Number(cohort),
+        intro: intro.trim(),
+        ...(mailOn ? { mailId, personalEmail: personalEmail.trim() } : {}),
+      }),
     onSuccess: () => {
       setEditing(false);
       qc.invalidateQueries({ queryKey: ["me"] });
@@ -128,8 +159,29 @@ export default function WelcomePage() {
   });
 
   const cohortNum = Number(cohort);
-  const valid = name.trim().length > 0 && Number.isInteger(cohortNum) && cohortNum >= 1 && cohortNum <= 99;
+  const cohortOk = Number.isInteger(cohortNum) && cohortNum >= 1 && cohortNum <= 99;
   const showForm = (status === "unregistered" && me?.canRegister) || (pending && editing);
+
+  // 메일 — 예전 서버(메일 기능 없음)면 칸을 숨긴다
+  const mailOn = me?.mailDomain !== undefined;
+  const domain = me?.mailDomain || "bssmcast.com";
+  const prefix = cohortPrefix(cohort);
+  const idProblem = mailIdProblem(mailId);
+  const emailProblem = personalEmailProblem(personalEmail.trim(), domain);
+  const checkId = useDebounced(mailId, 350);
+  const check = useQuery({
+    queryKey: ["mail-check", cohortNum, checkId],
+    queryFn: () => mailApi.check(cohortNum, checkId),
+    enabled: !!showForm && mailOn && cohortOk && !mailIdProblem(checkId),
+    retry: false,
+    staleTime: 10_000,
+  });
+  const checked = check.data && check.data.mailId === mailId && check.data.address === `${prefix}${mailId}`;
+  const taken = checked && !check.data.ok ? check.data.problem : "";
+  const mailProblem = mailId ? idProblem || taken : "";
+  const mailValid = !mailOn || (!idProblem && !taken && !emailProblem);
+
+  const valid = name.trim().length > 0 && cohortOk && mailValid;
 
   // 튜너 단계 · 오른쪽 문장 · 아래 안내
   let at: Step = 1;
@@ -199,7 +251,7 @@ export default function WelcomePage() {
                   <input
                     id="reg-name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => changeName(e.target.value)}
                     maxLength={30}
                     placeholder="홍길동"
                     autoFocus
@@ -220,6 +272,70 @@ export default function WelcomePage() {
                   />
                 </div>
               </div>
+              {mailOn && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="reg-personal" className={lblCls}>
+                      받을 메일 (개인)
+                    </label>
+                    <input
+                      id="reg-personal"
+                      type="email"
+                      value={personalEmail}
+                      onChange={(e) => setPersonalEmail(e.target.value)}
+                      maxLength={120}
+                      autoComplete="email"
+                      spellCheck={false}
+                      placeholder="name@gmail.com"
+                      className={cn(inpCls, "h-12", emailProblem && "border-red-400/50")}
+                    />
+                    <p className={emailProblem ? errCls : hintCls}>
+                      {emailProblem || "ONAIR 메일로 온 편지를 여기로 넘겨요. 승인 뒤 Cloudflare 확인 메일이 한 번 와요."}
+                    </p>
+                  </div>
+                  <div>
+                    <label htmlFor="reg-mail" className={lblCls}>
+                      ONAIR 메일 주소
+                    </label>
+                    <div
+                      className={cn(
+                        "flex h-12 items-center overflow-hidden rounded-[10px] border bg-[#0c0d0f] shadow-[inset_0_2px_6px_rgba(0,0,0,0.7)] focus-within:border-red-400/70",
+                        mailProblem ? "border-red-400/50" : "border-white/[0.12]",
+                      )}
+                    >
+                      <span
+                        className="flex h-full shrink-0 items-center border-r border-white/[0.08] bg-white/[0.05] px-3 font-mono text-base font-bold tabular-nums text-white/55"
+                        title="기수 2자리 — 바꿀 수 없어요"
+                      >
+                        {prefix || "--"}
+                      </span>
+                      <input
+                        id="reg-mail"
+                        value={mailId}
+                        onChange={(e) => {
+                          setMailId(e.target.value.toLowerCase().replace(/\s/g, ""));
+                          setMailEdited(true);
+                        }}
+                        maxLength={20}
+                        autoComplete="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        placeholder="junghyun"
+                        className="h-full min-w-0 flex-1 bg-transparent px-3 font-mono text-base text-white outline-none placeholder:text-white/35"
+                      />
+                      <span className="shrink-0 pr-3.5 font-mono text-[15px] text-white/40">@{domain}</span>
+                    </div>
+                    {mailProblem ? (
+                      <p className={errCls}>{mailProblem}</p>
+                    ) : (
+                      <p className={hintCls}>
+                        {mailEdited ? "" : "이름으로 미리 채웠어요 · "}영문 소문자·숫자·점 3~20자 · 나중에 바꿔도 예전 주소로{" "}
+                        <b className="font-semibold text-white">30일</b> 더 받아요
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
               <div>
                 <label htmlFor="reg-intro" className={lblCls}>
                   소개 <span className="ml-1 font-normal text-white/45">선택 — 방송부 화면에 보일 수 있어요</span>
@@ -265,11 +381,26 @@ export default function WelcomePage() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-[56px_1fr] gap-x-3 gap-y-1.5 rounded-[14px] border border-white/[0.08] bg-[#0a0a0c] px-[18px] py-3.5 font-pretendard text-sm text-white">
+              <div className="grid grid-cols-[72px_1fr] gap-x-3 gap-y-1.5 rounded-[14px] border border-white/[0.08] bg-[#0a0a0c] px-[18px] py-3.5 font-pretendard text-sm text-white">
                 <span className="text-white/45">이름</span>
                 <span>{me.name}</span>
                 <span className="text-white/45">기수</span>
                 <span className="font-mono tabular-nums">{me.cohort}기</span>
+                {me.mailAddress && (
+                  <>
+                    <span className="text-white/45">ONAIR 메일</span>
+                    <span className="font-mono">
+                      {me.mailAddress}
+                      <span className="text-white/40">@{domain}</span>
+                    </span>
+                  </>
+                )}
+                {me.personalEmail && (
+                  <>
+                    <span className="text-white/45">받을 메일</span>
+                    <span>{me.personalEmail}</span>
+                  </>
+                )}
                 {me.intro && (
                   <>
                     <span className="text-white/45">소개</span>

@@ -10,9 +10,10 @@ import InviteModal from "@/components/devices/InviteModal";
 import { ASSIGNABLE } from "@/components/devices/roleStyle";
 import { Notice, Panel } from "@/components/hall/HallControls";
 import { ActionButton } from "@/components/hall/setup/ui";
-import { downloadMembersCsv, memberApi } from "@/lib/memberApi";
+import { useMe } from "@/hooks/useMe";
+import { downloadMembersCsv, mailApi, memberApi } from "@/lib/memberApi";
 import { cn } from "@/lib/utils";
-import type { AssignableRole, InviteCreated, Member, Role } from "@/types/member";
+import type { AssignableRole, InviteCreated, MailStatus, Member, Role, RoleAddress } from "@/types/member";
 
 type Filter = "all" | "lead" | "member" | "teacher" | "alumni" | "revoked";
 const FILTERS: { key: Filter; label: string }[] = [
@@ -89,13 +90,72 @@ function Seg<T extends string>({
   );
 }
 
+/** ONAIR 메일 주소 — 04junghyun@ (@ 뒤는 흐리게) */
+function MailAddress({ address, domain, dim }: { address: string; domain?: string; dim?: boolean }) {
+  if (!address) return <span className="text-white/30">—</span>;
+  return (
+    <span className={cn("font-mono text-[15px] font-semibold", dim ? "text-white/35" : "text-white")}>
+      {address}
+      <span className="font-medium text-white/40">@{domain ?? ""}</span>
+    </span>
+  );
+}
+
+/** 받는 역할 주소 — 작은 회색 태그 */
+function RoleTags({ roles, dim }: { roles: RoleAddress[]; dim?: boolean }) {
+  if (roles.length === 0) return <span className="text-white/30">—</span>;
+  return (
+    <span className={cn("flex gap-1", dim && "opacity-50")}>
+      {roles.map((r) => (
+        <span
+          key={r}
+          className="inline-flex h-6 items-center rounded-md bg-white/[0.07] px-2 font-mono text-[12.5px] text-white/80"
+        >
+          {r}@
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** 메일 상태 — 사용 중(흰 점) · 메일 확인 대기(빨간 점) · 꺼짐·없음(회색) */
+function MailState({ status, label, error }: { status: MailStatus; label: string; error?: string }) {
+  return (
+    <span className="flex flex-col gap-0.5">
+      <span
+        className={cn(
+          "inline-flex items-center gap-2 text-sm font-bold",
+          status === "off" || status === "none" ? "text-white/40" : "text-white",
+        )}
+      >
+        <span
+          className={cn(
+            "h-2 w-2 shrink-0 rounded-full",
+            status === "active" && "bg-white/85",
+            status === "pending" && "bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]",
+            (status === "off" || status === "none") && "bg-white/25",
+          )}
+        />
+        {label}
+      </span>
+      {error && (
+        <span className="max-w-[220px] truncate text-xs font-normal text-red-300/90" title={error}>
+          Cloudflare 실패 — 다시 맞춰야 해요
+        </span>
+      )}
+    </span>
+  );
+}
+
 function PendingCard({
   m,
+  domain,
   busy,
   onApprove,
   onReject,
 }: {
   m: Member;
+  domain: string;
   busy: boolean;
   onApprove: (role: AssignableRole) => void;
   onReject: () => void;
@@ -109,6 +169,13 @@ function PendingCard({
         <span className="ml-auto font-pretendard text-[13px] text-white/50">{ago(m.registeredAt)} 신청</span>
       </div>
       {m.intro && <p className="whitespace-pre-wrap font-pretendard text-sm leading-relaxed text-white/80">{m.intro}</p>}
+      {m.mailAddress && (
+        <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 font-pretendard text-[13px] text-white/50">
+          ONAIR 메일
+          <MailAddress address={m.mailAddress} domain={domain} />
+          {m.personalEmailHint && <span>→ {m.personalEmailHint}</span>}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <Seg
           items={(["member", "lead", "teacher"] as AssignableRole[]).map((r) => ({
@@ -131,6 +198,86 @@ function PendingCard({
 
 type Confirm = { title: string; message: string; confirmText: string; run: () => Promise<unknown> } | null;
 
+/** 메일 (Cloudflare) — 최고 관리자만. 값은 서버 .env 로만 바꾸고 여기서는 보기·규칙 다시 맞추기 */
+function MailSettingsPanel() {
+  const qc = useQueryClient();
+  const settings = useQuery({ queryKey: ["mail-settings"], queryFn: mailApi.settings, refetchInterval: 30000 });
+  const sync = useMutation({
+    mutationFn: mailApi.sync,
+    onSuccess: (res) => {
+      qc.setQueryData(["mail-settings"], res.settings);
+      qc.invalidateQueries({ queryKey: ["members"] });
+      if (res.failed.length) toast.error(`규칙을 못 맞춘 부원: ${res.failed.join(", ")}`);
+      else toast.success("메일 규칙을 다시 맞췄어요.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const s = settings.data;
+
+  return (
+    <Panel title="메일 (Cloudflare)" hint="최고 관리자만 보여요 · 값은 서버 .env 로 바꿔요 (docs/mail.md)">
+      {settings.error ? (
+        <p className="font-pretendard text-sm text-white/50">{(settings.error as Error).message}</p>
+      ) : !s ? (
+        <p className="font-pretendard text-sm text-white/45">불러오는 중…</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-[110px_1fr] gap-x-4 gap-y-2.5 font-pretendard text-sm">
+            <span className="text-white/45">연결</span>
+            <span className="flex items-center gap-2 text-white">
+              <span
+                className={cn(
+                  "h-2 w-2 shrink-0 rounded-full",
+                  s.connection.ok ? "bg-white/85" : "bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]",
+                )}
+              />
+              {s.driver === "mock"
+                ? "가짜(mock) — 서버 안에서만 시험"
+                : s.connection.ok
+                  ? `Cloudflare 연결됨${s.connection.enabled === false ? " · Email Routing 꺼짐" : ""}`
+                  : "Cloudflare 에 연결하지 못했어요"}
+            </span>
+            <span className="text-white/45">도메인</span>
+            <span className="font-mono text-white">{s.domain}</span>
+            <span className="text-white/45">역할 주소</span>
+            <span className="flex flex-wrap items-center gap-1.5">
+              {s.roleRules.map((r) => (
+                <span
+                  key={r.address}
+                  className={cn(
+                    "inline-flex h-6 items-center rounded-md px-2 font-mono text-[12.5px]",
+                    r.routed ? "bg-white/[0.07] text-white/80" : "bg-white/[0.03] text-white/35",
+                  )}
+                >
+                  {r.address}@
+                </span>
+              ))}
+              <span className="ml-1 text-xs text-white/45">
+                {s.roleRules.every((r) => r.routed) ? `워커 ${s.workerName} 로 가요` : "워커 규칙이 아직 없어요"}
+              </span>
+            </span>
+            <span className="text-white/45">워커 비밀값</span>
+            <span className={s.workerSecretSet ? "text-white" : "text-white/45"}>
+              {s.workerSecretSet ? "설정됨" : "없음 — MAIL_WORKER_SECRET 을 넣어야 역할 주소가 동작해요"}
+            </span>
+          </div>
+          {(s.problem || s.connection.message) && (
+            <p className="font-pretendard text-[13px] text-red-300/90">{s.problem || s.connection.message}</p>
+          )}
+          <div className="flex items-center gap-3">
+            <span className="mr-auto font-pretendard text-[13px] text-white/45">
+              {s.failed > 0 ? `규칙을 못 맞춘 부원 ${s.failed}명` : "역할 주소 워커 규칙을 만들고 부원 규칙을 다시 맞춰요"}
+            </span>
+            <ActionButton busy={sync.isPending} onClick={() => sync.mutate()}>
+              규칙 다시 맞추기
+            </ActionButton>
+          </div>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
 /** 기기·부원 관리 › 부원 — 초대(QR·코드), 승인 대기, 부원 목록 (부장 이상) */
 export default function MembersPanel() {
   const qc = useQueryClient();
@@ -140,6 +287,7 @@ export default function MembersPanel() {
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [mailFor, setMailFor] = useState<Member | null>(null);
   const [allInvites, setAllInvites] = useState(false);
+  const { isSuperadmin } = useMe();
 
   // 메뉴는 Esc 로도 닫는다
   useEffect(() => {
@@ -194,6 +342,8 @@ export default function MembersPanel() {
         : m.status === "approved" && m.role === filter,
   );
   const waiting = invites.data?.invites ?? [];
+  const domain = list.data?.mail?.domain ?? "bssmcast.com";
+  const mockMail = list.data?.mail?.driver === "mock";
 
   const setRole = (m: Member, role: AssignableRole) => {
     if (role === m.role) return;
@@ -276,6 +426,7 @@ export default function MembersPanel() {
               <PendingCard
                 key={m.id}
                 m={m}
+                domain={domain}
                 busy={act.isPending}
                 onApprove={(role) => run(() => memberApi.approve(m.id, role), `${m.name} 님을 승인했어요.`)}
                 onReject={() =>
@@ -293,15 +444,18 @@ export default function MembersPanel() {
       )}
 
       {/* 부원 목록 */}
-      <Panel title="부원" hint="역할을 바꾸면 그 기기에 바로 반영돼요 · 마지막 부장은 내려놓을 수 없어요">
+      <Panel title="부원" hint="역할을 바꾸면 그 기기·받는 역할 주소에 바로 반영돼요 · 마지막 부장은 내려놓을 수 없어요">
         <Seg items={FILTERS} value={filter} onChange={setFilter} />
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left font-pretendard text-sm">
+          <table className="w-full min-w-[980px] text-left font-pretendard text-sm">
             <thead className="text-white/50">
               <tr className="border-b border-white/[0.07]">
                 <th className="w-[70px] px-3 py-2 text-[13px] font-bold">기수</th>
                 <th className="px-3 py-2 text-[13px] font-bold">이름</th>
                 <th className="px-3 py-2 text-[13px] font-bold">역할</th>
+                <th className="px-3 py-2 text-[13px] font-bold">ONAIR 메일</th>
+                <th className="px-3 py-2 text-[13px] font-bold">받는 역할 주소</th>
+                <th className="px-3 py-2 text-[13px] font-bold">메일 상태</th>
                 <th className="px-3 py-2 text-[13px] font-bold">디스코드</th>
                 <th className="px-3 py-2 text-[13px] font-bold">기기 키 만료</th>
                 <th className="w-[52px] px-3 py-2" />
@@ -310,7 +464,7 @@ export default function MembersPanel() {
             <tbody>
               {shown.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-white/45">
+                  <td colSpan={9} className="px-3 py-8 text-center text-white/45">
                     {list.isLoading
                       ? "불러오는 중…"
                       : filter === "all"
@@ -330,9 +484,6 @@ export default function MembersPanel() {
                       <td className="px-3 py-3">
                         <div className={cn("flex items-center gap-2.5 font-mbc text-base", gone ? "text-white/35" : "text-white")}>
                           {m.name}
-                          {m.mailLocalPart && (
-                            <span className="font-pretendard text-xs text-white/45">{m.mailLocalPart}@bssmcast.com</span>
-                          )}
                         </div>
                       </td>
                       <td className="px-3 py-3">
@@ -358,6 +509,23 @@ export default function MembersPanel() {
                           </select>
                         )}
                       </td>
+                      <td className="whitespace-nowrap px-3 py-3">
+                        <MailAddress address={m.mailAddress} dim={gone} />
+                        {m.mailAliases.length > 0 && !gone && (
+                          <div
+                            className="mt-0.5 font-mono text-xs text-white/40"
+                            title={m.mailAliases.map((a) => `${a.address}@${domain} — ${a.expiresAt.slice(0, 10)}까지`).join("\n")}
+                          >
+                            예전 {m.mailAliases[0].address}@ · {m.mailAliases[0].expiresAt.slice(5, 10).replace("-", "/")}까지
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        <RoleTags roles={m.mailRoles} dim={gone} />
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3">
+                        <MailState status={m.mailStatus} label={m.mailStatusLabel} error={gone ? "" : m.mailError} />
+                      </td>
                       <td className="px-3 py-3">
                         {m.discordLinked ? (
                           <span className={gone ? "text-white/35" : "text-white"}>연결</span>
@@ -369,7 +537,7 @@ export default function MembersPanel() {
                         {!gone && m.tokenExpiresAt ? m.tokenExpiresAt.slice(0, 10) : ""}
                       </td>
                       <td className="relative px-3 py-3 text-right">
-                        {!fixed && !gone && (
+                        {!gone && (!fixed || m.mailStatus === "pending") && (
                           <>
                             <button
                               type="button"
@@ -384,27 +552,42 @@ export default function MembersPanel() {
                                 <div className="fixed inset-0 z-10" onClick={() => setMenu(null)} />
                                 <div className="absolute right-3 top-11 z-20 flex min-w-[170px] flex-col rounded-xl border border-white/10 bg-[#161616] p-1.5 text-left shadow-2xl">
                                   {[
-                                    m.role === "lead"
-                                      ? { t: "부장 해제", f: () => setRole(m, "member") }
-                                      : { t: "부장 임명", f: () => setRole(m, "lead") },
-                                    m.role !== "alumni" && {
+                                    !fixed &&
+                                      (m.role === "lead"
+                                        ? { t: "부장 해제", f: () => setRole(m, "member") }
+                                        : { t: "부장 임명", f: () => setRole(m, "lead") }),
+                                    !fixed &&
+                                      m.role !== "alumni" && {
                                       t: "졸업 처리",
                                       f: () =>
                                         setConfirm({
                                           title: "졸업 처리",
-                                          message: `${m.name} 님을 졸업 처리할까요?\n기기는 그대로 두고 보기만 할 수 있게 됩니다.`,
+                                          message: `${m.name} 님을 졸업 처리할까요?\n기기는 그대로 두고 보기만 할 수 있게 됩니다. ONAIR 메일 전달도 꺼져요.`,
                                           confirmText: "졸업 처리",
                                           run: () => memberApi.graduate(m.id),
                                         }),
                                     },
-                                    { t: "메일 주소 정하기", f: () => setMailFor(m) },
-                                    {
+                                    !fixed && { t: "메일 주소 바꾸기", f: () => setMailFor(m) },
+                                    m.mailStatus === "pending" && {
+                                      t: "확인 메일 다시 보내기",
+                                      f: () =>
+                                        run(
+                                          () => mailApi.resend(m.id),
+                                          `${m.name} 님 받을 메일(${m.personalEmailHint})로 확인 메일을 다시 보냈어요.`,
+                                        ),
+                                    },
+                                    mockMail &&
+                                      m.mailStatus === "pending" && {
+                                        t: "메일 확인 처리 (시험용)",
+                                        f: () => run(() => mailApi.devVerify(m.id), `${m.name} — 메일 확인됨(시험용)`),
+                                      },
+                                    !fixed && {
                                       t: "내보내기",
                                       danger: true,
                                       f: () =>
                                         setConfirm({
                                           title: "부원 내보내기",
-                                          message: `${m.name} 님을 내보낼까요?\n이 기기의 Cloudflare 토큰을 지워 더는 ONAIR 에 들어올 수 없습니다.`,
+                                          message: `${m.name} 님을 내보낼까요?\n이 기기의 Cloudflare 토큰을 지워 더는 ONAIR 에 들어올 수 없고, ONAIR 메일 전달도 꺼져요.`,
                                           confirmText: "내보내기",
                                           run: () => memberApi.revoke(m.id),
                                         }),
@@ -465,14 +648,21 @@ export default function MembersPanel() {
         }}
       />
 
+      {isSuperadmin && <MailSettingsPanel />}
+
       <InputModal
         isOpen={!!mailFor}
         onClose={() => setMailFor(null)}
-        title={`${mailFor?.name ?? ""} — 메일 주소 앞부분 (@bssmcast.com)`}
-        placeholder="예: 07honggildong (비우면 지움)"
-        initialValue={mailFor?.mailLocalPart ?? ""}
+        title={`${mailFor?.name ?? ""} — ONAIR 메일 ${String(mailFor?.cohort ?? "").padStart(2, "0")}□@${domain}`}
+        placeholder="기수 뒤에 붙는 부분 — 영문 소문자·숫자·점 3~20자"
+        initialValue={mailFor?.mailId ?? ""}
+        confirmText="바꾸기"
         onConfirm={async (v) => {
-          if (mailFor) run(() => memberApi.update(mailFor.id, { mailLocalPart: v.trim() }), "메일 주소를 저장했어요.");
+          if (mailFor)
+            run(
+              () => memberApi.update(mailFor.id, { mailId: v.trim().toLowerCase() }),
+              mailFor.mailAddress ? "메일 주소를 바꿨어요. 예전 주소로도 30일 더 받아요." : "메일 주소를 정했어요.",
+            );
         }}
       />
     </div>
