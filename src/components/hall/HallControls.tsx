@@ -98,8 +98,8 @@ export function Panel({
         className,
       )}
     >
-      <div className="mb-4 flex items-baseline gap-3">
-        <h3 className="font-mbc text-2xl text-white">{title}</h3>
+      <div className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h3 className="whitespace-nowrap font-mbc text-2xl text-white">{title}</h3>
         {hint && <span className="font-pretendard text-[13px] text-white/40">{hint}</span>}
       </div>
       {children}

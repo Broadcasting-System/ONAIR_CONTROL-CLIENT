@@ -268,7 +268,8 @@ function MirrorCountdown({
   );
 }
 
-export const DisplayMirror = ({ channel = 1 }: { channel?: number }) => {
+/** badge=false 면 'LIVE MONITOR' 표시 없이 (녹음·녹화의 채널 썸네일처럼 작게 쓸 때) */
+export const DisplayMirror = ({ channel = 1, badge = true }: { channel?: number; badge?: boolean }) => {
   const { content } = useDisplaySync(channel);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(() =>
     calculateSlideIndex(content),
@@ -488,12 +489,14 @@ export const DisplayMirror = ({ channel = 1 }: { channel?: number }) => {
         <MirrorYouTube videoId={content.videoId} playback={content.playback} />
       ) : null}
 
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-full border border-red-500/50 bg-red-600/90 px-3 py-1.5 shadow-lg">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
-        <span className="text-[10px] font-black uppercase tracking-tighter text-white">
-          LIVE MONITOR
-        </span>
-      </div>
+      {badge && (
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-full border border-red-500/50 bg-red-600/90 px-3 py-1.5 shadow-lg">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+          <span className="text-[10px] font-black uppercase tracking-tighter text-white">
+            LIVE MONITOR
+          </span>
+        </div>
+      )}
     </div>
   );
 };
