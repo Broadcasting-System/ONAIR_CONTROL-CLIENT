@@ -37,6 +37,13 @@ export function del<T>(path: string): Promise<T> {
   return request<T>(path, { method: "DELETE" });
 }
 
+/** 파일 올리기 (multipart) — Content-Type 은 브라우저가 경계값과 함께 붙인다 */
+export async function upload<T>(path: string, form: FormData): Promise<T> {
+  const res = await fetch(`${getApiBase()}${path}`, { method: "POST", body: form });
+  if (!res.ok) throw await failure(res);
+  return (await res.json()) as T;
+}
+
 /** 파일 받기 (POST) — 서버가 만든 파일을 브라우저 다운로드로 저장한다 */
 export async function download(path: string, body: unknown, filename: string): Promise<void> {
   const res = await fetch(`${getApiBase()}${path}`, {

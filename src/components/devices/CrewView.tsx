@@ -1,17 +1,20 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, X } from "lucide-react";
 import { toast } from "@/components/common/Toast";
+import { CardBackground, PhotoLayer, WaveCanvas } from "@/components/devices/CardBackground";
 import { Notice } from "@/components/hall/HallControls";
 import { ActionButton } from "@/components/hall/setup/ui";
 import { memberApi } from "@/lib/memberApi";
 import { cn } from "@/lib/utils";
-import type { CrewMember } from "@/types/member";
+import type { CardBg, CrewMember } from "@/types/member";
 
 const TITLE_MAX = 40;
 const BIO_MAX = 1000;
+const PHOTO_MAX_MB = 5;
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const RED = "#FF3B3B";
 
 const two = (n: number) => String(n).padStart(2, "0");
@@ -48,14 +51,8 @@ function Monitor({ p }: { p: CrewMember }) {
   const live = p.role !== "alumni";
   return (
     <div className="relative aspect-[16/10] overflow-hidden rounded-[18px] border border-black bg-[#050506] shadow-[0_20px_60px_rgba(0,0,0,0.6),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
-      <div className="absolute inset-0 bg-[url('/onair_background.png')] bg-cover bg-center opacity-55" />
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse at 70% 30%, transparent, rgba(0,0,0,0.85) 75%), linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85))",
-        }}
-      />
+      {/* 배경 — 부원마다 ① 소리 파형(이름으로 만든 그림) 또는 ③ 본인 사진 */}
+      <CardBackground key={p.id} name={p.name} cohort={p.cohort} cardBg={p.cardBg} photoUrl={p.photoUrl} />
       {/* 큰 기수 숫자 워터마크 */}
       <span
         aria-hidden
@@ -154,7 +151,7 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative z-10 grid w-full max-w-[560px] gap-5 rounded-[24px] border border-white/10 bg-[#151515] p-7 shadow-2xl">
+      <div className="relative z-10 grid max-h-[calc(100dvh-2rem)] w-full max-w-[560px] gap-5 overflow-y-auto rounded-[24px] border border-white/10 bg-[#151515] p-7 shadow-2xl">
         <div className="flex items-center gap-3">
           <h2 className="min-w-0 truncate font-mbc text-2xl text-white">{title}</h2>
           <button
@@ -189,6 +186,164 @@ export interface ProfileTarget {
   bio: string;
   /** 보고 있는 기기의 본인이면 /members/me/profile 로 */
   me: boolean;
+  /** 프로필 카드 배경 (지금 보이는 것)·사진 주소 */
+  cardBg: CardBg;
+  photoUrl: string;
+}
+
+/** 카드 배경 고르기 타일 하나 — 16:10 미리보기, 고르면 빨간 테두리 */
+function BgTile({
+  label,
+  on,
+  onPick,
+  disabled,
+  children,
+  actions,
+}: {
+  label: string;
+  on: boolean;
+  onPick: () => void;
+  disabled?: boolean;
+  children: ReactNode;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="grid min-w-0 gap-1.5">
+      <button
+        type="button"
+        aria-pressed={on}
+        disabled={disabled}
+        onClick={onPick}
+        className={cn(
+          "relative aspect-[16/10] overflow-hidden rounded-xl border bg-[#060607] text-left transition-colors disabled:cursor-default",
+          on ? "border-red-400/70 shadow-[0_0_0_1px_rgba(255,59,59,0.5)]" : "border-white/10 enabled:hover:border-white/30",
+        )}
+      >
+        {children}
+        <span className="absolute bottom-2 left-2.5 flex items-center gap-1.5 font-pretendard text-[13px] font-bold text-white [text-shadow:0_1px_4px_#000]">
+          <span className={cn("h-2 w-2 rounded-full", on ? "bg-[#FF3B3B]" : "bg-white/30")} />
+          {label}
+        </span>
+      </button>
+      {actions && <div className="flex gap-1.5">{actions}</div>}
+    </div>
+  );
+}
+
+const tileBtn =
+  "flex h-8 flex-1 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] font-pretendard text-[13px] font-semibold text-white/75 transition-colors enabled:hover:bg-white/10 enabled:hover:text-white disabled:opacity-40";
+
+/** 카드 배경 — ① 소리 파형 · ③ 본인 사진 (사진 올리기·바꾸기·지우기는 바로 서버에) */
+function CardBgPicker({
+  target,
+  choice,
+  setChoice,
+  photoUrl,
+  setPhotoUrl,
+}: {
+  target: ProfileTarget;
+  choice: CardBg;
+  setChoice: (c: CardBg) => void;
+  photoUrl: string;
+  setPhotoUrl: (u: string) => void;
+}) {
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const who = target.me ? "me" : target.id;
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["crew"] });
+    qc.invalidateQueries({ queryKey: ["members"] });
+    qc.invalidateQueries({ queryKey: ["me"] });
+  };
+  const up = useMutation({
+    mutationFn: (file: File) => memberApi.uploadPhoto(who, file),
+    onSuccess: (res) => {
+      setPhotoUrl(res.member.photoUrl ?? "");
+      setChoice("photo");
+      toast.success(`${target.name} — 사진을 올렸어요.`);
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const rm = useMutation({
+    mutationFn: () => memberApi.deletePhoto(who),
+    onSuccess: () => {
+      setPhotoUrl("");
+      setChoice("wave");
+      toast.success(`${target.name} — 사진을 지웠어요. 카드는 소리 파형으로 보여요.`);
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const busy = up.isPending || rm.isPending;
+
+  const pickFile = (file: File | undefined) => {
+    if (!file) return;
+    if (!PHOTO_TYPES.includes(file.type)) {
+      toast.error("JPG·PNG·WEBP 사진만 올릴 수 있어요.");
+      return;
+    }
+    if (file.size > PHOTO_MAX_MB * 1024 * 1024) {
+      toast.error(`사진은 ${PHOTO_MAX_MB}MB 이하로 올려 주세요.`);
+      return;
+    }
+    up.mutate(file);
+  };
+  const openFile = () => fileRef.current?.click();
+
+  return (
+    <div className="grid gap-1.5">
+      <span className={lblCls}>카드 배경</span>
+      <div className="grid grid-cols-2 gap-3">
+        <BgTile label="소리 파형" on={choice === "wave"} onPick={() => setChoice("wave")}>
+          <WaveCanvas name={target.name} />
+        </BgTile>
+        <BgTile
+          label="본인 사진"
+          on={choice === "photo" && !!photoUrl}
+          disabled={busy}
+          onPick={() => (photoUrl ? setChoice("photo") : openFile())}
+          actions={
+            photoUrl ? (
+              <>
+                <button type="button" className={tileBtn} disabled={busy} onClick={openFile}>
+                  {up.isPending ? "올리는 중…" : "바꾸기"}
+                </button>
+                <button type="button" className={tileBtn} disabled={busy} onClick={() => rm.mutate()}>
+                  {rm.isPending ? "지우는 중…" : "지우기"}
+                </button>
+              </>
+            ) : (
+              <button type="button" className={tileBtn} disabled={busy} onClick={openFile}>
+                {up.isPending ? "올리는 중…" : "사진 올리기"}
+              </button>
+            )
+          }
+        >
+          {photoUrl ? (
+            <PhotoLayer url={photoUrl} cohort={target.cohort} />
+          ) : (
+            <span className="absolute inset-0 grid place-items-center pb-5 font-pretendard text-[13px] text-white/45">
+              {up.isPending ? "올리는 중…" : "사진을 올려 주세요"}
+            </span>
+          )}
+        </BgTile>
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          pickFile(e.target.files?.[0]);
+          e.target.value = ""; // 같은 파일을 다시 골라도 바뀌게
+        }}
+      />
+      <span className="font-pretendard text-xs text-white/45">
+        소리 파형은 이름으로 만든 그림이에요. 사진은 흑백 + 기수 색으로 바꿔 보여요 (JPG·PNG·WEBP, {PHOTO_MAX_MB}MB 이하).
+      </span>
+    </div>
+  );
 }
 
 /** 소개 고치기 — 직함(한 줄)·소개글. 본인 또는 부장 이상 */
@@ -196,8 +351,15 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
   const qc = useQueryClient();
   const [title, setTitle] = useState(target.title);
   const [bio, setBio] = useState(target.bio);
+  const [cardBg, setCardBg] = useState<CardBg>(target.cardBg);
+  const [photoUrl, setPhotoUrl] = useState(target.photoUrl);
   const save = useMutation({
-    mutationFn: () => memberApi.updateProfile(target.me ? "me" : target.id, { title, bio }),
+    mutationFn: () =>
+      memberApi.updateProfile(target.me ? "me" : target.id, {
+        title,
+        bio,
+        cardBg: cardBg === "photo" && photoUrl ? "photo" : "wave",
+      }),
     onSuccess: () => {
       toast.success(`${target.name} — 소개를 고쳤어요.`);
       qc.invalidateQueries({ queryKey: ["crew"] });
@@ -240,7 +402,7 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            rows={8}
+            rows={6}
             placeholder={defaultBio(target)}
             className={cn(inpCls, "resize-y py-3 leading-relaxed")}
           />
@@ -248,6 +410,13 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
             비우면 &ldquo;{defaultBio(target)}&rdquo; 로 보여요. 줄바꿈은 그대로 보여요.
           </span>
         </label>
+        <CardBgPicker
+          target={target}
+          choice={cardBg}
+          setChoice={setCardBg}
+          photoUrl={photoUrl}
+          setPhotoUrl={setPhotoUrl}
+        />
         <div className="flex justify-end gap-2">
           <ActionButton tone="ghost" onClick={onClose}>
             취소
@@ -482,6 +651,8 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
                 title: selected.title,
                 bio: selected.bio,
                 me: selected.me,
+                cardBg: selected.cardBg ?? "wave",
+                photoUrl: selected.photoUrl ?? "",
               })
             }
           />

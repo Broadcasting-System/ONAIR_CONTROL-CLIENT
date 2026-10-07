@@ -7,6 +7,16 @@ export type MemberStatus = "unregistered" | "pending" | "approved" | "revoked";
 export type MailStatus = "none" | "pending" | "active" | "off";
 /** 역할 주소 — Cloudflare Email Worker 가 그때의 역할로 받는 사람을 정한다 */
 export type RoleAddress = "admin" | "lead" | "all";
+/** 프로필 카드 배경 — wave 이름으로 만든 소리 파형(기본) · photo 본인 사진 */
+export type CardBg = "wave" | "photo";
+
+/** 프로필 카드 배경 (서버가 준 값). cardBg 는 지금 보이는 배경 — 사진이 없으면 photo 를 골랐어도 wave */
+export interface CardBgInfo {
+  cardBg: CardBg;
+  hasPhoto: boolean;
+  /** /api/members/<id>/photo?v=… (없으면 "") */
+  photoUrl: string;
+}
 
 export interface Permissions {
   operate: boolean;
@@ -44,7 +54,7 @@ export interface MeInfo {
   personalEmail?: string;
 }
 
-export interface Member {
+export interface Member extends Partial<CardBgInfo> {
   id: string;
   name: string;
   cohort: number | null;
@@ -104,7 +114,7 @@ export interface Invite {
 }
 
 /** GET /members/crew — 방송부 보기 한 사람 */
-export interface CrewMember {
+export interface CrewMember extends CardBgInfo {
   id: string;
   name: string;
   cohort: number;

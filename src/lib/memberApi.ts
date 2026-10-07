@@ -1,7 +1,8 @@
 import { getApiBase } from "@/lib/apiBase";
-import { del, post, put, request, seg } from "@/lib/http";
+import { del, post, put, request, seg, upload } from "@/lib/http";
 import type {
   AssignableRole,
+  CardBg,
   CrewResponse,
   Invite,
   InviteCreated,
@@ -35,9 +36,18 @@ export const memberApi = {
 
   /** 방송부 보기 (누구나) */
   crew: () => request<CrewResponse>("/members/crew"),
-  /** 직함·소개글 — 본인은 /me/profile, 부장 이상은 아무나 */
-  updateProfile: (id: string | "me", body: { title?: string; bio?: string }) =>
+  /** 직함·소개글·카드 배경 — 본인은 /me/profile, 부장 이상은 아무나 */
+  updateProfile: (id: string | "me", body: { title?: string; bio?: string; cardBg?: CardBg }) =>
     put<{ member: Member }>(id === "me" ? "/members/me/profile" : `/members/${seg(id)}/profile`, body),
+  /** 프로필 카드 사진 올리기 (JPG·PNG·WEBP, 5MB) — 올리면 카드 배경도 사진으로 */
+  uploadPhoto: (id: string | "me", file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return upload<{ member: Member }>(id === "me" ? "/members/me/photo" : `/members/${seg(id)}/photo`, form);
+  },
+  /** 사진 지우기 — 카드 배경은 소리 파형으로 */
+  deletePhoto: (id: string | "me") =>
+    del<{ member: Member }>(id === "me" ? "/members/me/photo" : `/members/${seg(id)}/photo`),
   /** + 명단에 추가 — 기기 없이 이름만 */
   addRoster: (body: {
     name: string;

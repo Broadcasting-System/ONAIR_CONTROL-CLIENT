@@ -58,6 +58,8 @@ const profileOf = (m: Member, meId: string | null | undefined): ProfileTarget =>
   title: m.title ?? "",
   bio: m.bio ?? "",
   me: !!meId && meId === m.id,
+  cardBg: m.cardBg ?? "wave",
+  photoUrl: m.photoUrl ?? "",
 });
 
 function ago(iso: string | null): string {
