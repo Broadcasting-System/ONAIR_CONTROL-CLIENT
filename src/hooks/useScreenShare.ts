@@ -18,7 +18,8 @@ async function postScreen(channel: number, active: boolean) {
 
 /** 컨트롤(노트북) 측 화면 공유 송신기.
  *  getDisplayMedia로 화면+소리를 캡처해 WebRTC(sendonly)로 송출 화면에 보낸다.
- *  시그널링은 전용 /api/display/ws 로 offer/answer/ice 교환.
+ *  시그널링은 전용 /api/display/ws 로 hello/offer/answer/ice 교환.
+ *  같은 채널의 받는 쪽(프로젝터 + 서버 PC 녹화 창 등) 여럿에게 각자 연결을 만든다.
  *
  *  공유는 '시작한 채널'에 묶인다. 공유 중에 컨트롤에서 다른 채널을 골라도
  *  중지·정리는 시작한 채널에 대해 이뤄진다(sharingChannel). */
@@ -26,15 +27,15 @@ export function useScreenShare(channel: number = 1) {
   const [sharingChannel, setSharingChannel] = useState<number | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const peersRef = useRef<Map<string, { pc: RTCPeerConnection }> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const shareChannelRef = useRef<number | null>(null);
   const startingRef = useRef(false);
 
   const cleanup = useCallback(() => {
-    if (pcRef.current) {
-      try { pcRef.current.close(); } catch {}
-      pcRef.current = null;
+    if (peersRef.current) {
+      peersRef.current.forEach((p) => { try { p.pc.close(); } catch {} });
+      peersRef.current = null;
     }
     if (wsRef.current) {
       const ws = wsRef.current;
@@ -65,7 +66,7 @@ export function useScreenShare(channel: number = 1) {
   useEffect(() => () => { void stopRef.current(); }, []);
 
   const start = useCallback(async () => {
-    if (pcRef.current || startingRef.current) return; // 이미 공유 중(또는 화면 선택 창이 떠 있음)
+    if (peersRef.current || startingRef.current) return; // 이미 공유 중(또는 화면 선택 창이 떠 있음)
 
     // 화면 캡처 API는 보안 컨텍스트(HTTPS 또는 localhost)에서만 제공된다.
     // HTTP+IP로 접속하면 navigator.mediaDevices 자체가 없다 → 명확히 안내.
@@ -120,41 +121,72 @@ export function useScreenShare(channel: number = 1) {
       if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(m));
     };
 
-    const pc = new RTCPeerConnection(RTC_CONFIG);
-    pcRef.current = pc;
-    stream.getTracks().forEach((t) => pc.addTrack(t, stream)); // sendonly
-    pc.onicecandidate = (e) => {
-      if (e.candidate)
-        send({ command: "webrtc", from: "control", kind: "ice", candidate: e.candidate.toJSON() });
+    // 받는 쪽(송출 화면·서버 PC 녹화 창)마다 WebRTC 연결을 따로 — 서버가 붙여 주는 fromPeer 로 구분하고
+    // offer·ice 는 그 받는 쪽에게만(to) 보낸다. fromPeer 를 모르는 예전 서버면 "" 하나로 1:1 처럼 동작.
+    type Peer = { pc: RTCPeerConnection; pendingIce: RTCIceCandidateInit[] };
+    const peers = new Map<string, Peer>();
+    peersRef.current = peers;
+    const target = (peer: string) => (peer ? { to: peer } : {});
+
+    const closePeer = (peer: string) => {
+      const p = peers.get(peer);
+      if (!p) return;
+      peers.delete(peer);
+      try { p.pc.close(); } catch {}
     };
 
-    const pendingIce: RTCIceCandidateInit[] = [];
-    const sendOffer = async (iceRestart = false) => {
+    const offerTo = async (peer: string) => {
+      closePeer(peer); // (다시) 붙은 받는 쪽 — 새 연결로
+      const pc = new RTCPeerConnection(RTC_CONFIG);
+      const entry: Peer = { pc, pendingIce: [] };
+      peers.set(peer, entry);
+      stream.getTracks().forEach((t) => pc.addTrack(t, stream)); // sendonly
+      pc.onicecandidate = (e) => {
+        if (e.candidate)
+          send({ command: "webrtc", from: "control", kind: "ice", candidate: e.candidate.toJSON(), ...target(peer) });
+      };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "failed" && peers.get(peer)?.pc === pc) closePeer(peer);
+      };
       try {
-        const offer = await pc.createOffer(iceRestart ? { iceRestart: true } : undefined);
+        const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        send({ command: "webrtc", from: "control", kind: "offer", sdp: offer });
+        send({ command: "webrtc", from: "control", kind: "offer", sdp: offer, ...target(peer) });
       } catch (e) { console.error("offer 생성 실패", e); }
     };
+
     ws.onmessage = async (ev) => {
-      let m: { command?: string; from?: string; kind?: string; sdp?: RTCSessionDescriptionInit; candidate?: RTCIceCandidateInit };
+      let m: {
+        command?: string; from?: string; kind?: string; fromPeer?: string;
+        sdp?: RTCSessionDescriptionInit; candidate?: RTCIceCandidateInit;
+      };
       try { m = JSON.parse(ev.data); } catch { return; }
       if (m?.command !== "webrtc" || m.from === "control") return;
+      const peer = m.fromPeer ?? "";
+      if (m.kind === "hello") {
+        // 받는 쪽이 (다시) 붙었다 → 그 화면 몫의 offer
+        await offerTo(peer);
+        return;
+      }
+      if (m.kind === "bye") {
+        closePeer(peer);
+        return;
+      }
+      const p = peers.get(peer);
+      if (!p) return;
       if (m.kind === "answer" && m.sdp) {
         try {
-          await pc.setRemoteDescription(new RTCSessionDescription(m.sdp));
-          for (const c of pendingIce) { try { await pc.addIceCandidate(c); } catch {} }
-          pendingIce.length = 0;
+          await p.pc.setRemoteDescription(new RTCSessionDescription(m.sdp));
+          for (const c of p.pendingIce) { try { await p.pc.addIceCandidate(c); } catch {} }
+          p.pendingIce.length = 0;
         } catch (e) { console.error("answer 처리 실패", e); }
       } else if (m.kind === "ice" && m.candidate) {
-        if (pc.remoteDescription) { try { await pc.addIceCandidate(m.candidate); } catch {} }
-        else pendingIce.push(m.candidate);
-      } else if (m.kind === "hello") {
-        // 송출이 (재)연결됨 → offer를 ICE 재시작과 함께 재전송해 재협상
-        await sendOffer(true);
+        if (p.pc.remoteDescription) { try { await p.pc.addIceCandidate(m.candidate); } catch {} }
+        else p.pendingIce.push(m.candidate);
       }
     };
-    ws.onopen = () => { void sendOffer(false); };
+    // 이미 떠 있는 받는 쪽들에게 "보낼 게 있다" — 각자 hello 로 답하면 그 화면마다 offer 를 보낸다
+    ws.onopen = () => { send({ command: "webrtc", from: "control", kind: "hello" }); };
     ws.onclose = () => {
       // 우리가 닫은 게 아니라 서버 재시작 등으로 끊겼다 → '공유 중'으로 남지 않게 정리
       if (wsRef.current !== ws) return;

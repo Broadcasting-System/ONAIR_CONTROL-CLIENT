@@ -2,8 +2,7 @@
 
 import { useRef, useState } from "react";
 import { toast } from "@/components/common/Toast";
-import { duration, gb } from "@/components/recording/RecordDeck";
-import { when } from "@/components/recording/RecordingList";
+import { duration, gb, when } from "@/components/recording/format";
 import { recordingApi } from "@/lib/recordingApi";
 import { cn } from "@/lib/utils";
 import type { AmbientMode, LaneMode, MergeJob, RecordingItem, UploadedVideo } from "@/types/recording";
@@ -24,7 +23,7 @@ function Step({ n, done, title, children }: { n: number; done: boolean; title: s
       <span
         className={cn(
           "grid h-7 w-7 place-items-center rounded-full border font-orbitron text-xs",
-          done ? "border-[#00FF57]/40 bg-[#00FF57]/[0.12] text-[#00FF57]" : "border-white/12 bg-white/[0.06] text-white/60",
+          done ? "border-white/40 bg-white/[0.14] text-white" : "border-white/12 bg-white/[0.06] text-white/60",
         )}
       >
         {n}
@@ -313,7 +312,7 @@ export default function MergePanel({
                 className={cn(
                   "h-full transition-[width] duration-300",
                   job.status === "error"
-                    ? "bg-amber-400/70"
+                    ? "bg-white/30"
                     : "bg-[linear-gradient(90deg,#ff6b6b,#FF3B3B)] shadow-[0_0_10px_rgba(255,59,59,0.6)]",
                 )}
                 style={{ width: `${Math.round(job.progress * 100)}%` }}
@@ -325,7 +324,7 @@ export default function MergePanel({
                 const ok = done || (stageIndex >= 0 && i < stageIndex);
                 const on = !done && i === stageIndex;
                 return (
-                  <span key={s.key} className={ok ? "text-[#00FF57]" : on ? "text-white" : "text-white/35"}>
+                  <span key={s.key} className={ok ? "text-white/75" : on ? "text-white" : "text-white/35"}>
                     {ok ? "✓ " : ""}
                     {s.name}
                   </span>
@@ -333,19 +332,19 @@ export default function MergePanel({
               })}
             </div>
             {job.status === "error" && (
-              <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-3 font-pretendard text-[13px] text-amber-100/90">
+              <div className="mt-3 rounded-xl border border-[#FF3B3B]/35 bg-[#FF3B3B]/[0.08] px-3.5 py-3 font-pretendard text-[13px] text-[#ffb3b3]">
                 {job.error}
               </div>
             )}
             {done && job.summary && (
-              <div className="mt-3 rounded-xl border border-[#00FF57]/25 bg-[#00FF57]/[0.06] px-3.5 py-3 font-pretendard text-[13px] leading-relaxed text-white/80">
+              <div className="mt-3 rounded-xl border border-white/12 bg-white/[0.04] px-3.5 py-3 font-pretendard text-[13px] leading-relaxed text-white/80">
                 {job.summary.start} — 맞춰서 합쳤습니다.
                 <br />
                 {job.summary.drift}
                 {job.sync && !job.sync.precise && (
                   <>
                     <br />
-                    <span className="text-amber-200/90">
+                    <span className="text-[#ff9a9a]">
                       소리가 비슷한 곳이 적어 0.01초 단위로만 맞췄어요. 어긋나 보이면 미세 조정을 써 주세요.
                     </span>
                   </>
