@@ -70,7 +70,9 @@ export default function InviteModal({
 
         <div className="flex min-w-0 flex-col gap-4">
           <div className="flex items-center gap-3">
-            <h2 className="font-mbc text-2xl text-white">새 부원 초대</h2>
+            <h2 className="min-w-0 truncate font-mbc text-2xl text-white">
+              {invite.invite.memberId && invite.invite.note ? `${invite.invite.note} 초대` : "새 부원 초대"}
+            </h2>
             <span
               className="ml-auto inline-flex h-[34px] items-center rounded-[10px] border border-red-400/50 bg-red-400/[0.12] px-3.5 font-mono text-[15px] font-bold tabular-nums text-white"
               title="QR 을 쓸 수 있는 남은 시간"
@@ -85,6 +87,9 @@ export default function InviteModal({
           <p className="font-pretendard text-sm leading-relaxed text-white/60">
             새 부원의 노트북에서 ONAIR 앱을 열고 이 QR 을 찍게 하세요. 직접 만나서 찍는 게 가장 안전해요. QR 은 24시간 동안 쓸 수
             있어요.
+            {invite.invite.memberId && (
+              <span className="mt-1 block">이 QR 로 등록하면 방송부 명단의 그 기록(직함·소개)에 기기가 붙어요.</span>
+            )}
           </p>
 
           <div className="flex flex-col gap-1.5 rounded-[14px] border border-white/[0.08] bg-[#0a0a0c] px-[18px] py-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]">

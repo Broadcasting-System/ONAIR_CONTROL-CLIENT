@@ -40,7 +40,7 @@ export default function DashboardLayout({
                 {group.title}
               </span>
               {group.items
-                .filter((item) => !item.adminOnly || isAdmin)
+                .filter((item) => (isAdmin ? !item.hideForAdmin : !item.adminOnly))
                 .map((item) => {
                   const isActive = pathname.startsWith(item.path);
                   return (

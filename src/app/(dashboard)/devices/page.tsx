@@ -7,6 +7,7 @@ import { toast } from "@/components/common/Toast";
 import { useMe } from "@/hooks/useMe";
 import PageTabs from "@/components/common/PageTabs";
 import AccessLogPanel from "@/components/devices/AccessLogPanel";
+import CrewView from "@/components/devices/CrewView";
 import MembersPanel from "@/components/devices/MembersPanel";
 import SpeakerMappingPanel from "@/components/devices/SpeakerMappingPanel";
 import BridgePanel from "@/components/devices/BridgePanel";
@@ -39,7 +40,7 @@ const DEVICE_TABS = [
 ];
 
 export default function DevicesPage() {
-  const { me } = useMe();
+  const { me, isAdmin, loading } = useMe();
   const [devices, setDevices] = useState<Device[]>([]);
   const [denied, setDenied] = useState(false);
   const [newIp, setNewIp] = useState("");
@@ -64,8 +65,8 @@ export default function DevicesPage() {
   }, []);
 
   useEffect(() => {
-    fetchDevices();
-  }, [fetchDevices]);
+    if (isAdmin) fetchDevices();
+  }, [fetchDevices, isAdmin]);
 
   const save = useCallback(
     async (ip: string, patch: { label?: string; role?: DeviceRole }) => {
@@ -91,6 +92,17 @@ export default function DevicesPage() {
     await save(ip, { role: newRole });
     setNewIp("");
   }, [newIp, newRole, save]);
+
+  // 부장이 아니면 방송부 보기만 (내 소개는 여기서 고친다)
+  if (!isAdmin) {
+    if (loading) return null;
+    return (
+      <div className="flex flex-col gap-6">
+        <SectionHeader className="mb-0">방송부</SectionHeader>
+        <CrewView />
+      </div>
+    );
+  }
 
   if (denied) {
     return (

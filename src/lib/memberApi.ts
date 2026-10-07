@@ -2,6 +2,7 @@ import { getApiBase } from "@/lib/apiBase";
 import { del, post, put, request, seg } from "@/lib/http";
 import type {
   AssignableRole,
+  CrewResponse,
   Invite,
   InviteCreated,
   MailCheck,
@@ -18,7 +19,8 @@ export const memberApi = {
 
   list: () => request<{ members: Member[]; counts: Record<string, number>; mail?: MailSummary }>("/members"),
   invites: () => request<{ invites: Invite[] }>("/members/invites"),
-  createInvite: (note = "") => post<InviteCreated>("/members/invites", { note }),
+  /** memberId — 명단만 부원에게 이어 둘 초대 */
+  createInvite: (note = "", memberId?: string) => post<InviteCreated>("/members/invites", { note, memberId }),
   cancelInvite: (id: string) => del<{ ok: boolean }>(`/members/invites/${seg(id)}`),
 
   approve: (id: string, role: AssignableRole) => post<{ member: Member }>(`/members/${seg(id)}/approve`, { role }),
@@ -30,6 +32,22 @@ export const memberApi = {
   revoke: (id: string) => post<{ member: Member }>(`/members/${seg(id)}/revoke`),
 
   discordCode: () => post<{ code: string; expiresAt: string }>("/members/me/discord-code"),
+
+  /** 방송부 보기 (누구나) */
+  crew: () => request<CrewResponse>("/members/crew"),
+  /** 직함·소개글 — 본인은 /me/profile, 부장 이상은 아무나 */
+  updateProfile: (id: string | "me", body: { title?: string; bio?: string }) =>
+    put<{ member: Member }>(id === "me" ? "/members/me/profile" : `/members/${seg(id)}/profile`, body),
+  /** + 명단에 추가 — 기기 없이 이름만 */
+  addRoster: (body: {
+    name: string;
+    cohort: number;
+    role: "member" | "alumni";
+    wasLead?: boolean;
+    title?: string;
+    bio?: string;
+  }) => post<{ member: Member }>("/members/roster", body),
+  deleteRoster: (id: string) => del<{ ok: boolean }>(`/members/roster/${seg(id)}`),
 };
 
 /** 부원 메일 (docs/mail.md — 서버) */

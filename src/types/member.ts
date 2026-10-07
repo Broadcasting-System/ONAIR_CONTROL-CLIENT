@@ -27,6 +27,9 @@ export interface MeInfo {
   name: string;
   cohort: number | null;
   intro: string;
+  /** 방송부 직함·소개글 (예전 서버면 없다) */
+  title?: string;
+  bio?: string;
   memberId: string | null;
   discordLinked: boolean;
   cloudflare: boolean;
@@ -70,6 +73,17 @@ export interface Member {
   mailError: string;
   discordLinked: boolean;
   discordId: string;
+  /** 방송부 직함·한 줄 (40자) */
+  title: string;
+  /** 방송부 소개글 (1000자) */
+  bio: string;
+  /** 그 기수의 부장이었다 ("4기 부장") — 지금 역할과는 따로 */
+  wasLead: boolean;
+  /** 명단만 — 기기·토큰 없이 이름만 올라 있다 (대개 졸업생) */
+  rosterOnly: boolean;
+  hasDevice: boolean;
+  /** 명단만 부원에게 이어진 등록이면 그 전 역할 (승인 기본값) */
+  rosterRole: "" | "member" | "alumni";
   createdAt: string | null;
   registeredAt: string | null;
   approvedAt: string | null;
@@ -85,6 +99,40 @@ export interface Invite {
   expiresAt: string;
   codeExpiresAt: string;
   codeActive: boolean;
+  /** 명단만 부원에게 이어 둔 초대 */
+  memberId?: string;
+}
+
+/** GET /members/crew — 방송부 보기 한 사람 */
+export interface CrewMember {
+  id: string;
+  name: string;
+  cohort: number;
+  role: "superadmin" | "lead" | "member" | "alumni";
+  roleLabel: string;
+  /** 지금 부장이거나 그 기수 부장이었다 */
+  lead: boolean;
+  wasLead: boolean;
+  title: string;
+  bio: string;
+  rosterOnly: boolean;
+  hasDevice: boolean;
+  /** 지금 기수 */
+  current: boolean;
+  /** ONAIR 메일 주소 앞부분 (부원 이상에게만, 없으면 "") */
+  mailAddress: string;
+  /** 보고 있는 기기의 부원 본인 */
+  me: boolean;
+  /** 본인 또는 부장 이상 */
+  canEdit: boolean;
+}
+
+export interface CrewResponse {
+  crew: CrewMember[];
+  currentCohorts: number[];
+  domain: string;
+  me: string | null;
+  canManage: boolean;
 }
 
 /** GET /members 의 mail — 메일 드라이버(mock 이면 시험용 확인 버튼을 보인다) */
