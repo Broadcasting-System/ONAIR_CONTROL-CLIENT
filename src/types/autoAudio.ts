@@ -177,6 +177,8 @@ export interface ShowDetail extends ShowSummary {
     beats: number[];
     sections: { start: number; end: number; kind: SectionKind; energy: number }[];
     energy: number[];
+    /** 화면 파형 (0~1) — 예전에 올린 쇼에는 없다 */
+    peaks?: number[];
   };
   cueList: ShowCue[];
 }
@@ -219,16 +221,16 @@ export interface MusicLightState {
 }
 
 export const SECTION_INFO: Record<SectionKind, { label: string; color: string }> = {
-  intro: { label: "도입", color: "#3D6BFF" },
-  quiet: { label: "조용", color: "#A855F7" },
-  mid: { label: "중간", color: "#3FC8FF" },
-  loud: { label: "신남", color: "#FF3B3B" },
+  intro: { label: "도입", color: "#4C6FE0" },
+  quiet: { label: "조용", color: "#8E5BD9" },
+  mid: { label: "중간", color: "#3DB9CF" },
+  loud: { label: "신남", color: "#E5484D" },
   outro: { label: "마무리", color: "#585858" },
 };
 
 export const LANE_INFO: { lane: CueLane; label: string; color: string }[] = [
-  { lane: "dimmer", label: "밝기(할로겐)", color: "#FFD49A" },
-  { lane: "color", label: "LED 색", color: "#A855F7" },
-  { lane: "beat", label: "LED 박자", color: "#FF3B3B" },
-  { lane: "scene", label: "장면", color: "#3FC8FF" },
+  { lane: "dimmer", label: "밝기(할로겐)", color: "#F3D9B1" },
+  { lane: "color", label: "LED 색", color: "#8E5BD9" },
+  { lane: "beat", label: "LED 박자", color: "#E5484D" },
+  { lane: "scene", label: "장면", color: "#3DB9CF" },
 ];

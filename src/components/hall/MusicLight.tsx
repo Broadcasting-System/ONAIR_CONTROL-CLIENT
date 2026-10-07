@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Notice, Panel } from "@/components/hall/HallControls";
 import { OnSwitch } from "@/components/hall/AutoAudio";
+import { lightColor } from "@/components/hall/LightStrip";
 import { useMusicLight, useMusicShow } from "@/hooks/useMusicLight";
 import { musicLightApi } from "@/lib/autoAudioApi";
+import { lightingApi } from "@/lib/lightingApi";
 import { cn } from "@/lib/utils";
+import { WARM_SWATCH, swatchOf, type Fixture } from "@/types/lighting";
 import {
   LANE_INFO,
-  SECTION_INFO,
   type MusicLightSettings,
   type MusicLightState,
   type ShowDetail,
@@ -22,14 +25,6 @@ const STYLE_HINT: Record<ShowStyle, string> = {
   calm: "깜빡임 없이 천천히",
   party: "중간 구간도 박자",
 };
-
-function Chip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-[9px] bg-black/40 px-2.5 py-1.5 font-orbitron text-[11px] tracking-[0.1em] text-white/70">
-      {children}
-    </span>
-  );
-}
 
 function ChoiceButton({
   on,
@@ -81,70 +76,165 @@ function usePlayhead(
   return { position: playing || (audio && !audio.paused) ? now : 0, playing };
 }
 
-/** 구간 띠 · 크기 곡선 · 4박자 눈금 · 재생 위치 + 아래 큐 줄 */
-function Timeline({
+/** 화면 파형 — 서버가 준 봉우리, 예전 쇼는 크기 곡선으로 대신 */
+function wavePeaks(show: ShowDetail): number[] {
+  const p = show.analysis.peaks;
+  if (p && p.length) return p;
+  return show.analysis.energy;
+}
+
+/** 시간순 파형 · 재생 위치(빨간 선) · 아래 '그 시간에 나가는 색' 띠 · 시간 눈금 */
+function Waveform({
   show,
   position,
+  onSeek,
+}: {
+  show: ShowDetail;
+  position: number;
+  onSeek?: (t: number) => void;
+}) {
+  const L = Math.max(1, show.analysis.duration);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const peaks = useMemo(() => wavePeaks(show), [show]);
+  const ratio = Math.min(1, Math.max(0, position / L));
+
+  useEffect(() => {
+    const c = canvas.current;
+    if (!c) return;
+    const draw = () => {
+      const w = c.clientWidth;
+      const h = c.clientHeight;
+      const dpr = window.devicePixelRatio || 1;
+      c.width = w * dpr;
+      c.height = h * dpr;
+      const g = c.getContext("2d");
+      if (!g || !peaks.length) return;
+      g.scale(dpr, dpr);
+      const bw = 2;
+      const step = 3;
+      const n = Math.floor(w / step);
+      const mid = h / 2;
+      const px = ratio * w;
+      for (let i = 0; i < n; i++) {
+        // 칸마다 봉우리 중 가장 큰 값
+        const a = Math.floor((i / n) * peaks.length);
+        const b = Math.max(a + 1, Math.floor(((i + 1) / n) * peaks.length));
+        let v = 0;
+        for (let k = a; k < b; k++) v = Math.max(v, peaks[k] ?? 0);
+        const amp = Math.max(1, v * (mid - 6));
+        const x = i * step;
+        g.fillStyle = x < px ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.22)";
+        g.fillRect(x, mid - amp, bw, amp * 2);
+      }
+      g.fillStyle = "rgba(255,255,255,0.08)";
+      g.fillRect(0, mid, w, 1);
+    };
+    draw();
+    const ro = new ResizeObserver(draw);
+    ro.observe(c);
+    return () => ro.disconnect();
+  }, [peaks, ratio]);
+
+  const ribbon = useMemo(() => colorRibbon(show), [show]);
+  const ticks: number[] = [];
+  const every = L > 600 ? 120 : L > 240 ? 60 : 30;
+  for (let t = 0; L - t > every * 0.6; t += every) ticks.push(t);
+  ticks.push(L);
+  const pct = (t: number) => `${(t / L) * 100}%`;
+
+  return (
+    <div className="flex flex-col gap-1.5 select-none">
+      <div
+        className={cn("relative h-[120px] rounded-lg bg-white/[0.03]", onSeek && "cursor-pointer")}
+        onClick={(e) => {
+          if (!onSeek) return;
+          const r = e.currentTarget.getBoundingClientRect();
+          onSeek(Math.max(0, Math.min(L - 0.5, ((e.clientX - r.left) / r.width) * L)));
+        }}
+        title={onSeek ? "누르면 그 자리부터 틀어요" : undefined}
+      >
+        <canvas ref={canvas} className="absolute inset-0 h-full w-full" aria-hidden />
+        {position > 0 && (
+          <span
+            className="pointer-events-none absolute -bottom-1 -top-1 -ml-px w-0.5 bg-[#FF3B3B] shadow-[0_0_8px_rgba(255,59,59,0.7)]"
+            style={{ left: pct(position) }}
+          />
+        )}
+      </div>
+      {ribbon.length > 0 && (
+        <div className="relative h-1.5" aria-label="그 시간에 나가는 조명 색">
+          {ribbon.map((r, i) => {
+            const now = position >= r.start && position < r.end;
+            return (
+              <i
+                key={i}
+                className={cn(
+                  "absolute rounded-sm",
+                  now ? "top-0 h-1.5 opacity-100" : "top-px h-1",
+                  !now && (position > r.end ? "opacity-[0.18]" : "opacity-45"),
+                )}
+                style={{
+                  left: pct(r.start),
+                  width: `calc(${pct(r.end - r.start)} - 2px)`,
+                  background: r.color,
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
+      <div className="relative h-4 font-mono text-xs tabular-nums text-white/40">
+        {ticks.map((t, i) => (
+          <span
+            key={t}
+            className="absolute"
+            style={{
+              left: pct(t),
+              transform: i === 0 ? "none" : i === ticks.length - 1 ? "translateX(-100%)" : "translateX(-50%)",
+            }}
+          >
+            {fmt(t)}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** 색 큐 → 띠 조각 (다음 색 큐까지). 색 큐가 없으면 할로겐 밝기 큐로 */
+function colorRibbon(show: ShowDetail): { start: number; end: number; color: string }[] {
+  const L = show.analysis.duration;
+  const on = show.cueList.filter((c) => c.enabled).sort((a, b) => a.t - b.t);
+  const color = on.filter((c) => c.lane === "color" && c.color);
+  const cues = color.length ? color : on.filter((c) => c.lane === "dimmer");
+  return cues.map((c, i) => ({
+    start: c.t,
+    end: cues[i + 1]?.t ?? L,
+    color:
+      c.lane === "color"
+        ? swatchOf(c.color)
+        : (c.intensity ?? 0) > 0
+          ? WARM_SWATCH
+          : "#3a3b40",
+  }));
+}
+
+/** 큐 편집 (접어 둠) — 큐 하나 또는 줄 전체를 끄고 켜기 */
+function CueEditor({
+  show,
   operable,
   onToggleCue,
   onToggleLane,
 }: {
   show: ShowDetail;
-  position: number;
   operable: boolean;
   onToggleCue: (id: string, on: boolean) => void;
   onToggleLane: (ids: string[], on: boolean) => void;
 }) {
-  const W = 1000;
-  const H = 130;
   const L = Math.max(1, show.analysis.duration);
-  const x = (s: number) => (s / L) * W;
-  const path = useMemo(() => {
-    const e = show.analysis.energy;
-    if (!e.length) return "";
-    const step = L / e.length;
-    return (
-      `M0 ${H} ` +
-      e.map((v, i) => `L${x(i * step).toFixed(1)} ${(H - v * (H - 22)).toFixed(1)}`).join(" ") +
-      ` L${W} ${H} Z`
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [show.analysis.energy, L]);
-  const bars = show.analysis.beats.filter((_, i) => i % 4 === 0);
   const lanes = LANE_INFO.filter((l) => show.cueList.some((c) => c.lane === l.lane));
-
   return (
-    <div className="flex flex-col gap-3">
-      <div className="overflow-hidden rounded-[14px] border border-black bg-[#08080a] shadow-[inset_0_1px_6px_#000]">
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="none"
-          className="block h-[130px] w-full"
-        >
-          {bars.map((b, i) => (
-            <line key={i} x1={x(b)} x2={x(b)} y1={18} y2={H} stroke="rgba(255,255,255,0.06)" />
-          ))}
-          {path && <path d={path} fill="rgba(255,59,59,0.22)" stroke="#FF3B3B" strokeWidth={1.2} />}
-          {show.analysis.sections.map((s, i) => (
-            <g key={i}>
-              <rect
-                x={x(s.start)}
-                y={0}
-                width={x(s.end) - x(s.start)}
-                height={16}
-                fill={SECTION_INFO[s.kind].color}
-                opacity={0.55}
-              />
-              <text x={x(s.start) + 6} y={12} fontSize={10} fill="#fff" fontFamily="Pretendard">
-                {SECTION_INFO[s.kind].label}
-              </text>
-            </g>
-          ))}
-          {position > 0 && (
-            <line x1={x(position)} x2={x(position)} y1={0} y2={H} stroke="#fff" strokeWidth={2} />
-          )}
-        </svg>
-      </div>
+    <div className="flex flex-col gap-2">
       <div className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-x-2.5 gap-y-1.5">
         {lanes.map((l) => {
           const cues = show.cueList.filter((c) => c.lane === l.lane);
@@ -183,7 +273,7 @@ function Timeline({
                     style={{
                       left: `${(c.t / L) * 100}%`,
                       width: `${(Math.max(c.fade, 0.4) / L) * 100}%`,
-                      background: c.strobe ? "#ffffff" : l.color,
+                      background: c.strobe ? "#ffffff" : c.color ? swatchOf(c.color) : l.color,
                     }}
                   />
                 ))}
@@ -192,19 +282,96 @@ function Timeline({
           );
         })}
       </div>
-      <div className="flex flex-wrap gap-3 font-pretendard text-[11.5px] text-white/50">
-        {Object.values(SECTION_INFO).map((s) => (
-          <span key={s.label} className="flex items-center gap-1.5">
-            <i className="inline-block h-2.5 w-2.5 rounded-[3px]" style={{ background: s.color }} />
-            {s.label}
-          </span>
-        ))}
-        <span className="ml-auto">
-          큐를 누르면 그 큐만, 줄 이름을 누르면 줄 전체를 끄고 켤 수 있어요
-        </span>
+      <p className="font-pretendard text-[11.5px] text-white/35">
+        큐를 누르면 그 큐만, 줄 이름을 누르면 줄 전체를 끄고 켤 수 있어요
+      </p>
+    </div>
+  );
+}
+
+const SEGMENTS = 18;
+
+/** 콘솔 입력 미터처럼 LED 칸 — 켜진 칸 수가 밝기, 칸 색이 지금 색 */
+function LedMeter({ level, color, label, wide }: { level: number; color: string; label?: string; wide?: boolean }) {
+  const lit = Math.round((Math.max(0, Math.min(100, level)) / 100) * SEGMENTS);
+  return (
+    <div className="flex w-[30px] flex-col items-center gap-[5px]" title={label ? `${label} ${level}%` : `${level}%`}>
+      <div className={cn("grid gap-0.5", wide ? "w-[18px]" : "w-3.5")}>
+        {Array.from({ length: SEGMENTS }, (_, i) => {
+          const k = SEGMENTS - i;
+          const on = k <= lit;
+          return (
+            <i
+              key={i}
+              className="h-1 rounded-[1px] bg-[#1b1c20]"
+              style={
+                on
+                  ? { background: color, boxShadow: `0 0 6px ${color}66`, opacity: 0.55 + (0.45 * k) / SEGMENTS }
+                  : undefined
+              }
+            />
+          );
+        })}
+      </div>
+      <b className="font-mono text-[11px] font-semibold tabular-nums text-white/70">{level}</b>
+      {label !== undefined && (
+        <span className="-mt-1 max-w-[30px] truncate font-pretendard text-[10.5px] text-white/40">{label}</span>
+      )}
+    </div>
+  );
+}
+
+/** 지금 나가는 조명 — 묶음별 LED 미터 + 전체 밝기 */
+function MeterBridge({ hallId, fast }: { hallId: string; fast: boolean }) {
+  const { data } = useQuery({
+    queryKey: ["lighting", hallId],
+    queryFn: () => lightingApi.state(hallId),
+    refetchInterval: fast ? 1000 : 3000,
+  });
+  if (!data || !data.fixtures.length) return null;
+  const master = data.blackout ? 0 : data.master;
+  const groups = new Map<string, Fixture[]>();
+  for (const f of data.fixtures) {
+    const g = f.group || "묶음 없음";
+    groups.set(g, [...(groups.get(g) ?? []), f]);
+  }
+  return (
+    <div className="flex gap-3.5 overflow-x-auto rounded-xl border border-black bg-[#0a0a0c] px-[18px] pb-3 pt-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.9)]">
+      {[...groups].map(([g, fx]) => (
+        <div
+          key={g}
+          className="flex flex-col gap-2 border-r border-white/[0.06] pr-3.5"
+          style={{ flex: `${fx.length} 0 auto` }}
+        >
+          <div className="flex justify-around gap-2.5">
+            {fx.map((f) => (
+              <LedMeter
+                key={f.id}
+                level={Math.round((f.value.intensity * master) / 100)}
+                color={lightColor(f)}
+                label={shortName(f.name, g)}
+              />
+            ))}
+          </div>
+          <div className="border-t border-white/[0.08] pt-1.5 text-center font-pretendard text-xs font-bold text-white/50">
+            {g}
+          </div>
+        </div>
+      ))}
+      <div className="flex shrink-0 flex-col items-center gap-2">
+        <LedMeter level={master} color="#ECEEF2" wide />
+        <div className="w-full border-t border-white/[0.08] pt-1.5 text-center font-pretendard text-xs font-bold text-white/50">
+          전체
+        </div>
       </div>
     </div>
   );
+}
+
+/** 미터 아래 이름 — 묶음 이름으로 시작하면 떼고 짧게 */
+function shortName(name: string, group: string) {
+  const n = name.startsWith(group) ? name.slice(group.length).trim() : name;
+  return n || name;
 }
 
 /** MR 올리기 — 고르기 → 이름·분위기 → 분석 */
@@ -280,7 +447,7 @@ function UploadBox({
               .then(() => setFile(null))
               .catch(() => undefined)
           }
-          className="h-9 flex-1 rounded-lg border border-[#FF3B3B]/50 bg-[#FF3B3B]/20 font-mbc text-sm text-white disabled:opacity-50"
+          className="h-9 flex-1 rounded-lg border border-red-400/50 bg-red-400/15 font-mbc text-sm text-white disabled:opacity-50"
         >
           {uploading ? "분석하는 중…" : "분석해서 쇼 만들기"}
         </button>
@@ -385,7 +552,7 @@ function MusicSettings({
         )}
       </div>
       {draft.feed.source === "bridge" && (
-        <p className="text-xs text-amber-100/70">
+        <p className="text-xs text-white/45">
           노트북 녹음 소리 받기는 아직 준비 중이에요 (브릿지 소리 스트림 필요).
         </p>
       )}
@@ -400,7 +567,7 @@ function MusicSettings({
   );
 }
 
-/** 조명 화면의 '음악 조명' 탭 — 쇼 목록·올리기·실시간 | 타임라인·시작/정지·안전 */
+/** 조명 화면의 '음악 조명' 탭 — 위 재생(파형·색 띠·LED 미터·실시간) | 아래 쇼 목록·올리기 */
 export default function MusicLightPanel({
   hallId,
   operable,
@@ -424,6 +591,7 @@ export default function MusicLightPanel({
   const [withAudio, setWithAudio] = useState(false);
   const { position, playing } = usePlayhead(state, showId, audio);
   const [showSettings, setShowSettings] = useState(false);
+  const [editCues, setEditCues] = useState(false);
 
   if (!state) {
     return error ? <Notice>{error.message}</Notice> : null;
@@ -432,6 +600,7 @@ export default function MusicLightPanel({
   const live = state.live;
   const summary = state.shows.find((s) => s.id === showId) ?? null;
   const noFixtures = state.fixtures.led + state.fixtures.dimmer === 0;
+  const anyPlaying = !!state.playing;
 
   const press = () => {
     if (!summary) return;
@@ -447,9 +616,26 @@ export default function MusicLightPanel({
     }
   };
 
+  const seek =
+    summary && playing && operable
+      ? (t: number) => {
+          start(summary.id, t);
+          if (withAudio && audio) audio.currentTime = t;
+        }
+      : audio && !audio.paused
+        ? (t: number) => {
+            audio.currentTime = t;
+          }
+        : undefined;
+
+  const safety = [
+    `깜빡임 초당 ${state.settings.maxFlashPerSec}번까지`,
+    state.settings.allowStrobe ? "스트로브 허용됨 (쇼에서 켜야 나감)" : "스트로브 꺼짐",
+    `할로겐은 ${state.dimmerMinFade}초 넘게 천천히`,
+  ].join(" · ");
+
   return (
     <div className="flex flex-col gap-5">
-      <style>{`@keyframes onairBeat { 0%, 12% { background: #FF3B3B; box-shadow: 0 0 18px #FF3B3B; } 30%, 100% { background: #222; box-shadow: none; } }`}</style>
       {noFixtures && (
         <Notice tone="info">
           조명 목록이 비어 있어요. 관리자가 조명 세팅에서 조명을 넣으면 쇼를 만들 수 있어요.
@@ -458,34 +644,232 @@ export default function MusicLightPanel({
       {state.lastError && <Notice>{state.lastError}</Notice>}
       {(playing?.error || live?.error) && <Notice>{playing?.error || live?.error}</Notice>}
 
-      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
-        <Panel title="조명 쇼">
-          <div className="flex flex-col gap-2">
-            {state.shows.map((s) => (
+      <section className="flex flex-col gap-5 rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
+        {!summary || !show ? (
+          <p className="font-pretendard text-sm text-white/45">
+            MR 을 올리면 빠르기·박자·구간을 찾아 조명 큐를 만들어요. 아래 &apos;조명 쇼&apos;에서 올려 주세요.
+          </p>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-[18px]">
               <button
-                key={s.id}
                 type="button"
-                onClick={() => setSelected(s.id)}
+                disabled={!operable}
+                onClick={press}
                 className={cn(
-                  "rounded-[14px] border px-3.5 py-3 text-left",
-                  s.id === showId
-                    ? "border-[#FF3B3B]/55 bg-[linear-gradient(180deg,rgba(255,59,59,0.2),rgba(255,59,59,0.06))]"
-                    : "border-white/[0.08] bg-[linear-gradient(180deg,#1d1d21,#131316)] hover:border-white/20",
+                  "flex h-10 items-center gap-2 rounded-xl border px-4 font-pretendard text-[15px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40",
+                  playing
+                    ? "border-red-400/60 bg-red-400/25 shadow-[0_0_18px_rgba(255,59,59,0.35)]"
+                    : "border-red-400/50 bg-red-400/15 enabled:hover:bg-red-400/20",
                 )}
               >
-                <span className="flex items-center gap-2 font-mbc text-base text-white">
-                  {s.name}
-                  {playing?.showId === s.id && (
-                    <span className="rounded bg-red-500 px-1.5 py-px font-orbitron text-[9px] text-white">
-                      ON AIR
-                    </span>
-                  )}
-                </span>
-                <span className="font-orbitron text-[10px] tracking-[0.08em] text-white/40">
-                  {Math.round(s.bpm)} BPM · {fmt(s.duration)} · 큐 {s.enabledCues}/{s.cues}
-                </span>
+                {playing ? "■ 멈춤" : "▶ 시작"}
               </button>
-            ))}
+              <div className="min-w-0">
+                <div className="truncate font-pretendard text-xl font-extrabold text-white">
+                  {summary.name}
+                </div>
+                <div className="font-pretendard text-sm text-white/55">
+                  {state.styles[summary.options.style ?? "basic"]} · 조명 큐 {summary.enabledCues}개
+                  {summary.enabledCues !== summary.cues && ` (전체 ${summary.cues})`}
+                </div>
+              </div>
+              <div className="ml-auto flex gap-[26px] text-right">
+                <div className="grid gap-0.5">
+                  <b className="font-mono text-xl font-bold tabular-nums text-white">{fmt(position)}</b>
+                  <span className="font-pretendard text-xs text-white/50">/ {fmt(summary.duration)}</span>
+                </div>
+                <div className="grid gap-0.5">
+                  <b className="font-mono text-xl font-bold tabular-nums text-white">
+                    {Math.round(summary.bpm)}
+                  </b>
+                  <span className="font-pretendard text-xs text-white/50">BPM</span>
+                </div>
+              </div>
+            </div>
+
+            <Waveform show={show} position={position} onSeek={seek} />
+
+            {summary.hasAudio && (
+              <div className="flex flex-wrap items-center gap-3 font-pretendard text-[12.5px] text-white/50">
+                <audio
+                  ref={setAudio}
+                  key={summary.id}
+                  src={musicLightApi.audioUrl(hallId, summary.id)}
+                  controls
+                  preload="none"
+                  className="h-8 w-60 [color-scheme:dark]"
+                />
+                <label className="flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={withAudio}
+                    onChange={(e) => setWithAudio(e.target.checked)}
+                    className="accent-[#FF3B3B]"
+                  />
+                  시작할 때 이 컴퓨터에서 음악도 같이 틀기
+                </label>
+              </div>
+            )}
+          </>
+        )}
+
+        <MeterBridge hallId={hallId} fast={anyPlaying || !!live} />
+
+        {playing && (playing.skipped.flash > 0 || playing.skipped.strobe > 0) && (
+          <p className="font-pretendard text-xs text-white/40">
+            안전 규칙으로 건너뜀 — 깜빡임 {playing.skipped.flash}번 · 스트로브 {playing.skipped.strobe}번
+          </p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-white/[0.07] pt-4 font-pretendard text-sm">
+          <OnSwitch
+            checked={!!live}
+            disabled={!operable || (!live && !state.feed)}
+            onChange={(on) => setLive(on)}
+            label="실시간 박자 따라가기"
+          />
+          <b className="text-white">박자 따라가기 (라이브)</b>
+          <span className="text-white/50">
+            {live
+              ? live.bpm
+                ? `${Math.round(live.bpm)} BPM · 박자 ${live.beats}번`
+                : "박자를 듣는 중…"
+              : state.feed
+                ? "MR 없이 들어오는 소리에 맞춰요"
+                : "소리 입력이 없어요 (관리자 설정)"}
+          </span>
+          <span className="ml-auto text-white/50">{safety}</span>
+        </div>
+
+        {summary && show && (
+          <div className="flex flex-col gap-3 border-t border-white/[0.07] pt-4">
+            <div className="flex flex-wrap items-center gap-2 font-pretendard text-[13px] text-white/55">
+              <span className="mr-1">분위기</span>
+              {(["basic", "calm", "party"] as ShowStyle[]).map((s) => (
+                <ChoiceButton
+                  key={s}
+                  on={(summary.options.style ?? "basic") === s}
+                  disabled={!operable || !!playing}
+                  onClick={() => update(summary.id, { options: { style: s } })}
+                >
+                  {state.styles[s]}
+                </ChoiceButton>
+              ))}
+              <span className="ml-3 mr-1">스트로브</span>
+              <OnSwitch
+                checked={!!summary.options.strobe}
+                disabled={!operable || !!playing || !state.settings.allowStrobe}
+                onChange={(on) => update(summary.id, { options: { strobe: on } })}
+                label="이 쇼에 스트로브"
+              />
+              {state.scenes.length > 0 && (
+                <>
+                  <span className="ml-3">시작 장면</span>
+                  <select
+                    value={summary.options.startScene ?? ""}
+                    disabled={!operable || !!playing}
+                    onChange={(e) => update(summary.id, { options: { startScene: e.target.value } })}
+                    className="h-8 rounded-lg border border-white/10 bg-[#141414] px-2 text-sm text-white"
+                  >
+                    <option value="">없음</option>
+                    {state.scenes.map((sc) => (
+                      <option key={sc.id} value={sc.id}>
+                        {sc.name}
+                      </option>
+                    ))}
+                  </select>
+                  <span>끝 장면</span>
+                  <select
+                    value={summary.options.endScene ?? ""}
+                    disabled={!operable || !!playing}
+                    onChange={(e) => update(summary.id, { options: { endScene: e.target.value } })}
+                    className="h-8 rounded-lg border border-white/10 bg-[#141414] px-2 text-sm text-white"
+                  >
+                    <option value="">천천히 끄기</option>
+                    {state.scenes.map((sc) => (
+                      <option key={sc.id} value={sc.id}>
+                        {sc.name}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => setEditCues((v) => !v)}
+                className="ml-auto h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/60 hover:text-white"
+              >
+                {editCues ? "큐 편집 닫기" : "큐 편집"}
+              </button>
+              <button
+                type="button"
+                disabled={!operable || !!playing}
+                onClick={() => {
+                  if (window.confirm(`'${summary.name}' 쇼를 지울까요?`)) remove(summary.id);
+                }}
+                className="h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/50 enabled:hover:text-red-300 disabled:opacity-40"
+              >
+                쇼 지우기
+              </button>
+            </div>
+            <p className="font-pretendard text-[11.5px] text-white/35">
+              분위기·스트로브·장면을 바꾸면 큐를 다시 만들어요 (큐마다 끈 것은 처음으로 돌아가요).
+            </p>
+            {editCues && (
+              <CueEditor
+                show={show}
+                operable={operable}
+                onToggleCue={(id, on) => update(summary.id, { cues: { [id]: on } })}
+                onToggleLane={(ids, on) =>
+                  update(summary.id, { cues: Object.fromEntries(ids.map((id) => [id, on])) })
+                }
+              />
+            )}
+          </div>
+        )}
+      </section>
+
+      <Panel title="조명 쇼" hint="MR 을 올리면 박자·구간을 찾아 쇼를 만들어요">
+        <div className="flex flex-col">
+          {state.shows.map((s) => {
+            const isPlaying = state.playing?.showId === s.id;
+            return (
+              <div
+                key={s.id}
+                className={cn(
+                  "grid grid-cols-[minmax(0,1fr)_90px_60px_auto] items-center gap-3.5 border-t border-white/[0.07] px-2 py-3.5 first:border-t-0",
+                  s.id === showId && "rounded-xl bg-white/[0.04]",
+                )}
+              >
+                <button type="button" onClick={() => setSelected(s.id)} className="min-w-0 text-left">
+                  <span className="flex items-center gap-2.5 font-pretendard text-base font-bold text-white">
+                    {isPlaying && (
+                      <i className="h-2 w-2 shrink-0 rounded-full bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]" />
+                    )}
+                    <span className="truncate">{s.name}</span>
+                  </span>
+                  <span className="font-pretendard text-sm text-white/50">
+                    {state.styles[s.options.style ?? "basic"]} · 큐 {s.enabledCues}/{s.cues}
+                  </span>
+                </button>
+                <span className="font-mono text-sm tabular-nums text-white/50">{Math.round(s.bpm)} BPM</span>
+                <span className="font-mono text-sm tabular-nums text-white/50">{fmt(s.duration)}</span>
+                <button
+                  type="button"
+                  disabled={!operable || isPlaying}
+                  onClick={() => {
+                    setSelected(s.id);
+                    start(s.id, 0);
+                  }}
+                  className="h-10 rounded-xl border border-white/[0.12] bg-white/5 px-4 font-pretendard text-[15px] font-bold text-white enabled:hover:bg-white/10 disabled:cursor-default disabled:opacity-60"
+                >
+                  {isPlaying ? "재생 중" : "▶ 틀기"}
+                </button>
+              </div>
+            );
+          })}
+          <div className={cn(state.shows.length > 0 && "mt-3")}>
             <UploadBox
               disabled={!operable || noFixtures}
               uploading={isUploading}
@@ -494,216 +878,8 @@ export default function MusicLightPanel({
               }
             />
           </div>
-
-          <div className="mt-4 flex items-center gap-3.5 rounded-2xl border border-white/[0.06] bg-black/35 p-3.5">
-            <span
-              className="h-[22px] w-[22px] shrink-0 rounded-full bg-[#222]"
-              style={live?.bpm ? { animation: `onairBeat ${60 / live.bpm}s infinite` } : undefined}
-              aria-hidden
-            />
-            <div className="min-w-0 flex-1">
-              <div className="font-mbc text-[17px] text-white">실시간 박자 따라가기</div>
-              <div className="font-pretendard text-xs text-white/45">
-                {live
-                  ? live.bpm
-                    ? `${Math.round(live.bpm)} BPM · 박자 ${live.beats}번`
-                    : "박자를 듣는 중…"
-                  : state.feed || "쇼 없이 지금 나오는 음악에 맞춰요"}
-              </div>
-              <div className="mt-1.5 h-2 overflow-hidden rounded bg-[#050506]">
-                <span
-                  className="block h-full bg-[linear-gradient(90deg,#3D6BFF,#A855F7,#FF3B3B)] transition-[width] duration-300"
-                  style={{ width: `${live ? live.energy * 100 : 0}%` }}
-                />
-              </div>
-            </div>
-            <OnSwitch
-              checked={!!live}
-              disabled={!operable || (!live && !state.feed)}
-              onChange={(on) => setLive(on)}
-              label="실시간 박자 따라가기"
-            />
-          </div>
-          {!state.feed && (
-            <p className="mt-2 font-pretendard text-[11.5px] text-white/35">
-              소리 입력이 없어 실시간은 꺼져 있어요 (관리자 설정).
-            </p>
-          )}
-        </Panel>
-
-        <Panel
-          title={summary?.name ?? "쇼를 고르세요"}
-          hint={summary ? "음악을 트는 순간 '시작'을 누르세요" : undefined}
-        >
-          {!summary || !show ? (
-            <p className="font-pretendard text-sm text-white/40">
-              MR 을 올리면 빠르기·박자·구간을 찾아 조명 큐를 만들어요.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap gap-2.5">
-                <Chip>{Math.round(summary.bpm)} BPM</Chip>
-                <Chip>{fmt(summary.duration)}</Chip>
-                <Chip>
-                  큐 {summary.enabledCues}/{summary.cues}
-                </Chip>
-                <Chip>
-                  LED {state.fixtures.led} · 할로겐 {state.fixtures.dimmer}
-                </Chip>
-              </div>
-
-              <Timeline
-                show={show}
-                position={position}
-                operable={operable}
-                onToggleCue={(id, on) => update(summary.id, { cues: { [id]: on } })}
-                onToggleLane={(ids, on) =>
-                  update(summary.id, { cues: Object.fromEntries(ids.map((id) => [id, on])) })
-                }
-              />
-
-              <div className="flex flex-wrap items-center gap-3.5">
-                <button
-                  type="button"
-                  disabled={!operable}
-                  onClick={press}
-                  className={cn(
-                    "flex h-14 items-center gap-2.5 rounded-2xl border px-6 font-mbc text-[19px] text-white disabled:cursor-not-allowed disabled:opacity-40",
-                    playing
-                      ? "border-[#FF3B3B] bg-[#FF3B3B] shadow-[0_0_24px_rgba(255,59,59,0.5)]"
-                      : "border-[#FF3B3B]/50 bg-[linear-gradient(180deg,rgba(255,59,59,0.3),rgba(255,59,59,0.1))]",
-                  )}
-                >
-                  {playing ? "■ 정지" : "▶ 시작"}
-                </button>
-                <div className="font-orbitron text-[22px] tabular-nums text-white">
-                  {fmt(position)}{" "}
-                  <span className="text-xs text-white/35">/ {fmt(summary.duration)}</span>
-                </div>
-                {summary.hasAudio && (
-                  <div className="flex flex-col gap-1">
-                    <audio
-                      ref={setAudio}
-                      key={summary.id}
-                      src={musicLightApi.audioUrl(hallId, summary.id)}
-                      controls
-                      preload="none"
-                      className="h-8 w-60"
-                    />
-                    <label className="flex items-center gap-1.5 font-pretendard text-[11.5px] text-white/50">
-                      <input
-                        type="checkbox"
-                        checked={withAudio}
-                        onChange={(e) => setWithAudio(e.target.checked)}
-                        className="accent-[#FF3B3B]"
-                      />
-                      시작할 때 이 컴퓨터에서 음악도 같이 틀기
-                    </label>
-                  </div>
-                )}
-                <div className="ml-auto flex flex-col gap-1.5 font-pretendard text-[12.5px] text-white/55">
-                  <span className="flex items-center gap-2">
-                    <i className="h-[7px] w-[7px] rounded-full bg-[#00FF57]" />
-                    깜빡임은 1초에 {state.settings.maxFlashPerSec}번까지 (고정 상한{" "}
-                    {state.maxFlashPerSec})
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <i
-                      className={cn(
-                        "h-[7px] w-[7px] rounded-full",
-                        state.settings.allowStrobe ? "bg-[#FFD600]" : "bg-[#585858]",
-                      )}
-                    />
-                    {state.settings.allowStrobe
-                      ? "스트로브 허용됨 · 쇼에서 켜야 나감"
-                      : "스트로브 꺼짐 · 관리자가 켜야 함"}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <i className="h-[7px] w-[7px] rounded-full bg-[#00FF57]" />
-                    할로겐 조명은 {state.dimmerMinFade}초 넘게 천천히만
-                  </span>
-                </div>
-              </div>
-              {playing && (playing.skipped.flash > 0 || playing.skipped.strobe > 0) && (
-                <p className="font-pretendard text-xs text-white/40">
-                  안전 규칙으로 건너뜀 — 깜빡임 {playing.skipped.flash}번 · 스트로브{" "}
-                  {playing.skipped.strobe}번
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-4 font-pretendard text-[13px] text-white/55">
-                <span className="mr-1">분위기</span>
-                {(["basic", "calm", "party"] as ShowStyle[]).map((s) => (
-                  <ChoiceButton
-                    key={s}
-                    on={(summary.options.style ?? "basic") === s}
-                    disabled={!operable || !!playing}
-                    onClick={() => update(summary.id, { options: { style: s } })}
-                  >
-                    {state.styles[s]}
-                  </ChoiceButton>
-                ))}
-                <span className="ml-3 mr-1">스트로브</span>
-                <OnSwitch
-                  checked={!!summary.options.strobe}
-                  disabled={!operable || !!playing || !state.settings.allowStrobe}
-                  onChange={(on) => update(summary.id, { options: { strobe: on } })}
-                  label="이 쇼에 스트로브"
-                />
-                {state.scenes.length > 0 && (
-                  <>
-                    <span className="ml-3">시작 장면</span>
-                    <select
-                      value={summary.options.startScene ?? ""}
-                      disabled={!operable || !!playing}
-                      onChange={(e) =>
-                        update(summary.id, { options: { startScene: e.target.value } })
-                      }
-                      className="h-8 rounded-lg border border-white/10 bg-[#141414] px-2 text-sm text-white"
-                    >
-                      <option value="">없음</option>
-                      {state.scenes.map((sc) => (
-                        <option key={sc.id} value={sc.id}>
-                          {sc.name}
-                        </option>
-                      ))}
-                    </select>
-                    <span>끝 장면</span>
-                    <select
-                      value={summary.options.endScene ?? ""}
-                      disabled={!operable || !!playing}
-                      onChange={(e) =>
-                        update(summary.id, { options: { endScene: e.target.value } })
-                      }
-                      className="h-8 rounded-lg border border-white/10 bg-[#141414] px-2 text-sm text-white"
-                    >
-                      <option value="">천천히 끄기</option>
-                      {state.scenes.map((sc) => (
-                        <option key={sc.id} value={sc.id}>
-                          {sc.name}
-                        </option>
-                      ))}
-                    </select>
-                  </>
-                )}
-                <button
-                  type="button"
-                  disabled={!operable || !!playing}
-                  onClick={() => {
-                    if (window.confirm(`'${summary.name}' 쇼를 지울까요?`)) remove(summary.id);
-                  }}
-                  className="ml-auto h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/50 enabled:hover:text-red-300 disabled:opacity-40"
-                >
-                  쇼 지우기
-                </button>
-              </div>
-              <p className="font-pretendard text-[11.5px] text-white/35">
-                분위기·스트로브·장면을 바꾸면 큐를 다시 만들어요 (큐마다 끈 것은 처음으로 돌아가요).
-              </p>
-            </div>
-          )}
-        </Panel>
-      </div>
+        </div>
+      </Panel>
 
       {isAdmin && (
         <div>

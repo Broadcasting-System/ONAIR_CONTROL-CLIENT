@@ -3,13 +3,13 @@
 import { useRef, useState } from "react";
 import { Power } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { COLOR_PRESETS, type ColorPreset, type Fixture, type LightColor } from "@/types/lighting";
+import { COLOR_PRESETS, WARM_SWATCH, type ColorPreset, type Fixture, type LightColor } from "@/types/lighting";
 
 const SEND_INTERVAL_MS = 150;
 const KEY_STEP = 5;
 const SCALE = [100, 75, 50, 25, 0];
 // 밝기만 되는 조명(조광기)의 전구 색
-const WARM = "#FFD49A";
+const WARM = WARM_SWATCH;
 const MASTER = "#FF3B3B";
 
 /** 지금 색과 같은 색 버튼 (빨·초·파가 같으면 같은 색으로 본다) */
@@ -154,8 +154,9 @@ function ColorKeys({
 }) {
   return (
     <div className="grid w-full grid-cols-2 gap-1">
-      {COLOR_PRESETS.map((p) => {
+      {COLOR_PRESETS.map((p, i) => {
         const on = selected?.name === p.name;
+        const alone = i === COLOR_PRESETS.length - 1 && COLOR_PRESETS.length % 2 === 1;
         return (
           <button
             key={p.name}
@@ -167,6 +168,7 @@ function ColorKeys({
             className={cn(
               "flex h-[22px] items-center gap-[5px] rounded-[5px] border border-black px-[5px] font-pretendard text-[10px] transition-all",
               "bg-[linear-gradient(180deg,#303035,#1e1e22)] active:translate-y-px disabled:cursor-not-allowed",
+              alone && "col-span-2",
               on ? "text-white" : "text-white/45 enabled:hover:text-white/80",
             )}
             style={{
@@ -180,7 +182,7 @@ function ColorKeys({
               style={{ background: p.swatch, opacity: on ? 1 : 0.45, boxShadow: on ? `0 0 7px ${p.swatch}` : "none" }}
               aria-hidden
             />
-            {p.name}
+            {p.short ?? p.name}
           </button>
         );
       })}

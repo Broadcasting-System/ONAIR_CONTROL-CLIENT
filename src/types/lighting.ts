@@ -97,18 +97,44 @@ export interface CaptureResult {
 /** 조명 화면의 색 버튼. value 는 조명에 보내는 값, swatch 는 화면에 보이는 색 */
 export interface ColorPreset {
   name: string;
+  /** 좁은 버튼에 쓰는 짧은 이름 */
+  short?: string;
   swatch: string;
   value: LightColor;
 }
 
-// 색을 섞는 LED 기준 기본 8색 — 실제 강당 LED 모델을 확인하면 맞춘다
+// 색을 섞는 LED 기준 기본 9색 — 견본은 채도를 낮춘 무대 조명 색, value 는 실제 강당 LED 를 보고 맞춘다
+// (onair-server music_light_service.COLORS 와 같은 값)
 export const COLOR_PRESETS: ColorPreset[] = [
-  { name: "흰색", swatch: "#F4F4F4", value: { r: 255, g: 255, b: 255, w: 255, a: 0 } },
-  { name: "빨강", swatch: "#FF3B3B", value: { r: 255, g: 0, b: 0, w: 0, a: 0 } },
-  { name: "주황", swatch: "#FF8A1F", value: { r: 255, g: 90, b: 0, w: 0, a: 0 } },
-  { name: "노랑", swatch: "#FFD83D", value: { r: 255, g: 190, b: 0, w: 0, a: 0 } },
-  { name: "초록", swatch: "#2BE36A", value: { r: 0, g: 255, b: 0, w: 0, a: 0 } },
-  { name: "하늘", swatch: "#3FC8FF", value: { r: 0, g: 190, b: 255, w: 0, a: 0 } },
-  { name: "파랑", swatch: "#3D6BFF", value: { r: 0, g: 0, b: 255, w: 0, a: 0 } },
-  { name: "보라", swatch: "#A855F7", value: { r: 150, g: 0, b: 255, w: 0, a: 0 } },
+  { name: "따뜻한 흰색", short: "따뜻한", swatch: "#F3D9B1", value: { r: 255, g: 190, b: 110, w: 180, a: 200 } },
+  { name: "흰색", swatch: "#ECEEF2", value: { r: 255, g: 255, b: 255, w: 255, a: 0 } },
+  { name: "호박색", swatch: "#F2A65A", value: { r: 255, g: 110, b: 0, w: 0, a: 255 } },
+  { name: "빨강", swatch: "#E5484D", value: { r: 255, g: 0, b: 0, w: 0, a: 0 } },
+  { name: "자홍", swatch: "#D6409F", value: { r: 255, g: 0, b: 140, w: 0, a: 0 } },
+  { name: "보라", swatch: "#8E5BD9", value: { r: 120, g: 0, b: 255, w: 0, a: 0 } },
+  { name: "파랑", swatch: "#4C6FE0", value: { r: 0, g: 0, b: 255, w: 0, a: 0 } },
+  { name: "청록", swatch: "#3DB9CF", value: { r: 0, g: 200, b: 220, w: 0, a: 0 } },
+  { name: "초록", swatch: "#46A758", value: { r: 0, g: 255, b: 40, w: 0, a: 0 } },
 ];
+
+/** 할로겐(색 없는 조명)을 화면에 그릴 때 쓰는 색 */
+export const WARM_SWATCH = "#F3D9B1";
+
+/** 조명에 보내는 색 값 → 화면 견본 (가장 가까운 기본색) */
+export function swatchOf(color?: LightColor | null): string {
+  if (!color) return WARM_SWATCH;
+  const rgb = (c: LightColor) => [c.r ?? 0, c.g ?? 0, c.b ?? 0];
+  const [r, g, b] = rgb(color);
+  if (r + g + b === 0) return (color.w ?? 0) + (color.a ?? 0) > 0 ? WARM_SWATCH : "#3a3b40";
+  let best = COLOR_PRESETS[0];
+  let bestD = Infinity;
+  for (const p of COLOR_PRESETS) {
+    const [pr, pg, pb] = rgb(p.value);
+    const d = (pr - r) ** 2 + (pg - g) ** 2 + (pb - b) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      best = p;
+    }
+  }
+  return best.swatch;
+}
