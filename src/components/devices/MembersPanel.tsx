@@ -421,7 +421,7 @@ export default function MembersPanel() {
       {/* 승인 대기 */}
       {pending.length > 0 && (
         <Panel title="승인 대기" hint="역할을 고르고 승인하면 그 기기에서 바로 조작할 수 있어요">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(330px,1fr))] gap-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,460px),1fr))] gap-3">
             {pending.map((m) => (
               <PendingCard
                 key={m.id}
