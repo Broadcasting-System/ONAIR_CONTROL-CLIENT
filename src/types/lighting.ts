@@ -106,9 +106,9 @@ export interface ColorPreset {
 // 색을 섞는 LED 기준 기본 9색 — 견본은 채도를 낮춘 무대 조명 색, value 는 실제 강당 LED 를 보고 맞춘다
 // (onair-server music_light_service.COLORS 와 같은 값)
 export const COLOR_PRESETS: ColorPreset[] = [
-  { name: "따뜻한 흰색", short: "따뜻한", swatch: "#F3D9B1", value: { r: 255, g: 190, b: 110, w: 180, a: 200 } },
+  { name: "따뜻한 흰색", short: "전구", swatch: "#F3D9B1", value: { r: 255, g: 190, b: 110, w: 180, a: 200 } },
   { name: "흰색", swatch: "#ECEEF2", value: { r: 255, g: 255, b: 255, w: 255, a: 0 } },
-  { name: "호박색", swatch: "#F2A65A", value: { r: 255, g: 110, b: 0, w: 0, a: 255 } },
+  { name: "호박색", short: "호박", swatch: "#F2A65A", value: { r: 255, g: 110, b: 0, w: 0, a: 255 } },
   { name: "빨강", swatch: "#E5484D", value: { r: 255, g: 0, b: 0, w: 0, a: 0 } },
   { name: "자홍", swatch: "#D6409F", value: { r: 255, g: 0, b: 140, w: 0, a: 0 } },
   { name: "보라", swatch: "#8E5BD9", value: { r: 120, g: 0, b: 255, w: 0, a: 0 } },
