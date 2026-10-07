@@ -76,7 +76,6 @@ function Monitor({ p }: { p: CrewMember }) {
       </div>
       {/* 방송 자막 (로워서드) */}
       <div className="absolute bottom-6 left-[22px] right-[22px] flex items-stretch">
-        <div className="w-1.5 shrink-0 shadow-[0_0_16px_rgba(255,59,59,0.6)]" style={{ background: RED }} />
         <div className="min-w-0 bg-[rgba(8,8,10,0.82)] px-5 pb-3.5 pt-3 backdrop-blur-[6px]">
           <div className="truncate font-mbc text-[44px] leading-[1.05] text-white">{p.name}</div>
           <div className="mt-1.5 truncate font-mbc text-[17px] text-white/75">
