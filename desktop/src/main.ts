@@ -31,69 +31,81 @@ async function renderSetup() {
   let forceable = false;
 
   const notices: Record<string, [string, string]> = {
-    link: ["", "등록 링크를 받았어요. 내용을 확인하고 '연결 확인하고 시작'을 눌러 주세요."],
+    link: ["", "등록 링크를 받았어요. 내용을 확인하고 '연결'을 눌러 주세요."],
     cleared: ["red", "이 컴퓨터의 접속 키를 지웠어요. 다시 쓰려면 새 등록 링크로 등록해 주세요."],
     denied: ["red", "접속 키가 거부됐어요. 관리자에게 새 등록 QR 을 받아 다시 등록해 주세요."],
   };
   const notice = pending ? notices.link : reason ? notices[reason] : undefined;
   const reenter = state.configured;
 
+  const os = state.platform === "windows" ? "Windows" : state.platform === "macos" ? "macOS" : state.platform;
+  const ticks = Array.from({ length: 41 }, (_, i) => `<i style="left:${i * 2.5}%;height:${i % 5 ? 8 : 14}px"></i>`).join("");
+
+  // 시안 A · 라디오 튜너 — 이 화면은 '키 연결' 단계. #st2(키 연결)·#st3(프로필) 표시가 바뀌면 바늘이 따라간다
   app.innerHTML = `
-  <div class="setup-wrap"><div class="setup">
-    <aside class="left">
-      <div class="brand"><div class="logo">ON<em>AIR</em></div><div class="sub">DESKTOP · BSSM BROADCAST</div></div>
-      <ol class="steps">
-        <li class="done"><span class="n">1</span><div><div class="t">등록 링크 받기</div><div class="d">방송부 관리자에게 '앱 등록 QR'을 받아요. 링크로 받아도 돼요.</div></div></li>
-        <li class="on" id="st2"><span class="n">2</span><div><div class="t">이 앱에 넣기</div><div class="d">링크를 붙여넣거나 QR 이미지를 넣어요. 링크를 클릭하면 자동으로 채워져요.</div></div></li>
-        <li id="st3"><span class="n">3</span><div><div class="t">연결 확인</div><div class="d">서버에 붙어 보고 이 컴퓨터에 안전하게 저장해요. 다음부턴 바로 열려요.</div></div></li>
-      </ol>
-      <div class="lock">접속 키는 이 컴퓨터의 ${state.platform === "windows" ? "자격 증명 관리자" : "키체인"}에만 저장되고, 서버에서 오는 화면(웹페이지)에는 전달되지 않아요.</div>
-    </aside>
-    <section class="right">
-      <h2>${reenter ? "접속 키 다시 입력" : "이 컴퓨터 등록하기"}</h2>
-      <div class="muted">${reenter ? `지금 서버: <span class="selectable">${esc(state.server)}</span>` : "처음 한 번만 하면 돼요."}</div>
+  <div class="reg-stage"><div class="reg">
+    <div class="reg-top">
+      <div class="reg-logo">ONAIR<small>DEVICE REGISTRATION</small></div>
+      <span class="tally">OFF AIR</span>
+    </div>
+    <section class="reg-panel">
+      <div class="tuner">
+        <div class="tuner-status">
+          <span class="k">이 컴퓨터 · ${esc(os)}</span>
+          <span class="v"><span class="v-idle">${reenter ? "접속 키를 다시 넣어 주세요" : "등록 키를 기다려요"}</span><span class="v-busy">키 확인 중…</span></span>
+        </div>
+        <div class="scale" aria-hidden="true">${ticks}<b class="needle"></b></div>
+        <ol class="marks"><li id="st2" class="on">키 연결</li><li id="st3">프로필</li><li>승인</li><li>ON AIR</li></ol>
+      </div>
+      ${reenter ? `<div class="muted">지금 서버 <span class="selectable mono">${esc(state.server)}</span></div>` : ""}
       ${notice ? `<div class="notice ${notice[0]}">${esc(notice[1])}</div>` : ""}
       ${state.storeError ? `<div class="notice red">${esc(state.storeError)}</div>` : ""}
-      <div class="tabs" role="tablist">
-        <button data-tab="link" class="on">링크 붙여넣기</button>
-        <button data-tab="qr">QR 이미지</button>
-        <button data-tab="manual">직접 입력</button>
-      </div>
 
-      <div data-pane="link">
-        <label class="f" for="link">등록 링크</label>
-        <textarea class="in" id="link" spellcheck="false" placeholder="onair://register?d=… 를 여기에 붙여넣어 주세요"></textarea>
-        <div id="parsed"></div>
-      </div>
+      <div>
+        <div class="tabs" role="tablist">
+          <button data-tab="link" class="on">링크 붙여넣기</button>
+          <button data-tab="qr">QR 사진</button>
+          <button data-tab="manual">직접 입력</button>
+        </div>
 
-      <div data-pane="qr" class="hidden">
-        <label class="drop" id="drop" tabindex="0">
-          <div><b>QR 이미지를 끌어다 놓기</b>또는 ${state.platform === "macos" ? "⌘V" : "Ctrl+V"} 로 캡처 붙여넣기 · <u>파일 고르기</u></div>
-          <input type="file" id="file" accept="image/*" class="hidden">
-        </label>
-        <div class="muted" style="margin-top:8px">휴대폰으로 받은 QR 을 캡처해서 넣어도 돼요. 이미지는 저장하지 않아요.</div>
-        <div id="qrmsg" class="muted" style="margin-top:6px"></div>
-      </div>
+        <div data-pane="link">
+          <label class="f" for="link">등록 링크</label>
+          <textarea class="in" id="link" spellcheck="false" placeholder="부장에게 받은 onair://register?d=… 링크를 붙여넣거나 QR 사진을 끌어다 놓으세요"></textarea>
+          <div id="parsed"></div>
+        </div>
 
-      <div data-pane="manual" class="hidden">
-        <label class="f" for="server">서버 주소</label>
-        <input class="in" id="server" spellcheck="false" placeholder="https://onair.bssmcast.com" value="${esc(state.server ?? "")}">
-        <label class="f" for="cid">접속 키 ID <small>CF-Access-Client-Id</small></label>
-        <input class="in" id="cid" spellcheck="false" autocomplete="off" placeholder="xxxx.access">
-        <label class="f" for="csec">비밀 키 <small>CF-Access-Client-Secret</small></label>
-        <input class="in" id="csec" type="password" autocomplete="off" placeholder="••••••••">
-        <details><summary>고급 — API 주소 따로 쓰기</summary>
-          <label class="f" for="api">API 주소 <small>비우면 자동 (포트 있는 주소 → 같은 호스트 :8000, 없으면 같은 주소 /api)</small></label>
-          <input class="in" id="api" spellcheck="false" placeholder="http://100.95.97.82:8000">
-          <div class="muted" style="margin-top:6px">Cloudflare 없이 학교망에서 바로 붙을 땐 접속 키를 둘 다 비워도 돼요.</div>
-        </details>
+        <div data-pane="qr" class="hidden">
+          <label class="drop" id="drop" tabindex="0">
+            <div><b>QR 사진을 끌어다 놓기</b>또는 ${state.platform === "macos" ? "⌘V" : "Ctrl+V"} 로 캡처 붙여넣기 · <u>파일 고르기</u></div>
+            <input type="file" id="file" accept="image/*" class="hidden">
+          </label>
+          <div class="muted" style="margin-top:8px">휴대폰으로 받은 QR 을 캡처해서 넣어도 돼요. 이미지는 저장하지 않아요.</div>
+          <div id="qrmsg" class="muted" style="margin-top:6px"></div>
+        </div>
+
+        <div data-pane="manual" class="hidden">
+          <label class="f" for="server">서버 주소</label>
+          <input class="in" id="server" spellcheck="false" placeholder="https://onair.bssmcast.com" value="${esc(state.server ?? "")}">
+          <label class="f" for="cid">접속 키 ID <small>CF-Access-Client-Id</small></label>
+          <input class="in" id="cid" spellcheck="false" autocomplete="off" placeholder="xxxx.access">
+          <label class="f" for="csec">비밀 키 <small>CF-Access-Client-Secret</small></label>
+          <input class="in" id="csec" type="password" autocomplete="off" placeholder="••••••••">
+          <details><summary>고급 — API 주소 따로 쓰기</summary>
+            <label class="f" for="api">API 주소 <small>비우면 자동 (포트 있는 주소 → 같은 호스트 :8000, 없으면 같은 주소 /api)</small></label>
+            <input class="in" id="api" spellcheck="false" placeholder="http://100.95.97.82:8000">
+            <div class="muted" style="margin-top:6px">Cloudflare 없이 학교망에서 바로 붙을 땐 접속 키를 둘 다 비워도 돼요.</div>
+          </details>
+        </div>
       </div>
 
       <div class="foot">
-        <span class="status" id="status"></span>
-        ${reenter ? `<button class="btn" id="cancel">취소</button>` : ""}
+        <div class="foot-l">
+          <span class="status" id="status"></span>
+          <span class="lock">키는 이 컴퓨터의 ${state.platform === "windows" ? "자격 증명 관리자" : "키체인"}에만 저장되고, 서버에서 오는 화면에는 전달되지 않아요.</span>
+        </div>
+        ${reenter ? `<button class="btn ghost" id="cancel">취소</button>` : ""}
         <button class="btn hidden" id="force">그래도 저장</button>
-        <button class="btn primary" id="go">연결 확인하고 시작</button>
+        <button class="btn primary" id="go">연결</button>
       </div>
     </section>
   </div></div>`;

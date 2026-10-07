@@ -1,11 +1,11 @@
 import type { AssignableRole, Role } from "@/types/member";
 
-/** 역할 점 색 — 최고 관리자 노랑 · 부장 빨강 · 부원 초록 · 교사 하늘 · 졸업/미등록 회색 */
+/** 역할 점 — 색으로 역할을 나누지 않는다(흰색·회색만). 쓰는 역할은 밝게, 졸업·미등록은 흐리게 */
 export const ROLE_DOT: Record<Role, string> = {
-  superadmin: "bg-[#FFD600] shadow-[0_0_8px_#FFD600]",
-  lead: "bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]",
-  member: "bg-[#00FF57] shadow-[0_0_8px_#00FF57]",
-  teacher: "bg-[#7CC4FF] shadow-[0_0_8px_#7CC4FF]",
+  superadmin: "bg-white/80",
+  lead: "bg-white/80",
+  member: "bg-white/80",
+  teacher: "bg-white/80",
   alumni: "bg-white/30",
   guest: "bg-white/15",
 };

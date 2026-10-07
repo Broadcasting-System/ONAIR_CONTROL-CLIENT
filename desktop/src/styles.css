@@ -26,21 +26,20 @@ input, textarea, .selectable { user-select: text; -webkit-user-select: text; }
 #app { min-height: 100%; }
 
 /* 공통 */
-.brand .logo { font-family: var(--orb); font-weight: 700; font-size: 22px; letter-spacing: 0.18em; }
-.brand .logo em { font-style: normal; color: var(--red); text-shadow: 0 0 14px rgba(255, 59, 59, 0.6); }
-.brand .sub { font-family: var(--orb); font-size: 9px; letter-spacing: 0.24em; color: rgba(255, 255, 255, 0.35); margin-top: 2px; }
 .panel { border-radius: 24px; border: 1px solid var(--line); background: var(--panel); padding: 8px 26px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); backdrop-filter: blur(12px); }
 h2 { font-family: var(--mbc); font-weight: 400; font-size: 28px; margin: 0; }
 .muted { color: rgba(255, 255, 255, 0.5); font-size: 13px; line-height: 1.6; }
-.tabs { display: flex; gap: 6px; margin: 20px 0 14px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 6px; margin: 0 0 14px; flex-wrap: wrap; }
 .tabs button { height: 36px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: transparent; cursor: pointer;
   font-family: var(--mbc); font-size: 14px; color: rgba(255, 255, 255, 0.45); }
 .tabs button:hover { color: #fff; }
 .tabs button.on { border-color: rgba(248, 113, 113, 0.5); background: rgba(248, 113, 113, 0.15); color: #fff; }
-label.f { display: block; font-family: var(--mbc); font-size: 14px; color: rgba(255, 255, 255, 0.7); margin: 12px 0 6px; }
-label.f small { font-family: var(--pre); color: rgba(255, 255, 255, 0.35); margin-left: 6px; }
-.in { width: 100%; height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.45); outline: none; font-size: 14px; }
-.in:focus { border-color: rgba(255, 59, 59, 0.55); }
+label.f { display: block; font-family: var(--pre); font-weight: 600; font-size: 14px; color: rgba(255, 255, 255, 0.8); margin: 14px 0 8px; }
+label.f small { font-weight: 400; color: rgba(255, 255, 255, 0.45); margin-left: 6px; }
+.in { width: 100%; height: 48px; padding: 0 14px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: #0c0d0f; outline: none; font-size: 15px; color: #fff;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7); }
+.in::placeholder { color: rgba(255, 255, 255, 0.35); }
+.in:focus { border-color: rgba(248, 113, 113, 0.7); }
 textarea.in { height: 96px; padding: 12px 14px; resize: none; font-family: var(--mono); font-size: 12px; line-height: 1.5; word-break: break-all; }
 .btn { height: 46px; padding: 0 22px; border-radius: 14px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.08);
   background: linear-gradient(180deg, #1d1d21, #131316); font-family: var(--mbc); font-size: 16px; color: rgba(255, 255, 255, 0.8);
@@ -54,15 +53,14 @@ textarea.in { height: 96px; padding: 12px 14px; resize: none; font-family: var(-
   color: rgba(255, 255, 255, 0.45); font-size: 13px; line-height: 1.7; background: rgba(0, 0, 0, 0.25); cursor: pointer; transition: border-color .15s, background .15s; }
 .drop.over { border-color: rgba(255, 59, 59, 0.7); background: rgba(255, 59, 59, 0.08); }
 .drop b { display: block; font-family: var(--mbc); font-weight: 400; font-size: 17px; color: rgba(255, 255, 255, 0.8); }
-.drop u { color: #ff9a9a; }
-.parsed { margin: 14px 0 0; border-radius: 14px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.06); padding: 12px 14px;
-  display: grid; grid-template-columns: 92px 1fr; gap: 6px 10px; font-size: 13px; }
-.parsed dt { color: rgba(255, 255, 255, 0.4); }
-.parsed dd { margin: 0; font-family: var(--mono); font-size: 12px; word-break: break-all; }
-.ok { color: var(--green); }
+.drop u { color: #fff; }
+.parsed { margin: 14px 0 0; border-radius: 14px; background: #0a0a0c; border: 1px solid rgba(255, 255, 255, 0.08); padding: 12px 16px;
+  display: grid; grid-template-columns: 92px 1fr; gap: 6px 10px; font-size: 13px; box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.8); }
+.parsed dt { color: rgba(255, 255, 255, 0.45); }
+.parsed dd { margin: 0; font-family: var(--mono); font-size: 12px; color: #fff; word-break: break-all; }
+.ok { color: #fff; }
 .err { color: #ff8a8a; }
-.warn { color: #ffd166; }
-.notice { margin-top: 14px; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.55; border: 1px solid rgba(255, 209, 102, 0.3); background: rgba(255, 209, 102, 0.07); color: #ffe2a0; }
+.notice { margin-top: 14px; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.55; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04); color: rgba(255, 255, 255, 0.8); }
 .notice.red { border-color: rgba(255, 59, 59, 0.35); background: rgba(255, 59, 59, 0.08); color: #ffb0b0; }
 .chip { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 10px; background: rgba(0, 0, 0, 0.4);
   font-family: var(--orb); font-size: 10px; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.7); }
@@ -73,22 +71,54 @@ details { margin-top: 14px; }
 details summary { cursor: pointer; font-size: 13px; color: rgba(255, 255, 255, 0.45); }
 .hidden { display: none !important; }
 
-/* 등록 화면: 왼쪽 안내 + 오른쪽 입력 */
-.setup-wrap { min-height: 100vh; display: grid; place-items: center; padding: 28px; }
-.setup { width: min(960px, 100%); display: grid; grid-template-columns: 300px 1fr; border-radius: 24px; border: 1px solid var(--line);
-  background: var(--panel); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); overflow: hidden; min-height: 600px; backdrop-filter: blur(12px); }
-.setup .left { padding: 34px 28px; border-right: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; gap: 28px; }
-.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
-.steps li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; }
-.steps .n { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-family: var(--orb); font-size: 12px; color: rgba(255, 255, 255, 0.5); }
-.steps li.on .n { border-color: var(--red); color: #fff; background: rgba(255, 59, 59, 0.2); box-shadow: 0 0 10px rgba(255, 59, 59, 0.4); }
-.steps li.done .n { border-color: rgba(0, 255, 87, 0.5); color: var(--green); }
-.steps .t { font-family: var(--mbc); font-size: 16px; }
-.steps .d { font-size: 12px; color: rgba(255, 255, 255, 0.45); line-height: 1.55; margin-top: 3px; }
-.setup .lock { margin-top: auto; font-size: 12px; color: rgba(255, 255, 255, 0.38); line-height: 1.6; }
-.setup .right { padding: 34px 34px 28px; display: flex; flex-direction: column; min-width: 0; }
-.setup .foot { margin-top: auto; padding-top: 22px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.setup .foot .status { flex: 1; min-width: 180px; font-size: 13px; line-height: 1.5; }
+/* 등록 화면 — 시안 A · 라디오 튜너 (흰색·회색 + ONAIR 빨강 하나) */
+.reg-stage { position: relative; min-height: 100vh; display: grid; place-items: center; padding: 40px 20px; overflow: hidden; isolation: isolate; }
+.reg-stage::before, .reg-stage::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.reg-stage::before { background: linear-gradient(135deg, #1a0505, #000); opacity: 0.8; }
+.reg-stage::after { background: url("/onair_background.jpg") center / cover; opacity: 0.45; mix-blend-mode: screen; }
+.reg { width: min(860px, 100%); display: grid; gap: 22px; }
+.reg-top { display: flex; align-items: center; gap: 14px; }
+.reg-logo { font-family: var(--mbc); font-size: 34px; line-height: 1; }
+.reg-logo small { display: block; font-family: var(--orb); font-size: 11px; letter-spacing: 0.3em; color: rgba(255, 255, 255, 0.4); margin-top: 6px; }
+.tally { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; height: 36px; min-width: 120px; padding: 0 16px; border-radius: 10px; border: 1px solid #000;
+  font-family: var(--orb); font-weight: 700; font-size: 13px; letter-spacing: 0.22em; background: #1d0b0c; color: #7a3436; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8); }
+.reg-panel { border-radius: 24px; border: 1px solid var(--line); background: var(--panel); padding: 28px; display: grid; gap: 22px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); min-width: 0; }
+.reg-panel > * { min-width: 0; }
+.reg-panel .notice { margin-top: 0; }
+
+/* 튜너 창: 왼쪽 기기 이름(회색) · 오른쪽 지금 상태(흰색) · 눈금 위 빨간 바늘 · 네 단계 이름 */
+.tuner { border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.06); background: #0a0a0c; padding: 18px 22px 14px; box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.9); }
+.tuner-status { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 8px; }
+.tuner-status .k { font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.45); white-space: nowrap; }
+.tuner-status .v { font-size: 20px; font-weight: 600; color: #fff; text-align: right; }
+.tuner .v-busy { display: none; }
+.tuner:has(#st3.on) .v-idle { display: none; }
+.tuner:has(#st3.on) .v-busy { display: inline; }
+.tuner .scale { position: relative; height: 30px; margin-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.15); }
+.tuner .scale i { position: absolute; top: 0; width: 1px; background: rgba(255, 255, 255, 0.2); }
+.tuner .needle { position: absolute; top: -6px; left: 12.5%; margin-left: -1px; width: 2px; height: 22px; background: var(--red); box-shadow: 0 0 8px var(--red); transition: left 0.7s ease-out; }
+.tuner:has(#st3.on) .needle { left: 37.5%; }
+.tuner .marks { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
+.tuner .marks li { text-align: center; padding-top: 8px; font-size: 15px; font-weight: 600; color: rgba(255, 255, 255, 0.3); transition: color 0.3s; }
+.tuner .marks li.on { color: #fff; }
+.tuner .marks li.done { color: rgba(255, 255, 255, 0.6); }
+
+/* 라디오 프리셋 키 버튼 — 글자는 크고 하얗게, 주 버튼만 빨강 */
+.reg .btn { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid #000;
+  font-family: var(--pre); font-weight: 600; font-size: 15px; color: #fff; background: linear-gradient(180deg, #303238, #1f2125);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 3px 0 #08090a; }
+.reg .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 0 #08090a; }
+.reg .btn.primary { height: 54px; padding: 0 26px; font-size: 17px; background: linear-gradient(180deg, #ff5a52, #d9201e);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 3px 0 #5c0b0b, 0 0 22px rgba(255, 59, 59, 0.3); }
+.reg .btn.ghost { background: transparent; box-shadow: none; border-color: rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.8); }
+.reg .foot { display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.reg .foot-l { flex: 1; min-width: 220px; display: grid; gap: 4px; }
+.reg .foot .status { font-size: 14px; line-height: 1.5; }
+.reg .foot .status:empty { display: none; }
+.reg .lock { font-size: 13px; color: rgba(255, 255, 255, 0.55); line-height: 1.55; }
+.reg .muted { color: rgba(255, 255, 255, 0.55); }
+.mono { font-family: var(--mono); }
 
 /* 설정 화면 */
 .settings { padding: 26px 28px 22px; min-height: 100vh; display: flex; flex-direction: column; }
@@ -107,9 +137,11 @@ details summary { cursor: pointer; font-size: 13px; color: rgba(255, 255, 255, 0
 .modal .box { width: min(400px, calc(100% - 32px)); border-radius: 24px; border: 1px solid var(--line); background: #1a1a1a; padding: 24px 26px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); }
 .modal h3 { font-family: var(--mbc); font-weight: 400; font-size: 21px; margin: 0 0 8px; }
 
-@media (max-width: 760px) {
-  .setup { grid-template-columns: 1fr; }
-  .setup .left { border-right: 0; border-bottom: 1px solid var(--line); }
+@media (max-width: 640px) {
+  .reg-panel { padding: 20px; }
+  .tuner-status { flex-wrap: wrap; }
+  .tuner-status .v { font-size: 17px; }
+  .tuner .marks li { font-size: 13px; }
 }
 @media (max-width: 520px) {
   .setrow { grid-template-columns: 1fr; gap: 8px; }

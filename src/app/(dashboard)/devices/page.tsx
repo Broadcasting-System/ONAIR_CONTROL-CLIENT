@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import SectionHeader from "@/components/common/SectionHeader";
 import { getApiBase } from "@/lib/apiBase";
-import { cn } from "@/lib/utils";
 import { toast } from "@/components/common/Toast";
 import { useMe } from "@/hooks/useMe";
 import PageTabs from "@/components/common/PageTabs";
@@ -209,14 +208,7 @@ export default function DevicesPage() {
                     <select
                       value={d.role}
                       onChange={(e) => save(d.ip, { role: e.target.value as DeviceRole })}
-                      className={cn(
-                        "h-9 rounded-lg border bg-[#141414] px-3 text-white focus:outline-none",
-                        d.role === "admin"
-                          ? "border-emerald-500/40"
-                          : d.role === "operator"
-                            ? "border-sky-500/40"
-                            : "border-white/10",
-                      )}
+                      className="h-9 rounded-lg border border-white/10 bg-[#141414] px-3 text-white focus:border-white/30 focus:outline-none"
                     >
                       {ROLES.map((r) => (
                         <option key={r.value} value={r.value}>

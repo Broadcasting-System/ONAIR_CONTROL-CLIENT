@@ -7,7 +7,7 @@ import ConfirmModal from "@/components/common/ConfirmModal";
 import InputModal from "@/components/common/InputModal";
 import { toast } from "@/components/common/Toast";
 import InviteModal from "@/components/devices/InviteModal";
-import { ASSIGNABLE, ROLE_DOT } from "@/components/devices/roleStyle";
+import { ASSIGNABLE } from "@/components/devices/roleStyle";
 import { Notice, Panel } from "@/components/hall/HallControls";
 import { ActionButton } from "@/components/hall/setup/ui";
 import { downloadMembersCsv, memberApi } from "@/lib/memberApi";
@@ -38,38 +38,53 @@ function hoursLeft(iso: string): string {
   return h >= 1 ? `${Math.floor(h)}시간 남음` : `${Math.max(0, Math.round(h * 60))}분 남음`;
 }
 
-function Dot({ role }: { role: Role }) {
-  return <span className={cn("h-2 w-2 shrink-0 rounded-full", ROLE_DOT[role])} />;
+/** 기수 배지 — 회색 바탕 고정폭 숫자 */
+function Cohort({ n, suffix }: { n: number | null; suffix?: boolean }) {
+  if (!n) return <span className="font-mono text-[13px] text-white/30">—</span>;
+  return (
+    <span className="rounded-md bg-white/[0.06] px-2 py-0.5 font-mono text-[13px] font-bold tabular-nums text-white/70">
+      {suffix ? `${n}기` : String(n).padStart(2, "0")}
+    </span>
+  );
 }
 
-/** 작은 칸 고르기 (승인 대기 카드·필터) */
+/** 프리셋 스위치 묶음 (승인 대기 역할·목록 필터) — 고른 것만 빨간 테두리·LED */
 function Seg<T extends string>({
   items,
   value,
   onChange,
-  dots,
 }: {
   items: { key: T; label: string }[];
   value: T;
   onChange: (v: T) => void;
-  dots?: boolean;
 }) {
   return (
-    <div className="inline-flex gap-[3px] rounded-[10px] border border-white/[0.06] bg-black/40 p-[3px]">
-      {items.map((it) => (
-        <button
-          key={it.key}
-          type="button"
-          onClick={() => onChange(it.key)}
-          className={cn(
-            "flex h-7 items-center gap-1.5 rounded-[7px] px-2.5 font-mbc text-[13px] transition-colors",
-            value === it.key ? "bg-white/[0.14] text-white" : "text-white/45 hover:text-white/75",
-          )}
-        >
-          {dots && <Dot role={it.key as Role} />}
-          {it.label}
-        </button>
-      ))}
+    <div className="inline-flex flex-wrap gap-2">
+      {items.map((it) => {
+        const on = value === it.key;
+        return (
+          <button
+            key={it.key}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(it.key)}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-[10px] border border-black bg-[linear-gradient(180deg,#2a2c31,#1c1e22)] px-3.5 font-pretendard text-sm font-semibold transition-colors",
+              on
+                ? "text-white shadow-[inset_0_0_0_1.5px_rgba(248,113,113,0.8),0_2px_0_#08090a]"
+                : "text-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_0_#08090a] hover:text-white",
+            )}
+          >
+            <span
+              className={cn(
+                "h-2 w-2 shrink-0 rounded-full",
+                on ? "bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]" : "bg-[#3a3d44]",
+              )}
+            />
+            {it.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -87,18 +102,15 @@ function PendingCard({
 }) {
   const [role, setRole] = useState<AssignableRole>("member");
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.05] px-[18px] py-4">
+    <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 px-5 py-[18px]">
       <div className="flex items-center gap-2.5">
-        <span className="rounded-md border border-amber-400/40 px-1.5 py-0.5 font-orbitron text-xs text-amber-300">
-          {m.cohort}기
-        </span>
+        <Cohort n={m.cohort} suffix />
         <span className="font-mbc text-[19px] text-white">{m.name}</span>
-        <span className="ml-auto font-pretendard text-xs text-white/35">{ago(m.registeredAt)} 신청</span>
+        <span className="ml-auto font-pretendard text-[13px] text-white/50">{ago(m.registeredAt)} 신청</span>
       </div>
-      {m.intro && <p className="whitespace-pre-wrap font-pretendard text-[13px] leading-relaxed text-white/60">{m.intro}</p>}
+      {m.intro && <p className="whitespace-pre-wrap font-pretendard text-sm leading-relaxed text-white/80">{m.intro}</p>}
       <div className="flex flex-wrap items-center gap-2">
         <Seg
-          dots
           items={(["member", "lead", "teacher"] as AssignableRole[]).map((r) => ({
             key: r,
             label: ASSIGNABLE.find((a) => a.value === r)?.label ?? r,
@@ -106,10 +118,10 @@ function PendingCard({
           value={role}
           onChange={setRole}
         />
-        <ActionButton tone="ghost" className="h-8 px-3 text-[13px] text-[#ff9b9b]" onClick={onReject} disabled={busy}>
+        <ActionButton className="ml-auto h-9 px-3.5" onClick={onReject} disabled={busy}>
           거절
         </ActionButton>
-        <ActionButton tone="primary" className="ml-auto h-8 px-3 text-[13px]" onClick={() => onApprove(role)} busy={busy}>
+        <ActionButton tone="primary" className="h-9 px-4" onClick={() => onApprove(role)} busy={busy}>
           승인
         </ActionButton>
       </div>
@@ -201,15 +213,18 @@ export default function MembersPanel() {
             ["alumni", "졸업"],
           ] as [Role, string][]
         ).map(([r, label]) => (
-          <span key={r} className="flex h-9 items-center gap-2 rounded-xl bg-black/40 px-3.5 font-mbc text-sm text-white/65">
-            <Dot role={r} />
+          <span
+            key={r}
+            className="flex h-10 items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 font-mbc text-sm text-white/70"
+          >
             {label}
-            <span className="font-orbitron text-[13px] text-white">{count(r)}</span>
+            <span className="font-mono text-base font-bold tabular-nums text-white">{count(r)}</span>
           </span>
         ))}
         {pending.length > 0 && (
-          <span className="flex h-9 items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 font-mbc text-sm text-amber-200">
-            승인 대기 <span className="font-orbitron text-[13px]">{pending.length}</span>
+          <span className="flex h-10 items-center gap-2.5 rounded-xl border border-red-400/50 bg-red-400/[0.12] px-4 font-mbc text-sm text-white">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]" />
+            승인 대기 <span className="font-mono text-base font-bold tabular-nums">{pending.length}</span>
           </span>
         )}
         <div className="ml-auto flex gap-2">
@@ -228,10 +243,10 @@ export default function MembersPanel() {
       {waiting.length > 0 && (
         <div className="flex flex-col gap-1.5">
           {(allInvites ? waiting : waiting.slice(0, 2)).map((i) => (
-            <div key={i.id} className="flex items-center gap-2.5 font-pretendard text-[13px] text-white/50">
-              <span className="h-2 w-2 rounded-full bg-[#FFB23F] shadow-[0_0_8px_#FFB23F]" />
+            <div key={i.id} className="flex items-center gap-2.5 font-pretendard text-[13px] text-white/60">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF3B3B]" />
               기다리는 초대 · {i.createdAt.slice(11, 16)} {i.createdBy && `${i.createdBy} `}만듦 · {hoursLeft(i.expiresAt)}
-              {i.codeActive && <span className="text-white/35">· 코드 사용 가능</span>}
+              {i.codeActive && <span className="text-white/45">· 코드 사용 가능</span>}
               <button
                 type="button"
                 className="rounded-md px-2 py-0.5 font-mbc text-xs text-white/55 hover:bg-white/[0.06] hover:text-white"
@@ -245,7 +260,7 @@ export default function MembersPanel() {
             <button
               type="button"
               onClick={() => setAllInvites((v) => !v)}
-              className="w-fit pl-[18px] font-pretendard text-xs text-white/40 hover:text-white/70"
+              className="w-fit pl-4 font-pretendard text-xs text-white/45 hover:text-white/75"
             >
               {allInvites ? "접기" : `기다리는 초대 ${waiting.length - 2}개 더 보기`}
             </button>
@@ -255,7 +270,7 @@ export default function MembersPanel() {
 
       {/* 승인 대기 */}
       {pending.length > 0 && (
-        <Panel title="승인 대기" hint="역할을 고르고 승인하면 그 기기에서 바로 조작할 수 있어요" className="border-amber-400/25">
+        <Panel title="승인 대기" hint="역할을 고르고 승인하면 그 기기에서 바로 조작할 수 있어요">
           <div className="grid grid-cols-[repeat(auto-fill,minmax(330px,1fr))] gap-3">
             {pending.map((m) => (
               <PendingCard
@@ -280,22 +295,22 @@ export default function MembersPanel() {
       {/* 부원 목록 */}
       <Panel title="부원" hint="역할을 바꾸면 그 기기에 바로 반영돼요 · 마지막 부장은 내려놓을 수 없어요">
         <Seg items={FILTERS} value={filter} onChange={setFilter} />
-        <div className="mt-3 overflow-x-auto">
+        <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[640px] text-left font-pretendard text-sm">
-            <thead className="text-white/40">
-              <tr className="border-b border-white/10">
-                <th className="w-[70px] px-3 py-2 font-mbc text-[13px] font-normal">기수</th>
-                <th className="px-3 py-2 font-mbc text-[13px] font-normal">이름</th>
-                <th className="px-3 py-2 font-mbc text-[13px] font-normal">역할</th>
-                <th className="px-3 py-2 font-mbc text-[13px] font-normal">디스코드</th>
-                <th className="px-3 py-2 font-mbc text-[13px] font-normal">기기 토큰</th>
+            <thead className="text-white/50">
+              <tr className="border-b border-white/[0.07]">
+                <th className="w-[70px] px-3 py-2 text-[13px] font-bold">기수</th>
+                <th className="px-3 py-2 text-[13px] font-bold">이름</th>
+                <th className="px-3 py-2 text-[13px] font-bold">역할</th>
+                <th className="px-3 py-2 text-[13px] font-bold">디스코드</th>
+                <th className="px-3 py-2 text-[13px] font-bold">기기 키 만료</th>
                 <th className="w-[52px] px-3 py-2" />
               </tr>
             </thead>
             <tbody>
               {shown.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-white/30">
+                  <td colSpan={6} className="px-3 py-8 text-center text-white/45">
                     {list.isLoading
                       ? "불러오는 중…"
                       : filter === "all"
@@ -308,20 +323,24 @@ export default function MembersPanel() {
                   const gone = m.status === "revoked";
                   const fixed = m.superadmin;
                   return (
-                    <tr key={m.id} className={cn("border-b border-white/5", gone && "text-white/30")}>
-                      <td className="px-3 py-2.5 font-orbitron text-xs text-white/50">{m.cohort ? `${m.cohort}기` : "—"}</td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-2.5 font-mbc text-base text-white/85">
-                          <Dot role={gone ? "guest" : m.role} />
+                    <tr key={m.id} className={cn("border-b border-white/[0.07]", gone && "text-white/30")}>
+                      <td className={cn("px-3 py-3", gone && "opacity-50")}>
+                        <Cohort n={m.cohort} />
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className={cn("flex items-center gap-2.5 font-mbc text-base", gone ? "text-white/35" : "text-white")}>
                           {m.name}
                           {m.mailLocalPart && (
-                            <span className="font-pretendard text-xs text-white/30">{m.mailLocalPart}@bssmcast.com</span>
+                            <span className="font-pretendard text-xs text-white/45">{m.mailLocalPart}@bssmcast.com</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-3">
                         {fixed ? (
-                          <span className="text-xs text-white/40">최고 관리자 (서버 설정)</span>
+                          <span className="flex items-baseline gap-2">
+                            <b className="font-bold text-white">최고 관리자</b>
+                            <span className="text-xs text-white/45">서버 설정</span>
+                          </span>
                         ) : gone ? (
                           <span className="text-xs">내보냄{m.hasToken ? " · 토큰 삭제 실패 — Cloudflare 에서 지우세요" : ""}</span>
                         ) : (
@@ -329,7 +348,7 @@ export default function MembersPanel() {
                             value={m.role}
                             disabled={act.isPending}
                             onChange={(e) => setRole(m, e.target.value as AssignableRole)}
-                            className="h-8 rounded-[10px] border border-white/10 bg-[#141414] px-2.5 font-mbc text-[13px] text-white focus:outline-none"
+                            className="h-9 rounded-[10px] border border-white/[0.12] bg-[#0c0d0f] px-3 font-pretendard text-sm font-bold text-white focus:border-red-400/70 focus:outline-none"
                           >
                             {ASSIGNABLE.map((r) => (
                               <option key={r.value} value={r.value}>
@@ -339,26 +358,24 @@ export default function MembersPanel() {
                           </select>
                         )}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-3">
                         {m.discordLinked ? (
-                          <span className="rounded-md bg-[#5865F2]/20 px-1.5 py-0.5 font-orbitron text-[10px] tracking-wider text-[#aab4ff]">
-                            DISCORD
-                          </span>
+                          <span className={gone ? "text-white/35" : "text-white"}>연결</span>
                         ) : (
-                          <span className="text-xs text-white/25">—</span>
+                          <span className="text-white/45">없음</span>
                         )}
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-white/35">
-                        {!gone && m.tokenExpiresAt ? `${m.tokenExpiresAt.slice(0, 10)} 까지` : ""}
+                      <td className="px-3 py-3 font-mono text-[15px] tabular-nums text-white">
+                        {!gone && m.tokenExpiresAt ? m.tokenExpiresAt.slice(0, 10) : ""}
                       </td>
-                      <td className="relative px-3 py-2.5 text-right">
+                      <td className="relative px-3 py-3 text-right">
                         {!fixed && !gone && (
                           <>
                             <button
                               type="button"
                               aria-label={`${m.name} 더 보기`}
                               onClick={() => setMenu(menu === m.id ? null : m.id)}
-                              className="rounded-lg p-1.5 text-white/45 hover:bg-white/[0.06] hover:text-white"
+                              className="rounded-lg border border-white/15 p-1.5 text-white/75 hover:bg-white/[0.06] hover:text-white"
                             >
                               <MoreHorizontal size={16} />
                             </button>
