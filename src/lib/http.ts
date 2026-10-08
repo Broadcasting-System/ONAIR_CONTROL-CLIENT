@@ -1,5 +1,22 @@
 import { getApiBase } from "@/lib/apiBase";
 
+/** 서버가 실패로 답한 요청 — 화면에 보일 detail 메시지와 HTTP 상태 */
+export class HttpError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "HttpError";
+  }
+}
+
+/** react-query retry — 4xx(설정·권한 문제)는 다시 해 봐야 같으니 바로 실패로, 네트워크·5xx 만 3번까지 */
+export function retryUnlessClientError(failureCount: number, error: unknown): boolean {
+  if (error instanceof HttpError && error.status >= 400 && error.status < 500) return false;
+  return failureCount < 3;
+}
+
 /** 실패한 응답 → 서버가 준 detail 메시지를 담은 Error */
 export async function failure(res: Response): Promise<Error> {
   let message = res.status === 403 ? "이 작업을 수행할 권한이 없습니다." : "요청을 처리하지 못했습니다.";
@@ -9,7 +26,7 @@ export async function failure(res: Response): Promise<Error> {
   } catch {
     /* 본문 없음 */
   }
-  return new Error(message);
+  return new HttpError(message, res.status);
 }
 
 /** 서버 API 호출. 실패하면 서버가 준 detail 메시지를 담아 Error를 던진다. */

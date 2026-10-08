@@ -10,6 +10,7 @@ import { Panel } from "@/components/hall/HallControls";
 import { ActionButton } from "@/components/hall/setup/ui";
 import { useMe } from "@/hooks/useMe";
 import { cloudflareApi } from "@/lib/cloudflareApi";
+import { retryUnlessClientError } from "@/lib/http";
 import { cn } from "@/lib/utils";
 import type {
   CfAddress,
@@ -52,6 +53,11 @@ function Problem({ children }: { children: React.ReactNode }) {
 
 function Loading() {
   return <p className="font-pretendard text-[14px] text-white/45">불러오는 중…</p>;
+}
+
+/** 불러오기 실패 — 다시 해 보는 중이어도(창이 뒤에 있으면 다시 하기가 멈춘다) 데이터가 없으면 이유를 바로 보여 준다 */
+function loadError(q: { error: unknown; failureReason: unknown; data: unknown }) {
+  return q.error ?? (q.data === undefined ? q.failureReason : null);
 }
 
 function errText(e: unknown) {
@@ -120,7 +126,12 @@ function CheckRow({ c }: { c: CfCheck }) {
 
 function StatusSection() {
   const qc = useQueryClient();
-  const status = useQuery({ queryKey: ["cf", "status"], queryFn: () => cloudflareApi.status(), refetchInterval: 60_000 });
+  const status = useQuery({
+    queryKey: ["cf", "status"],
+    queryFn: () => cloudflareApi.status(),
+    refetchInterval: 60_000,
+    retry: retryUnlessClientError,
+  });
   const refresh = useMutation({
     mutationFn: () => cloudflareApi.status(true),
     onSuccess: (s) => qc.setQueryData(["cf", "status"], s),
@@ -131,8 +142,8 @@ function StatusSection() {
 
   return (
     <Panel title="연결 상태" hint="Cloudflare 가 제대로 연결됐는지 — 빨간 점의 '고치는 법'을 따라 하면 돼요">
-      {status.error ? (
-        <Problem>{errText(status.error)}</Problem>
+      {loadError(status) ? (
+        <Problem>{errText(loadError(status))}</Problem>
       ) : !s ? (
         <Loading />
       ) : (
@@ -351,7 +362,12 @@ function IssueForm({ domain, onDone }: { domain: string; onDone: () => void }) {
 
 function MailSection() {
   const qc = useQueryClient();
-  const mail = useQuery({ queryKey: ["cf", "mail"], queryFn: cloudflareApi.mail, refetchInterval: 30_000 });
+  const mail = useQuery({
+    queryKey: ["cf", "mail"],
+    queryFn: cloudflareApi.mail,
+    refetchInterval: 30_000,
+    retry: retryUnlessClientError,
+  });
   const [filter, setFilter] = useState<AddrFilter>("all");
   const [issuing, setIssuing] = useState(false);
   const { setConfirm, modal } = useConfirmRun([["cf", "mail"], ["cf", "status"]]);
@@ -385,8 +401,8 @@ function MailSection() {
 
   return (
     <Panel title="메일 주소" hint={`@${domain} 받기 전용 · 부원 주소는 '부원' 탭에서, 행사·선생님 주소는 여기서 발급해요`}>
-      {mail.error ? (
-        <Problem>{errText(mail.error)}</Problem>
+      {loadError(mail) ? (
+        <Problem>{errText(loadError(mail))}</Problem>
       ) : !d ? (
         <Loading />
       ) : (
@@ -567,7 +583,11 @@ function MailSection() {
 
 function AccessEmailSection() {
   const qc = useQueryClient();
-  const list = useQuery({ queryKey: ["cf", "access-emails"], queryFn: cloudflareApi.accessEmails });
+  const list = useQuery({
+    queryKey: ["cf", "access-emails"],
+    queryFn: cloudflareApi.accessEmails,
+    retry: retryUnlessClientError,
+  });
   const [email, setEmail] = useState("");
   const { setConfirm, modal } = useConfirmRun([["cf", "access-emails"], ["cf", "status"]]);
   const add = useMutation({
@@ -588,8 +608,8 @@ function AccessEmailSection() {
       title="로그인 허용 이메일"
       hint={d ? `${d.app.domain} 에 브라우저로 들어올 때 · 정책 '${d.policy.name}'` : "브라우저로 ONAIR 에 들어올 수 있는 이메일"}
     >
-      {list.error ? (
-        <Problem>{errText(list.error)}</Problem>
+      {loadError(list) ? (
+        <Problem>{errText(loadError(list))}</Problem>
       ) : !d ? (
         <Loading />
       ) : (
@@ -671,14 +691,19 @@ function disconnectMessage(d: CfDevice) {
 }
 
 function DeviceSection() {
-  const list = useQuery({ queryKey: ["cf", "devices"], queryFn: cloudflareApi.devices, refetchInterval: 30_000 });
+  const list = useQuery({
+    queryKey: ["cf", "devices"],
+    queryFn: cloudflareApi.devices,
+    refetchInterval: 30_000,
+    retry: retryUnlessClientError,
+  });
   const { setConfirm, modal } = useConfirmRun([["cf", "devices"], ["members"], ["member-invites"]]);
   const d = list.data;
 
   return (
     <Panel title="기기 접속 키" hint="데스크톱 앱이 쓰는 Cloudflare 서비스 토큰 · 끊으면 그 기기는 들어오지 못해요">
-      {list.error ? (
-        <Problem>{errText(list.error)}</Problem>
+      {loadError(list) ? (
+        <Problem>{errText(loadError(list))}</Problem>
       ) : !d ? (
         <Loading />
       ) : (
@@ -772,7 +797,11 @@ function sourceText(src: "settings" | "env" | "default" | "") {
 
 function SettingsSection() {
   const qc = useQueryClient();
-  const settings = useQuery({ queryKey: ["cf", "settings"], queryFn: cloudflareApi.settings });
+  const settings = useQuery({
+    queryKey: ["cf", "settings"],
+    queryFn: cloudflareApi.settings,
+    retry: retryUnlessClientError,
+  });
   const s = settings.data;
   const [form, setForm] = useState<Partial<Record<CfSettingField, string>>>({});
   const [token, setToken] = useState("");
@@ -809,7 +838,7 @@ function SettingsSection() {
     onError: (e) => setMsg({ text: errText(e), error: true }),
   });
 
-  if (settings.error) return <Panel title="연결 설정"><Problem>{errText(settings.error)}</Problem></Panel>;
+  if (loadError(settings)) return <Panel title="연결 설정"><Problem>{errText(loadError(settings))}</Problem></Panel>;
   if (!s) return <Panel title="연결 설정"><Loading /></Panel>;
 
   const submit = () => {
