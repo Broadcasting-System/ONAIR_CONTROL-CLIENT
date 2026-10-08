@@ -15,7 +15,14 @@ import type {
 
 export const memberApi = {
   me: () => request<MeInfo>("/members/me"),
-  register: (body: { name: string; cohort: number; intro: string; mailId?: string; personalEmail?: string }) =>
+  register: (body: {
+    name: string;
+    cohort: number;
+    intro: string;
+    mailId?: string;
+    personalEmail?: string;
+    cardBg?: CardBg;
+  }) =>
     post<{ status: string; member: Member }>("/members/register", body),
 
   list: () => request<{ members: Member[]; counts: Record<string, number>; mail?: MailSummary }>("/members"),

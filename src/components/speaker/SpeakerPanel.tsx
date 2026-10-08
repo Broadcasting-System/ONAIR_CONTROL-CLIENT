@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Button from "@/components/common/Button";
+import MinSizeGuard from "@/components/common/MinSizeGuard";
 import { SpeakerFloorMap } from "@/components/speaker/SpeakerFloorMap";
 import { SpeakerTable } from "@/components/speaker/SpeakerTable";
 import { FLOOR_KEYS, SPEAKER_COVERAGE } from "@/lib/speakerCoverage";
@@ -40,14 +41,17 @@ export function SpeakerPanel({
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_340px] items-start gap-6">
-      <SpeakerFloorMap
-        zones={zones}
-        onToggle={canOperate ? onToggle : () => {}}
-        floor={floor}
-        onFloorChange={setFloor}
-        highlight={hovered}
-        onHover={setHovered}
-      />
+      {/* 지도 칸이 이보다 좁으면 방 이름이 사라지고 글자가 7px 로 줄어든다 (창 너비 약 1260px) */}
+      <MinSizeGuard minWidth={520} fallbackClassName="h-[clamp(480px,calc(100vh_-_206px),944px)]">
+        <SpeakerFloorMap
+          zones={zones}
+          onToggle={canOperate ? onToggle : () => {}}
+          floor={floor}
+          onFloorChange={setFloor}
+          highlight={hovered}
+          onHover={setHovered}
+        />
+      </MinSizeGuard>
 
       <div className="flex flex-col gap-4">
         <SpeakerTable

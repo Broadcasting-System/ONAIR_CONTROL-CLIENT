@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SectionHeader from "@/components/common/SectionHeader";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import MinSizeGuard from "@/components/common/MinSizeGuard";
 import { ConfigButton, MatrixLabelsModal } from "@/components/hall/HallConfigModal";
 import { HallSwitcher, LockToggle, Notice, Panel, StatusChip } from "@/components/hall/HallControls";
 import { useHalls } from "@/hooks/useHalls";
@@ -77,6 +78,8 @@ export default function VideoMatrixPage() {
 
       <div className="flex min-h-0 flex-1 gap-5">
         <Panel title="라우팅" className="min-w-0 flex-1">
+          {/* 입력 칸이 48px 보다 좁아지면 입력 이름이 찌그러진다 — 행 이름 170px + 칸 + 간격 */}
+          <MinSizeGuard minWidth={170 + Math.max(inputs.length, 1) * 54}>
           <div
             className="grid gap-1.5"
             style={{ gridTemplateColumns: `170px repeat(${inputs.length || 1}, minmax(0, 1fr))` }}
@@ -128,6 +131,7 @@ export default function VideoMatrixPage() {
               </div>
             ))}
           </div>
+          </MinSizeGuard>
         </Panel>
 
         <div className="flex w-[340px] shrink-0 flex-col gap-5">

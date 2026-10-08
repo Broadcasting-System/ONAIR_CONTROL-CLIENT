@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { backendBase } from "@/lib/backend";
 import { cn } from "@/lib/utils";
 import { COLOR_PRESETS } from "@/types/lighting";
@@ -100,8 +100,19 @@ export function WaveCanvas({ name, className }: { name: string; className?: stri
   return <canvas ref={ref} aria-hidden className={cn("absolute inset-0 h-full w-full", className)} />;
 }
 
-/** 서버가 준 /api/... 사진 주소 → 지금 백엔드 주소 */
-export const photoSrc = (url: string) => (/^https?:/.test(url) ? url : `${backendBase()}${url}`);
+/** 서버가 준 /api/... 사진 주소 → 지금 백엔드 주소 (고른 파일 미리보기 blob: 은 그대로) */
+export const photoSrc = (url: string) => (/^(https?:|blob:|data:)/.test(url) ? url : `${backendBase()}${url}`);
+
+/** 카드 사진으로 올릴 수 있는 파일 (서버와 같은 한도) */
+export const PHOTO_MAX_MB = 5;
+export const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+/** 올리기 전에 고른 파일 확인 — 안 되면 짧은 오류 문구 */
+export function photoProblem(file: File): string | null {
+  if (!PHOTO_TYPES.includes(file.type)) return "JPG·PNG·WEBP 만 올릴 수 있어요";
+  if (file.size > PHOTO_MAX_MB * 1024 * 1024) return `사진은 ${PHOTO_MAX_MB}MB 까지예요`;
+  return null;
+}
 
 /** ③ 본인 사진 — 흑백·고대비·어둡게 + 기수 색 (사진을 못 불러오면 onError) */
 export function PhotoLayer({ url, cohort, onError }: { url: string; cohort: number | null; onError?: () => void }) {
@@ -152,3 +163,45 @@ export function CardBackground({
     </>
   );
 }
+
+/** 카드 배경 고르기 타일 하나 — 16:10 미리보기, 고르면 빨간 테두리 (등록 화면도 같이 쓴다) */
+export function BgTile({
+  label,
+  on,
+  onPick,
+  disabled,
+  children,
+  actions,
+}: {
+  label: string;
+  on: boolean;
+  onPick: () => void;
+  disabled?: boolean;
+  children: ReactNode;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="grid min-w-0 gap-1.5">
+      <button
+        type="button"
+        aria-pressed={on}
+        disabled={disabled}
+        onClick={onPick}
+        className={cn(
+          "relative aspect-[16/10] overflow-hidden rounded-xl border bg-[#060607] text-left transition-colors disabled:cursor-default",
+          on ? "border-red-400/70 shadow-[0_0_0_1px_rgba(255,59,59,0.5)]" : "border-white/10 enabled:hover:border-white/30",
+        )}
+      >
+        {children}
+        <span className="absolute bottom-2 left-2.5 flex items-center gap-1.5 font-pretendard text-[13px] font-bold text-white [text-shadow:0_1px_4px_#000]">
+          <span className={cn("h-2 w-2 rounded-full", on ? "bg-[#FF3B3B]" : "bg-white/30")} />
+          {label}
+        </span>
+      </button>
+      {actions && <div className="flex gap-1.5">{actions}</div>}
+    </div>
+  );
+}
+
+export const tileBtn =
+  "flex h-8 flex-1 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] font-pretendard text-[13px] font-semibold text-white/75 transition-colors enabled:hover:bg-white/10 enabled:hover:text-white disabled:opacity-40";

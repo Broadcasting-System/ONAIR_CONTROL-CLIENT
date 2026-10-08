@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ToastHost, toast } from "@/components/common/Toast";
+import { BgTile, PhotoLayer, WaveCanvas, photoProblem, tileBtn } from "@/components/devices/CardBackground";
 import { useMe } from "@/hooks/useMe";
 import { mailApi, memberApi } from "@/lib/memberApi";
 import { cohortPrefix, mailIdProblem, personalEmailProblem, suggestMailId } from "@/lib/romanize";
 import { cn } from "@/lib/utils";
+import type { CardBg } from "@/types/member";
 
 /** 튜너 눈금에 찍힌 네 단계 — 키 연결은 앱에서 끝내고 이 화면으로 온다 */
 const STEPS = ["키 연결", "프로필", "승인", "ON AIR"] as const;
@@ -95,6 +97,87 @@ function useDebounced<T>(value: T, ms: number): T {
   return v;
 }
 
+/** 고른 사진 파일 미리보기 주소 — 파일이 바뀌거나 화면을 떠나면 놓아 준다 */
+function useObjectUrl(file: File | null): string {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    if (!file) {
+      setUrl("");
+      return;
+    }
+    const u = URL.createObjectURL(file);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  return url;
+}
+
+/** 프로필 카드 배경 — 소리 파형(이름으로 그림) · 내 사진. 사진은 등록 신청 뒤에 올린다 */
+function CardBgChoice({
+  name,
+  cohort,
+  choice,
+  onChoice,
+  photoUrl,
+  onFile,
+}: {
+  name: string;
+  cohort: number | null;
+  choice: CardBg;
+  onChoice: (c: CardBg) => void;
+  photoUrl: string;
+  onFile: (f: File) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const openFile = () => fileRef.current?.click();
+  return (
+    <div>
+      <span className={lblCls}>카드 배경</span>
+      <div className="grid max-w-[560px] grid-cols-2 gap-3">
+        <BgTile label="소리 파형" on={choice === "wave"} onPick={() => onChoice("wave")}>
+          <WaveCanvas name={name.trim() || "ONAIR"} />
+        </BgTile>
+        <BgTile
+          label="내 사진"
+          on={choice === "photo" && !!photoUrl}
+          onPick={() => (photoUrl ? onChoice("photo") : openFile())}
+          actions={
+            <button type="button" className={tileBtn} onClick={openFile}>
+              {photoUrl ? "바꾸기" : "사진 올리기"}
+            </button>
+          }
+        >
+          {photoUrl ? (
+            <PhotoLayer url={photoUrl} cohort={cohort} />
+          ) : (
+            <span className="absolute inset-0 grid place-items-center pb-5 font-pretendard text-[13px] text-white/45">
+              사진 없음
+            </span>
+          )}
+        </BgTile>
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = ""; // 같은 파일을 다시 골라도 바뀌게
+          if (!f) return;
+          const problem = photoProblem(f);
+          if (problem) {
+            toast.error(problem);
+            return;
+          }
+          onFile(f);
+          onChoice("photo");
+        }}
+      />
+    </div>
+  );
+}
+
 /** 첫 화면 — 초대받은 기기의 등록 신청과 승인 기다리기 */
 export default function WelcomePage() {
   const router = useRouter();
@@ -108,6 +191,11 @@ export default function WelcomePage() {
   const [mailId, setMailId] = useState("");
   // 사람이 메일 주소를 직접 고쳤으면 이름을 바꿔도 다시 채우지 않는다
   const [mailEdited, setMailEdited] = useState(false);
+  // 카드 배경 — 고른 사진 파일은 등록 신청이 받아진 뒤에 올린다
+  const [cardBg, setCardBg] = useState<CardBg>("wave");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const localPhoto = useObjectUrl(photoFile);
+  const photoUrl = localPhoto || me?.photoUrl || "";
 
   const status = me?.status;
   const pending = status === "pending";
@@ -133,6 +221,8 @@ export default function WelcomePage() {
     setPersonalEmail(me?.personalEmail ?? "");
     setMailId(me?.mailId || suggestMailId(me?.name ?? ""));
     setMailEdited(!!me?.mailId);
+    setCardBg(me?.cardBg ?? "wave");
+    setPhotoFile(null);
     setEditing(true);
   };
 
@@ -141,14 +231,27 @@ export default function WelcomePage() {
     if (!mailEdited) setMailId(suggestMailId(v));
   };
 
+  const pickedBg: CardBg = cardBg === "photo" && photoUrl ? "photo" : "wave";
   const submit = useMutation({
-    mutationFn: () =>
-      memberApi.register({
+    mutationFn: async () => {
+      const res = await memberApi.register({
         name: name.trim(),
         cohort: Number(cohort),
         intro: intro.trim(),
+        cardBg: pickedBg,
         ...(mailOn ? { mailId, personalEmail: personalEmail.trim() } : {}),
-      }),
+      });
+      // 신청이 받아진 뒤라 사진이 안 올라가도 신청은 그대로 — 알리기만 한다
+      if (pickedBg === "photo" && photoFile) {
+        try {
+          await memberApi.uploadPhoto("me", photoFile);
+          setPhotoFile(null);
+        } catch (e) {
+          toast.error((e as Error).message || "사진을 올리지 못했어요");
+        }
+      }
+      return res;
+    },
     onSuccess: () => {
       setEditing(false);
       qc.invalidateQueries({ queryKey: ["me"] });
@@ -332,6 +435,14 @@ export default function WelcomePage() {
                   className={cn(inpCls, "h-[88px] resize-none py-3 leading-normal")}
                 />
               </div>
+              <CardBgChoice
+                name={name}
+                cohort={cohortOk ? cohortNum : null}
+                choice={pickedBg}
+                onChoice={setCardBg}
+                photoUrl={photoUrl}
+                onFile={setPhotoFile}
+              />
               <div className="flex flex-wrap items-center justify-end gap-2.5">
                 {editing && (
                   <button type="button" className={ghostCls} onClick={() => setEditing(false)}>
@@ -381,6 +492,12 @@ export default function WelcomePage() {
                   <>
                     <span className="text-white/45">소개</span>
                     <span className="whitespace-pre-wrap text-white/80">{me.intro}</span>
+                  </>
+                )}
+                {me.cardBg && (
+                  <>
+                    <span className="text-white/45">카드 배경</span>
+                    <span>{me.cardBg === "photo" ? "내 사진" : "소리 파형"}</span>
                   </>
                 )}
               </div>

@@ -130,7 +130,7 @@ export function FeatureCard({
   return (
     <div
       className={cn(
-        "flex min-h-[190px] flex-col gap-2.5 rounded-[18px] border p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+        "flex flex-col gap-3 rounded-[18px] border p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
         f.enabled
           ? "border-[#FF3B3B]/45 bg-[linear-gradient(180deg,rgba(255,59,59,0.13),rgba(255,59,59,0.03))]"
           : "border-white/[0.08] bg-[linear-gradient(180deg,#1b1b1f,#121215)]",
@@ -138,10 +138,8 @@ export function FeatureCard({
     >
       <div className="flex items-center gap-2.5">
         <div className="min-w-0 flex-1">
-          <div className="font-mbc text-[19px] leading-tight text-white">{f.name}</div>
-          <div className="font-orbitron text-[8.5px] tracking-[0.16em] text-white/30">
-            {info.en}
-          </div>
+          <div className="font-orbitron text-[10px] tracking-[0.2em] text-white/40">{info.en}</div>
+          <div className="mt-1 truncate font-mbc text-[23px] leading-tight text-white">{f.name}</div>
         </div>
         <OnSwitch
           checked={f.enabled}
@@ -152,13 +150,13 @@ export function FeatureCard({
       </div>
       <div
         className={cn(
-          "mt-auto flex items-center gap-2 rounded-[10px] bg-black/35 px-2.5 py-1.5 font-pretendard text-[12.5px]",
+          "flex items-center gap-2.5 rounded-[10px] bg-black/35 px-3 py-2 font-pretendard text-[15px]",
           status.acting ? "text-white" : "text-white/40",
         )}
       >
         <span
           className={cn(
-            "h-[7px] w-[7px] shrink-0 rounded-full",
+            "h-2 w-2 shrink-0 rounded-full",
             status.acting ? "bg-[#FFB23F] shadow-[0_0_8px_#FFB23F]" : "bg-white/20",
           )}
         />
@@ -167,7 +165,7 @@ export function FeatureCard({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-fit font-pretendard text-xs text-white/40 hover:text-white/75"
+        className="w-fit font-pretendard text-[13px] text-white/45 hover:text-white/80"
       >
         {open ? "▴ 접기" : "▾ 자세히"}
       </button>

@@ -71,7 +71,7 @@ export default function AutoAudioPanel({ hallId, lead }: { hallId: string | null
       )}
 
       {state && (
-        <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2 2xl:grid-cols-4">
+        <div className="grid grid-cols-1 items-start gap-3.5 md:grid-cols-2 2xl:grid-cols-4">
           {AUTO_FEATURES.map((f) => (
             <FeatureCard
               key={`${state.hall.id}-${f}`}

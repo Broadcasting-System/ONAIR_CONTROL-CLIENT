@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 /**
  * 페이지 탭 상태를 URL `?tab=` 과 맞춘다.
- * 옛 메뉴 주소(/scheduler, /logs)가 탭 주소로 넘어오도록 하기 위함.
+ * 옛 메뉴 주소(/scheduler 등)가 탭 주소로 넘어오도록 하기 위함.
  * useSearchParams 대신 window.location을 읽어 정적 렌더링(Suspense 경계) 제약을 피한다.
  */
 export function useTabParam<T extends string>(tabs: readonly T[], fallback: T) {

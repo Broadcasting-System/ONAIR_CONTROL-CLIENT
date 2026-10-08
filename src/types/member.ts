@@ -52,6 +52,9 @@ export interface MeInfo {
   mailStatus?: MailStatus;
   mailStatusLabel?: string;
   personalEmail?: string;
+  /** 프로필 카드 배경·사진 (예전 서버면 없다) */
+  cardBg?: CardBg;
+  photoUrl?: string;
 }
 
 export interface Member extends Partial<CardBgInfo> {
