@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Crosshair, RadioTower, Wifi, X } from "lucide-react";
+import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { SPEAKER_MATRIX_KEY } from "@/hooks/useSpeakerMatrix";
 import {
@@ -273,15 +274,16 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
             {mode === "manual" && (
               <label className="col-span-2 flex flex-col gap-1.5">
                 <span className="font-mbc text-xs text-white/40">배운 뒤 ONAIR가 장비에 보낼 방법</span>
-                <select
+                <Select
                   value={transport}
-                  onChange={(e) => setTransport(e.target.value as LearnTransport)}
-                  className={cn(input, "cursor-pointer")}
-                >
-                  <option value="tcp">랜 · TCP</option>
-                  <option value="udp">랜 · UDP</option>
-                  <option value="serial">시리얼 (COM 포트)</option>
-                </select>
+                  onChange={setTransport}
+                  options={[
+                    { value: "tcp", label: "랜 · TCP" },
+                    { value: "udp", label: "랜 · UDP" },
+                    { value: "serial", label: "시리얼 (COM 포트)" },
+                  ]}
+                  className={input}
+                />
               </label>
             )}
 
@@ -321,17 +323,12 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                 </label>
                 <label className="flex flex-col gap-1.5">
                   <span className="font-mbc text-xs text-white/40">통신 속도 (bps)</span>
-                  <select
+                  <Select
                     value={baud}
-                    onChange={(e) => setBaud(Number(e.target.value))}
-                    className={cn(input, "cursor-pointer font-orbitron")}
-                  >
-                    {[9600, 19200, 38400, 57600, 115200, 4800, 2400].map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setBaud}
+                    options={[9600, 19200, 38400, 57600, 115200, 4800, 2400].map((b) => ({ value: b, label: String(b) }))}
+                    className={cn(input, "font-orbitron")}
+                  />
                 </label>
                 {mode === "serial" && (
                   <label className="col-span-2 flex flex-col gap-1.5">

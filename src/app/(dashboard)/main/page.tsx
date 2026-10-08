@@ -7,6 +7,7 @@ import Button from "@/components/common/Button";
 import TextInput from "@/components/common/TextInput";
 import StatusCard from "@/components/StatusCard";
 import SectionHeader from "@/components/common/SectionHeader";
+import Select from "@/components/common/Select";
 
 import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
@@ -190,18 +191,15 @@ function SoundSelect({
   return (
     <div className="flex flex-1 flex-col gap-2">
       <span className="font-mbc text-sm text-white/50">{label}</span>
-      <select
+      <Select
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-[48px] w-full cursor-pointer rounded-xl border border-white/10 bg-[#1C1C1C] px-4 font-pretendard text-[15px] text-white transition-all focus:border-white/30 focus:outline-none"
-      >
-        <option value="none">미사용</option>
-        {options.map((f) => (
-          <option key={f.id} value={f.fileUrl}>
-            {f.fileName}
-          </option>
-        ))}
-      </select>
+        onChange={onChange}
+        options={[
+          { value: "none", label: "미사용" },
+          ...options.map((f) => ({ value: f.fileUrl, label: f.fileName })),
+        ]}
+        className="h-[48px] w-full rounded-xl bg-[#1C1C1C] px-4 text-[15px]"
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Lightbulb, Minus, Plus, Radio, Trash2, X } from "lucide-react";
+import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { Notice } from "@/components/hall/HallControls";
 import { move, nextKey } from "@/components/hall/setup/draft";
@@ -181,11 +182,7 @@ export default function LightingFixturesStep({
     return s && testAddr >= s.from && testAddr <= s.to;
   });
 
-  const typeOptions = Object.entries(types).map(([k, t]) => (
-    <option key={k} value={k}>
-      {t.name}
-    </option>
-  ));
+  const typeOptions = Object.entries(types).map(([k, t]) => ({ value: k, label: t.name }));
 
   return (
     <div className="flex flex-col gap-5">
@@ -340,17 +337,14 @@ export default function LightingFixturesStep({
                       onChange={(e) => patchRow(i, { name: e.target.value })}
                       className={cn(inputCls, r.name.trim() ? okBorder : badBorder)}
                     />
-                    <select
+                    <Select
                       value={r.type}
                       aria-label={`${r.name || i + 1} 종류`}
-                      onChange={(e) =>
-                        patchRow(i, { type: e.target.value, channels: channelsFor(e.target.value, r.type, r.channels, types) })
-                      }
-                      className={cn(inputCls, types[r.type] ? okBorder : badBorder, "cursor-pointer px-2")}
-                    >
-                      {!types[r.type] && <option value={r.type}>종류 고르기</option>}
-                      {typeOptions}
-                    </select>
+                      onChange={(type) => patchRow(i, { type, channels: channelsFor(type, r.type, r.channels, types) })}
+                      placeholder="종류 고르기"
+                      options={typeOptions}
+                      className={cn(inputCls, types[r.type] ? okBorder : badBorder, "px-2")}
+                    />
                     <input
                       value={r.address}
                       inputMode="numeric"
@@ -413,20 +407,19 @@ export default function LightingFixturesStep({
                     }}
                     className={cn(inputCls, okBorder)}
                   />
-                  <select
+                  <Select
                     value={pending.type}
                     aria-label="새 조명 종류"
-                    onChange={(e) =>
+                    onChange={(type) =>
                       setPending({
                         ...pending,
-                        type: e.target.value,
-                        channels: channelsFor(e.target.value, pending.type, pending.channels, types),
+                        type,
+                        channels: channelsFor(type, pending.type, pending.channels, types),
                       })
                     }
-                    className={cn(inputCls, okBorder, "cursor-pointer px-2")}
-                  >
-                    {typeOptions}
-                  </select>
+                    options={typeOptions}
+                    className={cn(inputCls, okBorder, "px-2")}
+                  />
                   <input
                     value={pending.address}
                     inputMode="numeric"
@@ -503,19 +496,16 @@ function ChannelEditor({
         return (
           <div key={i} className="flex items-center gap-1 rounded-lg border border-white/10 bg-[#101010] py-1 pl-2 pr-1">
             <span className="font-orbitron text-[10px] text-white/35">{start !== null ? start + i : i + 1}</span>
-            <select
+            <Select
               value={fixed ? "#fixed" : c}
               aria-label={`${i + 1}번째 채널 역할`}
-              onChange={(e) => set(i, e.target.value === "#fixed" ? 0 : e.target.value)}
-              className="h-7 cursor-pointer rounded-md bg-transparent font-pretendard text-xs text-white focus:outline-none"
-            >
-              {Object.entries(roles).map(([k, name]) => (
-                <option key={k} value={k}>
-                  {name}
-                </option>
-              ))}
-              <option value="#fixed">고정 값</option>
-            </select>
+              onChange={(v) => set(i, v === "#fixed" ? 0 : v)}
+              options={[
+                ...Object.entries(roles).map(([k, name]) => ({ value: k, label: name })),
+                { value: "#fixed", label: "고정 값" },
+              ]}
+              className="h-7 gap-1 border-transparent bg-transparent px-1.5 text-xs focus:border-white/20"
+            />
             {fixed && (
               <input
                 type="number"

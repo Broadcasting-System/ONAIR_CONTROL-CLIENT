@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { HallSwitcher } from "@/components/hall/HallControls";
 import { ActionButton, inputCls, okBorder } from "@/components/hall/setup/ui";
@@ -51,19 +52,13 @@ function ChannelTable({ channels, halls }: { channels: AvChannel[]; halls: AvHal
               placeholder="이름 (예: 강당 프로젝터)"
               className={cn(inputCls, okBorder)}
             />
-            <select
+            <Select
               value={r.hall ?? ""}
-              onChange={(e) => set(i, { hall: e.target.value || null })}
+              onChange={(hall) => set(i, { hall: hall || null })}
               aria-label={`CH${r.channel} 연결된 홀`}
+              options={[{ value: "", label: "연결된 홀 없음" }, ...halls.map((h) => ({ value: h.id, label: h.name }))]}
               className={cn(inputCls, okBorder, "col-span-2 sm:col-span-1")}
-            >
-              <option value="">연결된 홀 없음</option>
-              {halls.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name}
-                </option>
-              ))}
-            </select>
+            />
             <span className="hidden font-pretendard text-xs text-white/45 sm:block">
               {c?.live ? `송출 화면 ${c.displays}대` : "연결된 화면 없음"}
             </span>

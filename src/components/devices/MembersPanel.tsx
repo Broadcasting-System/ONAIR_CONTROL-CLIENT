@@ -6,6 +6,7 @@ import { Download, MoreHorizontal, UserPlus } from "lucide-react";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import InputModal from "@/components/common/InputModal";
 import PageTabs from "@/components/common/PageTabs";
+import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import CrewView, { ProfileModal, type ProfileTarget } from "@/components/devices/CrewView";
 import InviteModal from "@/components/devices/InviteModal";
@@ -483,18 +484,14 @@ export default function MembersPanel() {
                         ) : gone ? (
                           <span className="text-xs">내보냄{m.hasToken ? " · 토큰 삭제 실패 — Cloudflare 에서 지우세요" : ""}</span>
                         ) : (
-                          <select
+                          <Select
                             value={m.role}
                             disabled={act.isPending}
-                            onChange={(e) => setRole(m, e.target.value as AssignableRole)}
-                            className="h-9 rounded-[10px] border border-white/[0.12] bg-[#0c0d0f] px-3 font-pretendard text-sm font-bold text-white focus:border-red-400/70 focus:outline-none"
-                          >
-                            {ASSIGNABLE.filter((r) => !roster || ROSTER_ROLES.includes(r.value)).map((r) => (
-                              <option key={r.value} value={r.value}>
-                                {r.label}
-                              </option>
-                            ))}
-                          </select>
+                            onChange={(role) => setRole(m, role as AssignableRole)}
+                            aria-label={`${m.name} 역할`}
+                            options={ASSIGNABLE.filter((r) => !roster || ROSTER_ROLES.includes(r.value))}
+                            className="h-9 rounded-[10px] border-white/[0.12] bg-[#0c0d0f] text-sm font-bold focus:border-red-400/70"
+                          />
                         )}
                       </td>
                       <td className="whitespace-nowrap px-3 py-3">

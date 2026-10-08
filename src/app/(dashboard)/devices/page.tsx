@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import SectionHeader from "@/components/common/SectionHeader";
+import Select from "@/components/common/Select";
 import { getApiBase } from "@/lib/apiBase";
 import { toast } from "@/components/common/Toast";
 import { useMe } from "@/hooks/useMe";
@@ -163,17 +164,7 @@ export default function DevicesPage() {
         </div>
         <div className="flex flex-col gap-1">
           <span className="font-mbc text-xs text-white/40">역할</span>
-          <select
-            value={newRole}
-            onChange={(e) => setNewRole(e.target.value as DeviceRole)}
-            className="h-10 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white focus:outline-none"
-          >
-            {ROLES.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </select>
+          <Select value={newRole} onChange={setNewRole} options={ROLES} aria-label="역할" />
         </div>
         <button
           onClick={addDevice}
@@ -221,17 +212,13 @@ export default function DevicesPage() {
                     />
                   </td>
                   <td className="px-4 py-2.5">
-                    <select
+                    <Select
                       value={d.role}
-                      onChange={(e) => save(d.ip, { role: e.target.value as DeviceRole })}
-                      className="h-9 rounded-lg border border-white/10 bg-[#141414] px-3 text-white focus:border-white/30 focus:outline-none"
-                    >
-                      {ROLES.map((r) => (
-                        <option key={r.value} value={r.value}>
-                          {r.label}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(role) => save(d.ip, { role })}
+                      options={ROLES}
+                      aria-label={`${d.name} 역할`}
+                      className="h-9"
+                    />
                   </td>
                 </tr>
               ))

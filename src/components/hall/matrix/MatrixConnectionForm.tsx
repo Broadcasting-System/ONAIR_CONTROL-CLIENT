@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, PlugZap, RefreshCw, RotateCcw, Save, Send } from "lucide-react";
+import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { Notice } from "@/components/hall/HallControls";
 import NotebookPicker from "@/components/hall/setup/NotebookPicker";
@@ -306,34 +307,22 @@ export default function MatrixConnectionForm({
         >
           <div className="flex flex-wrap items-end gap-3">
             <Field label="포트 (노트북에 꽂힌 것)" className="min-w-[260px] flex-1">
-              <select
+              <Select
                 value={port}
-                onChange={(e) => setPort(e.target.value)}
+                onChange={setPort}
                 disabled={!ports || ports.length === 0}
-                className={cn(inputCls, okBorder, "cursor-pointer")}
-              >
-                <option value="">
-                  {!ports ? "'불러오기'를 누르세요" : ports.length ? "포트 고르기" : "꽂힌 USB-RS232 가 없어요"}
-                </option>
-                {ports?.map((p) => (
-                  <option key={p.port} value={p.port}>
-                    {p.port} · {p.chip || p.description || "시리얼"}
-                  </option>
-                ))}
-              </select>
+                placeholder={!ports ? "'불러오기'를 누르세요" : ports.length ? "포트 고르기" : "꽂힌 USB-RS232 가 없어요"}
+                options={(ports ?? []).map((p) => ({ value: p.port, label: `${p.port} · ${p.chip || p.description || "시리얼"}` }))}
+                className={cn(inputCls, okBorder)}
+              />
             </Field>
             <Field label="속도 (bps)" className="w-[130px]">
-              <select
+              <Select
                 value={baud}
-                onChange={(e) => setBaud(Number(e.target.value))}
-                className={cn(inputCls, okBorder, "cursor-pointer font-orbitron")}
-              >
-                {BAUDS.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
+                onChange={setBaud}
+                options={BAUDS.map((b) => ({ value: b, label: String(b) }))}
+                className={cn(inputCls, okBorder, "font-orbitron")}
+              />
             </Field>
             <ActionButton icon={<RefreshCw size={14} />} busy={portsBusy} onClick={loadPorts} disabled={urlBad}>
               불러오기
@@ -372,17 +361,12 @@ export default function MatrixConnectionForm({
               />
             </Field>
             <Field label="끝 문자" className="w-[170px]">
-              <select
+              <Select
                 value={conn.protocol.terminator}
-                onChange={(e) => setProto({ terminator: e.target.value as Terminator })}
-                className={cn(inputCls, okBorder, "cursor-pointer")}
-              >
-                {TERMINATORS.map((t) => (
-                  <option key={t.label} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(terminator) => setProto({ terminator })}
+                options={TERMINATORS.map((t) => ({ value: t.value, label: t.label }))}
+                className={cn(inputCls, okBorder)}
+              />
             </Field>
             <Field label="응답 확인 (선택)" hint="예: OK — 비우면 응답을 기다리지 않아요" className="w-[210px]">
               <input
@@ -399,30 +383,20 @@ export default function MatrixConnectionForm({
           {/* 보내 보기 — 저장 전의 값으로 한 번 */}
           <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white/[0.025] p-3">
             <Field label="입력 (소스)" className="w-[190px]">
-              <select
+              <Select
                 value={tryIn}
-                onChange={(e) => setTryIn(Number(e.target.value))}
-                className={cn(inputCls, okBorder, "cursor-pointer")}
-              >
-                {state.inputs.map((i) => (
-                  <option key={i.no} value={i.no}>
-                    IN {i.no} · {i.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setTryIn}
+                options={state.inputs.map((i) => ({ value: i.no, label: `IN ${i.no} · ${i.name}` }))}
+                className={cn(inputCls, okBorder)}
+              />
             </Field>
             <Field label="출력 (화면)" className="w-[190px]">
-              <select
+              <Select
                 value={tryOut}
-                onChange={(e) => setTryOut(Number(e.target.value))}
-                className={cn(inputCls, okBorder, "cursor-pointer")}
-              >
-                {state.outputs.map((o) => (
-                  <option key={o.no} value={o.no}>
-                    OUT {o.no} · {o.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setTryOut}
+                options={state.outputs.map((o) => ({ value: o.no, label: `OUT ${o.no} · ${o.name}` }))}
+                className={cn(inputCls, okBorder)}
+              />
             </Field>
             <div className="flex min-w-[180px] flex-1 flex-col gap-1.5">
               <span className="font-mbc text-[13px] text-white/55">보낼 명령</span>

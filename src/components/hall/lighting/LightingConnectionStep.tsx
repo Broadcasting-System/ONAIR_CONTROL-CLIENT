@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, RefreshCw, RotateCcw, Save } from "lucide-react";
+import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { Notice } from "@/components/hall/HallControls";
 import NotebookPicker from "@/components/hall/setup/NotebookPicker";
@@ -129,25 +130,17 @@ export default function LightingConnectionStep({
   const portOptions = (current: string) => {
     const list = ports ?? [];
     const extra = current && !list.some((p) => p.port === current) ? [current] : [];
-    return (
-      <>
-        <option value="">{!ports ? "'불러오기'를 누르세요" : list.length ? "포트 고르기" : "꽂힌 장치가 없어요"}</option>
-        {extra.map((p) => (
-          <option key={p} value={p}>
-            {p} · 저장된 포트
-          </option>
-        ))}
-        {list.map((p) => {
-          const guess = portGuess(p);
-          return (
-            <option key={p.port} value={p.port}>
-              {p.port} · {p.chip || p.description || "시리얼"}
-              {guess ? ` — ${guess}` : ""}
-            </option>
-          );
-        })}
-      </>
-    );
+    return [
+      { value: "", label: !ports ? "'불러오기'를 누르세요" : list.length ? "포트 고르기" : "꽂힌 장치가 없어요" },
+      ...extra.map((p) => ({ value: p, label: `${p} · 저장된 포트` })),
+      ...list.map((p) => {
+        const guess = portGuess(p);
+        return {
+          value: p.port,
+          label: `${p.port} · ${p.chip || p.description || "시리얼"}${guess ? ` — ${guess}` : ""}`,
+        };
+      }),
+    ];
   };
 
   const portLabel = form.kind === "esp32" ? "조명 노드 COM 포트" : "USB-DMX 케이블 COM 포트";
@@ -224,24 +217,22 @@ export default function LightingConnectionStep({
         >
           <div className="flex flex-wrap items-end gap-3">
             <Field label={portLabel} className="min-w-[260px] flex-1">
-              <select
+              <Select
                 value={form.port}
-                onChange={(e) => set({ port: e.target.value })}
+                onChange={(port) => set({ port })}
                 disabled={form.virtual}
-                className={cn(inputCls, portMissing ? badBorder : okBorder, "cursor-pointer")}
-              >
-                {portOptions(form.port)}
-              </select>
+                options={portOptions(form.port)}
+                className={cn(inputCls, portMissing ? badBorder : okBorder, "w-full")}
+              />
             </Field>
             {form.kind === "opendmx" && (
               <Field label="콘솔 신호 받는 조명 노드 (선택)" className="min-w-[260px] flex-1">
-                <select
+                <Select
                   value={form.inputPort}
-                  onChange={(e) => set({ inputPort: e.target.value })}
-                  className={cn(inputCls, samePort ? badBorder : okBorder, "cursor-pointer")}
-                >
-                  {portOptions(form.inputPort)}
-                </select>
+                  onChange={(inputPort) => set({ inputPort })}
+                  options={portOptions(form.inputPort)}
+                  className={cn(inputCls, samePort ? badBorder : okBorder, "w-full")}
+                />
               </Field>
             )}
             <ActionButton

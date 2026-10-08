@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import NotebookPicker from "@/components/hall/setup/NotebookPicker";
 import { ActionButton, Card, Field, inputCls, okBorder, OptionCard, Switch } from "@/components/hall/setup/ui";
@@ -120,18 +121,16 @@ export default function RecordingSettings({ hallId, state }: { hallId: string; s
                   className={cn(inputCls, okBorder, "flex-1")}
                 />
                 {list.length > 0 && (
-                  <select
+                  <Select
                     value=""
-                    onChange={(e) => e.target.value && setInput(e.target.value)}
+                    onChange={(name) => name && setInput(name)}
+                    placeholder="목록에서 고르기…"
+                    options={list.map((d) => ({
+                      value: d.name,
+                      label: `${d.name} ${d.hostapi ? `· ${d.hostapi}` : ""} · ${d.channels}ch`,
+                    }))}
                     className={cn(inputCls, okBorder, "w-48")}
-                  >
-                    <option value="">목록에서 고르기…</option>
-                    {list.map((d) => (
-                      <option key={`${d.index}-${d.name}`} value={d.name}>
-                        {d.name} {d.hostapi ? `· ${d.hostapi}` : ""} · {d.channels}ch
-                      </option>
-                    ))}
-                  </select>
+                  />
                 )}
               </div>
             </Field>

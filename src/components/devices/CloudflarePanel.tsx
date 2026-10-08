@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, RefreshCw } from "lucide-react";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { Panel } from "@/components/hall/HallControls";
 import { ActionButton } from "@/components/hall/setup/ui";
@@ -888,18 +889,15 @@ function SettingsSection() {
               메일 드라이버
               <span className="font-normal text-white/40">{sourceText(s.sources.mailDriver)}</span>
             </span>
-            <select
+            <Select
               value={form.mailDriver ?? s.mailDriver}
-              onChange={(e) => setForm({ ...form, mailDriver: e.target.value })}
-              className={cn(field, "appearance-auto")}
-            >
-              <option value="mock" className="bg-[#1a1a1d]">
-                mock — 가짜 (시험용)
-              </option>
-              <option value="cloudflare" className="bg-[#1a1a1d]">
-                cloudflare — 진짜 Email Routing
-              </option>
-            </select>
+              onChange={(mailDriver) => setForm({ ...form, mailDriver })}
+              options={[
+                { value: "mock", label: "mock — 가짜 (시험용)" },
+                { value: "cloudflare", label: "cloudflare — 진짜 Email Routing" },
+              ]}
+              className={field}
+            />
             <span className="font-pretendard text-[12.5px] text-white/45">Email Routing 을 켠 뒤에 cloudflare 로 바꿔요</span>
           </label>
         </div>

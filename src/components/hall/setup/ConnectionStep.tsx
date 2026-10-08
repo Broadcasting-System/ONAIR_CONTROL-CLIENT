@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PlugZap, Radar, RefreshCw, RotateCcw, Save } from "lucide-react";
+import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { Notice } from "@/components/hall/HallControls";
 import { hallApi } from "@/lib/hallApi";
@@ -301,21 +302,14 @@ export default function ConnectionStep({
               <div className="flex flex-wrap items-end gap-3">
                 <Field label="MIDI 포트 (노트북에 꽂힌 것)" className="min-w-[280px] flex-1">
                   <div className="flex gap-2">
-                    <select
+                    <Select
                       value={port}
-                      onChange={(e) => setPort(e.target.value)}
+                      onChange={setPort}
                       disabled={!ports || ports.out.length === 0}
-                      className={cn(inputCls, okBorder, "flex-1 cursor-pointer")}
-                    >
-                      <option value="">
-                        {!ports ? "'불러오기'를 누르세요" : ports.out.length ? "포트 고르기" : "꽂힌 USB-MIDI 가 없어요"}
-                      </option>
-                      {ports?.out.map((p) => (
-                        <option key={p} value={p}>
-                          {p}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder={!ports ? "'불러오기'를 누르세요" : ports.out.length ? "포트 고르기" : "꽂힌 USB-MIDI 가 없어요"}
+                      options={(ports?.out ?? []).map((p) => ({ value: p, label: p }))}
+                      className={cn(inputCls, okBorder, "flex-1")}
+                    />
                     <ActionButton icon={<RefreshCw size={14} />} busy={portsBusy} onClick={loadPorts} disabled={urlBad}>
                       불러오기
                     </ActionButton>

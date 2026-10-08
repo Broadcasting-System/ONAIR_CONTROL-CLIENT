@@ -3,6 +3,7 @@ import { Bell, Speaker, AudioFile } from "@/types/time";
 import { cn } from "@/lib/utils";
 import TextInput from "@/components/common/TextInput";
 import Button from "@/components/common/Button";
+import Select from "@/components/common/Select";
 
 /** 시보 음악을 기기 호스트와 무관하게 식별하기 위한 정규화.
  *  절대 URL(http://host:8000/api/files/stream/audio/x.mp3)이 기기마다 호스트가 달라
@@ -186,22 +187,17 @@ export default function BellEditor({
           <label className="text-white text-[15px] font-bold">
             시보 음악
           </label>
-          <select
+          <Select
             value={audioKey(audioFile)}
-            onChange={(e) => setAudioFile(e.target.value)}
-            className="h-[48px] w-full rounded-xl border border-white/5 bg-[#1C1C1C] px-4 text-md font-pretendard text-white focus:border-white/20 focus:outline-none transition-all appearance-none cursor-pointer"
-          >
-            <option value="" disabled>
-              음악을 선택해주세요
-            </option>
-            <option value="none">없음</option>
-            {audioFiles.map((file) => (
+            onChange={setAudioFile}
+            placeholder="음악을 선택해주세요"
+            options={[
+              { value: "none", label: "없음" },
               // value·저장값 모두 호스트 없는 경로로 통일 → 기기 간 동기화
-              <option key={file.id} value={audioKey(file.url)}>
-                {file.name}
-              </option>
-            ))}
-          </select>
+              ...audioFiles.map((file) => ({ value: audioKey(file.url), label: file.name })),
+            ]}
+            className="h-[48px] w-full rounded-xl border-white/5 bg-[#1C1C1C] px-4 text-md focus:border-white/20"
+          />
         </div>
       </div>
 

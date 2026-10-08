@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { OnSwitch } from "@/components/hall/AutoAudio";
 import { chatApi } from "@/lib/chatApi";
 import { cn } from "@/lib/utils";
+import Select from "@/components/common/Select";
 import type { ChatSettingsUpdate, ChatStatus, ChatTestResult } from "@/types/chat";
 
 const MODEL_LABEL: Record<string, string> = {
@@ -137,17 +138,16 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
       </Row>
 
       <Row label="모델">
-        <select value={model} onChange={(e) => setModel(e.target.value)} className={cn(field, "appearance-auto")}>
-          {(s.models?.length ? s.models : [s.model]).map((m) => {
+        <Select
+          value={model}
+          onChange={setModel}
+          options={(s.models?.length ? s.models : [s.model]).map((m) => {
             const id = typeof m === "string" ? m : m.id;
             const label = typeof m === "string" ? undefined : m.label;
-            return (
-              <option key={id} value={id} className="bg-[#1a1a1d]">
-                {label ?? MODEL_LABEL[id] ?? id}
-              </option>
-            );
+            return { value: id, label: label ?? MODEL_LABEL[id] ?? id };
           })}
-        </select>
+          className={field}
+        />
       </Row>
 
       <div className="flex items-center justify-between gap-3">

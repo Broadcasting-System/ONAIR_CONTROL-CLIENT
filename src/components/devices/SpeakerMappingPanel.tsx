@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RadioTower } from "lucide-react";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import LearnWizard from "@/components/devices/LearnWizard";
+import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { SPEAKER_MATRIX_KEY } from "@/hooks/useSpeakerMatrix";
 import { speakerApi, type SpeakerMatrix } from "@/lib/speakerApi";
@@ -367,13 +368,12 @@ function ConnectionCard() {
       </div>
       <label className="flex flex-col gap-1">
         <span className="font-mbc text-xs text-white/40">드라이버</span>
-        <select value={form.driver} onChange={(e) => setForm({ ...form, driver: e.target.value })} className={cn(field, "font-pretendard")}>
-          {data.drivers.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
+        <Select
+          value={form.driver}
+          onChange={(driver) => setForm({ ...form, driver })}
+          options={data.drivers.map((d) => ({ value: d, label: d }))}
+          className={field}
+        />
       </label>
       <label className="flex flex-col gap-1">
         <span className="font-mbc text-xs text-white/40">주소</span>
@@ -434,18 +434,13 @@ function BackupRestore({ onRestored }: { onRestored: (m: SpeakerMatrix) => void 
     <div className="flex flex-col gap-1">
       <span className="font-mbc text-xs text-white/40">저장 이력</span>
       <div className="flex gap-2">
-        <select
+        <Select
           value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="h-10 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white focus:outline-none"
-        >
-          <option value="">백업 선택</option>
-          {backups.map((b) => (
-            <option key={b.name} value={b.name}>
-              {new Date(b.savedAt * 1000).toLocaleString("ko-KR")}
-            </option>
-          ))}
-        </select>
+          onChange={setName}
+          placeholder="백업 선택"
+          aria-label="백업 선택"
+          options={backups.map((b) => ({ value: b.name, label: new Date(b.savedAt * 1000).toLocaleString("ko-KR") }))}
+        />
         <PanelButton onClick={() => setConfirm(true)} disabled={!name}>
           복원
         </PanelButton>

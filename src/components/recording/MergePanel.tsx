@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { duration, gb, when } from "@/components/recording/format";
 import { recordingApi } from "@/lib/recordingApi";
@@ -203,37 +204,33 @@ export default function MergePanel({
               }}
             />
             {videos.length > 0 && (
-              <select
+              <Select
                 value=""
-                onChange={(e) => e.target.value && setVideoId(e.target.value)}
-                className="h-10 rounded-xl border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white/70 focus:outline-none"
-              >
-                <option value="">전에 올린 영상에서 고르기…</option>
-                {videos.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name} · {duration(v.duration)} · {when(v.uploadedAt)}
-                  </option>
-                ))}
-              </select>
+                onChange={(id) => id && setVideoId(id)}
+                placeholder="전에 올린 영상에서 고르기…"
+                options={videos.map((v) => ({
+                  value: v.id,
+                  label: `${v.name} · ${duration(v.duration)} · ${when(v.uploadedAt)}`,
+                }))}
+                className="rounded-xl"
+              />
             )}
           </div>
         )}
       </Step>
 
       <Step n={2} done={!!recording} title="녹음 고르기">
-        <select
+        <Select
           value={recording?.id ?? ""}
-          onChange={(e) => onRecording(e.target.value)}
-          disabled={running}
-          className="h-10 w-full rounded-xl border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white focus:outline-none"
-        >
-          <option value="">{ready.length ? "녹음을 골라 주세요" : "서버에 있는 녹음이 없어요"}</option>
-          {ready.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.label || "이름 없는 녹음"} · {r.hallName} · {when(r.startedAt)} · {duration(r.duration)}
-            </option>
-          ))}
-        </select>
+          onChange={onRecording}
+          disabled={running || !ready.length}
+          placeholder={ready.length ? "녹음을 골라 주세요" : "서버에 있는 녹음이 없어요"}
+          options={ready.map((r) => ({
+            value: r.id,
+            label: `${r.label || "이름 없는 녹음"} · ${r.hallName} · ${when(r.startedAt)} · ${duration(r.duration)}`,
+          }))}
+          className="w-full rounded-xl"
+        />
       </Step>
 
       <Step n={3} done={false} title="소리 고르기">

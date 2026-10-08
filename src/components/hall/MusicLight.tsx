@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Notice, Panel } from "@/components/hall/HallControls";
 import { OnSwitch } from "@/components/hall/AutoAudio";
+import Select from "@/components/common/Select";
 import { lightColor } from "@/components/hall/LightStrip";
 import { useMusicLight, useMusicShow } from "@/hooks/useMusicLight";
 import { musicLightApi } from "@/lib/autoAudioApi";
@@ -766,33 +767,23 @@ export default function MusicLightPanel({
               {state.scenes.length > 0 && (
                 <>
                   <span className="ml-3">시작 장면</span>
-                  <select
+                  <Select
                     value={summary.options.startScene ?? ""}
                     disabled={!operable || !!playing}
-                    onChange={(e) => update(summary.id, { options: { startScene: e.target.value } })}
-                    className="h-8 rounded-lg border border-white/10 bg-[#141414] px-2 text-sm text-white"
-                  >
-                    <option value="">없음</option>
-                    {state.scenes.map((sc) => (
-                      <option key={sc.id} value={sc.id}>
-                        {sc.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(id) => update(summary.id, { options: { startScene: id } })}
+                    aria-label="시작 장면"
+                    options={[{ value: "", label: "없음" }, ...state.scenes.map((sc) => ({ value: sc.id, label: sc.name }))]}
+                    className="h-8 px-2"
+                  />
                   <span>끝 장면</span>
-                  <select
+                  <Select
                     value={summary.options.endScene ?? ""}
                     disabled={!operable || !!playing}
-                    onChange={(e) => update(summary.id, { options: { endScene: e.target.value } })}
-                    className="h-8 rounded-lg border border-white/10 bg-[#141414] px-2 text-sm text-white"
-                  >
-                    <option value="">천천히 끄기</option>
-                    {state.scenes.map((sc) => (
-                      <option key={sc.id} value={sc.id}>
-                        {sc.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(id) => update(summary.id, { options: { endScene: id } })}
+                    aria-label="끝 장면"
+                    options={[{ value: "", label: "천천히 끄기" }, ...state.scenes.map((sc) => ({ value: sc.id, label: sc.name }))]}
+                    className="h-8 px-2"
+                  />
                 </>
               )}
               <button
