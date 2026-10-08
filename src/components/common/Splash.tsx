@@ -164,16 +164,16 @@ export default function Splash() {
     };
 
     const logo = (t: number, start: number) => {
-      const p = seg(t, start, start + 0.6);
+      const p = seg(t, start, start + 0.4);
       if (p <= 0) return;
       const fs = Math.round(Math.min(W * 0.11, 150));
       g.save();
       g.font = `500 ${fs}px ${family}`;
       g.textAlign = "center"; g.textBaseline = "middle";
-      if ("letterSpacing" in g) (g as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${fs * (0.12 + (1 - eOutCubic(p)) * 0.25)}px`;
-      g.shadowColor = "rgba(0,0,0,0.85)"; g.shadowBlur = 40;
+      const ls = fs * 0.08;
+      if ("letterSpacing" in g) (g as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${ls}px`;
       g.fillStyle = `rgba(255,255,255,${eOutCubic(p)})`;
-      g.fillText("ONAIR", W / 2, H / 2);
+      g.fillText("ONAIR", W / 2 + ls / 2, H / 2);  // 마지막 글자 뒤 간격만큼 왼쪽으로 쏠리는 것 보정
       g.restore();
     };
 
