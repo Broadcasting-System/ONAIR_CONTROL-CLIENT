@@ -8,6 +8,33 @@ import { useEffect } from "react";
 import { ToastHost } from "@/components/common/Toast";
 import { ROLE_DOT } from "@/components/devices/roleStyle";
 import { useMe } from "@/hooks/useMe";
+import ChatPanel, { useChatShortcutLabel } from "@/components/chat/ChatPanel";
+import { useChatPanel } from "@/stores/chatStore";
+
+/** 사이드바 아래 — ONAIR 도우미 열고 닫기 (Cmd/Ctrl + K) */
+function ChatToggle() {
+  const open = useChatPanel((s) => s.open);
+  const toggle = useChatPanel((s) => s.toggle);
+  const shortcut = useChatShortcutLabel();
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-pressed={open}
+      title={`ONAIR 도우미 (${shortcut})`}
+      className={cn(
+        "mb-2 flex w-full items-center gap-2 rounded-lg border px-4 py-3 text-left transition-colors",
+        open
+          ? "border-sidebar-border bg-white/5 text-white"
+          : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/5 hover:text-white",
+      )}
+    >
+      <span className={cn("h-2 w-2 shrink-0 rounded-full", open ? "bg-[#FF3B3B]" : "bg-white/25")} />
+      <span className="flex-1 font-mbc text-[14px]">ONAIR 도우미</span>
+      <span className="font-orbitron text-[10px] tracking-widest text-white/30">{shortcut}</span>
+    </button>
+  );
+}
 
 export default function DashboardLayout({
   children,
@@ -16,7 +43,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { me, role, isAdmin } = useMe();
+  const { me, role, isAdmin, canOperate } = useMe();
 
   // 초대받은 기기인데 아직 등록 전이거나 승인 대기면 첫 화면(등록·승인 대기)으로
   const needsWelcome = !!me && (me.status === "pending" || (me.status === "unregistered" && me.canRegister));
@@ -84,6 +111,7 @@ export default function DashboardLayout({
 
         {/* 현재 기기 역할 배지 */}
         <div className="mt-auto mb-6 shrink-0 pr-[10px] pt-4">
+          {canOperate && <ChatToggle />}
           <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3">
             <span className={cn("h-2 w-2 shrink-0 rounded-full", ROLE_DOT[role])} />
             <div className="min-w-0">
@@ -103,6 +131,8 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
+
+      <ChatPanel />
 
       <ToastHost />
     </div>
