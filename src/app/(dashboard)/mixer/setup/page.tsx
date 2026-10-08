@@ -66,7 +66,7 @@ export default function MixerSetupPage() {
 
   const switchHall = (id: string) => {
     if (dirty) {
-      toast.error("저장하거나 되돌린 뒤 공간을 바꿀 수 있어요.");
+      toast.error("저장 안 한 변경이 있어요");
       return;
     }
     setHallId(id);
@@ -94,7 +94,7 @@ export default function MixerSetupPage() {
         setDraft(d);
         setBase(serialize(d));
       }
-      toast.success("믹서 구성을 저장했습니다. 이제 시험 버튼으로 확인하세요.");
+      toast.success("믹서 구성을 저장했습니다.");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -106,7 +106,7 @@ export default function MixerSetupPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>믹서 현장 세팅</SectionHeader>
-        <Notice tone="info">설정된 오디오 믹서가 없습니다. 서버의 config/halls.json 에 공간을 추가하세요.</Notice>
+        <Notice tone="info">오디오 믹서 없음</Notice>
       </div>
     );
   }
@@ -129,19 +129,19 @@ export default function MixerSetupPage() {
     {
       key: "channels",
       title: "채널",
-      sub: draft ? (hiqnet ? `${draft.channels.length}개 · 주소 ${channelsWithAddr}` : `${draft.channels.length}개`) : "-",
+      sub: draft ? (hiqnet ? `${draft.channels.length}개 · 주소 ${channelsWithAddr}` : `${draft.channels.length}개`) : "",
       done: !!draft && hiqnet && draft.channels.length > 0 && channelsWithAddr === draft.channels.length,
     },
     {
       key: "scenes",
       title: "씬",
-      sub: draft ? `${draft.scenes.length}개` : "-",
+      sub: draft ? `${draft.scenes.length}개` : "",
       done: !!draft && draft.scenes.length > 0,
     },
     {
       key: "mode",
       title: "조작 범위",
-      sub: draft ? (draft.mode === "scenes" ? "씬 전환만" : "채널 조작") : "-",
+      sub: draft ? (draft.mode === "scenes" ? "씬 전환만" : "채널 조작") : "",
       done: !!draft,
     },
   ];
@@ -161,15 +161,15 @@ export default function MixerSetupPage() {
         <div className="ml-auto flex items-center gap-2.5">
           <StatusChip
             tone={connected ? "good" : "off"}
-            label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "-"} ${connected ? "online" : "offline"}`}
+            label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "믹서"} ${connected ? "online" : "offline"}`}
           />
         </div>
       </header>
 
-      {!isAdmin && <Notice>관리자 기기에서만 세팅을 바꿀 수 있어요. 지금은 보기만 됩니다.</Notice>}
+      {!isAdmin && <Notice>보기 전용</Notice>}
       {error && <Notice>{error.message}</Notice>}
       {state && !connected && state.connection.driver !== "mock" && (
-        <Notice>믹서에 연결되지 않았어요 — {state.detail}</Notice>
+        <Notice>믹서 연결 안 됨 · {state.detail}</Notice>
       )}
 
       {/* 단계 */}

@@ -70,25 +70,17 @@ function DisabledState({ status }: { status: ChatStatus }) {
   const reason = status.reason ?? "";
   const title =
     reason === "no_key" || (!status.keySet && !reason)
-      ? "Claude API 키를 넣으면 켜져요"
+      ? "API 키가 없어요"
       : reason === "disabled"
         ? "CUE가 꺼져 있어요"
         : reason.includes("limit")
-          ? "오늘 쓸 수 있는 만큼 다 썼어요"
+          ? "오늘 한도를 다 썼어요"
           : "지금은 CUE를 쓸 수 없어요";
-  const body = status.canConfigure
-    ? reason === "disabled"
-      ? "아래에서 [CUE 켜기]를 켜고 저장하면 바로 쓸 수 있어요."
-      : "아래에 키를 넣고 저장하면 바로 쓸 수 있어요."
-    : reason.includes("limit")
-      ? "내일 다시 써 주세요. 급하면 최고 관리자에게 한도를 늘려 달라고 해 주세요."
-      : "최고 관리자에게 켜 달라고 말해 주세요.";
 
   return (
     <div className="flex flex-col gap-5 px-5 py-6">
       <div>
         <p className="font-pretendard text-[17px] font-semibold text-white">{title}</p>
-        <p className="mt-1.5 font-pretendard text-[14px] leading-relaxed text-white/60">{body}</p>
         {reason && !["no_key", "disabled"].includes(reason) && !reason.includes("limit") && (
           <p className="mt-1 font-mono text-[12px] text-white/30">{reason}</p>
         )}
@@ -123,12 +115,12 @@ function HistoryView({
   if (list.isError)
     return (
       <p className="px-5 py-6 font-pretendard text-[14px] text-white/60">
-        대화 목록을 불러오지 못했어요. {list.error instanceof Error ? list.error.message : ""}
+        대화 목록을 불러오지 못했어요 {list.error instanceof Error ? list.error.message : ""}
       </p>
     );
   const items = list.data ?? [];
   if (!items.length)
-    return <p className="px-5 py-6 font-pretendard text-[14px] text-white/50">아직 나눈 대화가 없어요.</p>;
+    return <p className="px-5 py-6 font-pretendard text-[14px] text-white/50">대화가 없어요</p>;
 
   return (
     <ul className="flex flex-col gap-1 px-3 py-3">
@@ -326,10 +318,7 @@ export default function ChatPanel() {
             <ChevronLeft size={18} /> 대화로
           </button>
         ) : (
-          <div className="min-w-0">
-            <p className="font-mbc text-lg leading-none text-white">CUE</p>
-            <p className="mt-1 font-orbitron text-[10px] uppercase tracking-widest text-white/30">Assistant</p>
-          </div>
+          <p className="min-w-0 font-mbc text-lg leading-none text-white">CUE</p>
         )}
         <div className="ml-auto flex items-center gap-0.5">
           {enabled && (
@@ -362,7 +351,7 @@ export default function ChatPanel() {
               <Settings size={18} />
             </IconButton>
           )}
-          <IconButton label="닫기 (Esc)" onClick={() => setOpen(false)}>
+          <IconButton label="닫기" onClick={() => setOpen(false)}>
             <X size={19} />
           </IconButton>
         </div>
@@ -398,9 +387,6 @@ export default function ChatPanel() {
         ) : !st ? (
           <div className="flex flex-col items-start gap-3 px-5 py-6">
             <p className="font-pretendard text-[16px] font-semibold text-white">CUE에 연결하지 못했어요</p>
-            <p className="font-pretendard text-[14px] leading-relaxed text-white/60">
-              서버가 꺼져 있거나 아직 CUE가 없는 버전이에요.
-            </p>
             <button
               type="button"
               onClick={() => status.refetch()}
@@ -438,7 +424,7 @@ export default function ChatPanel() {
 
       {dragging && (
         <div className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-white/40 bg-black/70">
-          <p className="font-pretendard text-[16px] text-white">여기에 놓으면 올라가요</p>
+          <p className="font-pretendard text-[16px] text-white">여기에 놓기</p>
         </div>
       )}
     </aside>

@@ -157,7 +157,7 @@ export default function ConnectionStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="어떻게 연결하나요?">
+      <Card title="연결 방식">
         <div className="grid grid-cols-3 gap-3">
           <OptionCard
             selected={isHiqnet}
@@ -218,7 +218,6 @@ export default function ConnectionStep({
               busy={finding}
               onClick={find}
               disabled={viaBridge && urlBad}
-              title={viaBridge && urlBad ? "아래에 노트북 주소를 먼저 넣어 주세요" : undefined}
             >
               콘솔 찾기
             </ActionButton>
@@ -274,7 +273,7 @@ export default function ConnectionStep({
             need={viaBridge ? "hiqnet-relay" : "midi-ports"}
           />
           {!saved.tokenConfigured && (
-            <Notice>서버가 브릿지 토큰을 만들지 못했어요. 서버 data 폴더에 쓸 수 있는지 확인하고 서버를 다시 켜세요.</Notice>
+            <Notice>브릿지 토큰을 만들지 못했어요</Notice>
           )}
         </Card>
       )}
@@ -284,16 +283,16 @@ export default function ConnectionStep({
           title="씬 전환 (MIDI)"
           action={isHiqnet ? <Switch checked={conn.midi.enabled} onChange={(v) => setMidi({ enabled: v })} label="사용" /> : undefined}
         >
-          {midiOn ? (
+          {midiOn && (
             <>
               <div className="flex flex-wrap items-end gap-3">
-                <Field label="MIDI 포트 (노트북에 꽂힌 것)" className="min-w-[280px] flex-1">
+                <Field label="MIDI 포트" className="min-w-[280px] flex-1">
                   <div className="flex gap-2">
                     <Select
                       value={port}
                       onChange={setPort}
                       disabled={!ports || ports.out.length === 0}
-                      placeholder={!ports ? "'불러오기'를 누르세요" : ports.out.length ? "포트 고르기" : "꽂힌 USB-MIDI 가 없어요"}
+                      placeholder={ports && ports.out.length === 0 ? "USB-MIDI 없음" : "포트 고르기"}
                       options={(ports?.out ?? []).map((p) => ({ value: p, label: p }))}
                       className={cn(inputCls, okBorder, "flex-1")}
                     />
@@ -319,13 +318,9 @@ export default function ConnectionStep({
               <Switch
                 checked={conn.midi.oneBased}
                 onChange={(v) => setMidi({ oneBased: v })}
-                label="콘솔 화면의 씬 번호가 1부터 시작 (Si 기본)"
+                label="씬 번호 1부터 시작"
               />
             </>
-          ) : (
-            <p className="font-pretendard text-sm text-white/40">
-              USB-MIDI 를 꽂은 뒤 켜세요. 그 전에는 채널 조작만 됩니다.
-            </p>
           )}
         </Card>
       )}
@@ -371,10 +366,7 @@ function FoundList({
   if (found.consoles.length === 0) {
     return (
       <Notice>
-        {where}에서 콘솔을 찾지 못했어요. 콘솔 전원과 랜선을 확인하고 다시 찾아보세요.
-        {found.via === "server"
-          ? " 서버에서 안 보이면 '강당 노트북 거쳐서'로 바꿔서 찾아보세요."
-          : " 노트북 이더넷에 콘솔 랜선이 꽂혀 있는지 확인하세요."}
+        {where}에서 콘솔을 찾지 못했어요
       </Notice>
     );
   }
@@ -403,12 +395,9 @@ function FoundList({
             <ActionButton className="ml-auto" onClick={() => onPick(c)} disabled={inUse}>
               {inUse ? "사용 중" : "이 콘솔 쓰기"}
             </ActionButton>
-            {c.sameSubnet === false && (
+            {c.sameSubnet === false && found.via === "bridge" && suggestAddress(c.ip) && (
               <p className="w-full font-pretendard text-xs text-amber-200/85">
-                →{" "}
-                {found.via === "bridge"
-                  ? `노트북 이더넷을 ${suggestAddress(c.ip) ?? "콘솔과 같은 대역"} / ${c.mask || "255.255.255.0"} 으로 바꾸세요 (윈도우 설정 › 네트워크 › 이더넷 › IP 할당 편집).`
-                  : "서버가 콘솔과 다른 대역이라 연결이 안 될 수 있어요. '강당 노트북 거쳐서'를 쓰세요."}
+                노트북 IP {suggestAddress(c.ip)} · {c.mask || "255.255.255.0"}
               </p>
             )}
           </div>

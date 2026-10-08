@@ -61,7 +61,7 @@ function mock(cmd: string, args?: Record<string, unknown>): unknown {
       return null;
     case "parse_link": {
       const link = String(args?.link ?? "");
-      if (!link.startsWith("onair:")) throw "링크에 등록 정보(d=…)가 없어요.";
+      if (!link.startsWith("onair:")) throw "링크에 등록 정보가 없어요.";
       return { server: "https://onair.bssmcast.com", clientId: "x", clientIdHint: "8f2c….access", api: null, invite: "K3-7Q9", exp: Date.now() / 1000 + 7 * 86400 };
     }
     case "verify_and_save":

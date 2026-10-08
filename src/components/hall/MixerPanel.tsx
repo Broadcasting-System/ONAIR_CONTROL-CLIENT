@@ -57,7 +57,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
           {isAdmin && <ConfigButton label="현장 세팅" onClick={() => router.push("/mixer/setup")} />}
           <StatusChip
             tone={connected ? "good" : "off"}
-            label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "-"} ${connected ? "online" : "offline"}`}
+            label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "믹서"} ${connected ? "online" : "offline"}`}
           />
           <StatusChip
             tone={channelMode ? "good" : connected ? "warn" : "off"}
@@ -68,8 +68,8 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
       </header>
 
       {error && <Notice>{error.message}</Notice>}
-      {state && !connected && <Notice>믹서에 연결되지 않았습니다 — {state.detail}</Notice>}
-      {!canOperate && <Notice tone="info">보기 전용 기기입니다. 조작은 운영 권한이 있는 기기에서 가능합니다.</Notice>}
+      {state && !connected && <Notice>믹서 연결 안 됨 · {state.detail}</Notice>}
+      {!canOperate && <Notice tone="info">보기 전용</Notice>}
 
       <Panel title="씬">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3.5">
@@ -81,7 +81,6 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
                 type="button"
                 disabled={!operable || !connected || isRecalling}
                 onClick={() => pressScene(scene)}
-                title={scene.confirm ? "누르면 한 번 더 확인합니다" : undefined}
                 className={cn(
                   "flex h-[100px] flex-col justify-between rounded-2xl border px-4 py-3.5 text-left transition-all disabled:cursor-not-allowed",
                   active
@@ -122,11 +121,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
         </Panel>
       )}
 
-      {scenesOnly ? (
-        <Notice tone="info">
-          이 믹서는 <b>씬 전환만</b> 쓰도록 설정되어 있어요. 채널 음량·뮤트는 콘솔에서 직접 조작하세요.
-        </Notice>
-      ) : (
+      {!scenesOnly && (
         <Panel
           title="채널"
           className="flex min-h-[520px] flex-1 flex-col"
@@ -197,8 +192,8 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
               <div className="absolute inset-0 flex items-center justify-center">
                 <p className="rounded-xl bg-black/70 px-6 py-4 text-center font-pretendard text-sm text-white/70">
                   {connected
-                    ? "현재 연결 방식은 씬 전환만 지원합니다. 채널 조작은 HiQnet 연결 시 사용할 수 있습니다."
-                    : "믹서가 연결되면 채널을 조작할 수 있습니다."}
+                    ? "씬 전환만 지원"
+                    : "믹서 연결 안 됨"}
                 </p>
               </div>
             )}
@@ -215,7 +210,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
         title="씬을 바꿀까요?"
         message={
           pendingScene
-            ? `${state?.hall.name ?? "믹서"} 콘솔 전체가 '${pendingScene.name}' 씬으로 바뀝니다.\n진행 중인 행사가 있으면 소리가 바로 달라집니다.`
+            ? `${state?.hall.name ?? "믹서"} 콘솔 전체가 '${pendingScene.name}' 씬으로 바뀌어요`
             : ""
         }
         confirmText="씬 전환"

@@ -39,7 +39,7 @@ export default function MatrixSetupPage() {
 
   const switchHall = (id: string) => {
     if (dirty) {
-      toast.error("저장하거나 되돌린 뒤 공간을 바꿀 수 있어요.");
+      toast.error("저장 안 한 변경이 있어요");
       return;
     }
     setHallId(id);
@@ -49,7 +49,7 @@ export default function MatrixSetupPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>매트릭스 현장 세팅</SectionHeader>
-        <Notice tone="info">설정된 영상 매트릭스가 없습니다. 서버의 config/halls.json 에 공간을 추가하세요.</Notice>
+        <Notice tone="info">영상 매트릭스 없음</Notice>
       </div>
     );
   }
@@ -72,15 +72,15 @@ export default function MatrixSetupPage() {
         <div className="ml-auto flex items-center gap-2.5">
           <StatusChip
             tone={connected ? "good" : "off"}
-            label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "-"} ${connected ? "online" : "offline"}`}
+            label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "매트릭스"} ${connected ? "online" : "offline"}`}
           />
         </div>
       </header>
 
-      {!isAdmin && <Notice>관리자 기기에서만 세팅을 바꿀 수 있어요. 지금은 보기만 됩니다.</Notice>}
+      {!isAdmin && <Notice>보기 전용</Notice>}
       {error && <Notice>{error.message}</Notice>}
       {state && !connected && state.connection.driver !== "mock" && (
-        <Notice>영상 매트릭스에 연결되지 않았어요 — {state.detail}</Notice>
+        <Notice>영상 매트릭스 연결 안 됨 · {state.detail}</Notice>
       )}
 
       {!state || !current ? (

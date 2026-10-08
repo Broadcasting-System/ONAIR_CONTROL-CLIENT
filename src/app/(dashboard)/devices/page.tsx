@@ -36,7 +36,7 @@ const DEVICE_TAB_KEYS = ["members", "cloudflare", "devices", "speakers", "bridge
 const DEVICE_TABS = [
   { key: "members" as const, label: "부원" },
   { key: "cloudflare" as const, label: "Cloudflare" },
-  { key: "devices" as const, label: "기기(IP)" },
+  { key: "devices" as const, label: "기기" },
   { key: "speakers" as const, label: "스피커 매핑" },
   { key: "bridges" as const, label: "강당 장비" },
   { key: "logs" as const, label: "접근 로그" },
@@ -83,7 +83,7 @@ export default function DevicesPage() {
         toast.success("기기 설정을 저장했습니다.");
         fetchDevices();
       } catch {
-        toast.error("저장 실패 (권한 또는 네트워크).");
+        toast.error("저장하지 못했어요");
       }
     },
     [fetchDevices],
@@ -111,7 +111,7 @@ export default function DevicesPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>관리</SectionHeader>
-        <p className="font-pretendard text-white/40">부장 이상만 볼 수 있습니다.</p>
+        <p className="font-pretendard text-white/40">권한 없음</p>
       </div>
     );
   }
@@ -141,7 +141,7 @@ export default function DevicesPage() {
           <p className="font-mbc text-sm text-white/50">
             내 기기 IP{" "}
             <span className="font-orbitron text-white/80">{me.ip}</span>
-            <span className="ml-2 text-white/30">({me.roleLabel})</span>
+            <span className="ml-2 text-white/30">{me.roleLabel}</span>
           </p>
         </div>
       )}
@@ -185,7 +185,7 @@ export default function DevicesPage() {
             {devices.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-8 text-center text-white/30">
-                  등록된 기기가 없습니다. 위에서 IP로 추가하세요.
+                  등록된 기기가 없어요
                 </td>
               </tr>
             ) : (
@@ -202,7 +202,7 @@ export default function DevicesPage() {
                       onBlur={(e) => {
                         if (e.target.value !== d.label) save(d.ip, { label: e.target.value });
                       }}
-                      placeholder="(이름)"
+                      placeholder="이름"
                       className="h-9 w-40 rounded-lg border border-white/10 bg-[#141414] px-3 text-white/80 focus:border-white/30 focus:outline-none"
                     />
                   </td>

@@ -5,7 +5,7 @@ fn esc(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
 
-fn page(title: &str, lead: &str, detail: &str, primary: (&str, &str)) -> String {
+fn page(title: &str, detail: &str, primary: (&str, &str)) -> String {
     format!(
         r#"<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ONAIR</title>
@@ -26,13 +26,12 @@ background:linear-gradient(180deg,#1d1d21,#131316);color:rgba(255,255,255,.85);f
 button.primary{{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 22px rgba(255,59,59,.4)}}
 </style></head><body><div class="card">
 <div class="logo">ON<em>AIR</em></div>
-<h1>{title}</h1><p>{lead}</p>{detail}
+<h1>{title}</h1>{detail}
 <div class="row">
 <button class="primary" onclick="{action}">{label}</button>
 <button onclick="fetch('/__onair/action/settings',{{method:'POST'}})">설정 열기</button>
 </div></div></body></html>"#,
         title = title,
-        lead = lead,
         detail = detail,
         action = primary.0,
         label = primary.1,
@@ -42,7 +41,6 @@ button.primary{{background:var(--red);border-color:var(--red);color:#fff;box-sha
 pub fn unreachable(server: &str, err: &str) -> String {
     page(
         "서버에 연결할 수 없어요",
-        "",
         &format!("<code>{}<br>{}</code>", esc(server), esc(err)),
         ("location.reload()", "다시 시도"),
     )
@@ -51,7 +49,6 @@ pub fn unreachable(server: &str, err: &str) -> String {
 pub fn access_denied(server: &str) -> String {
     page(
         "접속 키가 거부됐어요",
-        "",
         &format!("<code>{}</code>", esc(server)),
         ("fetch('/__onair/action/setup',{method:'POST'})", "다시 등록하기"),
     )
@@ -60,7 +57,6 @@ pub fn access_denied(server: &str) -> String {
 pub fn not_configured() -> String {
     page(
         "아직 등록하지 않았어요",
-        "",
         "",
         ("fetch('/__onair/action/setup',{method:'POST'})", "등록하기"),
     )

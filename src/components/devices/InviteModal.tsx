@@ -75,7 +75,7 @@ export default function InviteModal({
             </h2>
             <span
               className="ml-auto inline-flex h-[34px] items-center rounded-[10px] border border-red-400/50 bg-red-400/[0.12] px-3.5 font-mono text-[15px] font-bold tabular-nums text-white"
-              title="QR 을 쓸 수 있는 남은 시간"
+              title="QR 남은 시간"
             >
               {clock(invite.invite.expiresAt, now)}
             </span>
@@ -84,19 +84,9 @@ export default function InviteModal({
             </button>
           </div>
 
-          <p className="font-pretendard text-sm leading-relaxed text-white/60">
-            새 부원의 노트북에서 ONAIR 앱을 열고 이 QR 을 찍게 하세요. 직접 만나서 찍는 게 가장 안전해요. QR 은 24시간 동안 쓸 수
-            있어요.
-            {invite.invite.memberId && (
-              <span className="mt-1 block">이 QR 로 등록하면 방송부 명단의 그 기록(직함·소개)에 기기가 붙어요.</span>
-            )}
-          </p>
-
           <div className="flex flex-col gap-1.5 rounded-[14px] border border-white/[0.08] bg-[#0a0a0c] px-[18px] py-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]">
             <span className="font-pretendard text-[13px] font-semibold text-white/50">
-              {codeAlive
-                ? `못 만날 때 쓰는 코드 · ${codeLeft} 남음 · 1번만`
-                : "코드 시간이 지났어요 — QR 은 아직 쓸 수 있어요"}
+              {codeAlive ? `코드 · ${codeLeft} 남음` : "코드 만료"}
             </span>
             <b
               className={`font-mono text-[40px] font-bold leading-[1.1] tracking-[0.06em] ${codeAlive ? "text-white" : "text-white/25 line-through"}`}
@@ -105,16 +95,9 @@ export default function InviteModal({
             </b>
           </div>
 
-          <p className="font-pretendard text-[13px] leading-relaxed text-white/50">
-            이 창을 닫으면 QR 과 코드는 다시 볼 수 없어요. 필요하면 새로 초대하세요.
-            {!invite.cloudflare && (
-              <span className="mt-1 block text-xs text-white/45">
-                Cloudflare 가 아직 꺼져 있어 학교 안(Tailscale)에서만 쓸 수 있는 개발용 토큰입니다.
-              </span>
-            )}
-          </p>
-          <p className="-mt-2 truncate font-mono text-[11px] text-white/30" title={invite.server}>
+          <p className="truncate font-mono text-[11px] text-white/30" title={invite.server}>
             서버 {invite.server}
+            {!invite.cloudflare && " · 개발용 토큰"}
           </p>
 
           <div className="flex justify-end gap-2">

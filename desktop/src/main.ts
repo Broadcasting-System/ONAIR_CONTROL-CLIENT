@@ -52,12 +52,12 @@ async function renderSetup() {
       <div class="tuner">
         <div class="tuner-status">
           <span class="k">이 컴퓨터 · ${esc(os)}</span>
-          <span class="v"><span class="v-idle">${reenter ? "접속 키를 다시 넣어 주세요" : "등록 키를 기다려요"}</span><span class="v-busy">키 확인 중…</span></span>
+          <span class="v"><span class="v-idle">${reenter ? "키 재등록" : "등록 대기"}</span><span class="v-busy">키 확인 중…</span></span>
         </div>
         <div class="scale" aria-hidden="true">${ticks}<b class="needle"></b></div>
         <ol class="marks"><li id="st2" class="on">키 연결</li><li id="st3">프로필</li><li>승인</li><li>ON AIR</li></ol>
       </div>
-      ${reenter ? `<div class="muted">지금 서버 <span class="selectable mono">${esc(state.server)}</span></div>` : ""}
+      ${reenter ? `<div class="muted">서버 <span class="selectable mono">${esc(state.server)}</span></div>` : ""}
       ${notice ? `<div class="notice ${notice[0]}">${esc(notice[1])}</div>` : ""}
       ${state.storeError ? `<div class="notice red">${esc(state.storeError)}</div>` : ""}
 
@@ -76,7 +76,7 @@ async function renderSetup() {
 
         <div data-pane="qr" class="hidden">
           <label class="drop" id="drop" tabindex="0">
-            <div><b>QR 사진을 끌어다 놓기</b>또는 ${state.platform === "macos" ? "⌘V" : "Ctrl+V"} 로 캡처 붙여넣기 · <u>파일 고르기</u></div>
+            <div><b>QR 사진</b><u>파일 고르기</u></div>
             <input type="file" id="file" accept="image/*" class="hidden">
           </label>
           <div id="qrmsg" class="muted" style="margin-top:6px"></div>
@@ -85,11 +85,11 @@ async function renderSetup() {
         <div data-pane="manual" class="hidden">
           <label class="f" for="server">서버 주소</label>
           <input class="in" id="server" spellcheck="false" placeholder="https://onair.bssmcast.com" value="${esc(state.server ?? "")}">
-          <label class="f" for="cid">접속 키 ID <small>CF-Access-Client-Id</small></label>
+          <label class="f" for="cid">접속 키 ID</label>
           <input class="in" id="cid" spellcheck="false" autocomplete="off" placeholder="xxxx.access">
-          <label class="f" for="csec">비밀 키 <small>CF-Access-Client-Secret</small></label>
+          <label class="f" for="csec">비밀 키</label>
           <input class="in" id="csec" type="password" autocomplete="off" placeholder="••••••••">
-          <details><summary>고급 — API 주소 따로 쓰기</summary>
+          <details><summary>고급</summary>
             <label class="f" for="api">API 주소</label>
             <input class="in" id="api" spellcheck="false" placeholder="http://100.95.97.82:8000">
           </details>
@@ -133,7 +133,7 @@ async function renderSetup() {
         <dt>서버</dt><dd>${esc(parsed.server)}</dd>
         ${parsed.api ? `<dt>API</dt><dd>${esc(parsed.api)}</dd>` : ""}
         <dt>접속 키 ID</dt><dd>${esc(parsed.clientIdHint)}</dd>
-        <dt>비밀 키</dt><dd>●●●●●●●● (화면에 안 보임)</dd>
+        <dt>비밀 키</dt><dd>●●●●●●●●</dd>
         ${parsed.exp ? `<dt>유효 기간</dt><dd class="ok">${fmtDate(parsed.exp)}까지</dd>` : ""}
       </dl>`;
     } catch (e) {
@@ -147,7 +147,7 @@ async function renderSetup() {
     const msg = $("#qrmsg")!;
     msg.innerHTML = "QR 읽는 중…";
     const text = await decodeQrFromBlob(blob);
-    if (!text) return void (msg.innerHTML = `<span class="err">QR 을 찾지 못했어요. 더 크게·선명하게 캡처해 주세요.</span>`);
+    if (!text) return void (msg.innerHTML = `<span class="err">QR 을 찾지 못했어요.</span>`);
     if (!text.startsWith("onair:")) return void (msg.innerHTML = `<span class="err">ONAIR 등록 QR 이 아니에요.</span>`);
     msg.innerHTML = "";
     linkEl.value = text;
@@ -198,7 +198,7 @@ async function renderSetup() {
 
   async function submit(force: boolean) {
     if (tab !== "manual" && !linkEl.value.trim()) {
-      setStatus(`<span class="err">등록 링크를 먼저 넣어 주세요.</span>`);
+      setStatus(`<span class="err">등록 링크가 비어 있어요.</span>`);
       return;
     }
     goBtn.disabled = forceBtn.disabled = true;
@@ -208,7 +208,7 @@ async function renderSetup() {
     try {
       const r = await call<SaveResult>("verify_and_save", { input: input(force) });
       if (r.saved) {
-        setStatus(`<span class="ok">● ${esc(r.message)} 컨트롤 화면을 여는 중…</span>`);
+        setStatus(`<span class="ok">● ${esc(r.message)}</span>`);
         setTimeout(() => call("open_control").catch((e) => setStatus(`<span class="err">${esc(e)}</span>`)), 700);
         return;
       }
@@ -247,7 +247,7 @@ async function renderSettings() {
     </div>
     <div class="panel">
       <div class="setrow"><div class="k">서버 주소<small>SERVER</small></div>
-        <div class="v selectable">${s.server ? esc(s.server) : `<span class="muted">아직 없음</span>`}</div>
+        <div class="v selectable">${s.server ? esc(s.server) : `<span class="muted">없음</span>`}</div>
         <button class="btn small" id="copy" ${s.server ? "" : "disabled"}>복사</button></div>
       ${s.api && s.server && !s.api.startsWith(s.server) ? `<div class="setrow"><div class="k">API 주소<small>API</small></div><div class="v selectable">${esc(s.api)}</div><span></span></div>` : ""}
       <div class="setrow"><div class="k">접속 키<small>ACCESS TOKEN</small></div>
@@ -276,7 +276,7 @@ async function renderSettings() {
     m.className = "modal";
     m.innerHTML = `<div class="box" role="dialog" aria-modal="true">
       <h3>토큰을 지울까요?</h3>
-      <div class="muted">이 컴퓨터에 저장된 접속 키가 지워지고 등록 화면으로 돌아가요. 다시 쓰려면 관리자에게 새 등록 QR 을 받아야 해요.</div>
+      <div class="muted">되돌릴 수 없어요.</div>
       <div class="row" style="margin-top:18px;justify-content:flex-end">
         <button class="btn small" data-no>취소</button><button class="btn small primary" data-yes>지우기</button>
       </div></div>`;

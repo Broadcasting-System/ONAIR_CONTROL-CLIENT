@@ -49,7 +49,7 @@ function ChannelTable({ channels, halls }: { channels: AvChannel[]; halls: AvHal
               value={r.name}
               maxLength={20}
               onChange={(e) => set(i, { name: e.target.value })}
-              placeholder="이름 (예: 강당 프로젝터)"
+              placeholder="예: 강당 프로젝터"
               className={cn(inputCls, okBorder)}
             />
             <Select
@@ -101,11 +101,11 @@ function InfoRow({ k, v, ok }: { k: string; v: string; ok?: boolean }) {
 /** 서버 PC 화면 녹화기 — 드라이버·ffmpeg·크롬·인코더·fps */
 export function RecorderInfo({ recorder, onRecheck }: { recorder: ScreenRecorderStatus; onRecheck: () => void }) {
   const enc = recorder.encoder
-    ? `${recorder.encoder}${recorder.hardware ? " (그래픽 카드)" : " (CPU)"}`
-    : "—";
+    ? `${recorder.encoder} · ${recorder.hardware ? "그래픽 카드" : "CPU"}`
+    : "없음";
   return (
     <div className="flex flex-col">
-      <InfoRow k="녹화 방식" v={recorder.driver === "window" ? "서버 PC 창 녹화" : "모의 (시험 화면)"} />
+      <InfoRow k="녹화 방식" v={recorder.driver === "window" ? "서버 PC 창 녹화" : "모의"} />
       <InfoRow k="ffmpeg" v={recorder.ffmpeg ? "있음" : "없음"} ok={recorder.ffmpeg} />
       {recorder.chrome !== null && (
         <InfoRow k="브라우저" v={recorder.chrome ? recorder.browser || "있음" : "없음"} ok={!!recorder.chrome} />

@@ -56,15 +56,8 @@ export default function AutoAudioPanel({ hallId, lead }: { hallId: string | null
         <Notice key={w}>{w}</Notice>
       ))}
       {state && anyOn && !state.meter.ok && <Notice>{state.meter.detail}</Notice>}
-      {state?.meter.source === "demo" && (
-        <Notice>시연용 가짜 미터를 쓰고 있어요 — 실제 소리와 상관없이 페이더가 움직입니다.</Notice>
-      )}
       {state?.error && <Notice>{state.error}</Notice>}
-      {!canOperate && (
-        <Notice tone="info">
-          보기 전용 기기입니다. 켜고 끄기는 운영 권한이 있는 기기에서 가능합니다.
-        </Notice>
-      )}
+      {!canOperate && <Notice tone="info">보기 전용</Notice>}
 
       {isAdmin && showSettings && state && (
         <Panel title="미터·사람 우선">

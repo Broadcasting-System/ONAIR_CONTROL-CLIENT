@@ -37,8 +37,8 @@ const same = (a: Form, b: Form) => JSON.stringify(a) === JSON.stringify(b);
 /** 칩 이름으로 어느 장치인지 짐작 — ESP32 보드는 CP210x·CH340, USB-DMX 케이블은 FTDI */
 function portGuess(p: SerialPortInfo): string {
   const chip = (p.chip || "").toUpperCase();
-  if (chip.includes("CP210") || chip.includes("CH340")) return "조명 노드(ESP32) 같아요";
-  if (chip.includes("FTDI")) return "USB-DMX 케이블 같아요";
+  if (chip.includes("CP210") || chip.includes("CH340")) return "조명 노드";
+  if (chip.includes("FTDI")) return "USB-DMX";
   return "";
 }
 
@@ -115,8 +115,8 @@ export default function LightingConnectionStep({
         qc.invalidateQueries({ queryKey: ["halls"] }),
         qc.invalidateQueries({ queryKey: ["bridges"] }),
       ]);
-      if (res.warning) toast.error(`저장은 했지만 조명에 보내지 못했어요 — ${res.warning}`);
-      else toast.success(state.configured ? "조명 연결을 저장했습니다." : `${hallName}에 조명을 켰습니다. 이제 조명을 찾아 보세요.`);
+      if (res.warning) toast.error(`조명에 보내지 못했어요 · ${res.warning}`);
+      else toast.success(state.configured ? "조명 연결을 저장했습니다." : `${hallName}에 조명을 켰어요`);
       onSaved();
     } catch (e) {
       toast.error((e as Error).message);
@@ -130,13 +130,13 @@ export default function LightingConnectionStep({
     const list = ports ?? [];
     const extra = current && !list.some((p) => p.port === current) ? [current] : [];
     return [
-      { value: "", label: !ports ? "'불러오기'를 누르세요" : list.length ? "포트 고르기" : "꽂힌 장치가 없어요" },
+      { value: "", label: ports && list.length === 0 ? "장치 없음" : "포트 고르기" },
       ...extra.map((p) => ({ value: p, label: `${p} · 저장된 포트` })),
       ...list.map((p) => {
         const guess = portGuess(p);
         return {
           value: p.port,
-          label: `${p.port} · ${p.chip || p.description || "시리얼"}${guess ? ` — ${guess}` : ""}`,
+          label: `${p.port} · ${p.chip || p.description || "시리얼"}${guess ? ` · ${guess}` : ""}`,
         };
       }),
     ];
@@ -146,7 +146,7 @@ export default function LightingConnectionStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="어떻게 연결하나요?">
+      <Card title="연결 방식">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <OptionCard
             selected={form.kind === "esp32"}
@@ -199,7 +199,7 @@ export default function LightingConnectionStep({
                 {state.connection.inputPort ? ` · 콘솔 ${state.connection.inputPort}` : ""}
               </Badge>
             ) : (
-              <Badge tone="off">아직 안 골랐어요</Badge>
+              <Badge tone="off">포트 없음</Badge>
             )
           }
         >
@@ -214,7 +214,7 @@ export default function LightingConnectionStep({
               />
             </Field>
             {form.kind === "opendmx" && (
-              <Field label="콘솔 신호 받는 조명 노드 (선택)" className="min-w-[260px] flex-1">
+              <Field label="콘솔 입력 조명 노드" className="min-w-[260px] flex-1">
                 <Select
                   value={form.inputPort}
                   onChange={(inputPort) => set({ inputPort })}
@@ -233,17 +233,12 @@ export default function LightingConnectionStep({
             </ActionButton>
           </div>
           {samePort && (
-            <p className="-mt-2 font-pretendard text-xs text-red-300/85">케이블과 조명 노드는 다른 COM 포트여야 해요.</p>
-          )}
-          {form.kind === "opendmx" && !form.inputPort && (
-            <p className="-mt-2 font-pretendard text-xs text-white/35">
-              비워 두면 콘솔 신호를 받지 않아요 — 그동안은 ONAIR 만 조명을 바꿀 수 있어요.
-            </p>
+            <p className="-mt-2 font-pretendard text-xs text-red-300/85">COM 포트가 같아요</p>
           )}
           <Switch
             checked={form.virtual}
             onChange={(v) => set({ virtual: v })}
-            label="변환기 없이 시험(가상)"
+            label="가상 시험"
           />
         </Card>
       )}
@@ -252,9 +247,9 @@ export default function LightingConnectionStep({
         <span className="font-pretendard text-xs text-white/35">
           {state.configured
             ? state.connected
-              ? `지금 연결됨 — ${state.detail}`
-              : `지금 연결 안 됨 — ${state.detail}`
-            : `${hallName}에는 아직 조명이 없어요. 저장하면 조명이 켜져요.`}
+              ? `연결됨 · ${state.detail}`
+              : `연결 안 됨 · ${state.detail}`
+            : `${hallName} 조명 없음`}
         </span>
         <div className="ml-auto flex items-center gap-2">
           {state.configured && dirty && (

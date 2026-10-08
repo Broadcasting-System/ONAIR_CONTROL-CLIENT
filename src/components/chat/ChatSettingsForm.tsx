@@ -10,9 +10,9 @@ import Select from "@/components/common/Select";
 import type { ChatSettingsUpdate, ChatStatus, ChatTestResult } from "@/types/chat";
 
 const MODEL_LABEL: Record<string, string> = {
-  "claude-sonnet-5-5": "Sonnet 5.5 (기본)",
-  "claude-opus-5-5": "Opus 5.5 (똑똑함 · 비쌈)",
-  "claude-haiku-4-5-20251001": "Haiku 4.5 (빠름 · 저렴)",
+  "claude-sonnet-5-5": "Sonnet 5.5",
+  "claude-opus-5-5": "Opus 5.5",
+  "claude-haiku-4-5-20251001": "Haiku 4.5",
 };
 
 const field =
@@ -62,16 +62,16 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
       setApiKey("");
       setClearArmed(false);
       setTest(null);
-      setMsg({ text: body.apiKey === null ? "키를 지웠어요." : "저장했어요." });
+      setMsg({ text: body.apiKey === null ? "키를 지웠어요" : "저장했어요" });
       refresh();
     },
-    onError: (e) => setMsg({ text: e instanceof Error ? e.message : "저장하지 못했어요.", error: true }),
+    onError: (e) => setMsg({ text: e instanceof Error ? e.message : "저장하지 못했어요", error: true }),
   });
 
   const runTest = useMutation({
     mutationFn: chatApi.testSettings,
     onSuccess: (r) => setTest(r),
-    onError: (e) => setTest({ ok: false, model, message: e instanceof Error ? e.message : "확인하지 못했어요." }),
+    onError: (e) => setTest({ ok: false, model, message: e instanceof Error ? e.message : "확인하지 못했어요" }),
   });
 
   if (settings.isLoading) {
@@ -80,7 +80,7 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
   if (!s) {
     return (
       <p className="font-pretendard text-[14px] text-white/60">
-        설정을 불러오지 못했어요. {settings.error instanceof Error ? settings.error.message : ""}
+        설정을 불러오지 못했어요 {settings.error instanceof Error ? settings.error.message : ""}
       </p>
     );
   }
@@ -95,7 +95,7 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
     if (num(daily) !== s.dailyRequestLimit) body.dailyRequestLimit = num(daily);
     if (num(perUser) !== s.userDailyLimit) body.userDailyLimit = num(perUser);
     if (!Object.keys(body).length) {
-      setMsg({ text: "바뀐 게 없어요." });
+      setMsg({ text: "바뀐 게 없어요" });
       return;
     }
     save.mutate(body);
@@ -116,7 +116,7 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
             spellCheck={false}
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder={s.keySet ? "새 키로 바꾸기" : "sk-ant-…"}
+            placeholder={s.keySet ? "새 키" : "sk-ant-…"}
             className={field}
           />
           {s.keySet && (
@@ -197,7 +197,6 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
             runTest.mutate();
           }}
           disabled={runTest.isPending || !s.keySet}
-          title={s.keySet ? undefined : "키를 먼저 저장해 주세요"}
           className="flex h-10 items-center gap-1.5 rounded-lg border border-white/10 px-4 font-pretendard text-[14px] text-white/75 transition-colors enabled:hover:bg-white/[0.06] enabled:hover:text-white disabled:opacity-40"
         >
           {runTest.isPending && <Loader2 size={14} className="animate-spin" />}
@@ -210,7 +209,7 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
       )}
       {test && (
         <p className={cn("font-pretendard text-[13px]", test.ok ? "text-white/80" : "text-[#FF6B6B]")}>
-          {test.ok ? "연결됐어요" : "연결 안 됨"} · {MODEL_LABEL[test.model] ?? test.model} — {test.message}
+          {test.ok ? "연결됐어요" : "연결 안 됨"} · {MODEL_LABEL[test.model] ?? test.model} · {test.message}
         </p>
       )}
     </div>

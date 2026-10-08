@@ -79,14 +79,14 @@ export default function RecordingPage() {
   const hoursLeft = free != null && mbPerHour > 0 ? free / (mbPerHour * 1e6) : null;
 
   let reason = "";
-  if (!canOperate) reason = "보기 전용 기기예요. 녹음·녹화는 운영 권한이 있는 기기에서 할 수 있어요.";
-  else if (screen === null && !audio) reason = "화면이나 소리를 골라 주세요.";
-  else if (screen !== null && recorder && !recorder.ready) reason = `서버 PC 녹화기가 준비되지 않았어요 — ${recorder.detail}`;
-  else if (channel && !channel.live) reason = `CH${channel.channel}에 연결된 송출 화면이 없어요.`;
+  if (!canOperate) reason = "보기 전용";
+  else if (screen === null && !audio) reason = "고른 것 없음";
+  else if (screen !== null && recorder && !recorder.ready) reason = `서버 PC 녹화기 준비 안 됨 · ${recorder.detail}`;
+  else if (channel && !channel.live) reason = `CH${channel.channel} 송출 화면 없음`;
   else if (hall && !hall.configured)
-    reason = `${hall.name}에는 콘솔 녹음이 설정되어 있지 않아요.${isAdmin ? " 오른쪽 위 '채널 설정'에서 켜 주세요." : ""}`;
+    reason = `${hall.name} 콘솔 녹음 꺼짐`;
   else if (hall && hallState && hallState.configured && !hallState.connected)
-    reason = `${hall.name} 녹음 장치에 연결되지 않았어요 — ${hallState.detail}`;
+    reason = `${hall.name} 녹음 장치 연결 안 됨 · ${hallState.detail}`;
 
   const chipLabel = !recorder ? "확인 중" : recorder.ready ? "준비됨 · 서버 PC" : "준비 안 됨 · 서버 PC";
   const lanes = hallState?.lanes.map((l) => l.name) ?? [];
@@ -121,7 +121,7 @@ export default function RecordingPage() {
       </header>
 
       {error && <Notice>{error.message}</Notice>}
-      {!canOperate && <Notice tone="info">보기 전용 기기입니다. 녹음·녹화·합치기는 운영 권한이 있는 기기에서 가능합니다.</Notice>}
+      {!canOperate && <Notice tone="info">보기 전용</Notice>}
 
       {isAdmin && showSettings && state && (
         <Panel title="채널 설정">

@@ -153,7 +153,7 @@ export default function AvDeck({
           />
         </button>
         <span className={cn("h-4 font-pretendard text-xs", confirmStop ? "text-[#ff9a9a]" : "text-white/35")}>
-          {confirmStop ? "한 번 더 누르면 멈춰요" : recording ? "두 번 누르면 멈춤" : ""}
+          {confirmStop ? "한 번 더 누르면 멈춰요" : ""}
         </span>
       </div>
 
@@ -175,7 +175,6 @@ export default function AvDeck({
               <button
                 type="button"
                 onClick={() => onFps(nextFps)}
-                title={`누르면 ${nextFps}fps 로`}
                 className={cn(tag, "hover:bg-white/10")}
               >
                 1080p · {fps}fps
@@ -197,7 +196,7 @@ export default function AvDeck({
             onKeyDown={(e) => e.key === "Enter" && press()}
             maxLength={60}
             disabled={disabled}
-            placeholder="이름 (예: 2학기 학예회 1부)"
+            placeholder="예: 2학기 학예회 1부"
             className="h-[42px] w-full max-w-[420px] rounded-[10px] border border-white/12 bg-[#0c0d0f] px-3.5 font-pretendard text-base text-white outline-none placeholder:text-white/35 focus:border-white/35 disabled:opacity-50"
           />
         )}

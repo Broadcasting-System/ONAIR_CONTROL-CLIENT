@@ -43,7 +43,6 @@ const ROSTER_ROLES: AssignableRole[] = ["member", "alumni"];
 function RosterTag() {
   return (
     <span
-      title="기기·토큰 없이 이름만 올라 있어요. [초대 이어 주기]로 기기를 붙일 수 있어요."
       className="inline-flex h-[22px] shrink-0 items-center rounded-md border border-white/15 px-1.5 font-pretendard text-[11.5px] font-semibold text-white/55"
     >
       명단만
@@ -79,7 +78,7 @@ function hoursLeft(iso: string): string {
 
 /** 기수 배지 — 회색 바탕 고정폭 숫자 */
 function Cohort({ n, suffix }: { n: number | null; suffix?: boolean }) {
-  if (!n) return <span className="font-mono text-[13px] text-white/30">—</span>;
+  if (!n) return null;
   return (
     <span className="rounded-md bg-white/[0.06] px-2 py-0.5 font-mono text-[13px] font-bold tabular-nums text-white/70">
       {suffix ? `${n}기` : String(n).padStart(2, "0")}
@@ -130,7 +129,7 @@ function Seg<T extends string>({
 
 /** ONAIR 메일 주소 — 04junghyun@ (@ 뒤는 흐리게) */
 function MailAddress({ address, domain, dim }: { address: string; domain?: string; dim?: boolean }) {
-  if (!address) return <span className="text-white/30">—</span>;
+  if (!address) return null;
   return (
     <span className={cn("font-mono text-[15px] font-semibold", dim ? "text-white/35" : "text-white")}>
       {address}
@@ -141,7 +140,7 @@ function MailAddress({ address, domain, dim }: { address: string; domain?: strin
 
 /** 받는 역할 주소 — 작은 회색 태그 */
 function RoleTags({ roles, dim }: { roles: RoleAddress[]; dim?: boolean }) {
-  if (roles.length === 0) return <span className="text-white/30">—</span>;
+  if (roles.length === 0) return null;
   return (
     <span className={cn("flex gap-1", dim && "opacity-50")}>
       {roles.map((r) => (
@@ -178,7 +177,7 @@ function MailState({ status, label, error }: { status: MailStatus; label: string
       </span>
       {error && (
         <span className="max-w-[220px] truncate text-xs font-normal text-red-300/90" title={error}>
-          Cloudflare 실패 — 다시 맞춰야 해요
+          Cloudflare 실패
         </span>
       )}
     </span>
@@ -209,7 +208,7 @@ function PendingCard({
       </div>
       {m.rosterRole && (
         <p className="font-pretendard text-[13px] text-white/55">
-          방송부 명단의 {m.cohort}기 {m.name}{m.title ? ` (${m.title})` : ""} 기록에 이어져요 — 거절하면 명단만으로 돌아가요.
+          명단 연결 · {m.cohort}기 {m.name}{m.title ? ` · ${m.title}` : ""}
         </p>
       )}
       {m.intro && <p className="whitespace-pre-wrap font-pretendard text-sm leading-relaxed text-white/80">{m.intro}</p>}
@@ -297,7 +296,7 @@ export default function MembersPanel() {
   if (view === "crew") return <CrewView toggle={toggle} />;
 
   if (list.error) {
-    return <Notice>{(list.error as Error).message || "부원 목록을 불러오지 못했습니다."}</Notice>;
+    return <Notice>{(list.error as Error).message || "부원 목록을 불러오지 못했어요"}</Notice>;
   }
 
   const members = list.data?.members ?? [];
@@ -320,7 +319,7 @@ export default function MembersPanel() {
   const setRole = (m: Member, role: AssignableRole) => {
     if (role === m.role) return;
     const label = ASSIGNABLE.find((r) => r.value === role)?.label ?? role;
-    run(() => memberApi.update(m.id, { role }), `${m.name} — ${label}(으)로 바꿨어요.`);
+    run(() => memberApi.update(m.id, { role }), `${m.name} 역할을 ${label}로 바꿨어요`);
   };
 
   return (
@@ -368,13 +367,13 @@ export default function MembersPanel() {
           {(allInvites ? waiting : waiting.slice(0, 2)).map((i) => (
             <div key={i.id} className="flex items-center gap-2.5 font-pretendard text-[13px] text-white/60">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF3B3B]" />
-              기다리는 초대{i.memberId && i.note ? ` (${i.note} 명단에 이어짐)` : ""} · {i.createdAt.slice(11, 16)}{" "}
-              {i.createdBy && `${i.createdBy} `}만듦 · {hoursLeft(i.expiresAt)}
-              {i.codeActive && <span className="text-white/45">· 코드 사용 가능</span>}
+              초대 대기{i.memberId && i.note ? ` · ${i.note}` : ""} · {i.createdAt.slice(11, 16)}
+              {i.createdBy && ` ${i.createdBy}`} · {hoursLeft(i.expiresAt)}
+              {i.codeActive && <span className="text-white/45">· 코드 유효</span>}
               <button
                 type="button"
                 className="rounded-md px-2 py-0.5 font-mbc text-xs text-white/55 hover:bg-white/[0.06] hover:text-white"
-                onClick={() => run(() => memberApi.cancelInvite(i.id), "초대를 취소했어요.")}
+                onClick={() => run(() => memberApi.cancelInvite(i.id), "초대를 취소했어요")}
               >
                 취소
               </button>
@@ -386,7 +385,7 @@ export default function MembersPanel() {
               onClick={() => setAllInvites((v) => !v)}
               className="w-fit pl-4 font-pretendard text-xs text-white/45 hover:text-white/75"
             >
-              {allInvites ? "접기" : `기다리는 초대 ${waiting.length - 2}개 더 보기`}
+              {allInvites ? "접기" : `${waiting.length - 2}개 더 보기`}
             </button>
           )}
         </div>
@@ -402,11 +401,11 @@ export default function MembersPanel() {
                 m={m}
                 domain={domain}
                 busy={act.isPending}
-                onApprove={(role) => run(() => memberApi.approve(m.id, role), `${m.name} 님을 승인했어요.`)}
+                onApprove={(role) => run(() => memberApi.approve(m.id, role), `${m.name} 님을 승인했어요`)}
                 onReject={() =>
                   setConfirm({
                     title: "등록 거절",
-                    message: `${m.cohort}기 ${m.name} 님의 등록을 거절할까요?\n이 기기의 토큰을 지워 다시 들어올 수 없게 됩니다.`,
+                    message: `${m.cohort}기 ${m.name} 님의 등록을 거절할까요?\n되돌릴 수 없어요.`,
                     confirmText: "거절",
                     run: () => memberApi.revoke(m.id),
                   })
@@ -443,8 +442,8 @@ export default function MembersPanel() {
                     {list.isLoading
                       ? "불러오는 중…"
                       : filter === "all"
-                        ? "아직 등록한 부원이 없어요. [새 부원 초대]로 시작하세요."
-                        : "해당하는 사람이 없어요."}
+                        ? "부원이 없어요"
+                        : "해당하는 사람이 없어요"}
                   </td>
                 </tr>
               ) : (
@@ -463,7 +462,7 @@ export default function MembersPanel() {
                           {m.name}
                           {(m.wasLead || m.role === "lead") && !gone && (
                             <span
-                              title={m.role === "lead" ? "부장" : `${m.cohort}기 부장이었어요`}
+                              title={m.role === "lead" ? "부장" : `${m.cohort}기 부장`}
                               className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF3B3B]"
                             />
                           )}
@@ -472,17 +471,14 @@ export default function MembersPanel() {
                       </td>
                       <td className="max-w-[200px] px-3 py-3">
                         <span className={cn("block truncate", gone || !m.title ? "text-white/35" : "text-white/80")} title={m.title}>
-                          {m.title || "—"}
+                          {m.title}
                         </span>
                       </td>
                       <td className="px-3 py-3">
                         {fixed ? (
-                          <span className="flex items-baseline gap-2">
-                            <b className="font-bold text-white">최고 관리자</b>
-                            <span className="text-xs text-white/45">서버 설정</span>
-                          </span>
+                          <b className="font-bold text-white">최고 관리자</b>
                         ) : gone ? (
-                          <span className="text-xs">내보냄{m.hasToken ? " · 토큰 삭제 실패 — Cloudflare 에서 지우세요" : ""}</span>
+                          <span className="text-xs">내보냄{m.hasToken ? " · 토큰 삭제 실패" : ""}</span>
                         ) : (
                           <Select
                             value={m.role}
@@ -499,9 +495,9 @@ export default function MembersPanel() {
                         {m.mailAliases.length > 0 && !gone && (
                           <div
                             className="mt-0.5 font-mono text-xs text-white/40"
-                            title={m.mailAliases.map((a) => `${a.address}@${domain} — ${a.expiresAt.slice(0, 10)}까지`).join("\n")}
+                            title={m.mailAliases.map((a) => `${a.address}@${domain} ${a.expiresAt.slice(0, 10)}까지`).join("\n")}
                           >
-                            예전 {m.mailAliases[0].address}@ · {m.mailAliases[0].expiresAt.slice(5, 10).replace("-", "/")}까지
+                            예전 {m.mailAliases[0].address}@ · {m.mailAliases[0].expiresAt.slice(5, 10).replace("-", ".")}까지
                           </div>
                         )}
                       </td>
@@ -553,7 +549,7 @@ export default function MembersPanel() {
                                       f: () =>
                                         setConfirm({
                                           title: "졸업 처리",
-                                          message: `${m.name} 님을 졸업 처리할까요?\n기기는 그대로 두고 보기만 할 수 있게 됩니다. ONAIR 메일 전달도 꺼져요.`,
+                                          message: `${m.name} 님을 졸업 처리할까요?\n보기만 할 수 있게 돼요.`,
                                           confirmText: "졸업 처리",
                                           run: () => memberApi.graduate(m.id),
                                         }),
@@ -564,13 +560,13 @@ export default function MembersPanel() {
                                       f: () =>
                                         run(
                                           () => mailApi.resend(m.id),
-                                          `${m.name} 님 받을 메일(${m.personalEmailHint})로 확인 메일을 다시 보냈어요.`,
+                                          `${m.personalEmailHint} 로 확인 메일을 보냈어요`,
                                         ),
                                     },
                                     mockMail &&
                                       m.mailStatus === "pending" && {
-                                        t: "메일 확인 처리 (시험용)",
-                                        f: () => run(() => mailApi.devVerify(m.id), `${m.name} — 메일 확인됨(시험용)`),
+                                        t: "메일 확인 처리",
+                                        f: () => run(() => mailApi.devVerify(m.id), `${m.name} 메일 확인됨`),
                                       },
                                     roster && {
                                       t: "명단에서 지우기",
@@ -578,7 +574,7 @@ export default function MembersPanel() {
                                       f: () =>
                                         setConfirm({
                                           title: "명단에서 지우기",
-                                          message: `${m.cohort}기 ${m.name} 님을 방송부 명단에서 지울까요?\n직함·소개도 함께 지워져요. (기기는 원래 없어요)`,
+                                          message: `${m.cohort}기 ${m.name} 님을 명단에서 지울까요?\n직함·소개도 함께 지워져요.`,
                                           confirmText: "지우기",
                                           run: () => memberApi.deleteRoster(m.id),
                                         }),
@@ -590,7 +586,7 @@ export default function MembersPanel() {
                                       f: () =>
                                         setConfirm({
                                           title: "부원 내보내기",
-                                          message: `${m.name} 님을 내보낼까요?\n이 기기의 Cloudflare 토큰을 지워 더는 ONAIR 에 들어올 수 없고, ONAIR 메일 전달도 꺼져요.`,
+                                          message: `${m.name} 님을 내보낼까요?\n되돌릴 수 없어요.`,
                                           confirmText: "내보내기",
                                           run: () => memberApi.revoke(m.id),
                                         }),
@@ -635,7 +631,7 @@ export default function MembersPanel() {
           onCancelInvite={() => {
             const id = created.invite.id;
             setCreated(null);
-            run(() => memberApi.cancelInvite(id), "초대를 취소했어요.");
+            run(() => memberApi.cancelInvite(id), "초대를 취소했어요");
           }}
         />
       )}
@@ -656,15 +652,15 @@ export default function MembersPanel() {
       <InputModal
         isOpen={!!mailFor}
         onClose={() => setMailFor(null)}
-        title={`${mailFor?.name ?? ""} — ONAIR 메일 ${String(mailFor?.cohort ?? "").padStart(2, "0")}□@${domain}`}
-        placeholder="기수 뒤에 붙는 부분 — 영문 소문자·숫자·점 3~20자"
+        title={`${mailFor?.name ?? ""} · ${String(mailFor?.cohort ?? "").padStart(2, "0")}□@${domain}`}
+        placeholder="junghyun"
         initialValue={mailFor?.mailId ?? ""}
         confirmText="바꾸기"
         onConfirm={async (v) => {
           if (mailFor)
             run(
               () => memberApi.update(mailFor.id, { mailId: v.trim().toLowerCase() }),
-              mailFor.mailAddress ? "메일 주소를 바꿨어요. 예전 주소로도 30일 더 받아요." : "메일 주소를 정했어요.",
+              mailFor.mailAddress ? "메일 주소를 바꿨어요" : "메일 주소를 정했어요",
             );
         }}
       />

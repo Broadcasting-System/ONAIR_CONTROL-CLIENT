@@ -83,7 +83,6 @@ const goCls =
 const ghostCls =
   "inline-flex h-11 items-center justify-center rounded-[10px] border border-white/15 bg-transparent px-[18px] font-pretendard text-[15px] font-bold text-white/80 hover:text-white disabled:opacity-40";
 const noteCls = "font-pretendard text-sm leading-relaxed text-white/60";
-const hintCls = "mt-2 font-pretendard text-[13px] leading-snug text-white/50";
 const errCls = "mt-2 font-pretendard text-[13px] leading-snug text-[#ff9b9b]";
 
 /** 입력이 멈춘 뒤에만 서버에 묻는다 */
@@ -153,7 +152,7 @@ export default function WelcomePage() {
     onSuccess: () => {
       setEditing(false);
       qc.invalidateQueries({ queryKey: ["me"] });
-      toast.success("등록 신청을 보냈어요. 부장이 승인하면 바로 쓸 수 있어요.");
+      toast.success("등록 신청을 보냈어요");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -186,28 +185,24 @@ export default function WelcomePage() {
   // 튜너 단계 · 오른쪽 문장 · 아래 안내
   let at: Step = 1;
   let title = "연결 중…";
-  let lead = "";
   if (!loading && !me) {
     at = 0;
     title = "서버에 연결하지 못했어요";
-    lead = "인터넷 연결이나 ONAIR 앱의 서버 주소를 확인하세요.";
   } else if (status === "approved") {
     at = 3;
     title = "승인 완료 · ON AIR";
   } else if (status === "revoked") {
     at = 0;
     title = "내보낸 기기예요";
-    lead = "이 기기는 더 이상 ONAIR 를 쓸 수 없어요. 다시 쓰려면 부장에게 새 초대를 받으세요.";
   } else if (pending && !editing) {
     at = 2;
-    title = "부장 승인을 기다려요";
+    title = "승인 대기";
   } else if (showForm) {
     at = 1;
-    title = pending ? "프로필을 고쳐 다시 보내요" : "키 확인됨 · 프로필을 적어 주세요";
+    title = pending ? "프로필 수정" : "프로필 입력";
   } else if (me) {
     at = 0;
     title = "초대받지 않은 기기예요";
-    lead = "부장에게 초대 QR 이나 코드를 받아 ONAIR 앱에서 입력하세요.";
   }
   const lamp: Lamp = status === "approved" ? "on" : pending && !editing ? "standby" : "off";
   const device = me?.ip ? `이 기기 · ${me.ip}` : "이 기기";
@@ -232,8 +227,6 @@ export default function WelcomePage() {
 
         <section className="grid gap-[22px] rounded-[24px] border border-white/10 bg-[rgba(32,32,32,0.6)] p-7 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6)] backdrop-blur-md">
           <Tuner at={at} device={device} status={title} />
-
-          {lead && <p className={noteCls}>{lead}</p>}
 
           {showForm && (
             <form
@@ -276,7 +269,7 @@ export default function WelcomePage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label htmlFor="reg-personal" className={lblCls}>
-                      받을 메일 (개인)
+                      받을 메일
                     </label>
                     <input
                       id="reg-personal"
@@ -289,9 +282,7 @@ export default function WelcomePage() {
                       placeholder="name@gmail.com"
                       className={cn(inpCls, "h-12", emailProblem && "border-red-400/50")}
                     />
-                    <p className={emailProblem ? errCls : hintCls}>
-                      {emailProblem || "ONAIR 메일로 온 편지를 여기로 넘겨요. 승인 뒤 Cloudflare 확인 메일이 한 번 와요."}
-                    </p>
+                    {emailProblem && <p className={errCls}>{emailProblem}</p>}
                   </div>
                   <div>
                     <label htmlFor="reg-mail" className={lblCls}>
@@ -303,12 +294,11 @@ export default function WelcomePage() {
                         mailProblem ? "border-red-400/50" : "border-white/[0.12]",
                       )}
                     >
-                      <span
-                        className="flex h-full shrink-0 items-center border-r border-white/[0.08] bg-white/[0.05] px-3 font-mono text-base font-bold tabular-nums text-white/55"
-                        title="기수 2자리 — 바꿀 수 없어요"
-                      >
-                        {prefix || "--"}
-                      </span>
+                      {prefix && (
+                        <span className="flex h-full shrink-0 items-center border-r border-white/[0.08] bg-white/[0.05] px-3 font-mono text-base font-bold tabular-nums text-white/55">
+                          {prefix}
+                        </span>
+                      )}
                       <input
                         id="reg-mail"
                         value={mailId}
@@ -325,20 +315,13 @@ export default function WelcomePage() {
                       />
                       <span className="shrink-0 pr-3.5 font-mono text-[15px] text-white/40">@{domain}</span>
                     </div>
-                    {mailProblem ? (
-                      <p className={errCls}>{mailProblem}</p>
-                    ) : (
-                      <p className={hintCls}>
-                        {mailEdited ? "" : "이름으로 미리 채웠어요 · "}영문 소문자·숫자·점 3~20자 · 나중에 바꿔도 예전 주소로{" "}
-                        <b className="font-semibold text-white">30일</b> 더 받아요
-                      </p>
-                    )}
+                    {mailProblem && <p className={errCls}>{mailProblem}</p>}
                   </div>
                 </div>
               )}
               <div>
                 <label htmlFor="reg-intro" className={lblCls}>
-                  소개 <span className="ml-1 font-normal text-white/45">선택 — 방송부 화면에 보일 수 있어요</span>
+                  소개
                 </label>
                 <textarea
                   id="reg-intro"
@@ -346,12 +329,10 @@ export default function WelcomePage() {
                   onChange={(e) => setIntro(e.target.value)}
                   maxLength={500}
                   rows={3}
-                  placeholder="한두 줄로 소개해 주세요"
                   className={cn(inpCls, "h-[88px] resize-none py-3 leading-normal")}
                 />
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2.5">
-                <span className={cn(noteCls, "mr-auto")}>부장이 이 정보를 보고 승인해요.</span>
                 {editing && (
                   <button type="button" className={ghostCls} onClick={() => setEditing(false)}>
                     취소
@@ -374,12 +355,7 @@ export default function WelcomePage() {
                   <i />
                   <i />
                 </div>
-                <div className="min-w-0">
-                  <p className="font-pretendard text-[22px] font-extrabold text-white">부장 승인을 기다리고 있어요</p>
-                  <p className={noteCls}>
-                    부장이 ‘관리’에서 승인하면 이 화면이 저절로 넘어가요. 창을 닫아도 괜찮아요.
-                  </p>
-                </div>
+                <p className="min-w-0 font-pretendard text-[22px] font-extrabold text-white">승인 대기</p>
               </div>
               <div className="grid grid-cols-[72px_1fr] gap-x-3 gap-y-1.5 rounded-[14px] border border-white/[0.08] bg-[#0a0a0c] px-[18px] py-3.5 font-pretendard text-sm text-white">
                 <span className="text-white/45">이름</span>
@@ -409,7 +385,6 @@ export default function WelcomePage() {
                 )}
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2.5">
-                <span className={cn(noteCls, "mr-auto text-white/45")}>5초마다 확인 중</span>
                 <button type="button" className={ghostCls} onClick={startEdit}>
                   정보 고치기
                 </button>
@@ -422,10 +397,9 @@ export default function WelcomePage() {
               <div className="flex items-center gap-[18px]">
                 <span className="h-4 w-4 shrink-0 rounded-full bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]" />
                 <div className="min-w-0">
-                  <p className="font-pretendard text-[22px] font-extrabold text-white">승인됐어요. 이제 ONAIR 를 쓸 수 있어요</p>
+                  <p className="font-pretendard text-[22px] font-extrabold text-white">승인 완료</p>
                   <p className={noteCls}>
-                    {[me?.cohort ? `${me.cohort}기` : "", me?.name, "·", me?.roleLabel].filter(Boolean).join(" ")} 권한으로
-                    ONAIR 를 시작합니다…
+                    {[me?.cohort ? `${me.cohort}기` : "", me?.name, "·", me?.roleLabel].filter(Boolean).join(" ")}
                   </p>
                 </div>
               </div>

@@ -74,9 +74,7 @@ export function useScreenShare(channel: number = 1) {
       typeof window !== "undefined" &&
       (!window.isSecureContext || !navigator.mediaDevices?.getDisplayMedia)
     ) {
-      toast.error(
-        "이 주소(HTTP)에서는 화면 공유를 쓸 수 없습니다. HTTPS 또는 localhost로 접속해야 합니다.",
-      );
+      toast.error("HTTP 주소에서는 화면 공유를 쓸 수 없어요");
       return;
     }
 
@@ -191,7 +189,7 @@ export function useScreenShare(channel: number = 1) {
       // 우리가 닫은 게 아니라 서버 재시작 등으로 끊겼다 → '공유 중'으로 남지 않게 정리
       if (wsRef.current !== ws) return;
       void stop();
-      toast.error("송출 서버와 연결이 끊겨 화면 공유를 종료했습니다. 다시 시작해주세요.");
+      toast.error("송출 서버 연결이 끊겨 화면 공유를 종료했습니다.");
     };
 
     toast.success(`CH${ch}에 화면 공유를 시작했습니다.`);

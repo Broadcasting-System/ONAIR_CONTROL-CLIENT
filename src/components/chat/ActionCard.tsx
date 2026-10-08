@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import type { ChatAction, TablePreview } from "@/types/chat";
 
 const STATUS_LABEL: Record<ChatAction["status"], string> = {
-  pending: "확인 기다리는 중",
+  pending: "확인 대기",
   running: "실행 중",
   done: "완료",
   error: "실패",
@@ -171,7 +171,7 @@ export default function ActionCard({
       onDone?.();
     } catch (e) {
       onUpdate({ ...action, status: "pending" });
-      setErr(e instanceof Error ? e.message : "실행하지 못했어요.");
+      setErr(e instanceof Error ? e.message : "실행하지 못했어요");
     } finally {
       setBusy(null);
     }
@@ -183,7 +183,7 @@ export default function ActionCard({
     try {
       onUpdate(await chatApi.cancelAction(action.id));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "취소하지 못했어요.");
+      setErr(e instanceof Error ? e.message : "취소하지 못했어요");
     } finally {
       setBusy(null);
     }
@@ -249,11 +249,6 @@ export default function ActionCard({
           {action.result}
         </p>
       )}
-      {status === "expired" && !action.result && (
-        <p className="border-t border-white/[0.08] pt-2.5 font-pretendard text-[13px] text-white/50">
-          10분이 지나서 실행할 수 없어요. 다시 말해 주면 새로 만들어 드려요.
-        </p>
-      )}
       {err && <p className="font-pretendard text-[13px] text-[#FF6B6B]">{err}</p>}
 
       {(pending || status === "running") && (
@@ -272,7 +267,7 @@ export default function ActionCard({
             )}
           >
             {busy === "confirm" && <Loader2 size={14} className="animate-spin" />}
-            {danger ? (armed ? "한 번 더 누르면 실행해요" : "확인하고 실행") : dirty ? "고친 대로 확인" : "확인"}
+            {danger ? (armed ? "정말 실행" : "실행") : dirty ? "고친 대로 확인" : "확인"}
           </button>
           <button
             type="button"
@@ -284,7 +279,7 @@ export default function ActionCard({
           </button>
           {pending && action.expiresAt && (
             <span className="ml-auto font-pretendard text-[12px] text-white/35">
-              {minutesLeft(action.expiresAt, now)} 확인해 주세요
+              {minutesLeft(action.expiresAt, now)}
             </span>
           )}
         </div>

@@ -105,7 +105,7 @@ export function SpeakerTable({
       >
         {shown === 0 ? (
           <p className="py-8 text-center font-pretendard text-[13px] text-white/30">
-            {onlyOn ? "켜진 스피커가 없어요." : "찾는 스피커가 없어요."}
+            {onlyOn ? "켜진 스피커가 없어요" : "찾는 스피커가 없어요"}
           </p>
         ) : (
           <div className="flex flex-col gap-3">
@@ -146,7 +146,7 @@ export function SpeakerTable({
                           onMouseLeave={() => onHover(null)}
                           title={
                             dead
-                              ? `${z.name} — 실제 연결된 스피커가 없어요`
+                              ? `${z.name} · 미연결`
                               : cov?.cells.length
                                 ? `${z.name} → ${cov.cells.join(", ")}`
                                 : z.name
@@ -174,7 +174,7 @@ export function SpeakerTable({
                               )}
                             />
                             <span className="font-orbitron text-[9px] tracking-wider text-white/45">
-                              {dead ? "—" : on ? "ON" : err ? "ERR" : "OFF"}
+                              {dead ? "" : on ? "ON" : err ? "ERR" : "OFF"}
                             </span>
                           </span>
                           <span className="mt-0.5 truncate font-mbc text-[13px] leading-tight text-white">

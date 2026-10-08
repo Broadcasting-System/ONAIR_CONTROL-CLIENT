@@ -119,7 +119,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
 
           {!canOperate && (
             <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 font-pretendard text-xs text-amber-200/80">
-              보기 전용 권한입니다. 송출하려면 관리자에게 운영 권한을 요청하세요.
+              보기 전용
             </p>
           )}
 
@@ -178,11 +178,6 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
             <button
               onClick={isSharing ? stopShare : startShare}
               disabled={!canOperate && !isSharing}
-              title={
-                isSharing
-                  ? `CH${sharingChannel}의 화면 공유를 중지합니다`
-                  : `CH${channel}에 내 화면을 송출합니다`
-              }
               className={cn(
                 "flex items-center gap-2 rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40",
                 isSharing
@@ -218,7 +213,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
               disabled={!canOperate}
               onSend={(videoId, loop) =>
                 showYouTube(channel, videoId, loop).catch(() =>
-                  toast.error("유튜브 송출에 실패했습니다 (권한 또는 잘못된 링크)."),
+                  toast.error("유튜브 송출에 실패했어요"),
                 )
               }
               onClear={clearDisplay}
@@ -229,7 +224,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
               <p className="p-4 font-pretendard text-white/40">불러오는 중…</p>
             ) : activeFiles.length === 0 ? (
               <p className="p-4 font-pretendard text-white/30">
-                해당 종류의 파일이 없습니다.
+                파일이 없어요
               </p>
             ) : (
               activeFiles.map((f) => (
@@ -501,11 +496,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                   송출 끄기
                 </button>
               </div>
-            ) : (
-              <p className="font-pretendard text-white/30">
-                왼쪽에서 영상을 선택하면 재생 제어가 활성화됩니다.
-              </p>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
@@ -613,14 +604,14 @@ function TimerComposer({
               mode === m ? "bg-white/15 text-white" : "bg-transparent text-white/40 hover:bg-white/5",
             )}
           >
-            {m === "down" ? "카운트다운" : "카운트업(경과)"}
+            {m === "down" ? "카운트다운" : "카운트업"}
           </button>
         ))}
       </div>
 
       {/* 라벨 */}
       <div className="flex flex-col gap-1.5">
-        <span className="font-mbc text-xs text-white/40">라벨 (선택)</span>
+        <span className="font-mbc text-xs text-white/40">라벨</span>
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
@@ -699,7 +690,7 @@ function YouTubeComposer({
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://youtu.be/… 또는 https://www.youtube.com/watch?v=…"
+          placeholder="https://youtu.be/…"
           className="h-11 rounded-xl border border-white/10 bg-[#141414] px-4 font-pretendard text-white placeholder:text-white/25 focus:border-white/30 focus:outline-none"
         />
         {url.trim() && !valid && (
@@ -804,7 +795,7 @@ function ImageOverlayEditor({
             onChange({ text: e.target.value });
           }}
           rows={2}
-          placeholder="이미지 위에 표시할 텍스트를 입력하세요 (줄바꿈 가능)"
+          placeholder="텍스트"
           className="flex-1 resize-none rounded-xl border border-white/10 bg-[#141414] px-4 py-3 font-pretendard text-[15px] text-white placeholder:text-white/25 focus:border-white/25 focus:outline-none"
         />
         <button

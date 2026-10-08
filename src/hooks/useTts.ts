@@ -24,7 +24,7 @@ export function useTts() {
       .map((z) => z.name);
 
     if (targets.length === 0) {
-      toast.error("방송할 스피커(존)를 먼저 선택해주세요.");
+      toast.error("선택한 스피커가 없어요");
       return;
     }
 

@@ -97,7 +97,7 @@ function queryProblem(query: string, regex: string): string | null {
   const q = query.trim();
   const r = regex.trim();
   if (!q && !r) return null;
-  if (!q || !r) return "조회 명령과 해석 규칙은 둘 다 적어야 해요 (안 쓰려면 둘 다 비우세요)";
+  if (!q || !r) return "조회 명령과 해석 규칙은 둘 다 적어야 해요";
   if (q.length > 40 || /[^\x20-\x7e]/.test(q)) return "조회 명령은 영문·숫자·기호 40자 이하로 적어 주세요";
   if (r.length > 120) return "해석 규칙은 120자 이하로 적어 주세요";
   if (!/\(\?P?<input>/.test(r) || !/\(\?P?<output>/.test(r))
@@ -248,17 +248,15 @@ export default function MatrixConnectionForm({
     }
   };
 
-  const inputName = state.inputs.find((i) => i.no === tryIn)?.name ?? "";
-  const outputName = state.outputs.find((o) => o.no === tryOut)?.name ?? "";
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="어떻게 연결하나요?">
+      <Card title="연결 방식">
         <div className="grid grid-cols-2 gap-3">
           <OptionCard
             selected={serial}
             onClick={() => edit((c) => ({ ...c, driver: "serial-bridge" }))}
-            title="RS-232 (다목적홀 노트북)"
+            title="RS-232"
             badge="추천"
           />
           <OptionCard
@@ -281,7 +279,7 @@ export default function MatrixConnectionForm({
           </Field>
           <NotebookPicker value={conn.bridge.url} onPick={(u) => setBridge({ url: u })} need="serial-ports" />
           {!saved.tokenConfigured && (
-            <Notice>서버가 브릿지 토큰을 만들지 못했어요. 서버 data 폴더에 쓸 수 있는지 확인하고 서버를 다시 켜세요.</Notice>
+            <Notice>브릿지 토큰을 만들지 못했어요</Notice>
           )}
         </Card>
       )}
@@ -295,17 +293,17 @@ export default function MatrixConnectionForm({
                 노트북 설정 {nowPort.port} · {nowPort.baud}bps
               </Badge>
             ) : (
-              <Badge tone="off">아직 안 골랐어요</Badge>
+              <Badge tone="off">포트 없음</Badge>
             )
           }
         >
           <div className="flex flex-wrap items-end gap-3">
-            <Field label="포트 (노트북에 꽂힌 것)" className="min-w-[260px] flex-1">
+            <Field label="포트" className="min-w-[260px] flex-1">
               <Select
                 value={port}
                 onChange={setPort}
                 disabled={!ports || ports.length === 0}
-                placeholder={!ports ? "'불러오기'를 누르세요" : ports.length ? "포트 고르기" : "꽂힌 USB-RS232 가 없어요"}
+                placeholder={ports && ports.length === 0 ? "USB-RS232 없음" : "포트 고르기"}
                 options={(ports ?? []).map((p) => ({ value: p.port, label: `${p.port} · ${p.chip || p.description || "시리얼"}` }))}
                 className={cn(inputCls, okBorder)}
               />
@@ -325,11 +323,6 @@ export default function MatrixConnectionForm({
               이 포트로
             </ActionButton>
           </div>
-          <Notice tone="info">
-            이 학교 매트릭스의 RS-232 는 <b>DB9 수(핀)</b> 예요. USB-RS232 케이블(수)과 사이에 <b>암-암 스트레이트(1:1)
-            젠더</b>를 끼워야 해요. 같은 계열 매뉴얼 기준으로 스트레이트가 맞고, 안 되면 크로스(널모뎀) 젠더로 바꿔
-            보세요.
-          </Notice>
         </Card>
       )}
 
@@ -352,7 +345,7 @@ export default function MatrixConnectionForm({
                 className={cn(inputCls, okBorder)}
               />
             </Field>
-            <Field label="응답 확인 (선택)" className="w-[210px]">
+            <Field label="응답 확인" className="w-[210px]">
               <input
                 value={conn.protocol.replyOk}
                 onChange={(e) => setProto({ replyOk: e.target.value })}
@@ -366,7 +359,7 @@ export default function MatrixConnectionForm({
 
           {/* 보내 보기 — 저장 전의 값으로 한 번 */}
           <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white/[0.025] p-3">
-            <Field label="입력 (소스)" className="w-[190px]">
+            <Field label="입력" className="w-[190px]">
               <Select
                 value={tryIn}
                 onChange={setTryIn}
@@ -374,7 +367,7 @@ export default function MatrixConnectionForm({
                 className={cn(inputCls, okBorder)}
               />
             </Field>
-            <Field label="출력 (화면)" className="w-[190px]">
+            <Field label="출력" className="w-[190px]">
               <Select
                 value={tryOut}
                 onChange={setTryOut}
@@ -385,7 +378,7 @@ export default function MatrixConnectionForm({
             <div className="flex min-w-[180px] flex-1 flex-col gap-1.5">
               <span className="font-mbc text-[13px] text-white/55">보낼 명령</span>
               <code className="flex h-10 items-center overflow-x-auto whitespace-nowrap rounded-lg border border-white/10 bg-black/40 px-3 font-mono text-sm text-[#9dffc1]">
-                {tplProblem ? "-" : visible(renderRoute(route, tryIn, tryOut) + conn.protocol.terminator)}
+                {tplProblem ? "" : visible(renderRoute(route, tryIn, tryOut) + conn.protocol.terminator)}
               </code>
             </div>
             <ActionButton
@@ -398,10 +391,6 @@ export default function MatrixConnectionForm({
               보내 보기
             </ActionButton>
           </div>
-          <p className="-mt-2 font-pretendard text-xs text-amber-200/70">
-            실제 화면이 바뀌어요 — 행사 중에는 하지 마세요. 매트릭스 앞면 LCD 나 &lsquo;{outputName}&rsquo; 화면이
-            &lsquo;{inputName}&rsquo; 으로 바뀌는지 보세요.
-          </p>
           {last && <SentResult last={last} />}
 
           {/* 문법 찾기 — 명령표가 없을 때 후보를 하나씩 */}
@@ -410,15 +399,10 @@ export default function MatrixConnectionForm({
             onClick={() => setFinder((v) => !v)}
             className="self-start font-mbc text-sm text-white/55 transition-colors hover:text-white"
           >
-            문법 찾기 (명령표가 없을 때) {finder ? "▲" : "▼"}
+            문법 찾기 {finder ? "▲" : "▼"}
           </button>
           {finder && (
             <div className="flex flex-col gap-2.5">
-              <p className="font-pretendard text-xs leading-relaxed text-white/45">
-                위에서 고른 <b className="text-white/70">입력 {tryIn} → 출력 {tryOut}</b> 을 후보마다 보내요. 매트릭스
-                LCD(또는 출력 {tryOut} 화면)가 입력 {tryIn} 으로 바뀌면 <b className="text-white/70">이걸로</b>를
-                누르세요. 끝까지 안 되면 끝 문자나 속도를 바꿔서 다시 해 보세요.
-              </p>
               <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
                 {candidates.map((c) => {
                   const inUse = c.route === route;
@@ -467,13 +451,13 @@ export default function MatrixConnectionForm({
       )}
 
       {serial && (
-        <Card title="현재 상태 읽기 (선택)">
+        <Card title="현재 상태 읽기">
           <div className="flex flex-wrap items-end gap-3">
             <Field label="조회 명령" className="w-[180px]">
               <input
                 value={conn.protocol.query}
                 onChange={(e) => setProto({ query: e.target.value })}
-                placeholder="(안 씀)"
+                placeholder="안 씀"
                 spellCheck={false}
                 className={cn(inputCls, "font-mono", qProblem ? badBorder : okBorder)}
               />
@@ -482,7 +466,7 @@ export default function MatrixConnectionForm({
               <input
                 value={conn.protocol.queryRegex}
                 onChange={(e) => setProto({ queryRegex: e.target.value })}
-                placeholder="(안 씀)"
+                placeholder="안 씀"
                 spellCheck={false}
                 className={cn(inputCls, "font-mono", qProblem ? badBorder : okBorder)}
               />
@@ -568,7 +552,7 @@ function SentResult({ last }: { last: Sent }) {
       </p>
       {last.matched !== null && (
         <p className={cn("font-pretendard text-xs", last.matched ? "text-[#9dffc1]" : "text-amber-200")}>
-          {last.matched ? "응답 확인 통과" : "응답이 '응답 확인' 패턴과 달라요"}
+          {last.matched ? "응답 확인 통과" : "응답 확인 불일치"}
         </p>
       )}
     </div>

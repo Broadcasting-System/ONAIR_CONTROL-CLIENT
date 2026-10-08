@@ -88,7 +88,7 @@ export default function LightingSetupPage() {
 
   const switchHall = (id: string) => {
     if (dirty) {
-      toast.error("저장하거나 되돌린 뒤 공간을 바꿀 수 있어요.");
+      toast.error("저장 안 한 변경이 있어요");
       return;
     }
     if (lit) void clearLight();
@@ -119,7 +119,7 @@ export default function LightingSetupPage() {
       const fresh = qc.getQueryData<LightingState>(["lighting", current.id]);
       if (fresh) reloadRows(fresh);
       if (res.overlaps.length) {
-        toast.info(`조명 ${res.fixtures}개를 저장했습니다. 주소가 겹치는 곳이 ${res.overlaps.length}군데 있어요.`);
+        toast.info(`조명 ${res.fixtures}개 저장 · 주소 겹침 ${res.overlaps.length}곳`);
       } else {
         toast.success(`조명 ${res.fixtures}개를 저장했습니다.`);
       }
@@ -164,7 +164,7 @@ export default function LightingSetupPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>조명 세팅</SectionHeader>
-        <Notice tone="info">설정된 공간이 없습니다. 서버의 config/halls.json 에 공간을 추가하세요.</Notice>
+        <Notice tone="info">공간 없음</Notice>
       </div>
     );
   }
@@ -190,7 +190,7 @@ export default function LightingSetupPage() {
     {
       key: "fixtures",
       title: "조명 찾기·목록",
-      sub: rows ? `${rows.length}개${capture ? ` / ${runs.length}묶음` : ""}` : "-",
+      sub: rows ? `${rows.length}개${capture ? ` · ${runs.length}묶음` : ""}` : "",
       done: configured && savedCount > 0 && !dirty,
     },
     {
@@ -221,9 +221,9 @@ export default function LightingSetupPage() {
         </div>
       </header>
 
-      {!isAdmin && <Notice>관리자 기기에서만 세팅을 바꿀 수 있어요. 지금은 보기만 됩니다.</Notice>}
+      {!isAdmin && <Notice>보기 전용</Notice>}
       {error && <Notice>{error.message}</Notice>}
-      {state && configured && !connected && <Notice>조명에 연결되지 않았어요 — {state.detail}</Notice>}
+      {state && configured && !connected && <Notice>조명 연결 안 됨 · {state.detail}</Notice>}
 
       {/* 단계 */}
       <nav className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">

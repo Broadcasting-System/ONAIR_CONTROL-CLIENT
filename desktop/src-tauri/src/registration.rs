@@ -94,19 +94,19 @@ pub fn parse_link(input: &str, now: u64) -> Result<ParsedLink, String> {
         u.query_pairs()
             .find(|(k, _)| k == "d")
             .map(|(_, v)| v.into_owned())
-            .ok_or("링크에 등록 정보(d=…)가 없어요.")?
+            .ok_or("링크에 등록 정보가 없어요.")?
     } else {
         input.to_string()
     };
-    let raw = decode_b64(&data).ok_or("등록 정보를 풀 수 없어요. 링크를 끝까지 복사했는지 확인해 주세요.")?;
+    let raw = decode_b64(&data).ok_or("등록 정보를 풀 수 없어요.")?;
     let p: Payload = serde_json::from_slice(&raw).map_err(|_| "등록 정보 형식이 맞지 않아요.".to_string())?;
     if p.v != 1 {
-        return Err(format!("이 앱이 모르는 등록 정보 버전이에요 (v{}). 앱을 업데이트해 주세요.", p.v));
+        return Err(format!("지원하지 않는 등록 정보 버전이에요 (v{}).", p.v));
     }
     let exp = p.exp.map(|e| if e > 1e12 { (e / 1000.0) as u64 } else { e as u64 });
     if let Some(e) = exp {
         if e < now {
-            return Err("등록 링크 유효 기간이 지났어요. 관리자에게 새로 받아 주세요.".into());
+            return Err("등록 링크 유효 기간이 지났어요.".into());
         }
     }
     let server = normalize_server(&p.server)?;
@@ -219,7 +219,7 @@ pub async fn verify(client: &reqwest::Client, c: &Credentials) -> VerifyResult {
                 ok: false,
                 can_force: true,
                 http_status: None,
-                message: format!("서버에 연결할 수 없어요. 주소와 인터넷 연결을 확인해 주세요. ({})", short_err(&e)),
+                message: format!("서버에 연결할 수 없어요 ({})", short_err(&e)),
                 member: None,
             };
         }
@@ -233,7 +233,7 @@ pub async fn verify(client: &reqwest::Client, c: &Credentials) -> VerifyResult {
             ok: false,
             can_force: false,
             http_status: Some(status.as_u16()),
-            message: "접속 키가 거부됐어요. 관리자에게 새 등록 QR 을 받아 주세요.".into(),
+            message: "접속 키가 거부됐어요.".into(),
             member: None,
         };
     }
@@ -242,7 +242,7 @@ pub async fn verify(client: &reqwest::Client, c: &Credentials) -> VerifyResult {
             ok: true,
             can_force: true,
             http_status: Some(404),
-            message: "서버에 연결됐어요. (회원 확인 기능은 아직 서버에 없어요)".into(),
+            message: "서버에 연결됐어요.".into(),
             member: None,
         };
     }

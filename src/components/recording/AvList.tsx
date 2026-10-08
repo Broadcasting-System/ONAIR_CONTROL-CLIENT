@@ -94,7 +94,7 @@ export default function AvList({
   };
 
   if (items.length === 0) {
-    return <p className="font-pretendard text-sm text-white/40">아직 녹음·녹화가 없어요. 위의 빨간 버튼으로 시작하세요.</p>;
+    return <p className="font-pretendard text-sm text-white/40">녹음·녹화가 없어요</p>;
   }
 
   return (
@@ -137,7 +137,6 @@ export default function AvList({
                       type="button"
                       disabled={!canOperate}
                       onClick={() => setEditing({ id: it.id, label: it.label })}
-                      title={canOperate ? "눌러서 이름 바꾸기" : undefined}
                       className="min-w-0 truncate text-left font-pretendard text-base font-bold text-white disabled:cursor-default"
                     >
                       {it.label || "이름 없음"}
@@ -203,16 +202,15 @@ export default function AvList({
                 <video src={avApi.fileUrl(it.id)} controls autoPlay playsInline className="aspect-video w-full" />
                 {it.hasOutput && (
                   <div className="flex justify-end gap-3 px-3 py-2 font-pretendard text-xs text-white/45">
-                    원본도 받을 수 있어요
                     <a className="underline-offset-4 hover:text-white/80 hover:underline" href={avApi.fileUrl(it.id, true, "screen")}>
-                      화면만 (소리 없음)
+                      화면만
                     </a>
                     {it.audioId && (
                       <a
                         className="underline-offset-4 hover:text-white/80 hover:underline"
                         href={recordingApi.audioUrl(it.audioId, 0, true)}
                       >
-                        콘솔 소리 (WAV)
+                        콘솔 소리 WAV
                       </a>
                     )}
                   </div>

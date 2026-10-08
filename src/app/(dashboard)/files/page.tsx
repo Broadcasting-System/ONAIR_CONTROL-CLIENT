@@ -144,7 +144,6 @@ export default function FilesPage() {
           isOpen={!!renameFileState}
           onClose={() => setRenameFileState(null)}
           title="파일 이름 수정"
-          placeholder="새 파일 이름을 입력하세요"
           icon={<Pencil size={18} className="text-red-500" />}
           initialValue={renameFileState.fileName}
           onConfirm={handleRenameConfirm}
@@ -158,7 +157,7 @@ export default function FilesPage() {
           onClose={() => setDeleteFileState(null)}
           onConfirm={handleConfirmDelete}
           title="파일 삭제"
-          message={`'${deleteFileState.fileName}' 파일을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`}
+          message={`'${deleteFileState.fileName}'\n되돌릴 수 없어요`}
           confirmText="삭제"
           cancelText="취소"
           isDestructive={true}

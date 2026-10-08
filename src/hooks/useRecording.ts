@@ -34,8 +34,8 @@ export function useRecording(hallId: string | null) {
 
   const stop = useMutation({
     mutationFn: () => recordingApi.stop(hallId as string),
-    onSuccess: (item) => {
-      toast.success(`녹음을 멈췄습니다 — ${item.label || "이름 없음"}. 서버로 가져오는 중이에요.`);
+    onSuccess: () => {
+      toast.success("녹음을 멈췄습니다.");
       qc.invalidateQueries({ queryKey: key });
       refreshLibrary();
     },

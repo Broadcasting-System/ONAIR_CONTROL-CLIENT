@@ -89,7 +89,7 @@ export default function PreviewModal({ isOpen, onClose, fileUrl, type, fileName,
           </div>
         );
       default:
-        return <div className="text-white/50">지원하지 않는 형식입니다.</div>;
+        return <div className="text-white/50">지원하지 않는 형식이에요</div>;
     }
   };
 

@@ -35,13 +35,6 @@ export default function ChannelsStep({
   const hiqnet = state.connection.driver === "hiqnet";
   const hasChannelControl = state.capabilities.includes("channel");
   const canTry = state.connected && hasChannelControl && !configDirty;
-  const tryHint = !state.connected
-    ? "믹서가 연결되면 시험할 수 있어요"
-    : !hasChannelControl
-      ? "채널 조작은 랜선(HiQnet) 연결에서만 돼요"
-      : configDirty
-        ? "저장한 뒤 시험할 수 있어요"
-        : "";
 
   const setChannels = (fn: (l: ChannelRow[]) => ChannelRow[]) =>
     setDraft((d) => (d ? { ...d, channels: fn(d.channels) } : d));
@@ -143,7 +136,7 @@ export default function ChannelsStep({
       return;
     }
     setChannels(() => next);
-    toast.success(`빈 칸 ${filled}개를 Si 기본 주소로 채웠어요. 화면 채널 번호가 콘솔 채널 번호와 같아야 맞아요 — 저장 후 시험으로 확인하세요.`);
+    toast.success(`빈 칸 ${filled}개 채웠어요`);
   };
 
   // ---- 시험: 저장된 설정으로 콘솔을 조금씩 움직여 본다 ----
@@ -182,7 +175,7 @@ export default function ChannelsStep({
       action={
         <div className="flex gap-2">
           {hiqnet && (
-            <ActionButton icon={<Wand2 size={15} />} onClick={fillSi} title="HiQontrol 분석 기준 추정값 — 저장 후 시험으로 확인">
+            <ActionButton icon={<Wand2 size={15} />} onClick={fillSi}>
               Si 기본 주소 채우기
             </ActionButton>
           )}
@@ -197,8 +190,8 @@ export default function ChannelsStep({
           <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[#FF3B3B] shadow-[0_0_10px_#FF3B3B]" />
           <p className="flex-1 font-pretendard text-sm text-white/85">
             {learn.role === "fader"
-              ? `콘솔에서 ‘${learn.label}’ 페이더를 위아래로 움직이세요`
-              : `콘솔에서 ‘${learn.label}’ MUTE를 눌러 켜 두세요`}
+              ? `${learn.label} 페이더 움직이기 대기`
+              : `${learn.label} MUTE 켜기 대기`}
           </p>
           <ActionButton tone="ghost" onClick={() => setLearn(null)}>
             취소
@@ -220,7 +213,7 @@ export default function ChannelsStep({
           </div>
 
           {draft.channels.length === 0 && (
-            <p className="px-2 py-6 text-center font-pretendard text-sm text-white/30">채널이 없어요. ‘채널 추가’를 누르세요.</p>
+            <p className="px-2 py-6 text-center font-pretendard text-sm text-white/30">채널이 없어요</p>
           )}
 
           {draft.channels.map((c, i) => {
@@ -279,10 +272,7 @@ export default function ChannelsStep({
                       onLearn={() => beginLearn({ row: i, role: "mute", label: c.name || `CH ${c.id}` })}
                       label={`CH ${c.id} 뮤트 주소`}
                     />
-                    <label
-                      className="flex shrink-0 cursor-pointer items-center gap-1 font-pretendard text-[11px] text-white/45"
-                      title="콘솔의 켜짐(ON) 버튼처럼 뮤트와 반대로 동작하는 파라미터"
-                    >
+                    <label className="flex shrink-0 cursor-pointer items-center gap-1 font-pretendard text-[11px] text-white/45">
                       <input
                         type="checkbox"
                         checked={c.muteInvert}
@@ -296,7 +286,6 @@ export default function ChannelsStep({
                 <MaxInput value={c.max} onChange={(v) => patchRow(i, { max: v })} label={`CH ${c.id} 최대 레벨`} />
                 <TryCell
                   disabled={!canTry}
-                  hint={tryHint}
                   level={lv?.level ?? null}
                   muted={lv?.mute ?? null}
                   onDown={() => tryLevel(c.id, c.max, -5)}
@@ -308,7 +297,6 @@ export default function ChannelsStep({
                     label={c.hidden ? "보이기" : "숨기기"}
                     onClick={() => patchRow(i, { hidden: !c.hidden })}
                     className={c.hidden ? "text-[#FFB23F]" : undefined}
-                    title={c.hidden ? "숨김 — 조작 화면에 안 보여요 (주소는 남아 있음)" : "조작 화면에서 숨기기"}
                   >
                     {c.hidden ? <EyeOff size={15} /> : <Eye size={15} />}
                   </IconBtn>
@@ -316,7 +304,6 @@ export default function ChannelsStep({
                     label="삭제"
                     onClick={() => setChannels((l) => l.filter((_, j) => j !== i))}
                     className="hover:text-red-400"
-                    title="삭제하면 찾아 둔 콘솔 주소도 사라져요. 잠깐 빼려면 숨기기를 쓰세요."
                   >
                     <Trash2 size={14} />
                   </IconBtn>
@@ -373,7 +360,6 @@ export default function ChannelsStep({
               <MaxInput value={draft.master.max} onChange={(v) => patchMaster({ max: v })} label="마스터 최대 레벨" />
               <TryCell
                 disabled={!canTry}
-                hint={tryHint}
                 level={live(draft.master.id)?.level ?? null}
                 muted={live(draft.master.id)?.mute ?? null}
                 onDown={() => tryLevel(draft.master!.id, draft.master!.max, -5)}
@@ -395,20 +381,18 @@ function IconBtn({
   disabled,
   children,
   className,
-  title,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
   children: React.ReactNode;
   className?: string;
-  title?: string;
 }) {
   return (
     <button
       type="button"
       aria-label={label}
-      title={title ?? label}
+      title={label}
       disabled={disabled}
       onClick={onClick}
       className={cn(
@@ -450,7 +434,6 @@ function AddrInput({
       <button
         type="button"
         onClick={onLearn}
-        title="콘솔에서 움직여 주소 찾기"
         className={cn(
           "flex h-9 shrink-0 items-center gap-1 rounded-lg border px-2 font-mbc text-xs transition-colors",
           learning
@@ -470,7 +453,7 @@ function MaxInput({ value, onChange, label }: { value: number; onChange: (v: num
   const bad = badMax(value);
   const limited = !bad && value < 100;
   return (
-    <div className="flex flex-col gap-1" title="이 값 위로는 조작 화면에서 올릴 수 없어요 · 100 = 제한 없음 · 75 ≈ 0dB">
+    <div className="flex flex-col gap-1">
       <input
         type="number"
         min={0}
@@ -495,7 +478,6 @@ function MaxInput({ value, onChange, label }: { value: number; onChange: (v: num
  *  실제 75 인 페이더가 '올리기'에 55 로 내려가는 식의 사고가 난다. */
 function TryCell({
   disabled,
-  hint,
   level,
   muted,
   onDown,
@@ -503,7 +485,6 @@ function TryCell({
   onMute,
 }: {
   disabled: boolean;
-  hint: string;
   level: number | null;
   muted: boolean | null;
   onDown: () => void;
@@ -512,11 +493,10 @@ function TryCell({
 }) {
   const levelUnknown = level == null;
   const muteUnknown = muted == null;
-  const waiting = !disabled && (levelUnknown || muteUnknown) ? "콘솔에서 지금 값을 받는 중이에요 — 잠시 뒤에 누르세요" : "";
   const btn =
     "flex h-8 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-white/70 transition-colors enabled:hover:bg-white/10 enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-30";
   return (
-    <div className="flex items-center gap-1" title={hint || waiting || undefined}>
+    <div className="flex items-center gap-1">
       <span
         className={cn(
           "w-9 text-center font-orbitron text-[11px] tabular-nums",

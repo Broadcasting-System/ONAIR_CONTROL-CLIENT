@@ -47,28 +47,28 @@ export default function LightingCheckStep({
   const missing = capture ? capture.used.map((u) => u.address).filter((a) => !covered.has(a)) : [];
 
   const conn: { tone: Tone; text: string } = !configured
-    ? { tone: "bad", text: "아직 연결을 저장하지 않았어요 — ① 연결에서 저장하세요" }
+    ? { tone: "bad", text: "연결 저장 안 됨" }
     : !state.connected
-      ? { tone: "bad", text: `조명에 연결되지 않았어요 — ${state.detail}` }
+      ? { tone: "bad", text: `조명 연결 안 됨 · ${state.detail}` }
       : mock
-        ? { tone: "off", text: "모의 장비 — 실제 조명은 바뀌지 않아요" }
+        ? { tone: "off", text: "모의 장비" }
         : { tone: "ok", text: `연결됨 · ${state.detail}` };
 
   const list: { tone: Tone; text: string } =
     rows.length === 0
-      ? { tone: "bad", text: "조명 목록이 비어 있어요 — ② 에서 조명을 넣으세요" }
+      ? { tone: "bad", text: "조명 목록이 비어 있어요" }
       : {
           tone: overlaps.length ? "bad" : "ok",
           text:
             `조명 ${rows.length}개 · ` +
-            (overlaps.length ? `주소 겹침 ${overlaps.length}곳 (같은 조광기에 묶였으면 괜찮아요)` : "주소 겹침 없음") +
-            (dirty ? " · 저장 안 한 변경이 있어요" : ""),
+            (overlaps.length ? `주소 겹침 ${overlaps.length}곳` : "주소 겹침 없음") +
+            (dirty ? " · 저장 안 함" : ""),
         };
 
   const consoleCheck: { tone: Tone; text: string } = !capture
-    ? { tone: "off", text: "콘솔 신호를 아직 읽지 않았어요 — ② 에서 ‘콘솔 신호 읽기’를 하면 빠진 조명을 찾아 줘요" }
+    ? { tone: "off", text: "콘솔 신호 안 읽음" }
     : missing.length
-      ? { tone: "bad", text: `콘솔이 쓰는 주소 중 목록에 없는 것: ${rangesText(missing)}` }
+      ? { tone: "bad", text: `목록에 없는 콘솔 주소 ${rangesText(missing)}` }
       : { tone: "ok", text: "콘솔이 쓰는 주소가 모두 목록에 있어요" };
 
   const act = async (key: string, job: () => Promise<unknown>, done: string) => {
@@ -82,9 +82,6 @@ export default function LightingCheckStep({
       setBusy(null);
     }
   };
-
-  // 목록을 저장해야 새 조명까지 켜진다
-  const needSave = dirty ? "저장한 뒤 켜 볼 수 있어요" : undefined;
 
   return (
     <div className="flex flex-col gap-5">
@@ -100,7 +97,6 @@ export default function LightingCheckStep({
             icon={<Sun size={15} />}
             busy={busy === "on"}
             disabled={!configured || rows.length === 0 || dirty}
-            title={needSave}
             onClick={() => act("on", () => lightingApi.set(hallId, { intensity: 100 }), "모든 조명을 켰습니다.")}
           >
             전체 켜기
@@ -109,7 +105,6 @@ export default function LightingCheckStep({
             icon={<PowerOff size={15} />}
             busy={busy === "off"}
             disabled={!configured || rows.length === 0 || dirty}
-            title={needSave}
             onClick={() => act("off", () => lightingApi.set(hallId, { intensity: 0 }), "모든 조명을 껐습니다.")}
           >
             전체 끄기
@@ -119,7 +114,7 @@ export default function LightingCheckStep({
             icon={<Eraser size={14} />}
             busy={busy === "clear"}
             disabled={!configured}
-            onClick={() => act("clear", clearLight, "켜 보기로 켠 시험 값을 모두 해제했습니다.")}
+            onClick={() => act("clear", clearLight, "시험 값을 해제했어요")}
           >
             시험 값 모두 해제
           </ActionButton>
@@ -134,17 +129,11 @@ export default function LightingCheckStep({
             {dirty ? "저장하고 조명 화면으로" : "조명 화면으로"}
           </ActionButton>
         </div>
-        {dirty && (
-          <p className="-mt-1 font-pretendard text-xs text-amber-200/70">
-            표를 고친 게 아직 저장되지 않았어요. 전체 켜기·끄기는 저장한 목록으로 해요.
-          </p>
-        )}
       </Card>
 
       {configured && (
         <Card
           title="이 공간 조명 끄기"
-          hint={`${hallName}의 조명 설정(연결·목록·장면)을 없애요. 조명 메뉴에서 ${hallName}이 사라져요. 서버에 백업 파일은 남아요.`}
           className="border-red-500/20"
           action={
             <ActionButton
@@ -174,7 +163,7 @@ export default function LightingCheckStep({
           }
         }}
         title="이 공간 조명 끄기"
-        message={`${hallName}의 조명 연결·조명 목록·장면이 모두 사라집니다.\n다시 쓰려면 ① 연결부터 다시 저장해야 해요. 정말 끌까요?`}
+        message={`${hallName}의 조명 연결·목록·장면이 모두 사라져요`}
         confirmText="조명 끄기"
       />
     </div>
@@ -192,7 +181,7 @@ function CheckRow({ tone, children }: { tone: Tone; children: ReactNode }) {
           tone === "off" && "bg-white/10 text-white/45",
         )}
       >
-        {tone === "ok" ? <Check size={12} strokeWidth={3} /> : tone === "bad" ? "!" : "–"}
+        {tone === "ok" ? <Check size={12} strokeWidth={3} /> : tone === "bad" ? "!" : "·"}
       </span>
       <span className="min-w-0 break-words">{children}</span>
     </div>

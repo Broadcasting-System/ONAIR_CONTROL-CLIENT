@@ -146,7 +146,6 @@ function Waveform({
           const r = e.currentTarget.getBoundingClientRect();
           onSeek(Math.max(0, Math.min(L - 0.5, ((e.clientX - r.left) / r.width) * L)));
         }}
-        title={onSeek ? "누르면 그 자리부터 틀어요" : undefined}
       >
         <canvas ref={canvas} className="absolute inset-0 h-full w-full" aria-hidden />
         {position > 0 && (
@@ -244,7 +243,6 @@ function CueEditor({
                   !allOn,
                 )
               }
-              title="누르면 이 줄 전체를 켜고 꺼요"
               className={cn(
                 "text-right font-pretendard text-xs enabled:hover:text-white",
                 allOn ? "text-white/55" : "text-white/30 line-through",
@@ -403,9 +401,6 @@ function UploadBox({
           className="rounded-[14px] border border-dashed border-white/20 p-3.5 text-center font-mbc text-[15px] text-white/50 enabled:hover:text-white/80 disabled:opacity-40"
         >
           + MR 올리기
-          <span className="mt-1 block font-pretendard text-[11.5px] text-white/35">
-            mp3·wav
-          </span>
         </button>
       </>
     );
@@ -472,7 +467,7 @@ function MusicSettings({
           onChange={(v) => setDraft({ ...draft, allowStrobe: v })}
           label="스트로브 허용"
         />
-        <span>스트로브(켰다 껐다) 허용</span>
+        <span>스트로브 허용</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="w-28 text-white/50">1초에 깜빡임</span>
@@ -537,11 +532,6 @@ function MusicSettings({
           </>
         )}
       </div>
-      {draft.feed.source === "bridge" && (
-        <p className="text-xs text-white/45">
-          노트북 녹음 소리 받기는 아직 준비 중이에요 (브릿지 소리 스트림 필요).
-        </p>
-      )}
       <button
         type="button"
         onClick={() => onSave(draft)}
@@ -615,26 +605,20 @@ export default function MusicLightPanel({
         : undefined;
 
   const safety = [
-    `깜빡임 초당 ${state.settings.maxFlashPerSec}번까지`,
-    state.settings.allowStrobe ? "스트로브 허용됨" : "스트로브 꺼짐",
-    `할로겐은 ${state.dimmerMinFade}초 넘게 천천히`,
+    `깜빡임 초당 ${state.settings.maxFlashPerSec}번`,
+    state.settings.allowStrobe ? "스트로브 허용" : "스트로브 꺼짐",
+    `할로겐 페이드 ${state.dimmerMinFade}초`,
   ].join(" · ");
 
   return (
     <div className="flex flex-col gap-5">
-      {noFixtures && (
-        <Notice tone="info">
-          조명 목록이 비어 있어요. 관리자가 조명 세팅에서 조명을 넣으면 쇼를 만들 수 있어요.
-        </Notice>
-      )}
+      {noFixtures && <Notice tone="info">조명 목록이 비어 있어요</Notice>}
       {state.lastError && <Notice>{state.lastError}</Notice>}
       {(playing?.error || live?.error) && <Notice>{playing?.error || live?.error}</Notice>}
 
       <section className="flex flex-col gap-5 rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
         {!summary || !show ? (
-          <p className="font-pretendard text-sm text-white/45">
-            MR 을 올리면 빠르기·박자·구간을 찾아 조명 큐를 만들어요. 아래 &apos;조명 쇼&apos;에서 올려 주세요.
-          </p>
+          <p className="font-pretendard text-sm text-white/45">쇼가 없어요</p>
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-[18px]">
@@ -693,7 +677,7 @@ export default function MusicLightPanel({
                     onChange={(e) => setWithAudio(e.target.checked)}
                     className="accent-[#FF3B3B]"
                   />
-                  시작할 때 이 컴퓨터에서 음악도 같이 틀기
+                  음악 같이 틀기
                 </label>
               </div>
             )}
@@ -704,7 +688,7 @@ export default function MusicLightPanel({
 
         {playing && (playing.skipped.flash > 0 || playing.skipped.strobe > 0) && (
           <p className="font-pretendard text-xs text-white/40">
-            안전 규칙으로 건너뜀 — 깜빡임 {playing.skipped.flash}번 · 스트로브 {playing.skipped.strobe}번
+            건너뜀 · 깜빡임 {playing.skipped.flash}번 · 스트로브 {playing.skipped.strobe}번
           </p>
         )}
 
@@ -715,7 +699,7 @@ export default function MusicLightPanel({
             onChange={(on) => setLive(on)}
             label="실시간 박자 따라가기"
           />
-          <b className="text-white">박자 따라가기 (라이브)</b>
+          <b className="text-white">박자 따라가기</b>
           <span className="text-white/50">
             {live
               ? live.bpm
@@ -723,7 +707,7 @@ export default function MusicLightPanel({
                 : "박자를 듣는 중…"
               : state.feed
                 ? null
-                : "소리 입력이 없어요 (관리자 설정)"}
+                : "소리 입력 없음"}
           </span>
           <span className="ml-auto text-white/50">{safety}</span>
         </div>
@@ -861,12 +845,10 @@ export default function MusicLightPanel({
             onClick={() => setShowSettings((v) => !v)}
             className="font-pretendard text-xs text-white/40 hover:text-white/75"
           >
-            {showSettings
-              ? "▴ 음악 조명 설정 접기"
-              : "▾ 음악 조명 설정 (관리자) — 스트로브·깜빡임·소리 입력"}
+            {showSettings ? "▴ 음악 조명 설정 접기" : "▾ 음악 조명 설정"}
           </button>
           {showSettings && (
-            <Panel title="음악 조명 설정" hint="관리자" className="mt-3">
+            <Panel title="음악 조명 설정" className="mt-3">
               <MusicSettings key={hallId} settings={state.settings} onSave={saveSettings} />
             </Panel>
           )}

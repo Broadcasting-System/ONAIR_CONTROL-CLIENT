@@ -21,7 +21,7 @@ export default function InputModal({
   onConfirm,
   initialValue = "",
   title,
-  placeholder = "입력하세요",
+  placeholder,
   icon,
   confirmText = "확인",
   cancelText = "취소",

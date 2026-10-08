@@ -104,7 +104,6 @@ export default function SourcePicker({
                 type="button"
                 disabled={locked || off}
                 onClick={() => onScreen(c.channel)}
-                title={off ? "이 채널에 연결된 송출 화면이 없어요" : undefined}
                 className={cn(cardCls, on ? cardOn : cardOff, on && "bg-black/30", off && "opacity-45")}
               >
                 <div className="relative aspect-video overflow-hidden rounded-lg bg-[#0a0a0c]">

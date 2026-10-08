@@ -67,7 +67,7 @@ export default function RemotePage() {
 
       {!canOperate && (
         <p className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center font-pretendard text-xs text-amber-200/80">
-          보기 전용입니다. 조작은 부원 이상만 할 수 있어요 — 부장에게 승인을 요청하세요.
+          보기 전용
         </p>
       )}
 
@@ -124,7 +124,7 @@ export default function RemotePage() {
       </div>
 
       {/* 빠른 TTS */}
-      <p className="mb-2 font-mbc text-sm text-white/40">빠른 TTS (켜진 스피커로 송출)</p>
+      <p className="mb-2 font-mbc text-sm text-white/40">빠른 TTS</p>
       <div className="flex flex-col gap-2">
         <textarea
           value={text}

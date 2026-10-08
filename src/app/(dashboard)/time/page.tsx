@@ -141,7 +141,7 @@ export default function TimePage() {
           <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5">
             <span className="font-mbc text-xs text-emerald-200/90">
               {liveGroupId
-                ? `현재 송출 중: GROUP ${liveGroupId}`
+                ? `GROUP ${liveGroupId} 송출 중`
                 : "송출 중인 시보 없음"}
             </span>
           </div>
@@ -239,7 +239,7 @@ export default function TimePage() {
           setEditingBellId(null);
         }}
         title="시보 초기화"
-        message="현재 선택된 요일의 시보가 모두 삭제됩니다. 계속하시겠습니까?"
+        message="이 요일 시보를 모두 지워요"
         confirmText="초기화"
         isDestructive={true}
       />

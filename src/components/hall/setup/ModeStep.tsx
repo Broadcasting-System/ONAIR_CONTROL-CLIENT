@@ -39,7 +39,7 @@ export default function ModeStep({
           />
         </div>
         {noChannelLink && (
-          <Notice>지금 연결 방식에서는 채널을 조작할 수 없어요. 채널까지 쓰려면 ‘연결’에서 랜선(HiQnet)을 고르세요.</Notice>
+          <Notice>이 연결 방식은 채널 조작이 안 돼요</Notice>
         )}
       </Card>
 
@@ -60,7 +60,7 @@ export default function ModeStep({
             title="누를 때 확인하는 씬"
             value={guarded.length ? guarded.map((s) => s.name || `씬 ${s.pc}`).join(" · ") : "없음"}
           />
-          <Item icon={<Lock size={16} />} title="조작 화면 잠금" value="열 때마다 잠긴 상태로 시작 (항상)" />
+          <Item icon={<Lock size={16} />} title="조작 화면 잠금" value="항상 켜짐" />
         </ul>
       </Card>
     </div>

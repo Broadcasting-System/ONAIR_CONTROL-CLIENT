@@ -90,7 +90,7 @@ export default function LightingFixturesStep({
       await clearLight();
       const res = await lightingApi.capture(hallId, 3);
       setCapture(res);
-      if (res.used.length === 0) toast.info("콘솔 신호가 없어요. 콘솔에서 평소 쓰는 씬을 켜 두고 다시 읽어 보세요.");
+      if (res.used.length === 0) toast.info("콘솔 신호가 없어요");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -186,20 +186,18 @@ export default function LightingFixturesStep({
 
   return (
     <div className="flex flex-col gap-5">
-      {!canTest && (
-        <Notice>먼저 ① 연결에서 저장하세요. 그래야 조명을 켜 보고 콘솔 신호를 읽을 수 있어요.</Notice>
-      )}
+      {!canTest && <Notice>연결 저장 안 됨</Notice>}
 
-      <Card title="조명 찾기·목록" hint="칩을 누르면 그 조명이 켜지고 아래 표에 새 줄이 생겨요. 이름만 적고 ‘추가’를 누르세요.">
+      <Card title="조명 찾기·목록">
         <div className="flex flex-wrap items-center gap-3">
           <ActionButton tone="primary" icon={<Radio size={15} />} busy={reading} disabled={!canTest} onClick={readConsole}>
             {reading ? "읽는 중… 3초" : "콘솔 신호 읽기 (3초)"}
           </ActionButton>
-          <span className="font-pretendard text-xs text-white/40">
-            {capture
-              ? `콘솔이 쓰는 주소 ${capture.used.length}개 · ${runs.length}묶음`
-              : "콘솔에서 평소 쓰는 씬을 켜 두고 읽으세요. 쓰는 주소가 칩으로 나와요."}
-          </span>
+          {capture && (
+            <span className="font-pretendard text-xs text-white/40">
+              {`콘솔이 쓰는 주소 ${capture.used.length}개 · ${runs.length}묶음`}
+            </span>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -295,13 +293,12 @@ export default function LightingFixturesStep({
             </ActionButton>
             <ActionButton onClick={() => openPending(testAddr, 1)}>이 주소로 새 줄</ActionButton>
             <p className="min-w-[220px] flex-1 font-pretendard text-xs leading-relaxed text-white/45">
-              켜 보면 무대에서 어떤 조명이 켜지는지 보세요.{" "}
               {testOwner
-                ? `목록의 ‘${testOwner.name || "이름 없음"}’ 이 쓰는 주소예요.`
+                ? `사용 중 · ${testOwner.name || "이름 없음"}`
                 : testRun
-                  ? `콘솔은 ${testRun.from}번부터 ${testRun.to - testRun.from + 1}채널을 써요.`
+                  ? `콘솔 ${rangeText(testRun.from, testRun.to)}`
                   : capture
-                    ? "콘솔이 쓰지 않는 주소예요."
+                    ? "콘솔 미사용"
                     : ""}
             </p>
           </div>
@@ -319,7 +316,7 @@ export default function LightingFixturesStep({
 
             {rows.length === 0 && !pending && (
               <p className="px-2 py-6 text-center font-pretendard text-sm text-white/30">
-                조명이 없어요. 콘솔 신호를 읽어 칩을 누르거나 ‘직접 추가’를 누르세요.
+                조명이 없어요
               </p>
             )}
 
@@ -353,7 +350,7 @@ export default function LightingFixturesStep({
                       className={cn(inputCls, "px-2 text-center font-orbitron", span ? okBorder : badBorder)}
                     />
                     <span className="whitespace-nowrap font-orbitron text-xs text-white/55">
-                      {span ? rangeText(span.from, span.to) : "-"}
+                      {span ? rangeText(span.from, span.to) : ""}
                     </span>
                     <div className="flex justify-end">
                       <IconBtn
@@ -399,7 +396,7 @@ export default function LightingFixturesStep({
                     autoFocus
                     value={pending.name}
                     maxLength={24}
-                    placeholder="방금 켜진 조명 이름 (예: 객석 1)"
+                    placeholder="예: 객석 1"
                     aria-label="새 조명 이름"
                     onChange={(e) => setPending({ ...pending, name: e.target.value })}
                     onKeyDown={(e) => {
@@ -428,7 +425,7 @@ export default function LightingFixturesStep({
                     className={cn(inputCls, "px-2 text-center font-orbitron", pendingSpan ? okBorder : badBorder)}
                   />
                   <span className="whitespace-nowrap font-orbitron text-xs text-[#FFD49A]/80">
-                    {pendingSpan ? rangeText(pendingSpan.from, pendingSpan.to) : "-"}
+                    {pendingSpan ? rangeText(pendingSpan.from, pendingSpan.to) : ""}
                   </span>
                   <div className="flex justify-end gap-1">
                     <ActionButton tone="primary" onClick={addPending} disabled={!pendingSpan} className="h-9 px-3">
@@ -449,7 +446,6 @@ export default function LightingFixturesStep({
                 )}
                 {pending.runLen > 1 && (
                   <p className="px-1 font-pretendard text-xs text-white/45">
-                    주소마다 다른 등이 켜지나요?{" "}
                     <button type="button" onClick={addPendingSplit} className="font-mbc text-[#FFD49A] hover:underline">
                       밝기만 {pending.runLen}개로 나눠 추가
                     </button>
@@ -466,8 +462,7 @@ export default function LightingFixturesStep({
 
         {overlaps.length > 0 && (
           <Notice>
-            {overlaps.map((o) => `${o.a} 와 ${o.b} 가 주소 ${o.addrs.join(", ")} 를 같이 써요`).join(" · ")} — 같은 조광기
-            채널에 묶인 거면 괜찮아요.
+            {overlaps.map((o) => `${o.a}·${o.b} 주소 ${o.addrs.join(", ")} 겹침`).join(" · ")}
           </Notice>
         )}
       </Card>

@@ -30,10 +30,7 @@ export default function NotebookPicker({
 
   if (list.length === 0) {
     return (
-      <p className="font-pretendard text-xs leading-relaxed text-white/35">
-        켜진 노트북이 아직 없어요. 노트북에 설치 파일을 깔면(기기 관리 › 강당 장비 › 노트북 설치 파일) 30초 안에 여기
-        나타나요.
-      </p>
+      <p className="font-pretendard text-xs text-white/35">켜진 노트북이 없어요</p>
     );
   }
   return (

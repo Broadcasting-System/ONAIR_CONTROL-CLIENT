@@ -101,7 +101,7 @@ export default function BellEditor({
       <TextInput
         value={label}
         onChange={setLabel}
-        placeholder="라벨을 붙여주세요"
+        placeholder="라벨"
         width="100%"
       />
 
@@ -135,7 +135,7 @@ export default function BellEditor({
       {staleSpeakers.length > 0 && (
         <div className="flex flex-col gap-2 px-2">
           <span className="font-mbc text-sm text-amber-200/80">
-            지금 스피커 목록에 없는 대상 — 눌러서 빼세요
+            목록에 없는 대상
           </span>
           <div className="flex flex-wrap gap-2">
             {staleSpeakers.map((id) => (
@@ -190,7 +190,7 @@ export default function BellEditor({
           <Select
             value={audioKey(audioFile)}
             onChange={setAudioFile}
-            placeholder="음악을 선택해주세요"
+            placeholder="음악 선택"
             options={[
               { value: "none", label: "없음" },
               // value·저장값 모두 호스트 없는 경로로 통일 → 기기 간 동기화

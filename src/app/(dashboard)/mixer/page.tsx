@@ -33,7 +33,7 @@ export default function AudioPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>오디오</SectionHeader>
-        <Notice tone="info">설정된 오디오 믹서가 없습니다. 서버의 config/halls.json 에 추가하세요.</Notice>
+        <Notice tone="info">오디오 믹서 없음</Notice>
       </div>
     );
   }

@@ -34,7 +34,7 @@ export function useMusicLight(hallId: string | null, enabled = true) {
     mutationFn: ({ file, name, options }: { file: File; name: string; options: ShowOptions }) =>
       musicLightApi.upload(hallId as string, file, name, options),
     onSuccess: (show) => {
-      toast.success(`'${show.name}' 분석 끝 — ${Math.round(show.bpm)} BPM, 큐 ${show.cues}개`);
+      toast.success(`'${show.name}' 분석 끝 · ${Math.round(show.bpm)} BPM · 큐 ${show.cues}개`);
       refresh();
     },
     onError: fail,

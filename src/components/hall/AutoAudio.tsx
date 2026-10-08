@@ -61,7 +61,7 @@ function featureStatus(
   if (!f.enabled) return { text: "꺼짐", acting: false };
   const lists = LIST_INFO[feature].map((l) => (f.params[l.key] as string[]) ?? []);
   if (lists.some((l) => l.length === 0))
-    return { text: "대상 채널을 먼저 정해야 해요 (관리자)", acting: false };
+    return { text: "대상 채널 없음", acting: false };
   if (!state.meter.ok) return { text: "미터가 없어 쉬는 중", acting: false };
   const name = (c: AutoChannel) => c.name;
   if (feature === "duck") {
@@ -169,7 +169,7 @@ export function FeatureCard({
         onClick={() => setOpen((v) => !v)}
         className="w-fit font-pretendard text-xs text-white/40 hover:text-white/75"
       >
-        {open ? "▴ 접기" : `▾ 자세히${isAdmin ? "" : " (바꾸기는 관리자)"}`}
+        {open ? "▴ 접기" : "▾ 자세히"}
       </button>
       {open && (
         <div className="flex flex-col gap-2.5 border-t border-dashed border-white/10 pt-2.5">
@@ -294,7 +294,7 @@ export function ChannelTable({
     return null;
   };
   if (state.channels.length === 0) {
-    return <p className="font-pretendard text-sm text-white/40">믹서에 채널이 없습니다.</p>;
+    return <p className="font-pretendard text-sm text-white/40">채널이 없어요</p>;
   }
   return (
     <div className="flex flex-col">
@@ -345,7 +345,6 @@ export function ChannelTable({
                   type="button"
                   disabled={!canOperate}
                   onClick={() => onResume(c.id)}
-                  title="누르면 지금 바로 자동으로 돌아가요"
                   className={cn(
                     "rounded-md px-1.5 py-px text-[11px] enabled:hover:brightness-125",
                     TAG_STYLE.hold,
@@ -369,7 +368,7 @@ export function ChannelTable({
                 <span className="font-pretendard text-white/70">그대로</span>
               )}
               <span className="block text-[9px] tracking-[0.06em] text-white/35">
-                {c.base !== null ? `사람 ${Math.round(c.base)}%` : "—"}
+                {c.base !== null ? `사람 ${Math.round(c.base)}%` : ""}
               </span>
             </div>
           </div>
@@ -392,7 +391,7 @@ export function AutoLog({ log }: { log: AutoLogEntry[] }) {
   if (log.length === 0) {
     return (
       <p className="font-pretendard text-sm text-white/40">
-        아직 한 일이 없습니다.
+        기록이 없어요
       </p>
     );
   }
@@ -423,7 +422,7 @@ export function AutoLog({ log }: { log: AutoLogEntry[] }) {
 
 const SOURCES: { value: MeterSourceKind; label: string }[] = [
   { value: "none", label: "없음" },
-  { value: "demo", label: "시연 (가짜 소리)" },
+  { value: "demo", label: "시연" },
   { value: "console", label: "콘솔 미터" },
   { value: "bridge", label: "강당 노트북 녹음" },
 ];
@@ -491,11 +490,6 @@ export function AutoSettings({
           </button>
         ))}
       </div>
-      {source === "console" && (
-        <p className="text-xs text-amber-100/70">
-          Si 콘솔 미터(UDP 3333)는 아직 해석하지 못해 모의 콘솔에서만 값이 나옵니다.
-        </p>
-      )}
       {source === "bridge" && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="w-28 text-white/50">노트북</span>
@@ -515,7 +509,7 @@ export function AutoSettings({
             className={cn(field, "w-64")}
             value={lanes}
             onChange={(e) => setLanes(e.target.value)}
-            placeholder="입력=채널, 예: 1=1, 2=5"
+            placeholder="예: 1=1, 2=5"
           />
         </div>
       )}

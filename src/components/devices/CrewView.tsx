@@ -128,7 +128,7 @@ function Profile({ p, domain, onEdit }: { p: CrewMember; domain: string; onEdit:
         <Meta label="지금">{p.roleLabel}</Meta>
         <Meta label="ONAIR 메일" mono>
           <span title={p.mailAddress ? `${p.mailAddress}@${domain}` : undefined}>
-            {p.mailAddress ? `${p.mailAddress}@` : "—"}
+            {p.mailAddress ? `${p.mailAddress}@` : "없음"}
           </span>
         </Meta>
         <Meta label="기기">{p.hasDevice ? "등록됨" : "명단만"}</Meta>
@@ -259,7 +259,7 @@ function CardBgPicker({
     onSuccess: (res) => {
       setPhotoUrl(res.member.photoUrl ?? "");
       setChoice("photo");
-      toast.success(`${target.name} — 사진을 올렸어요.`);
+      toast.success("사진을 올렸어요");
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -269,7 +269,7 @@ function CardBgPicker({
     onSuccess: () => {
       setPhotoUrl("");
       setChoice("wave");
-      toast.success(`${target.name} — 사진을 지웠어요. 카드는 소리 파형으로 보여요.`);
+      toast.success("사진을 지웠어요");
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -279,11 +279,11 @@ function CardBgPicker({
   const pickFile = (file: File | undefined) => {
     if (!file) return;
     if (!PHOTO_TYPES.includes(file.type)) {
-      toast.error("JPG·PNG·WEBP 사진만 올릴 수 있어요.");
+      toast.error("JPG·PNG·WEBP 만 올릴 수 있어요");
       return;
     }
     if (file.size > PHOTO_MAX_MB * 1024 * 1024) {
-      toast.error(`사진은 ${PHOTO_MAX_MB}MB 이하로 올려 주세요.`);
+      toast.error(`사진은 ${PHOTO_MAX_MB}MB 까지예요`);
       return;
     }
     up.mutate(file);
@@ -323,7 +323,7 @@ function CardBgPicker({
             <PhotoLayer url={photoUrl} cohort={target.cohort} />
           ) : (
             <span className="absolute inset-0 grid place-items-center pb-5 font-pretendard text-[13px] text-white/45">
-              {up.isPending ? "올리는 중…" : "사진을 올려 주세요"}
+              {up.isPending ? "올리는 중…" : "사진 없음"}
             </span>
           )}
         </BgTile>
@@ -357,7 +357,7 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
         cardBg: cardBg === "photo" && photoUrl ? "photo" : "wave",
       }),
     onSuccess: () => {
-      toast.success(`${target.name} — 소개를 고쳤어요.`);
+      toast.success("저장했어요");
       qc.invalidateQueries({ queryKey: ["crew"] });
       qc.invalidateQueries({ queryKey: ["members"] });
       qc.invalidateQueries({ queryKey: ["me"] });
@@ -370,7 +370,7 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
   const ok = titleLen <= TITLE_MAX && bioLen <= BIO_MAX;
 
   return (
-    <ModalShell title={`${target.name} — 소개 고치기`} onClose={onClose}>
+    <ModalShell title={`${target.name} 소개 고치기`} onClose={onClose}>
       <form
         className="grid gap-4"
         onSubmit={(e) => {
@@ -380,13 +380,13 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
       >
         <label className="grid gap-1.5">
           <span className={lblCls}>
-            직함 · 한 줄 <Count n={titleLen} max={TITLE_MAX} />
+            직함 <Count n={titleLen} max={TITLE_MAX} />
           </span>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={TITLE_MAX + 10}
-            placeholder="예: 팀모노리스 · 강당 음향 담당"
+            placeholder="예: 강당 음향 담당"
             autoFocus
             className={cn(inpCls, "h-11")}
           />
@@ -448,7 +448,7 @@ function AddRosterModal({
   const add = useMutation({
     mutationFn: () => memberApi.addRoster({ name: name.trim(), cohort: n, role: shownRole, wasLead, title }),
     onSuccess: (res) => {
-      toast.success(`${res.member.cohort}기 ${res.member.name} — 명단에 올렸어요.`);
+      toast.success(`${res.member.cohort}기 ${res.member.name} 추가했어요`);
       qc.invalidateQueries({ queryKey: ["crew"] });
       qc.invalidateQueries({ queryKey: ["members"] });
       onAdded(res.member.id);
@@ -500,12 +500,12 @@ function AddRosterModal({
           ))}
           <label className="ml-2 flex cursor-pointer items-center gap-2 font-pretendard text-sm text-white/70">
             <input type="checkbox" checked={wasLead} onChange={(e) => setWasLead(e.target.checked)} className="h-4 w-4 accent-[#FF3B3B]" />
-            그 기수 부장이었어요
+            부장
           </label>
         </div>
         <label className="grid gap-1.5">
           <span className={lblCls}>
-            직함 · 한 줄 (선택) <Count n={title.trim().length} max={TITLE_MAX} />
+            직함 <Count n={title.trim().length} max={TITLE_MAX} />
           </span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={TITLE_MAX + 10} placeholder="예: 화영" className={cn(inpCls, "h-11")} />
         </label>
@@ -547,23 +547,21 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
     list[0];
 
   const data = crew.data;
-  const first = groups[0]?.[0];
 
   return (
     <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,480px)] 2xl:grid-cols-[minmax(0,1fr)_520px]">
       <section className="rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
         <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
           <h3 className="whitespace-nowrap font-mbc text-2xl text-white">방송부</h3>
-          {first && <span className="font-pretendard text-[13px] text-white/50">{first}기부터 지금까지</span>}
           {toggle && <span className="ml-auto">{toggle}</span>}
         </div>
 
         {crew.error ? (
-          <Notice tone="info">{(crew.error as Error).message || "방송부 명단을 불러오지 못했어요."}</Notice>
+          <Notice tone="info">{(crew.error as Error).message || "명단을 불러오지 못했어요"}</Notice>
         ) : !data ? (
           <p className="py-8 font-pretendard text-sm text-white/45">불러오는 중…</p>
         ) : list.length === 0 ? (
-          <p className="py-8 font-pretendard text-sm text-white/45">아직 방송부 명단이 없어요.</p>
+          <p className="py-8 font-pretendard text-sm text-white/45">명단이 없어요</p>
         ) : (
           <div className="grid">
             {groups.map(([cohort, people]) => {

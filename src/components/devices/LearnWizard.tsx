@@ -31,14 +31,6 @@ const MODES: { key: LearnMode; title: string }[] = [
   { key: "manual", title: "직접 붙여넣기" },
 ];
 
-const MODE_NOTE: Record<LearnMode, string> = {
-  tcp: "시작하면 이 PC가 제조사 프로그램과 장비 사이에 섭니다. 프로그램의 ‘장비 주소’를 화면에 뜨는 이 PC 주소로 바꾸면, 프로그램은 평소처럼 동작하고 ONAIR는 오가는 신호를 기록합니다.",
-  serial:
-    "com0com 으로 가상 COM 포트 쌍(예: COM10 ↔ COM11)을 만들고, 제조사 프로그램의 포트를 COM10으로 바꿉니다. ONAIR가 COM11을 잡아 장비의 진짜 COM 포트로 넘기면서 기록합니다.",
-  manual:
-    "중계를 못 끼울 때 쓰는 길입니다. 와이어샤크·스위치 미러링·제조사 프로그램 로그·장비 매뉴얼에서 얻은 패킷을 단계마다 16진수로 붙여넣으면, 규칙 찾기는 똑같이 동작합니다.",
-};
-
 function Shell({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -173,11 +165,11 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
 
   const begin = async () => {
     if (!host.trim()) {
-      toast.error(useSerial ? "장비가 붙은 COM 포트를 입력하세요 (예: COM3)." : "스피커 선택기(장비) 주소를 입력하세요.");
+      toast.error(useSerial ? "COM 포트를 입력하세요" : "스피커 선택기 주소를 입력하세요");
       return;
     }
     if (mode === "serial" && !listenSerial.trim()) {
-      toast.error("제조사 프로그램이 붙을 가상 COM 포트를 입력하세요 (예: COM11).");
+      toast.error("가상 COM 포트를 입력하세요");
       return;
     }
     const s = await run(
@@ -192,7 +184,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
           listenSerial: mode === "serial" ? listenSerial.trim() : undefined,
           baud: useSerial ? baud : undefined,
         }),
-      mode === "manual" ? "붙여넣기 모드로 시작했습니다." : "중계를 시작했습니다.",
+      mode === "manual" ? "붙여넣기를 시작했어요" : "중계를 시작했어요",
     );
     if (!s) return;
     startedRef.current = true;
@@ -217,7 +209,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
   const addPacket = async () => {
     const s = steps[stepIdx];
     if (!s) return;
-    const next = await run(() => learnApi.packet(s.label, paste), "이 단계에 넣었습니다.");
+    const next = await run(() => learnApi.packet(s.label, paste), "넣었어요");
     if (!next) return;
     setStatus(next);
     setPaste("");
@@ -231,7 +223,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
   };
 
   const apply = async () => {
-    const r = await run(() => learnApi.apply(), "이 장비로 연결했습니다.");
+    const r = await run(() => learnApi.apply(), "연결했어요");
     if (!r) return;
     startedRef.current = false;
     qc.invalidateQueries({ queryKey: SPEAKER_MATRIX_KEY });
@@ -264,12 +256,11 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
               </button>
             ))}
           </div>
-          <p className="max-w-[70ch] font-pretendard text-sm leading-relaxed text-white/55">{MODE_NOTE[mode]}</p>
 
           <div className="grid grid-cols-2 gap-4">
             {mode === "manual" && (
               <label className="col-span-2 flex flex-col gap-1.5">
-                <span className="font-mbc text-xs text-white/40">배운 뒤 ONAIR가 장비에 보낼 방법</span>
+                <span className="font-mbc text-xs text-white/40">전송 방식</span>
                 <Select
                   value={transport}
                   onChange={setTransport}
@@ -286,7 +277,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
             {useSerial ? (
               <>
                 <label className="flex flex-col gap-1.5">
-                  <span className="font-mbc text-xs text-white/40">장비가 붙은 COM 포트</span>
+                  <span className="font-mbc text-xs text-white/40">장비 COM 포트</span>
                   <div className="flex gap-2">
                     <input
                       list="learn-com-ports"
@@ -328,7 +319,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                 </label>
                 {mode === "serial" && (
                   <label className="col-span-2 flex flex-col gap-1.5">
-                    <span className="font-mbc text-xs text-white/40">제조사 프로그램이 붙을 가상 COM 포트</span>
+                    <span className="font-mbc text-xs text-white/40">가상 COM 포트</span>
                     <input
                       value={listenSerial}
                       onChange={(e) => setListenSerial(e.target.value)}
@@ -341,7 +332,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
             ) : (
               <>
                 <label className="flex flex-col gap-1.5">
-                  <span className="font-mbc text-xs text-white/40">스피커 선택기 주소 (IP)</span>
+                  <span className="font-mbc text-xs text-white/40">스피커 선택기 IP</span>
                   <input value={host} onChange={(e) => setHost(e.target.value)} placeholder="192.168.0.200" className={cn(input, "font-orbitron")} />
                 </label>
                 <label className="flex flex-col gap-1.5">
@@ -352,11 +343,11 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
             )}
 
             <label className="flex flex-col gap-1.5">
-              <span className="font-mbc text-xs text-white/40">구역(스피커) 개수</span>
+              <span className="font-mbc text-xs text-white/40">구역 개수</span>
               <input type="number" min={1} max={256} value={zones} onChange={(e) => setZones(Number(e.target.value))} className={cn(input, "font-orbitron")} />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="font-mbc text-xs text-white/40">한 줄에 놓을 개수(열)</span>
+              <span className="font-mbc text-xs text-white/40">열 개수</span>
               <input type="number" min={1} max={64} value={cols} onChange={(e) => setCols(Number(e.target.value))} className={cn(input, "font-orbitron")} />
             </label>
           </div>
@@ -384,9 +375,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
           {status.mode !== "manual" && (
             <div className="flex flex-col gap-2 rounded-xl border border-sky-500/25 bg-sky-500/[0.07] px-5 py-4">
               <span className="font-mbc text-xs text-sky-200/70">
-                {status.mode === "serial"
-                  ? "제조사 프로그램의 ‘포트’를 아래 가상 COM 포트로 바꾸세요"
-                  : "제조사 프로그램의 ‘장비 주소’를 아래로 바꾸세요"}
+                {status.mode === "serial" ? "제조사 프로그램 포트" : "제조사 프로그램 장비 주소"}
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 {status.mode === "serial" ? (
@@ -417,7 +406,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                 </span>
                 {status.mode === "serial" && (
                   <span className="font-pretendard text-xs text-white/35">
-                    장비 쪽: {status.serial?.target}
+                    장비 {status.serial?.target}
                   </span>
                 )}
               </div>
@@ -427,9 +416,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
           {/* 직접 붙여넣기 */}
           {status.mode === "manual" && (
             <div className="flex flex-col gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-5 py-4">
-              <span className="font-mbc text-xs text-amber-200/80">
-                이 단계의 패킷을 16진수로 붙여넣으세요 (예: 02 2d 00 01 … )
-              </span>
+              <span className="font-mbc text-xs text-amber-200/80">패킷 (16진수)</span>
               <div className="flex gap-2">
                 <input
                   value={paste}
@@ -478,7 +465,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                 defaultValue={status.names[String(step.zone)] ?? ""}
                 key={step.zone}
                 onBlur={(e) => learnApi.name(step.zone as number, e.target.value).catch(() => {})}
-                placeholder="예: 1-3, 강당, 교무실"
+                placeholder="예: 1-3"
                 className={cn(input, "w-52")}
               />
             </label>
@@ -553,8 +540,8 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
             <span className={cn("h-2.5 w-2.5 rounded-full", result.template.mode === "bitmap" ? "bg-emerald-400" : "bg-amber-400")} />
             <p className="font-mbc text-[15px] text-white">
               {result.template.mode === "bitmap"
-                ? "규칙을 찾았어요 — 어떤 조합이든 계산해서 켤 수 있습니다"
-                : "규칙은 못 찾았지만 녹화 재생으로 켤 수 있습니다"}
+                ? "규칙을 찾았어요"
+                : "규칙을 못 찾았어요 · 녹화 재생 방식"}
             </p>
           </div>
 
@@ -574,7 +561,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
               </span>
               {result.checks.combo !== null && (
                 <span className={cn("rounded-full px-2.5 py-0.5", result.checks.combo ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300")}>
-                  {result.checks.combo ? "조합 규칙 확인" : "조합은 별도 명령일 수 있음"}
+                  {result.checks.combo ? "조합 규칙 확인" : "조합 규칙 미확인"}
                 </span>
               )}
               {result.missingZones.length > 0 && (
@@ -584,11 +571,6 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
               )}
             </div>
           </div>
-
-          <p className="font-pretendard text-sm text-white/50">
-            적용하면 스피커 연결이 이 장비로 바뀌고, 적어 둔 교실 이름이 매핑에 저장됩니다. 이름을 비워 둔 구역은
-            <b className="text-white/70"> 스피커 매핑</b>에서 소리를 들으며 마저 매길 수 있어요.
-          </p>
 
           <div className="flex justify-between">
             <button type="button" onClick={() => setPhase("capture")} className="h-11 rounded-xl px-4 font-mbc text-sm text-white/50 hover:bg-white/5 hover:text-white">

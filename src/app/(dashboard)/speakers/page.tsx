@@ -17,7 +17,7 @@ export default function SpeakersPage() {
         <SectionHeader className="mb-0">스피커 지도</SectionHeader>
         {!canOperate && (
           <span className="font-pretendard text-[13px] text-white/40">
-            보기 전용 기기라 스피커를 켜고 끌 수 없어요.
+            보기 전용
           </span>
         )}
       </header>

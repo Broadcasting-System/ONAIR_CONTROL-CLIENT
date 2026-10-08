@@ -74,7 +74,7 @@ export const useFileUpload = () => {
               };
 
               xhr.onerror = () =>
-                reject(new Error(`네트워크 오류 — 백엔드(${endpoint})에 연결 실패`));
+                reject(new Error("서버에 연결하지 못했어요"));
               xhr.open("POST", endpoint, true);
               xhr.send(formData);
             }),

@@ -121,7 +121,7 @@ function uploadFile(file: File, onProgress?: (ratio: number) => void, signal?: A
           typeof detail === "string"
             ? detail
             : xhr.status === 413
-              ? "파일이 너무 커요. 이미지는 20MB, 영상은 500MB 까지예요."
+              ? "파일이 너무 커요"
               : xhr.status === 403
                 ? "이 작업을 수행할 권한이 없습니다."
                 : "파일을 올리지 못했어요.",

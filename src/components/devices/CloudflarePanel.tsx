@@ -61,11 +61,11 @@ function loadError(q: { error: unknown; failureReason: unknown; data: unknown })
 }
 
 function errText(e: unknown) {
-  return e instanceof Error ? e.message : "요청을 처리하지 못했어요.";
+  return e instanceof Error ? e.message : "요청을 처리하지 못했어요";
 }
 
 function day(iso: string | null | undefined) {
-  return iso ? iso.slice(0, 10) : "—";
+  return iso ? iso.slice(0, 10) : "";
 }
 
 type Confirm = { title: string; message: string; confirmText: string; run: () => Promise<unknown>; done: string } | null;
@@ -113,12 +113,6 @@ function CheckRow({ c }: { c: CfCheck }) {
             {c.detail}
           </span>
         </div>
-        {c.fix && (
-          <p className="font-pretendard text-[13.5px] leading-relaxed text-white/70">
-            <span className="mr-1.5 font-semibold text-white/90">고치는 법</span>
-            {c.fix}
-          </p>
-        )}
       </div>
     </li>
   );
@@ -150,7 +144,7 @@ function StatusSection() {
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <span className="font-mbc text-[17px] text-white">
-              {s.driver === "mock" ? "가짜(mock)로 시험 중" : s.problems === 0 ? "모두 정상이에요" : `고칠 곳 ${s.problems}개`}
+              {s.driver === "mock" ? "mock 모드" : s.problems === 0 ? "모두 정상이에요" : `고칠 곳 ${s.problems}개`}
             </span>
             <span className="font-pretendard text-[13px] text-white/45">
               {s.checkedAt.replace("T", " ").slice(5, 16)} 확인
@@ -176,14 +170,14 @@ function StatusSection() {
             onClick={() => setShowPerms(!showPerms)}
             className="w-fit font-pretendard text-[13.5px] text-white/60 underline-offset-4 hover:text-white hover:underline"
           >
-            {showPerms ? "토큰 권한 접기" : "토큰 권한 자세히 보기"}
+            {showPerms ? "토큰 권한 접기" : "토큰 권한"}
           </button>
           {showPerms && (
             <div className="rounded-xl border border-white/10 bg-black/20">
               <table className="w-full text-left font-pretendard text-[14px]">
                 <thead className="text-white/45">
                   <tr className="border-b border-white/10">
-                    <th className="px-4 py-2.5 font-normal">권한 (토큰 편집 화면 이름)</th>
+                    <th className="px-4 py-2.5 font-normal">권한</th>
                     <th className="px-4 py-2.5 font-normal">쓰는 곳</th>
                     <th className="px-4 py-2.5 font-normal">있음</th>
                   </tr>
@@ -270,22 +264,22 @@ function IssueForm({ domain, onDone }: { domain: string; onDone: () => void }) {
   const problem = !l
     ? ""
     : !/^[a-z0-9.]+$/.test(l)
-      ? "영문 소문자·숫자·점(.)만 쓸 수 있어요."
+      ? "쓸 수 없는 글자가 있어요"
       : l.length < 3 || l.length > 20
-        ? "3~20자로 적어 주세요."
+        ? "3~20자"
         : !LOCAL_RE.test(l)
-          ? "점(.)으로 시작·끝나거나 두 번 이어 쓸 수 없어요."
+          ? "점 위치가 잘못됐어요"
           : /^\d{2}/.test(l)
-            ? "숫자 두 자리로 시작하면 부원 주소와 헷갈려요."
+            ? "숫자 두 자리로 시작할 수 없어요"
             : emails.some((e) => !EMAIL_RE.test(e))
-              ? "받을 메일 주소를 다시 확인해 주세요."
+              ? "받을 메일 주소가 잘못됐어요"
               : emails.length > 5
-                ? "받을 메일은 5개까지예요."
+                ? "받을 메일은 5개까지예요"
                 : "";
   const issue = useMutation({
     mutationFn: () => cloudflareApi.addAddress({ localPart: l, forwardTo: emails, note: note.trim() }),
     onSuccess: (r) => {
-      toast.success(`${r.address.address}@${domain} 를 만들었어요. 처음 쓰는 받을 메일에는 확인 메일이 가요.`);
+      toast.success(`${r.address.address}@${domain} 를 만들었어요`);
       qc.invalidateQueries({ queryKey: ["cf", "mail"] });
       onDone();
     },
@@ -311,7 +305,7 @@ function IssueForm({ domain, onDone }: { domain: string; onDone: () => void }) {
           {problem && <span className="font-pretendard text-[12.5px] text-[#FF8B8B]">{problem}</span>}
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="font-pretendard text-[13px] font-semibold text-white/70">받을 메일 (최대 5개)</span>
+          <span className="font-pretendard text-[13px] font-semibold text-white/70">받을 메일</span>
           <input
             value={to}
             onChange={(e) => setTo(e.target.value)}
@@ -323,18 +317,18 @@ function IssueForm({ domain, onDone }: { domain: string; onDone: () => void }) {
         </label>
       </div>
       <label className="flex flex-col gap-1.5">
-        <span className="font-pretendard text-[13px] font-semibold text-white/70">메모 (선택)</span>
+        <span className="font-pretendard text-[13px] font-semibold text-white/70">메모</span>
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={100}
-          placeholder="예: 축제 문의 · 담당 선생님"
+          placeholder="예: 축제 문의"
           className={field}
         />
       </label>
       <div className="flex items-center gap-2">
         <span className="mr-auto font-pretendard text-[13px] text-white/50">
-          {l && !problem ? `${l}@${domain} → ${emails.length ? emails.join(", ") : "받을 메일을 적어 주세요"}` : ""}
+          {l && !problem && emails.length ? `${l}@${domain} → ${emails.join(", ")}` : ""}
         </span>
         <ActionButton tone="ghost" onClick={onDone}>
           닫기
@@ -369,14 +363,14 @@ function MailSection() {
       qc.invalidateQueries({ queryKey: ["cf"] });
       qc.invalidateQueries({ queryKey: ["members"] });
       if (r.failed.length) toast.error(`못 맞춘 곳: ${r.failed.join(", ")}`);
-      else toast.success(r.extrasFixed ? `규칙을 다시 맞췄어요. 사라진 추가 주소 ${r.extrasFixed}개도 다시 만들었어요.` : "메일 규칙을 다시 맞췄어요.");
+      else toast.success(r.extrasFixed ? `규칙을 다시 맞췄어요 · 추가 주소 ${r.extrasFixed}개 복구` : "규칙을 다시 맞췄어요");
     },
     onError: (e) => toast.error(errText(e)),
   });
   const resend = useMutation({
     mutationFn: (id: string) => cloudflareApi.resendDestination(id),
     onSuccess: (r) => {
-      toast.success(`${r.destination.email} 로 확인 메일을 다시 보냈어요.`);
+      toast.success(`${r.destination.email} 로 확인 메일을 보냈어요`);
       qc.invalidateQueries({ queryKey: ["cf", "mail"] });
     },
     onError: (e) => toast.error(errText(e)),
@@ -404,7 +398,7 @@ function MailSection() {
               <Dot ok={d.driver === "mock" ? null : s?.connection.ok ?? null} />
               <span className="mt-0.5">
                 {d.driver === "mock"
-                  ? "가짜(mock) — 실제 메일은 오지 않아요"
+                  ? "mock 모드"
                   : s?.connection.ok
                     ? `Cloudflare 연결됨${s.connection.enabled === false ? " · Email Routing 꺼짐" : ""}`
                     : "Cloudflare 메일에 연결하지 못했어요"}
@@ -414,7 +408,7 @@ function MailSection() {
               추가 주소 {counts.extra}개 · 부원 주소 {counts.member}개
             </span>
             <span className="text-white/55">
-              워커 비밀값 {s?.workerSecretSet ? "있음" : "없음 (역할 주소가 동작하지 않아요)"}
+              워커 비밀값 {s?.workerSecretSet ? "있음" : "없음"}
             </span>
             <div className="ml-auto flex gap-2">
               <ActionButton busy={sync.isPending} icon={<RefreshCw size={14} />} onClick={() => sync.mutate()}>
@@ -447,7 +441,7 @@ function MailSection() {
                 {rows.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-4 py-8 text-center text-white/45">
-                      {filter === "extra" ? "발급한 추가 주소가 없어요. [주소 발급]으로 만들어요." : "주소가 없어요."}
+                      {filter === "extra" ? "추가 주소가 없어요" : "주소가 없어요"}
                     </td>
                   </tr>
                 ) : (
@@ -475,7 +469,7 @@ function MailSection() {
                         <AddrStatus a={a} />
                         {a.kind === "member" && a.error && (
                           <span className="mt-1 block text-[13px] text-[#FF8B8B]" title={a.error}>
-                            Cloudflare 실패 — [규칙 다시 맞추기]
+                            Cloudflare 실패
                           </span>
                         )}
                       </td>
@@ -483,7 +477,7 @@ function MailSection() {
                         {a.kind === "extra"
                           ? [a.note, a.createdBy && `${a.createdBy} · ${day(a.createdAt)}`].filter(Boolean).join(" · ")
                           : a.kind === "role"
-                            ? "역할로 받는 사람을 정해요"
+                            ? ""
                             : a.roleLabel}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -494,10 +488,10 @@ function MailSection() {
                             onClick={() =>
                               setConfirm({
                                 title: "주소 지우기",
-                                message: `${a.address}@${domain} 를 지울까요?\n이 주소로 오는 메일은 더는 전달되지 않아요.`,
+                                message: `${a.address}@${domain} 를 지울까요?\n메일이 더는 전달되지 않아요.`,
                                 confirmText: "지우기",
                                 run: () => cloudflareApi.deleteAddress(a.id),
-                                done: `${a.address}@${domain} 를 지웠어요.`,
+                                done: `${a.address}@${domain} 를 지웠어요`,
                               })
                             }
                           >
@@ -528,14 +522,14 @@ function MailSection() {
                   {d.destinations.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-4 py-6 text-center text-white/45">
-                        등록된 받을 메일이 없어요.
+                        받을 메일이 없어요
                       </td>
                     </tr>
                   ) : (
                     d.destinations.map((x) => (
                       <tr key={x.id} className="border-b border-white/[0.06] last:border-b-0">
                         <td className="px-4 py-3 font-mono text-[14px] text-white/90">{x.email}</td>
-                        <td className="px-4 py-3 text-white/60">{x.usedBy.join(", ") || "—"}</td>
+                        <td className="px-4 py-3 text-white/60">{x.usedBy.join(", ")}</td>
                         <td className="px-4 py-3">
                           <span className="flex items-start gap-2 text-white/85">
                             <Dot ok={x.verified} />
@@ -584,7 +578,7 @@ function AccessEmailSection() {
     onSuccess: (res, e) => {
       qc.setQueryData(["cf", "access-emails"], res);
       setEmail("");
-      toast.success(`${e} 로 로그인할 수 있어요.`);
+      toast.success(`${e} 를 더했어요`);
     },
     onError: (e) => toast.error(errText(e)),
   });
@@ -625,7 +619,7 @@ function AccessEmailSection() {
                 <span className="font-mono text-[14.5px] text-white">{e.email}</span>
                 {e.member && <span className="font-pretendard text-[14px] text-white/55">{e.member}</span>}
                 <span className="ml-auto font-pretendard text-[13.5px] text-white/50">
-                  {e.protected ? `${e.reason} — 뺄 수 없어요` : ""}
+                  {e.protected ? `${e.reason} · 고정` : ""}
                 </span>
                 {!e.protected && (
                   <ActionButton
@@ -634,10 +628,10 @@ function AccessEmailSection() {
                     onClick={() =>
                       setConfirm({
                         title: "로그인 허용 빼기",
-                        message: `${e.email} 을 허용 목록에서 뺄까요?\n이 이메일로는 브라우저 로그인이 더는 안 돼요. (데스크톱 앱 기기 키는 그대로예요)`,
+                        message: `${e.email} 을 뺄까요?\n브라우저 로그인이 더는 안 돼요.`,
                         confirmText: "빼기",
                         run: () => cloudflareApi.removeAccessEmail(e.email),
-                        done: `${e.email} 을 뺐어요.`,
+                        done: `${e.email} 을 뺐어요`,
                       })
                     }
                   >
@@ -648,12 +642,7 @@ function AccessEmailSection() {
             ))}
           </ul>
           {d.otherRules > 0 && (
-            <p className="font-pretendard text-[13px] text-white/50">
-              이메일 말고 다른 규칙(이메일 도메인·그룹 등) {d.otherRules}개는 그대로 두었어요 — Cloudflare 대시보드에서 바꿔요.
-            </p>
-          )}
-          {d.driver === "mock" && (
-            <p className="font-pretendard text-[13px] text-white/50">지금은 가짜(mock)라 실제 Cloudflare 에는 반영되지 않아요.</p>
+            <p className="font-pretendard text-[13px] text-white/50">다른 규칙 {d.otherRules}개</p>
           )}
         </div>
       )}
@@ -668,15 +657,15 @@ function ownerText(d: CfDevice) {
   const o = d.owner;
   if (o.kind === "member") return `${o.cohort ?? ""}기 ${o.name}`;
   if (o.kind === "invite") return `등록 전 초대 · ${o.name}`;
-  return "ONAIR 부원 기기 아님";
+  return "부원 기기 아님";
 }
 
 function disconnectMessage(d: CfDevice) {
   const o = d.owner;
   if (o.kind === "member")
-    return `${o.name} 님의 기기 키를 끊을까요?\n부원 내보내기와 같아요 — 이 기기는 더는 ONAIR 에 들어올 수 없고, ONAIR 메일 전달도 꺼져요.`;
-  if (o.kind === "invite") return "아직 등록하지 않은 초대를 취소할까요?\nQR·코드로 더는 등록할 수 없어요.";
-  return `'${d.name}' 키를 Cloudflare 에서 지울까요?\n이 키를 쓰는 기기(봇·송출 PC 등)는 더는 들어오지 못해요.`;
+    return `${o.name} 님의 기기 키를 끊을까요?\n부원 내보내기와 같아요.`;
+  if (o.kind === "invite") return "초대를 취소할까요?";
+  return `'${d.name}' 키를 지울까요?\n되돌릴 수 없어요.`;
 }
 
 function DeviceSection() {
@@ -712,7 +701,7 @@ function DeviceSection() {
               {d.devices.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-white/45">
-                    기기 접속 키가 없어요.
+                    기기 접속 키가 없어요
                   </td>
                 </tr>
               ) : (
@@ -723,10 +712,10 @@ function DeviceSection() {
                         {ownerText(x)}
                       </span>
                       {x.owner.roleLabel && <span className="ml-2 text-[13px] text-white/45">{x.owner.roleLabel}</span>}
-                      {x.mine && <span className="ml-2 text-[13px] text-white/45">· 지금 이 기기</span>}
+                      {x.mine && <span className="ml-2 text-[13px] text-white/45">· 이 기기</span>}
                     </td>
                     <td className="px-4 py-3 text-white/70">{x.name}</td>
-                    <td className="px-4 py-3 font-mono text-[13px] text-white/60">{x.clientIdTail || "—"}</td>
+                    <td className="px-4 py-3 font-mono text-[13px] text-white/60">{x.clientIdTail}</td>
                     <td className="px-4 py-3 font-mono text-[13px] tabular-nums text-white/70">{day(x.createdAt)}</td>
                     <td className="px-4 py-3 font-mono text-[13px] tabular-nums text-white/70">{day(x.expiresAt)}</td>
                     <td className="px-4 py-3 text-right">
@@ -740,7 +729,7 @@ function DeviceSection() {
                               message: disconnectMessage(x),
                               confirmText: "끊기",
                               run: () => cloudflareApi.disconnect(x.tokenId),
-                              done: x.owner.kind === "member" ? `${x.owner.name} 님의 기기를 끊었어요.` : "키를 끊었어요.",
+                              done: x.owner.kind === "member" ? `${x.owner.name} 님의 기기를 끊었어요` : "키를 끊었어요",
                             })
                           }
                         >
@@ -759,9 +748,6 @@ function DeviceSection() {
           </table>
         </div>
       )}
-      {d?.driver === "mock" && (
-        <p className="mt-3 font-pretendard text-[13px] text-white/50">지금은 가짜(mock) — 부원 기록에 남은 키를 보여 줘요.</p>
-      )}
       {modal}
     </Panel>
   );
@@ -769,19 +755,19 @@ function DeviceSection() {
 
 /* ---------------- 5. 연결 설정 (최고 관리자) ---------------- */
 
-const SETTING_ROWS: { key: CfSettingField; placeholder: string }[] = [
-  { key: "accountId", placeholder: "32자리 영문·숫자" },
-  { key: "zoneId", placeholder: "32자리 영문·숫자" },
+const SETTING_ROWS: { key: CfSettingField; placeholder?: string }[] = [
+  { key: "accountId" },
+  { key: "zoneId" },
   { key: "teamDomain", placeholder: "junghyun001" },
   { key: "appDomain", placeholder: "onair.bssmcast.com" },
-  { key: "accessAppId", placeholder: "비우면 위 주소로 찾아요" },
-  { key: "emailPolicyId", placeholder: "비우면 이메일 허용 정책을 찾아요" },
-  { key: "devicePolicyId", placeholder: "비우면 Service Auth 정책을 찾아요" },
-  { key: "tunnelId", placeholder: "비우면 정상인 터널을 찾아요" },
+  { key: "accessAppId" },
+  { key: "emailPolicyId" },
+  { key: "devicePolicyId" },
+  { key: "tunnelId" },
 ];
 
 function sourceText(src: "settings" | "env" | "default" | "") {
-  return src === "settings" ? "화면에서 넣은 값" : src === "env" ? "서버 .env 값" : src === "default" ? "기본값" : "비어 있음";
+  return src === "settings" ? "저장값" : src === "env" ? ".env" : src === "default" ? "기본값" : "비어 있음";
 }
 
 function SettingsSection() {
@@ -814,7 +800,7 @@ function SettingsSection() {
       qc.invalidateQueries({ queryKey: ["members"] });
       setToken("");
       setClearArmed(false);
-      setMsg({ text: body.apiToken === null ? "토큰을 지웠어요. .env 값이 있으면 그걸 써요." : "저장했어요. 서버를 다시 켜지 않아도 바로 써요." });
+      setMsg({ text: body.apiToken === null ? "토큰을 지웠어요" : "저장했어요" });
     },
     onError: (e) => setMsg({ text: errText(e), error: true }),
   });
@@ -840,7 +826,7 @@ function SettingsSection() {
     if (form.mailDriver && form.mailDriver !== s.mailDriver) body.mailDriver = form.mailDriver;
     if (token.trim()) body.apiToken = token.trim();
     if (!Object.keys(body).length) {
-      setMsg({ text: "바뀐 게 없어요." });
+      setMsg({ text: "바뀐 게 없어요" });
       return;
     }
     save.mutate(body);
@@ -858,7 +844,7 @@ function SettingsSection() {
               spellCheck={false}
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              placeholder={s.tokenSet ? "새 토큰으로 바꾸기" : "Cloudflare › My Profile › API Tokens 에서 만든 토큰"}
+              placeholder={s.tokenSet ? "새 토큰" : undefined}
               className={field}
             />
             {s.tokenSource === "settings" && (
@@ -879,8 +865,8 @@ function SettingsSection() {
           </div>
           <span className="font-pretendard text-[12.5px] text-white/50">
             {s.tokenSet
-              ? `저장된 토큰 ${s.tokenHint ?? ""} (${s.tokenSource === "settings" ? "화면에서 넣음" : "서버 .env"})`
-              : "토큰이 없어요 — 지금은 가짜(mock)로 돌아요"}
+              ? `저장된 토큰 ${s.tokenHint ?? ""} · ${s.tokenSource === "settings" ? "저장값" : ".env"}`
+              : "토큰 없음 · mock 모드"}
           </span>
         </label>
 
@@ -910,8 +896,8 @@ function SettingsSection() {
               value={form.mailDriver ?? s.mailDriver}
               onChange={(mailDriver) => setForm({ ...form, mailDriver })}
               options={[
-                { value: "mock", label: "mock — 가짜 (시험용)" },
-                { value: "cloudflare", label: "cloudflare — 진짜 Email Routing" },
+                { value: "mock", label: "mock" },
+                { value: "cloudflare", label: "cloudflare" },
               ]}
               className={field}
             />
@@ -946,10 +932,10 @@ function SettingsSection() {
         {test && (
           <p className="font-pretendard text-[14px] text-white/80">
             {test.driver === "mock"
-              ? "가짜(mock)로 돌고 있어요 — 계정 ID 와 토큰을 넣어야 진짜 Cloudflare 를 확인해요."
+              ? "mock 모드"
               : test.problems === 0
-                ? "연결됐어요. 모든 항목이 정상이에요."
-                : `연결 확인 — 고칠 곳 ${test.problems}개. 위 '연결 상태'에서 고치는 법을 봐요.`}
+                ? "연결됐어요"
+                : `고칠 곳 ${test.problems}개`}
           </p>
         )}
       </div>

@@ -161,8 +161,8 @@ export function MatrixLabelsModal({
       canSave={valid}
     >
       <div className="grid grid-cols-2 gap-8">
-        {column("입력 (소스)", "IN", inputs, setInputs)}
-        {column("출력 (화면)", "OUT", outputs, setOutputs)}
+        {column("입력", "IN", inputs, setInputs)}
+        {column("출력", "OUT", outputs, setOutputs)}
       </div>
     </Shell>
   );

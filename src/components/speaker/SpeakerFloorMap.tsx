@@ -188,8 +188,8 @@ export function SpeakerFloorMap({
                   onMouseLeave={() => onHover?.(null)}
                   title={
                     spk
-                      ? `${el.name}  →  스피커 ${sps.join(" / ")}`
-                      : `${el.name}  (스피커 없음)`
+                      ? `${el.name} → 스피커 ${sps.join(", ")}`
+                      : `${el.name} · 스피커 없음`
                   }
                   style={{
                     ...pos,

@@ -97,7 +97,7 @@ const Composer = forwardRef<
         .then((upload) => patch(it.key, { upload, progress: 1 }))
         .catch((e: unknown) => {
           if (e instanceof DOMException && e.name === "AbortError") return;
-          patch(it.key, { error: e instanceof Error ? e.message : "올리지 못했어요." });
+          patch(it.key, { error: e instanceof Error ? e.message : "올리지 못했어요" });
         });
     }
     area.current?.focus();
@@ -223,7 +223,7 @@ const Composer = forwardRef<
             }
           }}
           disabled={disabled}
-          title="파일 붙이기 (사진·영상·PDF)"
+          title="파일 붙이기"
           aria-label="파일 붙이기"
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/55 transition-colors enabled:hover:bg-white/[0.08] enabled:hover:text-white"
         >
@@ -266,7 +266,7 @@ const Composer = forwardRef<
             type="button"
             onClick={submit}
             disabled={!canSend}
-            title={uploading ? "파일을 올리는 중이에요" : "보내기 (Enter)"}
+            title={uploading ? "올리는 중" : "보내기"}
             aria-label="보내기"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-black transition-colors enabled:hover:bg-white/85 disabled:bg-white/15 disabled:text-white/40"
           >

@@ -30,13 +30,6 @@ export default function ScenesStep({
   const [trying, setTrying] = useState<number | null>(null);
   const hasScenes = state.capabilities.includes("scene");
   const canTry = state.connected && hasScenes && !configDirty;
-  const tryHint = !state.connected
-    ? "믹서가 연결되면 시험할 수 있어요"
-    : !hasScenes
-      ? "씬 전환은 USB-MIDI(강당 노트북)가 연결돼야 돼요"
-      : configDirty
-        ? "저장한 뒤 시험할 수 있어요"
-        : "";
 
   const setScenes = (fn: (l: SceneRow[]) => SceneRow[]) => setDraft((d) => (d ? { ...d, scenes: fn(d.scenes) } : d));
   const patch = (i: number, p: Partial<SceneRow>) => setScenes((l) => l.map((s, j) => (j === i ? { ...s, ...p } : s)));
@@ -52,7 +45,7 @@ export default function ScenesStep({
     setTrying(pc);
     try {
       const r = await hallApi.tryScene(hallId, pc);
-      toast.success(`'${r.scene}' 씬을 불렀어요. 콘솔 화면이 바뀌었는지 확인하세요.`);
+      toast.success(`'${r.scene}' 씬을 불렀어요`);
       await qc.invalidateQueries({ queryKey: ["mixer", hallId] });
     } catch (e) {
       toast.error((e as Error).message);
@@ -82,7 +75,7 @@ export default function ScenesStep({
           </div>
 
           {draft.scenes.length === 0 && (
-            <p className="px-2 py-6 text-center font-pretendard text-sm text-white/30">씬이 없어요. ‘씬 추가’를 누르세요.</p>
+            <p className="px-2 py-6 text-center font-pretendard text-sm text-white/30">씬이 없어요</p>
           )}
 
           {draft.scenes.map((s, i) => {
@@ -149,7 +142,6 @@ export default function ScenesStep({
                   icon={<Play size={13} />}
                   busy={trying === s.pc}
                   disabled={!canTry || trying !== null}
-                  title={tryHint || "콘솔을 이 씬으로 바꿔 봅니다 (방송부 알림은 안 보냄)"}
                   onClick={() => tryScene(s.pc)}
                   className="h-9 px-3"
                 >

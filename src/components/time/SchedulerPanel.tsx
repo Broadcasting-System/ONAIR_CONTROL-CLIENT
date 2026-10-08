@@ -56,7 +56,7 @@ export default function SchedulerPanel() {
   }, [fetchStatus]);
 
   if (denied) {
-    return <p className="font-pretendard text-white/40">관리자만 볼 수 있습니다.</p>;
+    return <p className="font-pretendard text-white/40">권한이 없어요</p>;
   }
 
   const jobs = status?.jobs ?? [];
@@ -87,7 +87,7 @@ export default function SchedulerPanel() {
             {jobs.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-white/30">
-                  등록된 시보가 없습니다.
+                  시보가 없어요
                 </td>
               </tr>
             ) : (
@@ -106,7 +106,7 @@ export default function SchedulerPanel() {
                       {j.dayLabel || j.dayType}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 text-white/80">{j.label || "(이름 없음)"}</td>
+                  <td className="px-4 py-2.5 text-white/80">{j.label || "이름 없음"}</td>
                   <td className="px-4 py-2.5 text-white/50">{summarizeSpeakers(j.speakers)}</td>
                   <td className="whitespace-nowrap px-4 py-2.5 font-orbitron text-xs text-white/40">
                     {j.nextRun ? j.nextRun.replace("T", " ").slice(0, 19) : "-"}

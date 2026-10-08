@@ -61,8 +61,7 @@ export default function LightingPage() {
       <div className="flex flex-col gap-5">
         <SectionHeader>조명</SectionHeader>
         <Notice tone="info">
-          아직 조명이 설정된 공간이 없습니다. 강당 노트북에 조명 노드를 꽂은 뒤 관리자가 조명 세팅에서 연결하고 조명 목록을
-          넣으면 여기에 나타납니다.
+          조명 공간 없음
           {isAdmin && (
             <>
               {" "}
@@ -100,12 +99,9 @@ export default function LightingPage() {
       </header>
 
       {error && <Notice>{error.message}</Notice>}
-      {state && !connected && <Notice>조명에 연결되지 않았습니다 — {state.detail}</Notice>}
-      {!canOperate && <Notice tone="info">보기 전용 기기입니다. 조작은 운영 권한이 있는 기기에서 가능합니다.</Notice>}
+      {state && !connected && <Notice>조명 연결 안 됨 · {state.detail}</Notice>}
+      {!canOperate && <Notice tone="info">보기 전용</Notice>}
 
-      {tab === "music" && canOperate && locked && (
-        <Notice tone="info">조작 잠금을 풀면 쇼를 틀고 큐를 바꿀 수 있어요.</Notice>
-      )}
       {tab === "music" && current && state?.configured && (
         <MusicLightPanel hallId={current.id} operable={canOperate && !locked} isAdmin={isAdmin} />
       )}
@@ -170,7 +166,7 @@ export default function LightingPage() {
                   value={sceneName}
                   onChange={(e) => setSceneName(e.target.value)}
                   maxLength={20}
-                  placeholder="장면 이름 (예: 조회)"
+                  placeholder="예: 조회"
                   className="h-11 w-44 rounded-xl border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white placeholder:text-white/35 focus:border-white/30 focus:outline-none"
                 />
                 <label className="flex items-center gap-1.5 font-pretendard text-sm text-white/55">
@@ -213,7 +209,7 @@ export default function LightingPage() {
             ))}
 
           {state && state.scenes.length === 0 && !isAdmin && (
-            <span className="font-pretendard text-sm text-white/40">저장된 장면이 없습니다.</span>
+            <span className="font-pretendard text-sm text-white/40">장면 없음</span>
           )}
         </div>
       </Panel>
@@ -224,7 +220,7 @@ export default function LightingPage() {
       >
         {fixtures.length === 0 ? (
           <Notice tone="info">
-            조명 목록이 비어 있습니다. 관리자가 조명 세팅에서 조명을 넣어 주세요.
+            조명 없음
             {isAdmin && (
               <>
                 {" "}

@@ -112,7 +112,7 @@ export function draftProblems(d: Draft, hiqnet: boolean): string[] {
   if (d.master && !d.master.name.trim()) out.push("마스터 이름이 비어 있어요");
   if ([...d.channels, ...(d.master ? [d.master] : [])].some((c) => badMax(c.max))) out.push("MAX 는 0~100 사이여야 해요");
   if (hiqnet && [...d.channels, ...(d.master ? [d.master] : [])].some((c) => badAddr(c.fader) || badAddr(c.mute)))
-    out.push("콘솔 주소 형식이 틀린 칸이 있어요 (예: 1.0.0.22/37)");
+    out.push("콘솔 주소 형식이 틀린 칸이 있어요");
   return out;
 }
 

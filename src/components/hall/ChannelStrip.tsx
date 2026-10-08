@@ -132,7 +132,6 @@ function GainDial({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={known ? Math.round(v) : undefined}
-      title={turnable ? "잡고 돌려서 게인 조절 · 짧게 누르면 처리 화면" : "짧게 누르면 처리 화면 (게인·EQ·컴프·이펙트)"}
       className={cn(
         "touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/30",
         turnable ? (drag !== null ? "cursor-grabbing" : "cursor-grab") : onTap ? "cursor-pointer" : "cursor-default",
@@ -443,7 +442,6 @@ export default function ChannelStrip({
       <div
         className="min-w-[58px] rounded-[3px] border border-black bg-[#07090b] px-1.5 py-[3px] text-center font-orbitron text-xs leading-none tabular-nums shadow-[inset_0_1px_4px_#000]"
         style={{ color: known || muted ? color : `${color}40`, textShadow: known || muted ? `0 0 6px ${color}b3` : "none" }}
-        title={known ? undefined : "콘솔에서 아직 값을 받지 못했습니다"}
       >
         {muted ? "MUTE" : known ? String(level).padStart(2, "0") : "--"}
       </div>
@@ -456,7 +454,7 @@ export default function ChannelStrip({
             on={!!selected}
             color={color}
             onClick={onSelect}
-            ariaLabel={`${channel.name} 채널 선택 (게인·EQ·컴프·이펙트)`}
+            ariaLabel={`${channel.name} 채널 선택`}
           />
         )}
         <Key

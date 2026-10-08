@@ -219,7 +219,7 @@ async fn verify_and_save(app: AppHandle, input: SaveInput) -> Result<SaveResult,
         let id = input.client_id.unwrap_or_default().trim().to_string();
         let secret = input.client_secret.unwrap_or_default().trim().to_string();
         if id.is_empty() != secret.is_empty() {
-            return Err("접속 키 ID 와 비밀 키는 둘 다 적거나 둘 다 비워 주세요.".into());
+            return Err("접속 키 ID 와 비밀 키 중 하나가 비어 있어요.".into());
         }
         Credentials {
             server: registration::normalize_server(input.server.as_deref().unwrap_or(""))?,
@@ -338,7 +338,7 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
         .build()?;
     let window = SubmenuBuilder::new(app, "창")
         .item(&PredefinedMenuItem::minimize(app, Some("최소화"))?)
-        .item(&PredefinedMenuItem::maximize(app, Some("확대/축소"))?)
+        .item(&PredefinedMenuItem::maximize(app, Some("확대"))?)
         .separator()
         .item(&PredefinedMenuItem::close_window(app, Some("창 닫기"))?)
         .build()?;

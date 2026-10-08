@@ -119,7 +119,7 @@ export default function MergePanel({
       .then((v) => {
         setVideoId(v.id);
         onUploaded();
-        if (!v.hasAudio) toast.error("이 영상에는 소리가 없어서 녹음과 맞출 수 없어요.");
+        if (!v.hasAudio) toast.error("영상에 소리가 없어요");
       })
       .catch((e: Error) => toast.error(e.message))
       .finally(() => setUpload(null));
@@ -189,7 +189,7 @@ export default function MergePanel({
                 dragOver ? "border-red-400/60 bg-red-400/[0.06]" : "border-white/20",
               )}
             >
-              <b className="mb-1 block font-mbc text-base font-normal text-white/80">여기를 눌러 영상 고르기</b>
+              <b className="mb-1 block font-mbc text-base font-normal text-white/80">영상 고르기</b>
             </button>
             <input
               ref={fileInput}
@@ -206,7 +206,7 @@ export default function MergePanel({
               <Select
                 value=""
                 onChange={(id) => id && setVideoId(id)}
-                placeholder="전에 올린 영상에서 고르기…"
+                placeholder="전에 올린 영상"
                 options={videos.map((v) => ({
                   value: v.id,
                   label: `${v.name} · ${duration(v.duration)} · ${when(v.uploadedAt)}`,
@@ -223,7 +223,7 @@ export default function MergePanel({
           value={recording?.id ?? ""}
           onChange={onRecording}
           disabled={running || !ready.length}
-          placeholder={ready.length ? "녹음을 골라 주세요" : "서버에 있는 녹음이 없어요"}
+          placeholder={ready.length ? "녹음 고르기" : "녹음이 없어요"}
           options={ready.map((r) => ({
             value: r.id,
             label: `${r.label || "이름 없는 녹음"} · ${r.hallName} · ${when(r.startedAt)} · ${duration(r.duration)}`,
@@ -314,7 +314,7 @@ export default function MergePanel({
               />
             </div>
             <div className="mt-2 flex flex-wrap gap-3.5 font-pretendard text-xs">
-              {job.status === "queued" && <span className="text-white/60">다른 영상을 합치는 중이라 기다리고 있어요</span>}
+              {job.status === "queued" && <span className="text-white/60">대기 중</span>}
               {STAGES.map((s, i) => {
                 const ok = done || (stageIndex >= 0 && i < stageIndex);
                 const on = !done && i === stageIndex;
@@ -333,14 +333,14 @@ export default function MergePanel({
             )}
             {done && job.summary && (
               <div className="mt-3 rounded-xl border border-white/12 bg-white/[0.04] px-3.5 py-3 font-pretendard text-[13px] leading-relaxed text-white/80">
-                {job.summary.start} — 맞춰서 합쳤습니다.
+                {job.summary.start}
                 <br />
                 {job.summary.drift}
                 {job.sync && !job.sync.precise && (
                   <>
                     <br />
                     <span className="text-[#ff9a9a]">
-                      소리가 비슷한 곳이 적어 0.01초 단위로만 맞췄어요. 어긋나 보이면 미세 조정을 써 주세요.
+                      0.01초 단위로 맞춤
                     </span>
                   </>
                 )}

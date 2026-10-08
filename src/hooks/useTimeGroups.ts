@@ -226,8 +226,8 @@ export const useTimeGroups = () => {
       // 전송 = 이 그룹이 지금부터 울리는 그룹이 된다 (P 탭이면 특별 모드도 켜짐) — 그대로 알려준다
       toast.success(
         activeDay === "P"
-          ? `GROUP ${activeGroupId} 특별(P) 시보를 적용했습니다 — 지금부터 매일 P 시보가 울립니다.`
-          : `GROUP ${activeGroupId} 평일 시보를 적용했습니다 — 지금부터 이 그룹이 울립니다.`,
+          ? `GROUP ${activeGroupId} 특별(P) 시보를 적용했습니다.`
+          : `GROUP ${activeGroupId} 평일 시보를 적용했습니다.`,
       );
     } catch (err: unknown) {
       console.error(err);
@@ -249,8 +249,8 @@ export const useTimeGroups = () => {
         if (!res.ok) throw new Error(await errorText(res));
         toast.success(
           active
-            ? `특별(P) 모드 ON — GROUP ${activeGroupId}이(가) 지금 울리는 그룹이 되고, P 시보가 매일 동작합니다.`
-            : `특별(P) 모드 OFF — GROUP ${activeGroupId}이(가) 지금 울리는 그룹이 되고, 평일 시보로 복귀합니다.`,
+            ? `GROUP ${activeGroupId} 특별(P) 모드 ON`
+            : `GROUP ${activeGroupId} 특별(P) 모드 OFF`,
         );
       } catch (err) {
         // 롤백

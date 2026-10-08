@@ -63,7 +63,7 @@ export function spanOf(row: FixtureRow, types: Record<string, FixtureType>): { f
   return { from: a, to: a + w - 1 };
 }
 
-export const rangeText = (from: number, to: number) => (to > from ? `${from}–${to}` : `${from}`);
+export const rangeText = (from: number, to: number) => (to > from ? `${from}~${to}` : `${from}`);
 
 /** 주소 목록 → "1–3, 7, 10–13" */
 export function rangesText(addrs: number[]): string {

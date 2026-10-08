@@ -27,7 +27,7 @@ export function useAvState() {
     onSuccess: (st) => {
       qc.setQueryData(KEY, st);
       qc.invalidateQueries({ queryKey: ["recording"] });
-      toast.success(st.session ? `시작했습니다 — ${st.session.source}` : "시작했습니다.");
+      toast.success("시작했습니다.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -37,8 +37,8 @@ export function useAvState() {
     onSuccess: (item) => {
       toast.success(
         item.kind === "audio"
-          ? `녹음을 멈췄습니다 — ${item.label || "이름 없음"}. 서버로 가져오는 중이에요.`
-          : `녹화를 멈췄습니다 — ${item.label || "이름 없음"}. 영상을 정리하는 중이에요.`,
+          ? "녹음을 멈췄습니다."
+          : "녹화를 멈췄습니다.",
       );
       qc.invalidateQueries({ queryKey: KEY });
       qc.invalidateQueries({ queryKey: ["recording"] });

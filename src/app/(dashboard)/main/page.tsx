@@ -65,7 +65,7 @@ export default function MainPage() {
             <TextInput
               value={text}
               onChange={setText}
-              placeholder="방송할 텍스트를 입력해주세요"
+              placeholder="방송할 텍스트"
             />
 
             {/* TTS 시작/끝 음원 (선택 — '안 함' 가능) */}

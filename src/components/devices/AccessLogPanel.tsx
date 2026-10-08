@@ -42,7 +42,7 @@ function describe(path: string, method: string): string {
   if (path.startsWith("/api/banner/clear")) return "현수막 끄기";
   if (path.startsWith("/api/banner")) return "현수막 변경";
   if (path.startsWith("/api/broadcast/execute")) return "방송 송출";
-  if (path.startsWith("/api/broadcast")) return "방송/예약";
+  if (path.startsWith("/api/broadcast")) return "방송 예약";
   if (path.startsWith("/api/speakers")) return "스피커 제어";
   if (path.startsWith("/api/halls/") && path.includes("/mixer/scene")) return "믹서 씬 전환";
   if (path.startsWith("/api/halls/") && path.includes("/mixer")) return "믹서 채널 조작";
@@ -90,7 +90,7 @@ export default function AccessLogPanel() {
   }, [fetchLogs]);
 
   if (denied) {
-    return <p className="font-pretendard text-white/40">관리자만 볼 수 있습니다.</p>;
+    return <p className="font-pretendard text-white/40">권한이 없어요</p>;
   }
 
   return (
@@ -109,7 +109,7 @@ export default function AccessLogPanel() {
           {logs.length === 0 ? (
             <tr>
               <td colSpan={5} className="px-4 py-8 text-center text-white/30">
-                기록이 없습니다.
+                기록이 없어요
               </td>
             </tr>
           ) : (

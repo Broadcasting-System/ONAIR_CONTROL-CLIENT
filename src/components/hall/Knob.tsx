@@ -302,7 +302,6 @@ export function LedKey({
       disabled={disabled || unlinked}
       aria-pressed={lit}
       onClick={() => onToggle(!lit)}
-      title={unlinked ? "콘솔 주소가 아직 연결되지 않았어요" : on == null ? "콘솔에서 아직 값을 받지 못했어요" : undefined}
       className={cn(
         "flex h-7 items-center gap-1.5 rounded-md border border-black px-2.5 font-orbitron text-[10px] font-semibold tracking-[0.18em] transition-all",
         "shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_3px_6px_rgba(0,0,0,0.55)] active:translate-y-px disabled:cursor-not-allowed",

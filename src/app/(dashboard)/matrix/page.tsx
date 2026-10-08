@@ -40,7 +40,7 @@ export default function VideoMatrixPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>영상 매트릭스</SectionHeader>
-        <Notice tone="info">설정된 영상 매트릭스가 없습니다. 서버의 config/halls.json 에 추가하세요.</Notice>
+        <Notice tone="info">영상 매트릭스 없음</Notice>
       </div>
     );
   }
@@ -59,7 +59,7 @@ export default function VideoMatrixPage() {
           {isAdmin && state && <ConfigButton label="이름 편집" onClick={() => setEditing(true)} />}
           <StatusChip
             tone={connected ? "good" : "off"}
-            label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "-"} ${connected ? "online" : "offline"}`}
+            label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "매트릭스"} ${connected ? "online" : "offline"}`}
           />
           {connected && (
             <StatusChip
@@ -72,14 +72,8 @@ export default function VideoMatrixPage() {
       </header>
 
       {error && <Notice>{error.message}</Notice>}
-      {state && !connected && <Notice>영상 매트릭스에 연결되지 않았습니다 — {state.detail}</Notice>}
-      {connected && state?.stateSource === "assumed" && (
-        <Notice tone="info">
-          이 장비는 현재 라우팅을 알려주지 않아, ONAIR가 마지막으로 보낸 명령 기준으로 표시합니다. 장비 앞면에서 직접
-          바꾸면 화면과 달라질 수 있습니다.
-        </Notice>
-      )}
-      {!canOperate && <Notice tone="info">보기 전용 기기입니다. 조작은 운영 권한이 있는 기기에서 가능합니다.</Notice>}
+      {state && !connected && <Notice>영상 매트릭스 연결 안 됨 · {state.detail}</Notice>}
+      {!canOperate && <Notice tone="info">보기 전용</Notice>}
 
       <div className="flex min-h-0 flex-1 gap-5">
         <Panel title="라우팅" className="min-w-0 flex-1">
@@ -194,7 +188,7 @@ export default function VideoMatrixPage() {
                   value={presetName}
                   onChange={(e) => setPresetName(e.target.value)}
                   maxLength={30}
-                  placeholder="현재 상태를 프리셋으로 저장"
+                  placeholder="프리셋 이름"
                   className="h-11 min-w-0 flex-1 rounded-xl border border-dashed border-white/20 bg-transparent px-3 font-pretendard text-sm text-white placeholder:text-white/35 focus:border-white/40 focus:outline-none"
                 />
                 <button
@@ -218,7 +212,7 @@ export default function VideoMatrixPage() {
           setConfirmAll(null);
         }}
         title="전체 화면 전환"
-        message={`모든 출력 화면을 '${confirmAll?.name ?? ""}' 입력으로 바꿉니다. 계속하시겠습니까?`}
+        message={`입력 '${confirmAll?.name ?? ""}'`}
         confirmText="전환"
       />
 

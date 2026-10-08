@@ -191,7 +191,7 @@ function Module({
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
         <span className="font-orbitron text-[10.5px] tracking-[0.24em] text-white/70">{label}</span>
         {locked && (
-          <span className="flex items-center gap-1 font-pretendard text-[10.5px] text-white/35" title="부원 이상이 잠금을 풀면 바꿀 수 있어요">
+          <span className="flex items-center gap-1 font-pretendard text-[10.5px] text-white/35">
             <Lock size={10} /> 보기만
           </span>
         )}
@@ -382,7 +382,7 @@ export default function ChannelProcessing({
         <span className="font-mbc text-xl text-white">{channel.name}</span>
         {realDevice && roles.size === 0 && !linkMode && (
           <span className="font-pretendard text-xs text-[#FFB23F]/80">
-            이 채널은 아직 콘솔 주소가 연결되지 않았어요
+            주소 연결 안 됨
           </span>
         )}
         {isAdmin && realDevice && (
@@ -398,7 +398,6 @@ export default function ChannelProcessing({
                 ? "border-[#FFB23F]/50 bg-[#FFB23F]/15 text-[#FFB23F]"
                 : "border-white/10 text-white/50 hover:text-white/80",
             )}
-            title="콘솔에서 손잡이를 돌려 ONAIR 손잡이와 짝을 지어요 (관리자)"
           >
             <Link2 size={13} />
             주소 연결 {linkMode ? "켜짐" : ""}
@@ -411,8 +410,8 @@ export default function ChannelProcessing({
           <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[#FF3B3B] shadow-[0_0_10px_#FF3B3B]" />
           <p className="flex-1 font-pretendard text-sm text-white/85">
             {SWITCH_ROLES.has(learn.target.role)
-              ? `콘솔에서 ‘${learn.target.label}’의 ${ROLE_NAME[learn.target.role]}을 눌러 켜 두세요`
-              : `콘솔에서 ‘${learn.target.label}’의 ${ROLE_NAME[learn.target.role]}을 돌리세요`}
+              ? `${learn.target.label} ${ROLE_NAME[learn.target.role]} 켜기 대기`
+              : `${learn.target.label} ${ROLE_NAME[learn.target.role]} 돌리기 대기`}
           </p>
           <button type="button" onClick={learn.cancel} className="font-pretendard text-xs text-white/55 hover:text-white">
             취소
@@ -576,7 +575,7 @@ export default function ChannelProcessing({
           if (!renaming) return;
           try {
             await hallApi.renameFx(hallId, renaming.id, name.trim());
-            toast.success(`이펙트 이름을 '${name.trim()}'(으)로 바꿨어요.`);
+            toast.success("이름을 바꿨어요");
             onRefresh();
           } catch (e) {
             toast.error((e as Error).message);

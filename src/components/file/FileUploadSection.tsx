@@ -44,7 +44,7 @@ export default function FileUploadSection({
         <div className="flex-1 w-full">
           {files.length === 0 ? (
             <div className="flex items-center justify-center h-full min-h-[120px] text-white/40 text-sm">
-              등록된 파일이 없습니다
+              파일이 없어요
             </div>
           ) : displayType === "grid" ? (
             <div className="grid grid-cols-4 gap-4">

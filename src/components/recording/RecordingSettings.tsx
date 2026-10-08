@@ -113,7 +113,7 @@ export default function RecordingSettings({ hallId, state }: { hallId: string; s
                   <Select
                     value=""
                     onChange={(name) => name && setInput(name)}
-                    placeholder="목록에서 고르기…"
+                    placeholder="목록"
                     options={list.map((d) => ({
                       value: d.name,
                       label: `${d.name} ${d.hostapi ? `· ${d.hostapi}` : ""} · ${d.channels}ch`,
@@ -127,7 +127,7 @@ export default function RecordingSettings({ hallId, state }: { hallId: string; s
         )}
         <div className="grid grid-cols-2 gap-2.5">
           {lanes.map((name, i) => (
-            <Field key={i} label={`통로 ${i + 1} 이름 (입력 ${i + 1})`}>
+            <Field key={i} label={`통로 ${i + 1} 이름`}>
               <input
                 value={name}
                 maxLength={12}
@@ -137,7 +137,7 @@ export default function RecordingSettings({ hallId, state }: { hallId: string; s
             </Field>
           ))}
         </div>
-        <Switch checked={split} onChange={setSplit} label="통로마다 따로 저장 (받은 뒤 모노 WAV 두 개도 만들기)" />
+        <Switch checked={split} onChange={setSplit} label="통로마다 따로 저장" />
         <div className="flex justify-end">
           <ActionButton tone="primary" onClick={save} busy={saving} disabled={driver === "bridge" && !bridgeUrl.trim()}>
             저장
@@ -145,10 +145,7 @@ export default function RecordingSettings({ hallId, state }: { hallId: string; s
         </div>
       </Card>
 
-      <Card
-        title="녹음 버스에 보낼 채널"
-        hint="지금은 저장만 해요 — 콘솔의 MIX 보내기 주소를 찾으면 ONAIR 가 직접 켭니다"
-      >
+      <Card title="녹음 버스에 보낼 채널">
         {state.configured ? (
           <>
             {sends.map((text, i) => (
@@ -156,21 +153,17 @@ export default function RecordingSettings({ hallId, state }: { hallId: string; s
                 <input
                   value={text}
                   onChange={(e) => setSends(sends.map((s, j) => (j === i ? e.target.value : s)))}
-                  placeholder={i === 0 ? "예: 1, 2, 3, 4 (마이크)" : "예: 15, 16 (PC 음악)"}
+                  placeholder={i === 0 ? "예: 1, 2, 3, 4" : "예: 15, 16"}
                   className={cn(inputCls, okBorder)}
                 />
               </Field>
             ))}
-            <p className="font-pretendard text-xs leading-relaxed text-white/35">
-              그 전까지는 콘솔에서 직접: 녹음용 MIX 두 개(예: MIX 13·14)를 모노·Post-fader 로 두고, 위 채널의 보내기를 0dB 로
-              켠 뒤 MIX 출력을 인터페이스 입력 1·2 로 연결합니다. 자세한 순서는 서버의 docs/recording.md.
-            </p>
             <div className="flex justify-end">
               <ActionButton onClick={saveSends}>저장</ActionButton>
             </div>
           </>
         ) : (
-          <p className="font-pretendard text-sm text-white/40">먼저 왼쪽에서 녹음 연결을 저장해 주세요.</p>
+          <p className="font-pretendard text-sm text-white/40">녹음 연결 저장 안 됨</p>
         )}
       </Card>
     </div>

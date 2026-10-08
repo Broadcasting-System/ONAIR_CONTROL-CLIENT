@@ -32,8 +32,8 @@ function fmtDate(iso: string | null | undefined): string {
 }
 
 function describeRun(r: EnergyRun): string {
-  if (r.skipped) return `건너뜀 — ${r.skipped}`;
-  if (r.error) return `실패 — ${r.error}`;
+  if (r.skipped) return `건너뜀 · ${r.skipped}`;
+  if (r.error) return `실패 · ${r.error}`;
   const speakers = r.speakers ?? [];
   const names = speakers.length
     ? `${speakers.slice(0, 5).join(", ")}${speakers.length > 5 ? ` 외 ${speakers.length - 5}` : ""}`
@@ -62,7 +62,7 @@ export default function EnergyPanel() {
   if (!state || !form) {
     return (
       <p className="font-pretendard text-white/40">
-        {error ? `절전 설정을 불러오지 못했습니다: ${error.message}` : "불러오는 중…"}
+        {error ? `절전 설정을 불러오지 못했어요: ${error.message}` : "불러오는 중…"}
       </p>
     );
   }
@@ -160,7 +160,7 @@ export default function EnergyPanel() {
             </div>
           </div>
           {form.enabled && form.days.length === 0 && (
-            <p className="font-pretendard text-xs text-red-300/80">요일을 하루 이상 고르세요.</p>
+            <p className="font-pretendard text-xs text-red-300/80">요일을 고르세요</p>
           )}
 
           <label className="flex cursor-pointer items-center gap-3">
@@ -170,7 +170,7 @@ export default function EnergyPanel() {
               onChange={(e) => setForm({ ...form, displays: e.target.checked })}
               className="h-4 w-4 accent-emerald-400"
             />
-            <span className="font-pretendard text-sm text-white/70">송출 화면(TV)도 대기 화면으로 바꾸기</span>
+            <span className="font-pretendard text-sm text-white/70">송출 화면도 대기 화면으로</span>
           </label>
         </div>
 
@@ -199,7 +199,7 @@ export default function EnergyPanel() {
         <div className="min-w-0 flex-1">
           <span className="font-mbc text-sm text-white/50">최근 실행</span>
           <p className="mt-1 truncate font-pretendard text-sm text-white/80" title={state.lastRun ? describeRun(state.lastRun) : undefined}>
-            {state.lastRun ? `${fmtDate(state.lastRun.at)} · ${describeRun(state.lastRun)}` : "아직 실행한 적이 없습니다."}
+            {state.lastRun ? `${fmtDate(state.lastRun.at)} · ${describeRun(state.lastRun)}` : "없음"}
           </p>
         </div>
         <button
@@ -219,8 +219,8 @@ export default function EnergyPanel() {
         title="지금 모두 끄기"
         message={
           state.displays
-            ? "켜져 있는 교실 스피커를 모두 끄고, 송출 중인 화면을 대기 화면으로 바꿉니다. 계속하시겠습니까?"
-            : "켜져 있는 교실 스피커를 모두 끕니다. 계속하시겠습니까?"
+            ? "스피커를 모두 끄고 송출 화면을 대기 화면으로 바꿀까요?"
+            : "스피커를 모두 끌까요?"
         }
         confirmText="끄기"
         isDestructive

@@ -420,9 +420,6 @@ export const DisplayMirror = ({ channel = 1, badge = true }: { channel?: number;
         <h3 className="text-4xl font-black italic tracking-wider text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
           OFF AIR
         </h3>
-        <p className="text-xs font-medium text-red-500 tracking-tight opacity-80">
-          방송 송출 준비 중입니다 잠시만 기다려주세요
-        </p>
       </div>
     );
   }

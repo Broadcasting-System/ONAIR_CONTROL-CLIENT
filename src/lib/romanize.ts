@@ -169,21 +169,21 @@ export const RESERVED_MAIL_IDS = [
 ];
 
 export function mailIdProblem(id: string): string {
-  if (!id) return "메일 주소를 적어 주세요.";
-  if (!/^[a-z0-9.]+$/.test(id)) return "메일 주소는 영문 소문자·숫자·점(.)만 쓸 수 있어요.";
-  if (id.length < 3 || id.length > 20) return "메일 주소는 3~20자로 적어 주세요.";
+  if (!id) return "메일 주소가 비어 있어요";
+  if (!/^[a-z0-9.]+$/.test(id)) return "영문 소문자·숫자·점만 쓸 수 있어요";
+  if (id.length < 3 || id.length > 20) return "3~20자여야 해요";
   if (!/^[a-z0-9]+(\.[a-z0-9]+)*$/.test(id))
-    return "점(.)으로 시작하거나 끝나거나, 점을 두 번 이어 쓸 수 없어요.";
-  if (RESERVED_MAIL_IDS.includes(id)) return `'${id}' 는 ONAIR 가 쓰는 이름이라 고를 수 없어요.`;
+    return "점 위치가 올바르지 않아요";
+  if (RESERVED_MAIL_IDS.includes(id)) return `'${id}' 는 쓸 수 없어요`;
   return "";
 }
 
 export function personalEmailProblem(email: string, domain: string): string {
   if (!email) return "";
   if (email.length > 120 || !/^[^@\s]+@[^@\s]+\.[^@\s.]+$/.test(email))
-    return "받을 메일 주소가 올바르지 않아요. 예: name@gmail.com";
+    return "메일 주소가 올바르지 않아요";
   if (domain && email.toLowerCase().endsWith(`@${domain}`))
-    return `받을 메일은 @${domain} 이 아닌 개인 메일로 적어 주세요.`;
+    return `@${domain} 주소는 쓸 수 없어요`;
   return "";
 }
 

@@ -172,7 +172,7 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
       updateBanner(scene, payload).catch((e) => {
         lastSentRef.current = "";
         console.error("송출 실패", e);
-        toast.error("현수막 송출에 실패했습니다. 권한이나 서버 연결을 확인하세요.");
+        toast.error("현수막 송출에 실패했어요");
       });
     }, 200);
     return () => {
@@ -184,7 +184,7 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
     (s: BannerScene, p: Record<string, unknown>) => {
       updateBanner(s, p).catch((e) => {
         console.error("송출 실패", e);
-        toast.error("현수막 송출에 실패했습니다. 권한이나 서버 연결을 확인하세요.");
+        toast.error("현수막 송출에 실패했어요");
       });
     },
     [],
@@ -263,10 +263,7 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
           )}
           {scene === "blank" && (
             <div className="rounded-3xl border border-white/5 bg-[#0a0a0a] p-8">
-              <p className="font-pretendard text-white/50">
-                송출이 꺼진 상태(검은 화면)입니다. 다른 탭을 선택해 콘텐츠를
-                내보내세요.
-              </p>
+              <p className="font-pretendard text-white/50">송출 꺼짐</p>
               <button
                 onClick={() => clearBanner()}
                 className="mt-4 rounded-xl border border-white/10 bg-white/5 px-5 py-2 font-mbc text-white hover:bg-white/10"
@@ -731,18 +728,18 @@ function ImageEditor({
 
   return (
     <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
-      <Field label="등록된 이미지에서 선택">
+      <Field label="등록된 이미지">
         <ImagePicker
           files={images}
           activeUrl={value.url}
           onPick={(url) => onChange({ ...value, url })}
         />
       </Field>
-      <Field label="또는 이미지 URL 직접 입력 (6845×552 권장)">
+      <Field label="이미지 URL">
         <TextInput
           value={value.url}
           onChange={(url) => onChange({ ...value, url })}
-          placeholder="https://… 또는 /uploads/…"
+          placeholder="https://…"
         />
       </Field>
       <Field label="맞춤 방식">
@@ -758,7 +755,7 @@ function ImageEditor({
                   : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
               )}
             >
-              {fit === "cover" ? "꽉 채움 (cover)" : "전체 표시 (contain)"}
+              {fit === "cover" ? "꽉 채움" : "전체 표시"}
             </button>
           ))}
         </div>
@@ -903,14 +900,14 @@ function GifEditor({
 }) {
   return (
     <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
-      <Field label="등록된 이미지/GIF에서 선택">
+      <Field label="등록된 GIF">
         <ImagePicker
           files={gifs}
           activeUrl={value.url}
           onPick={(url) => onChange({ url })}
         />
       </Field>
-      <Field label="또는 GIF URL 직접 입력">
+      <Field label="GIF URL">
         <TextInput
           value={value.url}
           onChange={(url) => onChange({ url })}
@@ -934,7 +931,7 @@ function ImagePicker({
   if (files.length === 0) {
     return (
       <p className="rounded-xl border border-white/5 bg-white/[0.02] p-4 font-pretendard text-sm text-white/30">
-        등록된 이미지가 없습니다. 파일 메뉴에서 업로드하세요.
+        등록된 이미지가 없어요
       </p>
     );
   }
@@ -1072,13 +1069,13 @@ function BannerTimerEditor({
               mode === m ? "bg-white/15 text-white" : "bg-transparent text-white/40 hover:bg-white/5",
             )}
           >
-            {m === "down" ? "카운트다운" : "카운트업(경과)"}
+            {m === "down" ? "카운트다운" : "카운트업"}
           </button>
         ))}
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <span className="font-mbc text-xs text-white/40">라벨 (선택)</span>
+        <span className="font-mbc text-xs text-white/40">라벨</span>
         <input
           value={value.label ?? ""}
           onChange={(e) => onChange({ ...value, label: e.target.value })}

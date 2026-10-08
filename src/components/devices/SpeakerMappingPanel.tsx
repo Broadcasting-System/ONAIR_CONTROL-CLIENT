@@ -100,12 +100,12 @@ export default function SpeakerMappingPanel() {
     }
     setDraft(next);
     setFillText("");
-    toast.success(`${names.length}칸을 채웠습니다. 저장해야 반영됩니다.`);
+    toast.success(`${names.length}칸을 채웠어요`);
   };
 
   const save = async () => {
     if (!draft) return;
-    const res = await run(() => speakerApi.saveMatrix(draft), "스피커 매핑을 저장했습니다.");
+    const res = await run(() => speakerApi.saveMatrix(draft), "저장했어요");
     if (!res) return;
     qc.setQueryData(SPEAKER_MATRIX_KEY, res.matrix);
     setDraft(copyCells(res.matrix));
@@ -115,13 +115,13 @@ export default function SpeakerMappingPanel() {
 
   const session = async (action: "start" | "stop" | "silence") => {
     const fn = action === "start" ? speakerApi.start : action === "stop" ? speakerApi.stop : speakerApi.silence;
-    const st = await run(fn, action === "start" ? "매핑을 시작했습니다. 모든 구역이 꺼졌습니다." : undefined);
+    const st = await run(fn, action === "start" ? "매핑을 시작했어요" : undefined);
     if (st) qc.setQueryData(CAL_KEY, st);
     if (action === "start") focus(selected);
   };
 
   if (matrixQuery.isError) {
-    return <p className="font-pretendard text-white/40">스피커 구역표를 불러오지 못했습니다.</p>;
+    return <p className="font-pretendard text-white/40">스피커 구역표를 불러오지 못했어요</p>;
   }
   if (!matrix || !draft) {
     return <p className="font-pretendard text-white/40">불러오는 중…</p>;
@@ -143,13 +143,10 @@ export default function SpeakerMappingPanel() {
             <span className="flex items-center gap-2 font-mbc text-sm text-white">
               <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-400 shadow-[0_0_8px_#f87171]" />
               매핑 중
-              <span className="text-white/45">
-                · 시험음 {cal?.tone ? "재생 중" : "없음(서버에 VLC 필요 — 콘솔에서 음원을 직접 틀어주세요)"}
-              </span>
+              <span className="text-white/45">· 시험음 {cal?.tone ? "재생 중" : "없음"}</span>
             </span>
             <span className="font-pretendard text-xs text-white/40">
-              지금 울리는 칸: {current ? `${current[0]}행 ${current[1]}열` : "없음"} · 방송·시보는 잠시 막힙니다 ·{" "}
-              {Math.round((cal?.idleTimeoutSec ?? 600) / 60)}분 동안 조작이 없으면 자동 종료
+              울리는 칸 {current ? `${current[0]}행 ${current[1]}열` : "없음"}
             </span>
             <div className="ml-auto flex gap-2">
               <PanelButton onClick={() => ping(nextOf(selected))} disabled={busy}>
@@ -164,17 +161,11 @@ export default function SpeakerMappingPanel() {
             </div>
           </>
         ) : (
-          <>
-            <p className="font-pretendard text-sm text-white/60">
-              시작하면 모든 구역이 꺼지고, 칸을 누를 때마다 <b className="text-white/85">그 칸만 켜져 시험음</b>이 나옵니다.
-              소리가 나는 곳을 듣고 이름을 적은 뒤 Enter를 누르면 다음 칸으로 넘어갑니다.
-            </p>
-            <div className="ml-auto">
-              <PanelButton tone="primary" onClick={() => session("start")} disabled={busy}>
-                매핑 시작
-              </PanelButton>
-            </div>
-          </>
+          <div className="ml-auto">
+            <PanelButton tone="primary" onClick={() => session("start")} disabled={busy}>
+              매핑 시작
+            </PanelButton>
+          </div>
         )}
       </div>
 
@@ -204,12 +195,12 @@ export default function SpeakerMappingPanel() {
                   <button
                     type="button"
                     onClick={() => ping(coord)}
-                    title={active ? "이 칸만 켜서 소리 확인" : "매핑을 시작하면 이 칸을 켜볼 수 있습니다"}
+                    title={active ? "소리 확인" : undefined}
                     className="flex items-center justify-between px-0.5 font-orbitron text-[9px] tracking-wider text-white/30 hover:text-white/60"
                   >
                     {coord[0]}·{coord[1]}
                     {isCurrent && <span className="text-red-400">●</span>}
-                    {dup && !isCurrent && <span className="text-amber-300" title="같은 이름이 여러 칸에 있습니다">≡</span>}
+                    {dup && !isCurrent && <span className="text-amber-300" title="이름 중복">≡</span>}
                   </button>
                   <input
                     ref={(el) => {
@@ -218,7 +209,6 @@ export default function SpeakerMappingPanel() {
                     }}
                     value={name}
                     maxLength={20}
-                    placeholder="—"
                     onFocus={() => setSelected(coord)}
                     onChange={(e) => setName(coord, e.target.value)}
                     onKeyDown={(e) => {
@@ -240,14 +230,14 @@ export default function SpeakerMappingPanel() {
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
         <div className="flex min-w-[320px] flex-1 flex-col gap-1">
           <span className="font-mbc text-xs text-white/40">
-            연속 채우기 — 선택한 칸({selected[0]}·{selected[1]})부터
+            연속 채우기 ({selected[0]}·{selected[1]}부터)
           </span>
           <div className="flex gap-2">
             <input
               value={fillText}
               onChange={(e) => setFillText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && fillFromSelected()}
-              placeholder="예: 1-1, 1-2, 1-3, 1-4"
+              placeholder="예: 1-1, 1-2"
               className="h-10 min-w-0 flex-1 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white focus:border-white/30 focus:outline-none"
             />
             <PanelButton onClick={fillFromSelected} disabled={!fillText.trim()}>
@@ -275,7 +265,7 @@ export default function SpeakerMappingPanel() {
           session("stop");
         }}
         title="매핑 종료"
-        message={`저장하지 않은 칸이 ${changed}개 있습니다. 종료해도 입력한 이름은 화면에 남아 있으니, 종료 후 저장할 수 있습니다.`}
+        message={`저장하지 않은 칸 ${changed}개`}
         confirmText="종료"
       />
     </div>
@@ -340,7 +330,7 @@ function ConnectionCard() {
   const save = async () => {
     try {
       await speakerApi.setConnection({ driver: form.driver, host: form.host.trim(), port });
-      toast.success("매트릭스 접속 정보를 저장했습니다.");
+      toast.success("저장했어요");
       qc.invalidateQueries({ queryKey: CONN_KEY });
       setTestResult("");
     } catch (e) {
@@ -390,13 +380,12 @@ function ConnectionCard() {
           type="button"
           onClick={() => setLearning(true)}
           className="flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3.5 py-2 font-mbc text-sm text-red-100 transition-colors hover:bg-red-500/20"
-          title="처음 보는 스피커 선택기를 캡처해서 자동으로 연결합니다"
         >
           <RadioTower size={15} />
           새 장비 배우기
         </button>
         <span className="font-pretendard text-xs text-white/30">
-          {data.source === "saved" ? "화면에서 저장한 값 사용 중" : "서버 .env 값 사용 중"}
+          {data.source === "saved" ? "저장값" : "서버 .env"}
         </span>
       </div>
       {learning && <LearnWizard onClose={() => setLearning(false)} />}
@@ -418,7 +407,7 @@ function BackupRestore({ onRestored }: { onRestored: (m: SpeakerMatrix) => void 
       onRestored(res.matrix);
       useSpeakerStore.getState().setZones([]);
       qc.invalidateQueries({ queryKey: BACKUP_KEY });
-      toast.success("백업으로 되돌렸습니다.");
+      toast.success("복원했어요");
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -448,7 +437,7 @@ function BackupRestore({ onRestored }: { onRestored: (m: SpeakerMatrix) => void 
           restore();
         }}
         title="매핑 복원"
-        message="선택한 시점의 매핑으로 되돌립니다. 지금 매핑도 이력에 백업됩니다."
+        message="선택한 시점으로 되돌릴까요?"
         confirmText="복원"
       />
     </div>

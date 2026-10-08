@@ -209,7 +209,7 @@ export function TestResults({ result }: { result: ConnectionTestResult }) {
       )}
     >
       <p className={cn("font-mbc text-sm", result.ok ? "text-[#9dffc1]" : "text-amber-200")}>
-        {result.ok ? "모두 통과 — 저장하면 바로 쓸 수 있어요" : "막힌 곳이 있어요"}
+        {result.ok ? "모두 통과" : "막힌 곳이 있어요"}
       </p>
       <ol className="flex flex-col gap-2.5">
         {result.steps.map((s) => (
@@ -227,7 +227,6 @@ export function TestResults({ result }: { result: ConnectionTestResult }) {
                 {s.label}
                 <span className="ml-2 break-all font-pretendard text-xs text-white/45">{s.detail}</span>
               </p>
-              {!s.ok && s.hint && <p className="mt-0.5 font-pretendard text-xs text-amber-200/85">→ {s.hint}</p>}
             </div>
           </li>
         ))}
