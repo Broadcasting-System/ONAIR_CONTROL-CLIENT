@@ -13,7 +13,7 @@ interface LogEntry {
   method: string;
   path: string;
   status: number;
-  /** 부원 관리 기록(method MEMBER)의 사람이 읽을 설명 */
+  /** 부원 관리(method MEMBER)·Cloudflare 관리(method CLOUDFLARE) 기록의 사람이 읽을 설명 */
   detail?: string;
 }
 
@@ -23,6 +23,7 @@ const METHOD_COLOR: Record<string, string> = {
   PATCH: "text-amber-300",
   DELETE: "text-red-300",
   MEMBER: "text-[#FF7B7B]",
+  CLOUDFLARE: "text-[#FF7B7B]",
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -53,6 +54,10 @@ function describe(path: string, method: string): string {
   if (path.startsWith("/api/files")) return method === "DELETE" ? "파일 삭제" : "파일 변경";
   if (path.startsWith("/api/devices")) return "기기 관리";
   if (path.startsWith("/api/members")) return "부원 관리";
+  if (path.startsWith("/api/cloudflare/settings")) return "Cloudflare 연결 설정";
+  if (path.startsWith("/api/cloudflare/access/emails")) return "로그인 허용 이메일";
+  if (path.startsWith("/api/cloudflare/access/devices")) return "기기 접속 키";
+  if (path.startsWith("/api/cloudflare") || path.startsWith("/api/mail")) return "메일·Cloudflare 관리";
   return path;
 }
 

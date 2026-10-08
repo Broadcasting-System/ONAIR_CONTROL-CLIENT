@@ -11,6 +11,7 @@ import CrewView from "@/components/devices/CrewView";
 import MembersPanel from "@/components/devices/MembersPanel";
 import SpeakerMappingPanel from "@/components/devices/SpeakerMappingPanel";
 import BridgePanel from "@/components/devices/BridgePanel";
+import CloudflarePanel from "@/components/devices/CloudflarePanel";
 import { useTabParam } from "@/hooks/useTabParam";
 
 /** 예전 기기(Tailscale IP) 역할 — 서버는 admin=부장, operator=부원, viewer=졸업(보기)으로 읽는다 */
@@ -30,9 +31,10 @@ const ROLES: { value: DeviceRole; label: string }[] = [
   { value: "viewer", label: "보기 전용" },
 ];
 
-const DEVICE_TAB_KEYS = ["members", "devices", "speakers", "bridges", "logs"] as const;
+const DEVICE_TAB_KEYS = ["members", "cloudflare", "devices", "speakers", "bridges", "logs"] as const;
 const DEVICE_TABS = [
   { key: "members" as const, label: "부원" },
+  { key: "cloudflare" as const, label: "Cloudflare" },
   { key: "devices" as const, label: "기기(IP)" },
   { key: "speakers" as const, label: "스피커 매핑" },
   { key: "bridges" as const, label: "강당 장비" },
@@ -122,6 +124,8 @@ export default function DevicesPage() {
 
       {tab === "members" ? (
         <MembersPanel />
+      ) : tab === "cloudflare" ? (
+        <CloudflarePanel />
       ) : tab === "logs" ? (
         <AccessLogPanel />
       ) : tab === "speakers" ? (

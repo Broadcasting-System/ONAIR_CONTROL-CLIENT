@@ -241,86 +241,6 @@ function PendingCard({
 
 type Confirm = { title: string; message: string; confirmText: string; run: () => Promise<unknown> } | null;
 
-/** 메일 (Cloudflare) — 최고 관리자만. 값은 서버 .env 로만 바꾸고 여기서는 보기·규칙 다시 맞추기 */
-function MailSettingsPanel() {
-  const qc = useQueryClient();
-  const settings = useQuery({ queryKey: ["mail-settings"], queryFn: mailApi.settings, refetchInterval: 30000 });
-  const sync = useMutation({
-    mutationFn: mailApi.sync,
-    onSuccess: (res) => {
-      qc.setQueryData(["mail-settings"], res.settings);
-      qc.invalidateQueries({ queryKey: ["members"] });
-      if (res.failed.length) toast.error(`규칙을 못 맞춘 부원: ${res.failed.join(", ")}`);
-      else toast.success("메일 규칙을 다시 맞췄어요.");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const s = settings.data;
-
-  return (
-    <Panel title="메일 (Cloudflare)" hint="최고 관리자만 보여요 · 값은 서버 .env 로 바꿔요 (docs/mail.md)">
-      {settings.error ? (
-        <p className="font-pretendard text-sm text-white/50">{(settings.error as Error).message}</p>
-      ) : !s ? (
-        <p className="font-pretendard text-sm text-white/45">불러오는 중…</p>
-      ) : (
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-[110px_1fr] gap-x-4 gap-y-2.5 font-pretendard text-sm">
-            <span className="text-white/45">연결</span>
-            <span className="flex items-center gap-2 text-white">
-              <span
-                className={cn(
-                  "h-2 w-2 shrink-0 rounded-full",
-                  s.connection.ok ? "bg-white/85" : "bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]",
-                )}
-              />
-              {s.driver === "mock"
-                ? "가짜(mock) — 서버 안에서만 시험"
-                : s.connection.ok
-                  ? `Cloudflare 연결됨${s.connection.enabled === false ? " · Email Routing 꺼짐" : ""}`
-                  : "Cloudflare 에 연결하지 못했어요"}
-            </span>
-            <span className="text-white/45">도메인</span>
-            <span className="font-mono text-white">{s.domain}</span>
-            <span className="text-white/45">역할 주소</span>
-            <span className="flex flex-wrap items-center gap-1.5">
-              {s.roleRules.map((r) => (
-                <span
-                  key={r.address}
-                  className={cn(
-                    "inline-flex h-6 items-center rounded-md px-2 font-mono text-[12.5px]",
-                    r.routed ? "bg-white/[0.07] text-white/80" : "bg-white/[0.03] text-white/35",
-                  )}
-                >
-                  {r.address}@
-                </span>
-              ))}
-              <span className="ml-1 text-xs text-white/45">
-                {s.roleRules.every((r) => r.routed) ? `워커 ${s.workerName} 로 가요` : "워커 규칙이 아직 없어요"}
-              </span>
-            </span>
-            <span className="text-white/45">워커 비밀값</span>
-            <span className={s.workerSecretSet ? "text-white" : "text-white/45"}>
-              {s.workerSecretSet ? "설정됨" : "없음 — MAIL_WORKER_SECRET 을 넣어야 역할 주소가 동작해요"}
-            </span>
-          </div>
-          {(s.problem || s.connection.message) && (
-            <p className="font-pretendard text-[13px] text-red-300/90">{s.problem || s.connection.message}</p>
-          )}
-          <div className="flex items-center gap-3">
-            <span className="mr-auto font-pretendard text-[13px] text-white/45">
-              {s.failed > 0 ? `규칙을 못 맞춘 부원 ${s.failed}명` : "역할 주소 워커 규칙을 만들고 부원 규칙을 다시 맞춰요"}
-            </span>
-            <ActionButton busy={sync.isPending} onClick={() => sync.mutate()}>
-              규칙 다시 맞추기
-            </ActionButton>
-          </div>
-        </div>
-      )}
-    </Panel>
-  );
-}
-
 /** 기기·부원 관리 › 부원 — 초대(QR·코드), 승인 대기, 부원 목록 (부장 이상) */
 export default function MembersPanel() {
   const qc = useQueryClient();
@@ -733,8 +653,6 @@ export default function MembersPanel() {
           if (confirm) run(confirm.run, `${confirm.title} 완료`);
         }}
       />
-
-      {isSuperadmin && <MailSettingsPanel />}
 
       {profileFor && <ProfileModal key={profileFor.id} target={profileFor} onClose={() => setProfileFor(null)} />}
 
