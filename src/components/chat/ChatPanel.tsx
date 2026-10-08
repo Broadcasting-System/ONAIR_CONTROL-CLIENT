@@ -279,6 +279,8 @@ export default function ChatPanel() {
   const onActionDone = useCallback(() => {
     // 실행 결과가 지금 보는 화면에 바로 보이게
     qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== "chat" });
+    // react-query 를 안 쓰는 화면(시보 설정 등)은 이 신호를 듣고 서버 값을 다시 읽는다
+    window.dispatchEvent(new Event("onair:refresh"));
   }, [qc]);
 
   if (!canOperate) return null;

@@ -45,6 +45,9 @@ function TableView({
     onChange(rows.map((row, i) => (i === r ? { ...row, [key]: value } : row)));
   const addRow = () => onChange([...rows, Object.fromEntries(cols.map((c) => [c.key, ""]))]);
   const removeRow = (r: number) => onChange(rows.filter((_, i) => i !== r));
+  // 칸 너비는 그 열에서 가장 긴 글자에 맞춘다 (한글은 2칸) — 이름 칸이 잘리지 않게
+  const colWidth = (key: string) =>
+    Math.max(5, ...rows.map((row) => [...cellText(row[key])].reduce((n, ch) => n + (ch.charCodeAt(0) > 0x2e80 ? 2 : 1), 0))) + 3;
 
   return (
     <div className="flex flex-col gap-2">
@@ -70,7 +73,8 @@ function TableView({
                         value={cellText(row[c.key])}
                         onChange={(e) => setCell(r, c.key, e.target.value)}
                         aria-label={`${r + 1}번째 줄 ${c.label}`}
-                        className="h-8 w-full min-w-[64px] rounded-md border border-transparent bg-white/[0.04] px-2 text-[13.5px] text-white outline-none focus:border-white/30 focus:bg-white/[0.08]"
+                        style={{ width: `${colWidth(c.key)}ch` }}
+                        className="h-8 min-w-[64px] max-w-[240px] rounded-md border border-transparent bg-white/[0.04] px-2 text-[13.5px] text-white outline-none focus:border-white/30 focus:bg-white/[0.08]"
                       />
                     ) : (
                       cellText(row[c.key])
