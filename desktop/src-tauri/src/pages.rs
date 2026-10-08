@@ -42,7 +42,7 @@ button.primary{{background:var(--red);border-color:var(--red);color:#fff;box-sha
 pub fn unreachable(server: &str, err: &str) -> String {
     page(
         "서버에 연결할 수 없어요",
-        "서버가 꺼져 있거나, 인터넷(또는 학교망)에 연결되지 않았을 수 있어요. 잠시 후 다시 시도해 주세요.",
+        "",
         &format!("<code>{}<br>{}</code>", esc(server), esc(err)),
         ("location.reload()", "다시 시도"),
     )
@@ -51,7 +51,7 @@ pub fn unreachable(server: &str, err: &str) -> String {
 pub fn access_denied(server: &str) -> String {
     page(
         "접속 키가 거부됐어요",
-        "이 컴퓨터에 저장된 접속 키가 만료됐거나 취소됐어요. 방송부 관리자에게 새 등록 QR 을 받아 다시 등록해 주세요.",
+        "",
         &format!("<code>{}</code>", esc(server)),
         ("fetch('/__onair/action/setup',{method:'POST'})", "다시 등록하기"),
     )
@@ -60,7 +60,7 @@ pub fn access_denied(server: &str) -> String {
 pub fn not_configured() -> String {
     page(
         "아직 등록하지 않았어요",
-        "처음 한 번, 방송부 관리자에게 받은 등록 링크(QR)로 이 컴퓨터를 등록해 주세요.",
+        "",
         "",
         ("fetch('/__onair/action/setup',{method:'POST'})", "등록하기"),
     )
