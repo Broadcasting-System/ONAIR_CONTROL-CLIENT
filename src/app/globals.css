@@ -183,3 +183,38 @@
     height: 20px;
   }
 }
+
+/* 스크롤바 — 밝은 기본 스크롤바 대신 얇고 어두운 막대 (모든 스크롤 영역 공통).
+   base 레이어에 둬야 no-scrollbar 유틸리티가 이길 수 있어요. */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  }
+  /* scrollbar-color 를 모르는 브라우저(Safari 등) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background: rgba(255, 255, 255, 0.16) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28) padding-box;
+  }
+}
+
+/* 스크롤은 되지만 막대는 안 보이게 (사이드바 메뉴) */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

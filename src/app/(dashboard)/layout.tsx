@@ -60,7 +60,7 @@ export default function DashboardLayout({
       </div>
 
       <aside className="relative z-20 flex min-h-0 w-[245px] flex-col bg-transparent pl-[10px] pt-10">
-        <nav className="flex min-h-0 flex-col gap-5 overflow-y-auto pr-1">
+        <nav className="no-scrollbar flex min-h-0 flex-col gap-5 overflow-y-auto pr-1">
           {NAVIGATION_GROUPS.filter((group) => !group.adminOnly || isAdmin).map((group) => (
             <div key={group.title} className="flex flex-col gap-1.5">
               <span className="px-5 font-orbitron text-[10px] tracking-[0.3em] text-white/25">
