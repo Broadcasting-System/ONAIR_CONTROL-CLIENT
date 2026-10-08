@@ -221,7 +221,7 @@ export default function BridgePanel() {
         <div className="rounded-2xl border border-white/5 bg-[#0a0a0a] px-6 py-8">
           <h3 className="font-mbc text-lg text-white">노트북을 쓰는 장비가 아직 없습니다</h3>
           <p className="mt-2 max-w-[64ch] font-pretendard text-sm leading-relaxed text-white/45">
-            위 설치 파일로 노트북을 준비한 뒤, 오디오 믹서 › 현장 세팅 또는 영상 매트릭스 › 현장 세팅에서 &lsquo;켜진
+            위 설치 파일로 노트북을 준비한 뒤, 오디오 › 현장 세팅 또는 영상 매트릭스 › 현장 세팅에서 &lsquo;켜진
             노트북&rsquo;을 고르면 여기에 연결 상태가 보입니다.
           </p>
         </div>

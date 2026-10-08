@@ -524,7 +524,7 @@ function AddRosterModal({
 
 /* ---------------- 방송부 보기 (시안 A · 엔딩 크레딧) ---------------- */
 
-/** 기기·부원 관리 › 부원 › 방송부 — 기수마다 큰 외곽선 숫자와 이름, 오른쪽은 송출 모니터 프로필 */
+/** 관리 › 부원 › 방송부 — 기수마다 큰 외곽선 숫자와 이름, 오른쪽은 송출 모니터 프로필 */
 export default function CrewView({ toggle }: { toggle?: ReactNode }) {
   const crew = useQuery({ queryKey: ["crew"], queryFn: memberApi.crew, refetchInterval: 30_000 });
   const [selectedId, setSelectedId] = useState<string | null>(null);

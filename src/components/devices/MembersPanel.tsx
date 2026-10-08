@@ -242,7 +242,7 @@ function PendingCard({
 
 type Confirm = { title: string; message: string; confirmText: string; run: () => Promise<unknown> } | null;
 
-/** 기기·부원 관리 › 부원 — 초대(QR·코드), 승인 대기, 부원 목록 (부장 이상) */
+/** 관리 › 부원 — 초대(QR·코드), 승인 대기, 부원 목록 (부장 이상) */
 export default function MembersPanel() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");

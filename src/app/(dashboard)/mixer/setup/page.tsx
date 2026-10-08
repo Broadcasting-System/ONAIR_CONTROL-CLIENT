@@ -154,7 +154,7 @@ export default function MixerSetupPage() {
           className="flex h-9 items-center gap-1 rounded-xl px-2 font-mbc text-sm text-white/50 transition-colors hover:bg-white/5 hover:text-white"
         >
           <ChevronLeft size={16} />
-          오디오 믹서
+          오디오
         </Link>
         <SectionHeader className="mb-0">믹서 현장 세팅</SectionHeader>
         <HallSwitcher halls={halls} value={current?.id} onChange={switchHall} />

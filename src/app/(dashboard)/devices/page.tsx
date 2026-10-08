@@ -110,7 +110,7 @@ export default function DevicesPage() {
   if (denied) {
     return (
       <div className="flex flex-col gap-5">
-        <SectionHeader>기기·부원 관리</SectionHeader>
+        <SectionHeader>관리</SectionHeader>
         <p className="font-pretendard text-white/40">부장 이상만 볼 수 있습니다.</p>
       </div>
     );
@@ -119,7 +119,7 @@ export default function DevicesPage() {
   return (
     <div className="flex h-full flex-col gap-6">
       <div className="flex items-center justify-between">
-        <SectionHeader className="mb-0">기기·부원 관리</SectionHeader>
+        <SectionHeader className="mb-0">관리</SectionHeader>
         <PageTabs tabs={DEVICE_TABS} value={tab} onChange={setTab} />
       </div>
 

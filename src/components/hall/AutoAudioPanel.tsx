@@ -1,14 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import SectionHeader from "@/components/common/SectionHeader";
+import { useState, type ReactNode } from "react";
 import { AutoLog, AutoSettings, ChannelTable, FeatureCard } from "@/components/hall/AutoAudio";
 import { ConfigButton } from "@/components/hall/HallConfigModal";
-import { HallSwitcher, Notice, Panel, StatusChip } from "@/components/hall/HallControls";
+import { Notice, Panel, StatusChip } from "@/components/hall/HallControls";
 import { useAutoAudio } from "@/hooks/useAutoAudio";
-import { useHalls } from "@/hooks/useHalls";
 import { useMe } from "@/hooks/useMe";
-import { usePersistentState } from "@/hooks/usePersistentState";
 import { AUTO_FEATURES } from "@/types/autoAudio";
 
 const METER_LABEL: Record<string, string> = {
@@ -18,16 +15,8 @@ const METER_LABEL: Record<string, string> = {
   bridge: "미터 · 노트북",
 };
 
-export default function AutoAudioPage() {
-  const { halls: allHalls, isLoading: hallsLoading } = useHalls();
-  const halls = allHalls.filter((h) => h.hasMixer);
-  const [hallId, setHallId] = usePersistentState<string | null>("onair.autoAudio.hall", null);
-  const current = halls.find((h) => h.id === hallId) ?? halls[0];
-
-  useEffect(() => {
-    if (current && current.id !== hallId) setHallId(current.id);
-  }, [current, hallId, setHallId]);
-
+/** 오디오 › 자동 음향 탭. 공간은 페이지가 고른다 (믹서 탭과 같은 공간). lead = 페이지 제목·공간·탭 */
+export default function AutoAudioPanel({ hallId, lead }: { hallId: string | null; lead: ReactNode }) {
   const {
     state,
     error,
@@ -37,26 +26,16 @@ export default function AutoAudioPage() {
     saveSettings,
     isSavingSettings,
     resume,
-  } = useAutoAudio(current?.id ?? null);
+  } = useAutoAudio(hallId);
   const { canOperate, isAdmin } = useMe();
   const [showSettings, setShowSettings] = useState(false);
-
-  if (!hallsLoading && halls.length === 0) {
-    return (
-      <div className="flex flex-col gap-5">
-        <SectionHeader>자동 음향</SectionHeader>
-        <Notice tone="info">설정된 오디오 믹서가 없습니다.</Notice>
-      </div>
-    );
-  }
 
   const anyOn = !!state && AUTO_FEATURES.some((f) => state.features[f].enabled);
 
   return (
     <div className="flex h-full flex-col gap-6">
       <header className="flex flex-wrap items-center gap-5">
-        <SectionHeader className="mb-0">자동 음향</SectionHeader>
-        <HallSwitcher halls={halls} value={current?.id} onChange={setHallId} />
+        {lead}
         <div className="ml-auto flex items-center gap-2.5">
           {isAdmin && (
             <ConfigButton label="미터·사람 우선" onClick={() => setShowSettings((v) => !v)} />

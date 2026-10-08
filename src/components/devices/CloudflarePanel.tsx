@@ -959,7 +959,7 @@ function SettingsSection() {
 
 /* ---------------- 탭 ---------------- */
 
-/** 기기·부원 관리 › Cloudflare — 부장 이상 (연결 설정은 최고 관리자) */
+/** 관리 › Cloudflare — 부장 이상 (연결 설정은 최고 관리자) */
 export default function CloudflarePanel() {
   const { isSuperadmin } = useMe();
   return (

@@ -48,13 +48,8 @@ const BY_PAGE: { prefix: string; items: Suggestion[]; minRole?: Role }[] = [
       { label: "영상 올려서 송출하기", text: "이 영상 송출 화면에 띄워 줘", upload: VIDEO },
       { label: "송출 화면에 뭐 나와?", text: "송출 화면에 지금 뭐 나오고 있어?" },
       { label: "송출 화면 비우기", text: "송출 화면 비워 줘" },
-    ],
-  },
-  {
-    prefix: "/banner",
-    items: [
+      // 송출 › 현수막 탭 (옛 /banner)
       { label: "배너에 지금 뭐라고 나와?", text: "하단 배너에 지금 뭐라고 나와?" },
-      { label: "배너 글자 바꾸기", text: "하단 배너 글자 바꾸고 싶어" },
     ],
   },
   {
@@ -69,6 +64,8 @@ const BY_PAGE: { prefix: string; items: Suggestion[]; minRole?: Role }[] = [
     items: [
       { label: "강당 믹서 상태 알려줘", text: "강당 믹서 지금 상태 알려줘" },
       { label: "믹서 씬 바꾸기", text: "강당 믹서 씬 바꾸고 싶어" },
+      // 오디오 › 자동 음향 탭 (옛 /auto-audio)
+      { label: "자동 음향 켜져 있어?", text: "자동 음향 지금 켜져 있어?" },
     ],
   },
   {
@@ -81,10 +78,6 @@ const BY_PAGE: { prefix: string; items: Suggestion[]; minRole?: Role }[] = [
       { label: "조명 장면 뭐 있어?", text: "강당 조명 장면 뭐 있어?" },
       { label: "조명 장면 바꾸기", text: "강당 조명 장면 바꾸고 싶어" },
     ],
-  },
-  {
-    prefix: "/auto-audio",
-    items: [{ label: "자동 음향 켜져 있어?", text: "자동 음향 지금 켜져 있어?" }],
   },
   {
     prefix: "/recording",

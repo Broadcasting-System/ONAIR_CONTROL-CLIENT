@@ -88,11 +88,6 @@ export default function DashboardLayout({
                         )}
                       >
                         {item.label}
-                        {item.isNew && (
-                          <span className="rounded border border-red-400/50 px-1 font-orbitron text-[9px] leading-[14px] tracking-wider text-red-400">
-                            NEW
-                          </span>
-                        )}
                       </span>
                       <span
                         className={cn(

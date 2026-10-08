@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import SectionHeader from "@/components/common/SectionHeader";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "@/components/common/Toast";
 import { cn } from "@/lib/utils";
 import { useFiles } from "@/hooks/useFiles";
@@ -52,7 +51,8 @@ const DEFAULT_SCOREBOARD: ScoreboardPayload = {
   teamB: { name: "4반", score: 0, set: 0 },
 };
 
-export default function BannerPage() {
+/** 현수막 (송출 › 현수막 탭). lead = 페이지 제목·탭 */
+export default function BannerPanel({ lead }: { lead: ReactNode }) {
   const [scene, setScene] = useState<BannerScene>("default");
   const [scoreboard, setScoreboard] =
     useState<ScoreboardPayload>(DEFAULT_SCOREBOARD);
@@ -193,10 +193,12 @@ export default function BannerPage() {
   return (
     <div className="flex h-full w-full flex-col gap-6 px-[20px]">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
-        <SectionHeader className="mb-0">현수막 송출</SectionHeader>
-        <LiveBadge displays={displays} />
-      </div>
+      <header className="flex flex-wrap items-center gap-5">
+        {lead}
+        <div className="ml-auto">
+          <LiveBadge displays={displays} />
+        </div>
+      </header>
 
       {/* scene 탭 */}
       <div className="flex gap-3">
@@ -932,7 +934,7 @@ function ImagePicker({
   if (files.length === 0) {
     return (
       <p className="rounded-xl border border-white/5 bg-white/[0.02] p-4 font-pretendard text-sm text-white/30">
-        등록된 이미지가 없습니다. 파일 관리에서 업로드하세요.
+        등록된 이미지가 없습니다. 파일 메뉴에서 업로드하세요.
       </p>
     );
   }

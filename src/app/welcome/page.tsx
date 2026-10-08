@@ -377,7 +377,7 @@ export default function WelcomePage() {
                 <div className="min-w-0">
                   <p className="font-pretendard text-[22px] font-extrabold text-white">부장 승인을 기다리고 있어요</p>
                   <p className={noteCls}>
-                    부장이 ‘기기·부원 관리’에서 승인하면 이 화면이 저절로 넘어가요. 창을 닫아도 괜찮아요.
+                    부장이 ‘관리’에서 승인하면 이 화면이 저절로 넘어가요. 창을 닫아도 괜찮아요.
                   </p>
                 </div>
               </div>

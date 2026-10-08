@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import type { HallSummary } from "@/types/hall";
 
-/** 공간 선택 (미디어 송출의 채널 버튼과 같은 모양) */
+/** 공간 선택 (송출 화면의 채널 버튼과 같은 모양) */
 export function HallSwitcher({
   halls,
   value,
