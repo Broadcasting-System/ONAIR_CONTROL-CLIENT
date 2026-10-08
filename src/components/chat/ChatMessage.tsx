@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowUpRight, Check, Loader2, Minus, X } from "lucide-react";
+import { ArrowUpRight, Check, Minus, X } from "lucide-react";
 import ActionCard from "@/components/chat/ActionCard";
+import CueRing from "@/components/common/CueRing";
 import ChatMarkdown from "@/components/chat/ChatMarkdown";
 import { KindIcon } from "@/components/chat/Composer";
 import type { LiveMessage } from "@/hooks/useChatConversation";
@@ -82,7 +83,7 @@ export default function ChatMessage({
               <li key={t.id} className="flex items-start gap-2 font-pretendard text-[13px] leading-5 text-white/55">
                 <span className="flex h-5 w-4 shrink-0 items-center justify-center">
                   {running ? (
-                    <Loader2 size={13} className="animate-spin" />
+                    <CueRing size={15} className="text-[#e5484d]" />
                   ) : t.status === "error" ? (
                     <X size={13} />
                   ) : t.status === "running" ? (
@@ -104,7 +105,7 @@ export default function ChatMessage({
 
       {thinking && (
         <p className="flex items-center gap-2 font-pretendard text-[13px] text-white/55">
-          <Loader2 size={13} className="animate-spin" /> 생각하는 중…
+          <CueRing size={18} className="text-[#e5484d]" /> 생각하는 중…
         </p>
       )}
 

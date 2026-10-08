@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * 앱을 켤 때 한 번 나오는 시작 화면 (시안 D1 · Orbitron 500).
- * TV 잡음이 걷히고 → 배경 그림의 빨간 입자가 소용돌이치며 모여 덩어리가 되고 → 육각형이 번쩍이며 자리 잡고 → 가운데 ONAIR.
+ * 앱을 켤 때 한 번 나오는 시작 화면.
+ * TV 잡음이 걷히고 → 배경 그림의 빨간 입자가 소용돌이치며 모여 덩어리가 되고 → 육각형이 번쩍이며 자리 잡고 → 가운데 마크(반쪽 소리 고리).
  * 입자는 public/onair_background.png 의 빨간 점을 그 자리에서 뽑는다. 누르거나 키를 치면 건너뛴다.
  * 같은 창(세션)에서는 한 번만, 움직임 줄이기 설정이면 나오지 않는다.
  */
@@ -70,16 +70,6 @@ async function loadPoints(): Promise<Pt[]> {
   return raw.slice(0, MAX_POINTS).map(([x, y, k], i) => ({ x, y, k, r1: R2(), r2: R2(), r3: R2(), i }));
 }
 
-/** next/font 가 붙인 Orbitron 의 실제 글꼴 이름 */
-function orbitronFamily(): string {
-  const el = document.createElement("span");
-  el.style.fontFamily = "var(--font-orbitron), Orbitron, sans-serif";
-  document.body.appendChild(el);
-  const fam = getComputedStyle(el).fontFamily;
-  el.remove();
-  return fam || "Orbitron, sans-serif";
-}
-
 export default function Splash() {
   // 처음 그릴 때는 검은 막으로 덮어 두고(앱이 잠깐 비쳤다 사라지지 않게), 띄울지 정해지면 바꾼다
   const [show, setShow] = useState(true);
@@ -100,7 +90,6 @@ export default function Splash() {
     let raf = 0, alive = true, t0 = 0;
     let W = 0, H = 0, DPR = 1, ZS = 1, ZX = 0, ZY = 0;
     let P: Pt[] = [];
-    let family = "Orbitron, sans-serif";
     let bb = { x0: 0.2, y0: 0.1, x1: 0.77, y1: 0.66 };
 
     const finish = () => {
@@ -163,17 +152,31 @@ export default function Splash() {
       });
     };
 
-    const logo = (t: number, start: number) => {
-      const p = seg(t, start, start + 0.4);
-      if (p <= 0) return;
-      const fs = Math.round(Math.min(W * 0.11, 150));
+    // 마크(반쪽 소리 고리) — 가운데 점이 톡 튀어나오고 막대가 왼쪽부터 차례로 솟아남. 앱 아이콘과 같은 모양
+    const D_LENS = [0.4, 0.7, 0.55, 0.9, 0.6, 1, 0.6, 0.9, 0.55, 0.7, 0.4];
+    const mark = (t: number, start: number) => {
+      const dim = eOutCubic(seg(t, start - 0.15, start + 0.25));
+      if (dim > 0) { g.fillStyle = `rgba(4,5,7,${0.5 * dim})`; g.fillRect(0, 0, W, H); }
+      const dp = seg(t, start, start + 0.35);
+      if (dp <= 0) return;
+      const u = (Math.min(W, H) / 100) * 0.42 * 1.16, cx = W / 2, cy = H / 2 + 12 * u;
+      const pop = dp < 1 ? 1 + Math.sin(dp * Math.PI) * 0.5 : 1;
       g.save();
-      g.font = `500 ${fs}px ${family}`;
-      g.textAlign = "center"; g.textBaseline = "middle";
-      const ls = fs * 0.08;
-      if ("letterSpacing" in g) (g as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${ls}px`;
-      g.fillStyle = `rgba(255,255,255,${eOutCubic(p)})`;
-      g.fillText("ONAIR", W / 2 + ls / 2, H / 2);  // 마지막 글자 뒤 간격만큼 왼쪽으로 쏠리는 것 보정
+      g.shadowColor = "rgba(255,255,255,.6)"; g.shadowBlur = 5 * u;
+      g.fillStyle = "#fff";
+      g.beginPath(); g.arc(cx, cy, 7.5 * u * pop * eOutCubic(dp), 0, 7); g.fill();
+      g.shadowBlur = 3 * u; g.shadowColor = "rgba(255,255,255,.55)";
+      g.strokeStyle = "#fff"; g.lineCap = "round"; g.lineWidth = 5.2 * u;
+      D_LENS.forEach((L, k) => {
+        const s0 = start + 0.12 + k * 0.045, bp = seg(t, s0, s0 + 0.32);
+        if (bp <= 0) return;
+        const over = bp < 1 ? eOutCubic(bp) * (1 + Math.sin(bp * Math.PI) * 0.25) : 1;
+        const a = Math.PI + ((k + 0.5) / 11) * Math.PI, r0 = 16.5 * u, r1 = r0 + (3 + L * 21 * over) * u;
+        g.beginPath();
+        g.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+        g.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+        g.stroke();
+      });
       g.restore();
     };
 
@@ -224,7 +227,7 @@ export default function Splash() {
           g.drawImage(cv, 0, y * DPR, W * DPR, h * DPR, dx, y, W, h);
         }
       }
-      logo(t, 2.35);
+      mark(t, 2.25);
     };
 
     const loop = (now: number) => {
@@ -237,9 +240,8 @@ export default function Splash() {
     };
 
     (async () => {
-      family = orbitronFamily();
       try {
-        const [pts] = await Promise.all([loadPoints(), document.fonts.load(`500 100px ${family}`)]);
+        const pts = await loadPoints();
         P = pts;
         if (P.length) {
           let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
