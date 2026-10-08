@@ -438,15 +438,20 @@ pub async fn handle(st: Arc<ProxyState>, req: Request<Incoming>) -> Response<Pro
         if !ok {
             return plain(StatusCode::FORBIDDEN, "bad key");
         }
+        // 302 로 넘기면 앱 화면(tauri://)에서 시작한 이동이라 '다른 사이트'로 취급돼, WebView 가
+        // 방금 심은 SameSite 쿠키를 다음 요청에 안 붙인다 → "앱 안에서만…" 403. 쿠키를 심는 페이지를
+        // 한 번 그리고, 그 페이지(같은 주소)에서 / 로 넘어가게 한다.
         return Response::builder()
-            .status(StatusCode::FOUND)
-            .header(header::LOCATION, "/")
+            .status(StatusCode::OK)
+            .header(header::CONTENT_TYPE, "text/html; charset=utf-8")
             .header(
                 header::SET_COOKIE,
-                format!("{GATE_COOKIE}={}; Path=/; HttpOnly; SameSite=Strict", st.session_key),
+                format!("{GATE_COOKIE}={}; Path=/; HttpOnly; SameSite=Lax", st.session_key),
             )
             .header(header::CACHE_CONTROL, "no-store")
-            .body(full(""))
+            .body(full(
+                "<!doctype html><meta charset=utf-8><style>html{background:#040507}</style><script>location.replace('/')</script>",
+            ))
             .unwrap();
     }
 
@@ -943,10 +948,10 @@ pub(crate) mod tests {
         let res = r.client.get(format!("{}/__onair/boot?k=nope", r.base)).send().await.unwrap();
         assert_eq!(res.status(), 403);
         let res = r.client.get(r.st.boot_url()).send().await.unwrap();
-        assert_eq!(res.status(), 302);
-        assert_eq!(res.headers()["location"], "/");
-        let sc = res.headers()["set-cookie"].to_str().unwrap();
-        assert!(sc.starts_with(&r.cookie) && sc.contains("HttpOnly") && sc.contains("SameSite=Strict"));
+        assert_eq!(res.status(), 200);
+        let sc = res.headers()["set-cookie"].to_str().unwrap().to_string();
+        assert!(sc.starts_with(&r.cookie) && sc.contains("HttpOnly") && sc.contains("SameSite=Lax"));
+        assert!(res.text().await.unwrap().contains("location.replace('/')"));
     }
 
     #[tokio::test]
