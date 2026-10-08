@@ -165,9 +165,6 @@ function AnnouncedCard({ a }: { a: AnnouncedBridge }) {
           매트릭스 현장 세팅
         </Link>
       </div>
-      <p className="w-full font-pretendard text-xs text-white/35">
-        아직 어떤 장비도 이 노트북을 쓰지 않아요. 현장 세팅의 &lsquo;켜진 노트북&rsquo;에서 이 노트북을 고르세요.
-      </p>
     </section>
   );
 }
@@ -188,19 +185,16 @@ export default function BridgePanel() {
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
       <NotebookKit />
 
-      <div className="flex items-center justify-between gap-6">
-        <p className="font-pretendard text-xs text-white/30">
-          RS-232·MIDI 장비는 옆에 둔 노트북(브릿지)을 거쳐 조작합니다. 5초마다 연결을 확인합니다.
-        </p>
-        {bridges.length > 0 && (
+      {bridges.length > 0 && (
+        <div className="flex items-center justify-end gap-6">
           <div className="flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2">
             <span className="font-mbc text-xs text-white/40">연결</span>
             <span className={cn("font-orbitron text-sm", online === bridges.length ? "text-emerald-300" : "text-amber-300")}>
               {online}/{bridges.length}
             </span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {data && !data.tokenConfigured && (
         <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-pretendard text-sm text-amber-100/90">

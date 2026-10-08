@@ -382,7 +382,7 @@ export default function ChannelProcessing({
         <span className="font-mbc text-xl text-white">{channel.name}</span>
         {realDevice && roles.size === 0 && !linkMode && (
           <span className="font-pretendard text-xs text-[#FFB23F]/80">
-            이 채널은 아직 콘솔 주소가 연결되지 않았어요{isAdmin ? " — 오른쪽 ‘주소 연결’을 켜서 하나씩 찾으세요" : ""}
+            이 채널은 아직 콘솔 주소가 연결되지 않았어요
           </span>
         )}
         {isAdmin && realDevice && (

@@ -197,7 +197,7 @@ export default function LightingFixturesStep({
           </ActionButton>
           <span className="font-pretendard text-xs text-white/40">
             {capture
-              ? `콘솔이 쓰는 주소 ${capture.used.length}개 · ${runs.length}묶음 — 이어진 주소는 한 조명으로 묶었어요`
+              ? `콘솔이 쓰는 주소 ${capture.used.length}개 · ${runs.length}묶음`
               : "콘솔에서 평소 쓰는 씬을 켜 두고 읽으세요. 쓰는 주소가 칩으로 나와요."}
           </span>
         </div>
@@ -449,7 +449,7 @@ export default function LightingFixturesStep({
                 )}
                 {pending.runLen > 1 && (
                   <p className="px-1 font-pretendard text-xs text-white/45">
-                    주소마다 다른 등이 켜지나요? (조광기 팩은 채널마다 등이 하나씩이에요){" "}
+                    주소마다 다른 등이 켜지나요?{" "}
                     <button type="button" onClick={addPendingSplit} className="font-mbc text-[#FFD49A] hover:underline">
                       밝기만 {pending.runLen}개로 나눠 추가
                     </button>
@@ -526,7 +526,6 @@ function ChannelEditor({
       <IconBtn label="채널 더하기" disabled={channels.length >= 32} onClick={() => onChange([...channels, "none"])}>
         <Plus size={14} />
       </IconBtn>
-      <span className="font-pretendard text-[11px] text-white/30">제품 설명서의 채널 표를 보고 순서대로 고르세요</span>
     </div>
   );
 }

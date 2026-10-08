@@ -111,7 +111,7 @@ export default function LightingPage() {
       )}
 
       {/* 음악 조명 탭에서는 조작 화면을 숨긴다 (페이더 상태는 그대로 유지) */}
-      <Panel title="장면" hint="누르면 저장된 조명 상태로 바뀌어요" className={cn(tab !== "control" && "hidden")}>
+      <Panel title="장면" className={cn(tab !== "control" && "hidden")}>
         <div className="flex flex-wrap items-center gap-2.5">
           {(state?.scenes ?? []).map((scene) => {
             const active = state?.current === scene.id;
@@ -220,7 +220,6 @@ export default function LightingPage() {
 
       <Panel
         title="조명"
-        hint="페이더로 밝기 · 아래 버튼으로 색"
         className={cn("flex min-h-[520px] flex-1 flex-col", tab !== "control" && "hidden")}
       >
         {fixtures.length === 0 ? (

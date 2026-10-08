@@ -25,10 +25,10 @@ const input =
   "h-10 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white placeholder:text-white/25 focus:border-white/30 focus:outline-none";
 
 /** 신호를 보는 세 가지 길 — 학교 장비가 어떻게 붙어 있느냐에 따라 고른다 */
-const MODES: { key: LearnMode; title: string; hint: string }[] = [
-  { key: "tcp", title: "랜으로 중계", hint: "제조사 프로그램이 IP로 장비에 붙을 때 (가장 쉬움)" },
-  { key: "serial", title: "시리얼로 중계", hint: "프로그램이 COM 포트로 붙을 때 (com0com 필요)" },
-  { key: "manual", title: "직접 붙여넣기", hint: "중계를 못 끼울 때 — 딴 패킷을 단계마다 넣기" },
+const MODES: { key: LearnMode; title: string }[] = [
+  { key: "tcp", title: "랜으로 중계" },
+  { key: "serial", title: "시리얼로 중계" },
+  { key: "manual", title: "직접 붙여넣기" },
 ];
 
 const MODE_NOTE: Record<LearnMode, string> = {
@@ -49,9 +49,6 @@ function Shell({ onClose, children }: { onClose: () => void; children: React.Rea
             <RadioTower size={18} className="text-red-400" />
             <div>
               <h2 className="text-lg font-semibold text-white">새 장비 배우기</h2>
-              <p className="mt-0.5 font-pretendard text-xs text-white/40">
-                제조사 프로그램을 따라 누르면 ONAIR가 스피커 선택기의 신호를 배웁니다
-              </p>
             </div>
           </div>
           <button
@@ -264,7 +261,6 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                 )}
               >
                 <span className="font-mbc text-[15px] text-white">{m.title}</span>
-                <span className="font-pretendard text-xs leading-relaxed text-white/45">{m.hint}</span>
               </button>
             ))}
           </div>
@@ -339,9 +335,6 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                       placeholder="COM11"
                       className={cn(input, "font-orbitron")}
                     />
-                    <span className="font-pretendard text-xs text-white/30">
-                      com0com 으로 가상 포트 쌍(예: COM10 ↔ COM11)을 만든 뒤, 제조사 프로그램은 COM10, ONAIR는 COM11로.
-                    </span>
                   </label>
                 )}
               </>
@@ -457,9 +450,6 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                   이 단계에 넣기
                 </button>
               </div>
-              <span className="font-pretendard text-xs text-white/35">
-                띄어쓰기·줄바꿈·0x 는 알아서 걸러요. 단계를 옮기려면 아래 번호를 누르세요.
-              </span>
             </div>
           )}
 
@@ -491,7 +481,6 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                 placeholder="예: 1-3, 강당, 교무실"
                 className={cn(input, "w-52")}
               />
-              <span className="font-pretendard text-xs text-white/30">비워도 나중에 캘리브레이션으로 매길 수 있어요</span>
             </label>
           )}
 

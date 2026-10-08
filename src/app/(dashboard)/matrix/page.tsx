@@ -82,7 +82,7 @@ export default function VideoMatrixPage() {
       {!canOperate && <Notice tone="info">보기 전용 기기입니다. 조작은 운영 권한이 있는 기기에서 가능합니다.</Notice>}
 
       <div className="flex min-h-0 flex-1 gap-5">
-        <Panel title="라우팅" hint="행 = 출력(화면), 열 = 입력(소스) · 입력 이름을 누르면 모든 화면이 그 입력으로" className="min-w-0 flex-1">
+        <Panel title="라우팅" className="min-w-0 flex-1">
           <div
             className="grid gap-1.5"
             style={{ gridTemplateColumns: `170px repeat(${inputs.length || 1}, minmax(0, 1fr))` }}

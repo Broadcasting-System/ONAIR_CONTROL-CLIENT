@@ -338,9 +338,6 @@ function CardBgPicker({
           e.target.value = ""; // 같은 파일을 다시 골라도 바뀌게
         }}
       />
-      <span className="font-pretendard text-xs text-white/45">
-        소리 파형은 이름으로 만든 그림이에요. 사진은 흑백 + 기수 색으로 바꿔 보여요 (JPG·PNG·WEBP, {PHOTO_MAX_MB}MB 이하).
-      </span>
     </div>
   );
 }
@@ -405,9 +402,6 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
             placeholder={defaultBio(target)}
             className={cn(inpCls, "resize-y py-3 leading-relaxed")}
           />
-          <span className="font-pretendard text-xs text-white/45">
-            비우면 &ldquo;{defaultBio(target)}&rdquo; 로 보여요. 줄바꿈은 그대로 보여요.
-          </span>
         </label>
         <CardBgPicker
           target={target}
@@ -465,9 +459,6 @@ function AddRosterModal({
 
   return (
     <ModalShell title="명단에 추가" onClose={onClose}>
-      <p className="-mt-2 font-pretendard text-sm leading-relaxed text-white/55">
-        기기 없이 이름만 올려요(대개 졸업생). 나중에 표에서 이 사람에게 초대를 이어 주면 그 기록에 기기가 붙어요.
-      </p>
       <form
         className="grid gap-4"
         onSubmit={(e) => {
@@ -563,9 +554,7 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
       <section className="rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
         <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
           <h3 className="whitespace-nowrap font-mbc text-2xl text-white">방송부</h3>
-          <span className="font-pretendard text-[13px] text-white/50">
-            {first ? `${first}기부터 지금까지 · ` : ""}이름을 누르면 소개가 나와요
-          </span>
+          {first && <span className="font-pretendard text-[13px] text-white/50">{first}기부터 지금까지</span>}
           {toggle && <span className="ml-auto">{toggle}</span>}
         </div>
 

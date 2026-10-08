@@ -394,7 +394,7 @@ export default function MembersPanel() {
 
       {/* 승인 대기 */}
       {pending.length > 0 && (
-        <Panel title="승인 대기" hint="역할을 고르고 승인하면 그 기기에서 바로 조작할 수 있어요">
+        <Panel title="승인 대기">
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,460px),1fr))] gap-3">
             {pending.map((m) => (
               <PendingCard
@@ -418,7 +418,7 @@ export default function MembersPanel() {
       )}
 
       {/* 부원 목록 */}
-      <Panel title="부원" hint="역할을 바꾸면 그 기기·받는 역할 주소에 바로 반영돼요 · 마지막 부장은 내려놓을 수 없어요">
+      <Panel title="부원">
         <Seg items={FILTERS} value={filter} onChange={setFilter} />
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[1100px] text-left font-pretendard text-sm">

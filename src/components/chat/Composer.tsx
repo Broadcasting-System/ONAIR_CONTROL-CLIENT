@@ -274,9 +274,6 @@ const Composer = forwardRef<
           </button>
         )}
       </div>
-      <p className="mt-1.5 px-1 font-pretendard text-[11.5px] text-white/40">
-        Enter 보내기 · Shift+Enter 줄바꿈 · 사진·영상은 끌어다 놓거나 붙여 넣어도 돼요
-      </p>
     </div>
   );
 });

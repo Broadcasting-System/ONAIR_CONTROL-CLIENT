@@ -410,9 +410,6 @@ export const DisplayMirror = ({ channel = 1, badge = true }: { channel?: number;
           <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
           <span className="text-[11px] font-black tracking-tight text-white">화면 공유 중</span>
         </span>
-        <p className="text-xs font-medium text-white/40 tracking-tight">
-          공유 중인 기기의 화면이 송출되고 있습니다
-        </p>
       </div>
     );
   }

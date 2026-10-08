@@ -157,45 +157,40 @@ export default function ConnectionStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="어떻게 연결하나요?" hint="콘솔에 꽂은 선에 맞춰 고르세요. 장비가 없으면 모의 장비로 화면만 연습할 수 있어요.">
+      <Card title="어떻게 연결하나요?">
         <div className="grid grid-cols-3 gap-3">
           <OptionCard
             selected={isHiqnet}
             onClick={() => setDriver("hiqnet")}
             title="랜선 (HiQnet)"
             badge="추천"
-            hint="채널 페이더·뮤트를 화면에서. USB-MIDI 까지 있으면 씬 전환도 됩니다."
           />
           <OptionCard
             selected={conn.driver === "midi-bridge"}
             onClick={() => setDriver("midi-bridge")}
             title="MIDI 만"
-            hint="씬 전환 버튼만. 강당 노트북에 USB-MIDI 가 꽂혀 있어야 합니다."
           />
           <OptionCard
             selected={conn.driver === "mock"}
             onClick={() => setDriver("mock")}
             title="모의 장비"
-            hint="실제 장비 없이 화면 연습용."
           />
         </div>
       </Card>
 
       {isHiqnet && (
-        <Card title="콘솔" hint="콘솔 IP 는 '콘솔 찾기'로 채우면 편해요.">
+        <Card title="콘솔">
           <div className="grid grid-cols-2 gap-3">
             <OptionCard
               selected={hq.via === "bridge"}
               onClick={() => setHq({ via: "bridge" })}
               title="강당 노트북 거쳐서"
               badge="추천"
-              hint="콘솔을 노트북에 랜선으로 직결. 학교망 설정과 상관없이 됩니다."
             />
             <OptionCard
               selected={hq.via === "direct"}
               onClick={() => setHq({ via: "direct" })}
               title="서버에서 바로"
-              hint="콘솔이 방송실 서버와 같은 학교 유선망에 꽂혀 있을 때."
             />
           </div>
 
@@ -235,9 +230,6 @@ export default function ConnectionStep({
               고급 설정 {advanced ? "접기" : "보기"}
             </button>
           </div>
-          <p className="-mt-2 font-pretendard text-xs text-white/30">
-            장치 번호는 콘솔 SYSTEM 의 HiQnet Address 예요 (예: 28147). 콘솔 찾기로 채우면 같이 들어갑니다.
-          </p>
 
           {advanced && (
             <div className="flex flex-wrap gap-3 rounded-xl bg-white/[0.02] p-3">
@@ -259,7 +251,6 @@ export default function ConnectionStep({
                   />
                 </Field>
               )}
-              <p className="self-end pb-2 font-pretendard text-xs text-white/30">바꿀 일은 거의 없어요.</p>
             </div>
           )}
 
@@ -268,11 +259,8 @@ export default function ConnectionStep({
       )}
 
       {usesBridge && (
-        <Card
-          title="강당 노트북"
-          hint="콘솔 옆 노트북에 'ONAIR Bridge' 창이 켜져 있어야 해요. 켜진 노트북은 아래에 저절로 나타나요."
-        >
-          <Field label="노트북 주소" hint="Tailscale IP 와 포트 — 예: http://100.64.12.3:8765" className="max-w-[420px]">
+        <Card title="강당 노트북">
+          <Field label="노트북 주소" className="max-w-[420px]">
             <input
               value={conn.bridge.url}
               onChange={(e) => setBridge({ url: e.target.value })}
@@ -294,7 +282,6 @@ export default function ConnectionStep({
       {(isHiqnet || conn.driver === "midi-bridge") && (
         <Card
           title="씬 전환 (MIDI)"
-          hint="콘솔에 저장된 씬(Cue)을 부를 때 써요. 강당 노트북에 USB-MIDI 가 필요합니다."
           action={isHiqnet ? <Switch checked={conn.midi.enabled} onChange={(v) => setMidi({ enabled: v })} label="사용" /> : undefined}
         >
           {midiOn ? (
@@ -347,7 +334,6 @@ export default function ConnectionStep({
         <ActionButton icon={<PlugZap size={15} />} busy={testing} onClick={runTest} disabled={!canSubmit}>
           연결 시험
         </ActionButton>
-        <span className="font-pretendard text-xs text-white/35">저장하지 않고 지금 입력한 값으로 시험해요.</span>
         <div className="ml-auto flex items-center gap-2">
           {dirty && <span className="font-pretendard text-xs text-amber-200/75">저장 안 한 변경이 있어요</span>}
           {dirty && (

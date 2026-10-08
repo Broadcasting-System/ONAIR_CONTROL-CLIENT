@@ -91,7 +91,7 @@ function featureStatus(
     : { text: "찢어진 채널 없음", acting: false };
 }
 
-/** 기능 카드 — 켜기 스위치 · 한 줄 설명 · 지금 하는 일 · 자세히(숫자·대상 채널, 관리자만 저장) */
+/** 기능 카드 — 켜기 스위치 · 지금 하는 일 · 자세히(숫자·대상 채널, 관리자만 저장) */
 export function FeatureCard({
   feature,
   state,
@@ -150,7 +150,6 @@ export function FeatureCard({
           label={`${f.name} 켜기`}
         />
       </div>
-      <p className="font-pretendard text-[12.5px] leading-relaxed text-white/50">{info.desc}</p>
       <div
         className={cn(
           "mt-auto flex items-center gap-2 rounded-[10px] bg-black/35 px-2.5 py-1.5 font-pretendard text-[12.5px]",
@@ -393,7 +392,7 @@ export function AutoLog({ log }: { log: AutoLogEntry[] }) {
   if (log.length === 0) {
     return (
       <p className="font-pretendard text-sm text-white/40">
-        아직 한 일이 없습니다. 기능을 켜면 여기에 쌓여요.
+        아직 한 일이 없습니다.
       </p>
     );
   }
@@ -530,7 +529,7 @@ export function AutoSettings({
           onChange={(e) => setOverride(Math.max(5, Math.min(600, Number(e.target.value) || 30)))}
           className={cn(field, "w-20 text-center font-orbitron")}
         />
-        <span>초 — 사람이 채널을 만지면 이 시간 동안 자동이 손을 뗍니다.</span>
+        <span>초</span>
       </div>
       <button
         type="button"

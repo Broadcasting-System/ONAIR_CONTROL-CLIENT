@@ -294,10 +294,6 @@ export default function BannerPage() {
               ) : null}
             </div>
           </div>
-          <p className="font-pretendard text-xs text-white/30">
-            미리보기는 송출 페이지를 그대로 렌더링합니다. 실제 현수막에서는 이
-            비율이 가로로 늘어나 정상으로 보입니다.
-          </p>
         </div>
       </div>
     </div>
@@ -406,9 +402,6 @@ function ScoreboardEditor({
           />
         </Field>
       </div>
-      <p className="-mt-2 font-pretendard text-xs text-white/30">
-        부제목은 「왼쪽 팀 VS 오른쪽 팀」으로 표시되며 코트 체인지 시 좌우가 바뀝니다.
-      </p>
       <SliderField
         label={`부제목 크기 (${value.subtitleSize}px)`}
         value={value.subtitleSize}
@@ -457,9 +450,6 @@ function ScoreboardEditor({
           <span className="font-pretendard text-sm text-white/40">점</span>
         </div>
       </label>
-      <p className="-mt-2 font-pretendard text-xs text-white/30">
-        목표 점수 기준으로 매치포인트·듀스가 자동 표시됩니다 (2점차 승리 규칙).
-      </p>
 
       <TeamControl
         title="왼쪽 팀"
@@ -508,7 +498,7 @@ function ScoreboardEditor({
       <div className="h-px bg-white/5" />
 
       {/* 득점 애니메이션 (승리 WIN은 항상 임팩트+샤인) */}
-      <Field label="득점 애니메이션 (승리 WIN은 임팩트+샤인 고정)">
+      <Field label="득점 애니메이션">
         <AnimSelect
           options={SCORE_ANIM_OPTIONS}
           value={value.scoreAnim}
@@ -1045,9 +1035,6 @@ function DefaultBannerEditor({
 
   return (
     <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
-      <p className="font-pretendard text-xs text-white/30">
-        고정 배경(동계캠프 디자인) 위에 아래 3개 텍스트만 바뀌어 실시간 송출됩니다.
-      </p>
       {field("메인 텍스트", "mainText", "예: 2025학년도 2학기 동계캠프")}
       {field("서브 텍스트 1", "subText1", "예: 2025년, BSSM 해커톤")}
       {field("서브 텍스트 2", "subText2", "예: 장소   날짜")}

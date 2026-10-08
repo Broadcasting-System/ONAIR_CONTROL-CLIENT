@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, Crosshair, Eye, EyeOff, Minus, Plus, Trash2, Wand2 } from "lucide-react";
 import { toast } from "@/components/common/Toast";
-import { Notice } from "@/components/hall/HallControls";
 import { hallApi } from "@/lib/hallApi";
 import { cn } from "@/lib/utils";
 import type { HiqnetAddress, MixerChannel, MixerState } from "@/types/hall";
@@ -179,11 +178,7 @@ export default function ChannelsStep({
   return (
     <Card
       title={`채널 ${draft.channels.length}개`}
-      hint={
-        hiqnet
-          ? `콘솔 주소 ${withAddr}/${draft.channels.length} · 방송부가 알아볼 이름으로 · 안 쓰는 채널은 눈을 꺼서 숨기세요`
-          : "방송부가 알아볼 이름으로 · 안 쓰는 채널은 눈을 꺼서 숨기세요"
-      }
+      hint={hiqnet ? `콘솔 주소 ${withAddr}/${draft.channels.length}` : undefined}
       action={
         <div className="flex gap-2">
           {hiqnet && (
@@ -197,14 +192,6 @@ export default function ChannelsStep({
         </div>
       }
     >
-      {!hiqnet && (
-        <Notice tone="info">콘솔 주소 칸은 ‘연결’에서 랜선(HiQnet)을 고르고 저장하면 나타나요.</Notice>
-      )}
-      {hiqnet && !learn && (
-        <p className="-mt-1 font-pretendard text-xs text-white/35">
-          주소는 <b className="text-white/55">찾기</b>를 누른 뒤 콘솔에서 그 채널을 움직이면 자동으로 채워져요. 시험 버튼은 저장한 설정으로 콘솔을 실제로 움직입니다.
-        </p>
-      )}
       {learn && (
         <div className="flex items-center gap-3 rounded-xl border border-[#FF3B3B]/30 bg-[#FF3B3B]/10 px-4 py-3">
           <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[#FF3B3B] shadow-[0_0_10px_#FF3B3B]" />

@@ -78,9 +78,6 @@ export default function NotebookKit() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-mbc text-lg text-white">노트북 설치 파일</h3>
-          <p className="mt-0.5 font-pretendard text-[13px] text-white/40">
-            강당·다목적홀 장비 옆에 둘 윈도우 노트북에 설치해요. 이 서버의 주소와 비밀 토큰이 미리 들어 있어요.
-          </p>
         </div>
         {info && <span className="font-orbitron text-[11px] tracking-[0.12em] text-white/35">BRIDGE v{info.version}</span>}
       </div>
@@ -100,7 +97,7 @@ export default function NotebookKit() {
       </ol>
 
       <div className="flex flex-wrap items-end gap-3">
-        <Field label="노트북 이름" hint="ONAIR 화면에 보일 이름" className="w-[190px]">
+        <Field label="노트북 이름" className="w-[190px]">
           <input
             list="onair-kit-names"
             value={name}
@@ -114,7 +111,7 @@ export default function NotebookKit() {
             ))}
           </datalist>
         </Field>
-        <Field label="ONAIR 서버 주소" hint="노트북이 찾아올 주소 — 서버의 Tailscale IP" className="min-w-[250px] flex-1">
+        <Field label="ONAIR 서버 주소" className="min-w-[250px] flex-1">
           <input
             value={server}
             onChange={(e) => setServer(e.target.value)}

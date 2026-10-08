@@ -234,18 +234,13 @@ export default function SpeakerMappingPanel() {
             }),
           )}
         </div>
-        <p className="mt-3 font-pretendard text-xs text-white/35">
-          빈 칸은 연결 안 된 좌표입니다. 한 구역이 여러 칸에 걸쳐 있으면 같은 이름을 적으면 됩니다(≡ 표시).
-          &quot;전체&quot;, &quot;N학년&quot;은 대상 지정 문법과 겹쳐 쓸 수 없습니다. 교실은 &quot;학년-반&quot;(예: 3-2)으로 적으면
-          학년 단위 선택이 자동으로 됩니다.
-        </p>
       </div>
 
       {/* 도구 + 저장 */}
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
         <div className="flex min-w-[320px] flex-1 flex-col gap-1">
           <span className="font-mbc text-xs text-white/40">
-            연속 채우기 — 선택한 칸({selected[0]}·{selected[1]})부터 쉼표로 구분한 이름을 차례로 넣습니다
+            연속 채우기 — 선택한 칸({selected[0]}·{selected[1]})부터
           </span>
           <div className="flex gap-2">
             <input

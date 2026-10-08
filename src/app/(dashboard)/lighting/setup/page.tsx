@@ -196,7 +196,7 @@ export default function LightingSetupPage() {
     {
       key: "check",
       title: "확인",
-      sub: "켜 보고 끝내기",
+      sub: "",
       done: configured && connected && savedCount > 0 && !dirty && !!capture && missing === 0,
     },
   ];
@@ -252,7 +252,7 @@ export default function LightingSetupPage() {
               <span className={cn("block font-mbc text-[15px]", step === s.key ? "text-white" : "text-white/70")}>
                 {s.title}
               </span>
-              <span className="block truncate font-pretendard text-xs text-white/40">{s.sub}</span>
+              {s.sub && <span className="block truncate font-pretendard text-xs text-white/40">{s.sub}</span>}
             </span>
           </button>
         ))}

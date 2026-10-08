@@ -107,7 +107,7 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
     <div className="flex flex-col gap-5">
       <Row
         label="Claude API 키"
-        hint={s.keySet ? `저장된 키 ${s.keyHint ?? ""} · 새 키를 넣으면 바뀌어요` : "console.anthropic.com 에서 만든 키를 넣어 주세요"}
+        hint={s.keySet ? `저장된 키 ${s.keyHint ?? ""}` : undefined}
       >
         <div className="flex gap-2">
           <input
@@ -151,18 +151,15 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
       </Row>
 
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="font-pretendard text-[13px] font-semibold text-white/70">CUE 켜기</p>
-          <p className="font-pretendard text-[12px] text-white/50">끄면 키가 있어도 아무도 못 써요</p>
-        </div>
+        <p className="font-pretendard text-[13px] font-semibold text-white/70">CUE 켜기</p>
         <OnSwitch checked={enabled} onChange={setEnabled} label="CUE 켜기" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Row label="하루 전체 요청" hint="서버 전체">
+        <Row label="하루 전체 요청">
           <input inputMode="numeric" value={daily} onChange={(e) => setDaily(e.target.value.replace(/\D/g, ""))} className={field} />
         </Row>
-        <Row label="한 사람 하루 요청" hint="사람마다">
+        <Row label="한 사람 하루 요청">
           <input
             inputMode="numeric"
             value={perUser}

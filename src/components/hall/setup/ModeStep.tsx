@@ -25,19 +25,17 @@ export default function ModeStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="방송부 조작 범위" hint="관리자는 이 세팅 화면에서 언제든 전부 시험할 수 있어요.">
+      <Card title="방송부 조작 범위">
         <div className="grid grid-cols-2 gap-3">
           <OptionCard
             selected={draft.mode === "channels"}
             onClick={() => setMode("channels")}
             title="채널 조작"
-            hint="페이더·뮤트·씬 전환을 조작 화면에서 합니다."
           />
           <OptionCard
             selected={draft.mode === "scenes"}
             onClick={() => setMode("scenes")}
             title="씬 전환만"
-            hint="조작 화면엔 씬 버튼만. 채널은 콘솔에서 직접 만집니다."
           />
         </div>
         {noChannelLink && (
@@ -45,7 +43,7 @@ export default function ModeStep({
         )}
       </Card>
 
-      <Card title="걸린 안전장치" hint="채널·씬 단계에서 바꾼 값이 여기 모여요.">
+      <Card title="걸린 안전장치">
         <ul className="grid grid-cols-2 gap-3">
           <Item
             icon={<Gauge size={16} />}

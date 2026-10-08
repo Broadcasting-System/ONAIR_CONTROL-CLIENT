@@ -141,7 +141,7 @@ function StatusSection() {
   const s = status.data;
 
   return (
-    <Panel title="연결 상태" hint="Cloudflare 가 제대로 연결됐는지 — 빨간 점의 '고치는 법'을 따라 하면 돼요">
+    <Panel title="연결 상태">
       {loadError(status) ? (
         <Problem>{errText(loadError(status))}</Problem>
       ) : !s ? (
@@ -203,9 +203,6 @@ function StatusSection() {
                   ))}
                 </tbody>
               </table>
-              <p className="border-t border-white/10 px-4 py-2.5 font-pretendard text-[13px] text-white/50">
-                읽기로만 확인해요. 고치기(Edit) 권한이 없으면 실제로 바꿀 때 어떤 권한이 빠졌는지 알려 줘요.
-              </p>
             </div>
           )}
         </div>
@@ -311,9 +308,7 @@ function IssueForm({ domain, onDone }: { domain: string; onDone: () => void }) {
             />
             <span className="shrink-0 font-mono text-[14px] text-white/45">@{domain}</span>
           </div>
-          <span className={cn("font-pretendard text-[12.5px]", problem ? "text-[#FF8B8B]" : "text-white/45")}>
-            {problem || "영문 소문자·숫자·점 3~20자. admin·lead·all 같은 이름은 못 써요."}
-          </span>
+          {problem && <span className="font-pretendard text-[12.5px] text-[#FF8B8B]">{problem}</span>}
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="font-pretendard text-[13px] font-semibold text-white/70">받을 메일 (최대 5개)</span>
@@ -325,9 +320,6 @@ function IssueForm({ domain, onDone }: { domain: string; onDone: () => void }) {
             spellCheck={false}
             className={field}
           />
-          <span className="font-pretendard text-[12.5px] text-white/45">
-            쉼표나 띄어쓰기로 나눠요. 처음 쓰는 메일에는 Cloudflare 가 확인 메일을 보내요.
-          </span>
         </label>
       </div>
       <label className="flex flex-col gap-1.5">
@@ -400,7 +392,7 @@ function MailSection() {
   const s = d?.settings;
 
   return (
-    <Panel title="메일 주소" hint={`@${domain} 받기 전용 · 부원 주소는 '부원' 탭에서, 행사·선생님 주소는 여기서 발급해요`}>
+    <Panel title="메일 주소" hint={`@${domain}`}>
       {loadError(mail) ? (
         <Problem>{errText(loadError(mail))}</Problem>
       ) : !d ? (
@@ -522,9 +514,6 @@ function MailSection() {
 
           <div className="flex flex-col gap-2">
             <h4 className="font-mbc text-[17px] text-white">받을 메일</h4>
-            <p className="font-pretendard text-[13px] text-white/50">
-              Cloudflare 가 보낸 확인 메일의 링크를 눌러야 전달돼요. 부원 개인 메일은 가려서 보여요.
-            </p>
             <div className="overflow-x-auto rounded-xl border border-white/10">
               <table className="w-full min-w-[560px] text-left font-pretendard text-[14px]">
                 <thead className="text-white/45">
@@ -606,7 +595,7 @@ function AccessEmailSection() {
   return (
     <Panel
       title="로그인 허용 이메일"
-      hint={d ? `${d.app.domain} 에 브라우저로 들어올 때 · 정책 '${d.policy.name}'` : "브라우저로 ONAIR 에 들어올 수 있는 이메일"}
+      hint={d ? `${d.app.domain} · 정책 '${d.policy.name}'` : undefined}
     >
       {loadError(list) ? (
         <Problem>{errText(loadError(list))}</Problem>
@@ -701,7 +690,7 @@ function DeviceSection() {
   const d = list.data;
 
   return (
-    <Panel title="기기 접속 키" hint="데스크톱 앱이 쓰는 Cloudflare 서비스 토큰 · 끊으면 그 기기는 들어오지 못해요">
+    <Panel title="기기 접속 키">
       {loadError(list) ? (
         <Problem>{errText(loadError(list))}</Problem>
       ) : !d ? (
@@ -780,15 +769,15 @@ function DeviceSection() {
 
 /* ---------------- 5. 연결 설정 (최고 관리자) ---------------- */
 
-const SETTING_ROWS: { key: CfSettingField; placeholder: string; hint: string }[] = [
-  { key: "accountId", placeholder: "32자리 영문·숫자", hint: "Cloudflare 대시보드 오른쪽 아래 Account ID" },
-  { key: "zoneId", placeholder: "32자리 영문·숫자", hint: "bssmcast.com 개요 오른쪽 아래 Zone ID" },
-  { key: "teamDomain", placeholder: "junghyun001", hint: "Zero Trust 팀 이름 (로그인 확인에 써요)" },
-  { key: "appDomain", placeholder: "onair.bssmcast.com", hint: "이 주소를 지키는 Access 앱을 찾아요" },
-  { key: "accessAppId", placeholder: "비우면 위 주소로 찾아요", hint: "Access › Applications › 앱 › Overview 의 Application ID" },
-  { key: "emailPolicyId", placeholder: "비우면 이메일 허용 정책을 찾아요", hint: "로그인 허용 이메일이 들어 있는 정책" },
-  { key: "devicePolicyId", placeholder: "비우면 Service Auth 정책을 찾아요", hint: "부원 기기(서비스 토큰) 정책" },
-  { key: "tunnelId", placeholder: "비우면 정상인 터널을 찾아요", hint: "Networks › Tunnels 의 Tunnel ID" },
+const SETTING_ROWS: { key: CfSettingField; placeholder: string }[] = [
+  { key: "accountId", placeholder: "32자리 영문·숫자" },
+  { key: "zoneId", placeholder: "32자리 영문·숫자" },
+  { key: "teamDomain", placeholder: "junghyun001" },
+  { key: "appDomain", placeholder: "onair.bssmcast.com" },
+  { key: "accessAppId", placeholder: "비우면 위 주소로 찾아요" },
+  { key: "emailPolicyId", placeholder: "비우면 이메일 허용 정책을 찾아요" },
+  { key: "devicePolicyId", placeholder: "비우면 Service Auth 정책을 찾아요" },
+  { key: "tunnelId", placeholder: "비우면 정상인 터널을 찾아요" },
 ];
 
 function sourceText(src: "settings" | "env" | "default" | "") {
@@ -858,7 +847,7 @@ function SettingsSection() {
   };
 
   return (
-    <Panel title="연결 설정" hint="최고 관리자만 보여요 · 비운 칸은 서버 .env 값을 써요 · 토큰은 다시 보여 주지 않아요">
+    <Panel title="연결 설정">
       <div className="flex flex-col gap-5">
         <label className="flex flex-col gap-1.5">
           <span className="font-pretendard text-[13px] font-semibold text-white/70">API 토큰</span>
@@ -890,7 +879,7 @@ function SettingsSection() {
           </div>
           <span className="font-pretendard text-[12.5px] text-white/50">
             {s.tokenSet
-              ? `저장된 토큰 ${s.tokenHint ?? ""} (${s.tokenSource === "settings" ? "화면에서 넣음" : "서버 .env"}) · 화면에서 넣으면 초대·메일·이 화면이 모두 이 토큰 하나를 써요`
+              ? `저장된 토큰 ${s.tokenHint ?? ""} (${s.tokenSource === "settings" ? "화면에서 넣음" : "서버 .env"})`
               : "토큰이 없어요 — 지금은 가짜(mock)로 돌아요"}
           </span>
         </label>
@@ -910,7 +899,6 @@ function SettingsSection() {
                 spellCheck={false}
                 className={cn(field, "font-mono text-[13.5px]")}
               />
-              <span className="font-pretendard text-[12.5px] text-white/45">{r.hint}</span>
             </label>
           ))}
           <label className="flex flex-col gap-1.5">
@@ -927,7 +915,6 @@ function SettingsSection() {
               ]}
               className={field}
             />
-            <span className="font-pretendard text-[12.5px] text-white/45">Email Routing 을 켠 뒤에 cloudflare 로 바꿔요</span>
           </label>
         </div>
 

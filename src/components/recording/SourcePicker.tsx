@@ -78,7 +78,6 @@ export default function SourcePicker({
       <div className="grid gap-[18px] lg:grid-cols-[220px_minmax(0,1fr)]">
         <div className="pt-1 font-pretendard text-sm font-bold text-white/60">
           화면
-          <p className="mt-1 text-[13px] font-normal leading-snug text-white/50">지금 나가는 화면이 그대로 보여요</p>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           <button
@@ -138,7 +137,6 @@ export default function SourcePicker({
       <div className="grid gap-[18px] border-t border-white/[0.07] pt-[18px] lg:grid-cols-[220px_minmax(0,1fr)]">
         <div className="pt-1 font-pretendard text-sm font-bold text-white/60">
           소리
-          <p className="mt-1 text-[13px] font-normal leading-snug text-white/50">화면을 고르면 그 홀 콘솔이 자동으로</p>
         </div>
         <div className="flex flex-wrap gap-2.5">
           {halls.map((h) => {

@@ -143,11 +143,6 @@ export default function DevicesPage() {
             <span className="font-orbitron text-white/80">{me.ip}</span>
             <span className="ml-2 text-white/30">({me.roleLabel})</span>
           </p>
-          <p className="mt-1 font-pretendard text-xs text-white/30">
-            예전 방식(Tailscale IP) 권한입니다. 이 IP를 서버 <code className="text-white/50">.env</code>의{" "}
-            <code className="text-white/50">ADMIN_IPS</code>에 넣으면 항상 부장 권한,{" "}
-            <code className="text-white/50">SUPERADMIN_IDS</code>에 넣으면 최고 관리자입니다. 새 부원은 &lsquo;부원&rsquo; 탭에서 초대하세요.
-          </p>
         </div>
       )}
 

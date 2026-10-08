@@ -490,13 +490,6 @@ export default function MediaPage() {
             <div className="flex items-center justify-between">
               <p className="font-pretendard text-white/50">
                 CH{channel} 송출 중: {TYPE_LABEL[content.type] ?? content.type}
-                <span className="ml-2 text-white/30">
-                  {content.type === "timer"
-                    ? "— 새 타이머를 보내면 바로 바뀝니다"
-                    : content.type === "screen"
-                      ? "— 공유한 기기에서 중지하세요"
-                      : "— 재생 제어는 영상·PPT만 지원"}
-                </span>
               </p>
               <button
                 onClick={clearDisplay}
@@ -724,11 +717,6 @@ function YouTubeComposer({
         />
         <span className="font-mbc text-sm text-white/60">반복 재생</span>
       </label>
-
-      <p className="font-pretendard text-xs text-white/25">
-        자동재생 정책상 <b className="text-white/40">음소거로 시작</b>합니다. 송출 후 아래 재생 제어의
-        “소리 켜기”로 소리를 켜세요.
-      </p>
 
       <div className="mt-auto flex gap-3">
         <button

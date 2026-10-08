@@ -21,12 +21,6 @@ import {
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-const STYLE_HINT: Record<ShowStyle, string> = {
-  basic: "신나는 구간에 박자",
-  calm: "깜빡임 없이 천천히",
-  party: "중간 구간도 박자",
-};
-
 function ChoiceButton({
   on,
   disabled,
@@ -235,57 +229,52 @@ function CueEditor({
   const L = Math.max(1, show.analysis.duration);
   const lanes = LANE_INFO.filter((l) => show.cueList.some((c) => c.lane === l.lane));
   return (
-    <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-x-2.5 gap-y-1.5">
-        {lanes.map((l) => {
-          const cues = show.cueList.filter((c) => c.lane === l.lane);
-          const allOn = cues.every((c) => c.enabled);
-          return (
-            <div key={l.lane} className="contents">
-              <button
-                type="button"
-                disabled={!operable}
-                onClick={() =>
-                  onToggleLane(
-                    cues.map((c) => c.id),
-                    !allOn,
-                  )
-                }
-                title="누르면 이 줄 전체를 켜고 꺼요"
-                className={cn(
-                  "text-right font-pretendard text-xs enabled:hover:text-white",
-                  allOn ? "text-white/55" : "text-white/30 line-through",
-                )}
-              >
-                {l.label}
-              </button>
-              <div className="relative h-[22px] rounded-md bg-black/35">
-                {cues.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    disabled={!operable}
-                    onClick={() => onToggleCue(c.id, !c.enabled)}
-                    title={`${fmt(c.t)} · ${c.label}${c.enabled ? "" : " (꺼짐)"}`}
-                    className={cn(
-                      "absolute top-[3px] h-4 min-w-[4px] rounded-[3px] border border-black/60 disabled:cursor-default",
-                      !c.enabled && "opacity-20",
-                    )}
-                    style={{
-                      left: `${(c.t / L) * 100}%`,
-                      width: `${(Math.max(c.fade, 0.4) / L) * 100}%`,
-                      background: c.strobe ? "#ffffff" : c.color ? swatchOf(c.color) : l.color,
-                    }}
-                  />
-                ))}
-              </div>
+    <div className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-x-2.5 gap-y-1.5">
+      {lanes.map((l) => {
+        const cues = show.cueList.filter((c) => c.lane === l.lane);
+        const allOn = cues.every((c) => c.enabled);
+        return (
+          <div key={l.lane} className="contents">
+            <button
+              type="button"
+              disabled={!operable}
+              onClick={() =>
+                onToggleLane(
+                  cues.map((c) => c.id),
+                  !allOn,
+                )
+              }
+              title="누르면 이 줄 전체를 켜고 꺼요"
+              className={cn(
+                "text-right font-pretendard text-xs enabled:hover:text-white",
+                allOn ? "text-white/55" : "text-white/30 line-through",
+              )}
+            >
+              {l.label}
+            </button>
+            <div className="relative h-[22px] rounded-md bg-black/35">
+              {cues.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  disabled={!operable}
+                  onClick={() => onToggleCue(c.id, !c.enabled)}
+                  title={`${fmt(c.t)} · ${c.label}${c.enabled ? "" : " (꺼짐)"}`}
+                  className={cn(
+                    "absolute top-[3px] h-4 min-w-[4px] rounded-[3px] border border-black/60 disabled:cursor-default",
+                    !c.enabled && "opacity-20",
+                  )}
+                  style={{
+                    left: `${(c.t / L) * 100}%`,
+                    width: `${(Math.max(c.fade, 0.4) / L) * 100}%`,
+                    background: c.strobe ? "#ffffff" : c.color ? swatchOf(c.color) : l.color,
+                  }}
+                />
+              ))}
             </div>
-          );
-        })}
-      </div>
-      <p className="font-pretendard text-[11.5px] text-white/35">
-        큐를 누르면 그 큐만, 줄 이름을 누르면 줄 전체를 끄고 켤 수 있어요
-      </p>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -415,7 +404,7 @@ function UploadBox({
         >
           + MR 올리기
           <span className="mt-1 block font-pretendard text-[11.5px] text-white/35">
-            mp3·wav · 올리면 박자·구간을 찾아 쇼를 만들어요
+            mp3·wav
           </span>
         </button>
       </>
@@ -438,7 +427,6 @@ function UploadBox({
           </ChoiceButton>
         ))}
       </div>
-      <span className="font-pretendard text-[11px] text-white/35">{STYLE_HINT[style]}</span>
       <div className="flex gap-2">
         <button
           type="button"
@@ -484,10 +472,7 @@ function MusicSettings({
           onChange={(v) => setDraft({ ...draft, allowStrobe: v })}
           label="스트로브 허용"
         />
-        <span>
-          스트로브(켰다 껐다) 허용{" "}
-          <span className="text-white/40">— 허용해도 쇼마다 따로 켜야 나가요</span>
-        </span>
+        <span>스트로브(켰다 껐다) 허용</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="w-28 text-white/50">1초에 깜빡임</span>
@@ -631,7 +616,7 @@ export default function MusicLightPanel({
 
   const safety = [
     `깜빡임 초당 ${state.settings.maxFlashPerSec}번까지`,
-    state.settings.allowStrobe ? "스트로브 허용됨 (쇼에서 켜야 나감)" : "스트로브 꺼짐",
+    state.settings.allowStrobe ? "스트로브 허용됨" : "스트로브 꺼짐",
     `할로겐은 ${state.dimmerMinFade}초 넘게 천천히`,
   ].join(" · ");
 
@@ -737,7 +722,7 @@ export default function MusicLightPanel({
                 ? `${Math.round(live.bpm)} BPM · 박자 ${live.beats}번`
                 : "박자를 듣는 중…"
               : state.feed
-                ? "MR 없이 들어오는 소리에 맞춰요"
+                ? null
                 : "소리 입력이 없어요 (관리자 설정)"}
           </span>
           <span className="ml-auto text-white/50">{safety}</span>
@@ -804,9 +789,6 @@ export default function MusicLightPanel({
                 쇼 지우기
               </button>
             </div>
-            <p className="font-pretendard text-[11.5px] text-white/35">
-              분위기·스트로브·장면을 바꾸면 큐를 다시 만들어요 (큐마다 끈 것은 처음으로 돌아가요).
-            </p>
             {editCues && (
               <CueEditor
                 show={show}
@@ -821,7 +803,7 @@ export default function MusicLightPanel({
         )}
       </section>
 
-      <Panel title="조명 쇼" hint="MR 을 올리면 박자·구간을 찾아 쇼를 만들어요">
+      <Panel title="조명 쇼">
         <div className="flex flex-col">
           {state.shows.map((s) => {
             const isPlaying = state.playing?.showId === s.id;

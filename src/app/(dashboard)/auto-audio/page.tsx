@@ -72,11 +72,6 @@ export default function AutoAudioPage() {
         </div>
       </header>
 
-      <Notice tone="info">
-        정해 둔 규칙대로만 움직여요 (AI 아님). 사람이 채널을 만지면 그 채널은{" "}
-        <b>{state?.overrideS ?? 30}초</b> 동안 자동이 손을 떼고, 기능을 끄면 사람이 맞춘 높이로
-        돌아가요.
-      </Notice>
       {error && <Notice>{error.message}</Notice>}
       {state?.warnings.map((w) => (
         <Notice key={w}>{w}</Notice>
@@ -93,7 +88,7 @@ export default function AutoAudioPage() {
       )}
 
       {isAdmin && showSettings && state && (
-        <Panel title="미터·사람 우선" hint="관리자">
+        <Panel title="미터·사람 우선">
           <AutoSettings
             key={state.hall.id}
             state={state}
@@ -122,10 +117,10 @@ export default function AutoAudioPage() {
 
       {state && (
         <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-          <Panel title="채널" hint="막대 = 지금 입력 · 흰 선 = 기준">
+          <Panel title="채널">
             <ChannelTable state={state} canOperate={canOperate} onResume={resume} />
           </Panel>
-          <Panel title="최근 동작" hint="무엇을 왜 바꿨는지">
+          <Panel title="최근 동작">
             <AutoLog log={state.log} />
           </Panel>
         </div>

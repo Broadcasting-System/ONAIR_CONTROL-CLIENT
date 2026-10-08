@@ -88,7 +88,7 @@ export default function LightingCheckStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="확인" hint="전체 켜기·끄기로 모든 조명이 따라오는지 보세요. 문제가 없으면 저장하고 조명 화면으로 가요.">
+      <Card title="확인">
         <div className="flex flex-col gap-2">
           <CheckRow tone={conn.tone}>{conn.text}</CheckRow>
           <CheckRow tone={list.tone}>{list.text}</CheckRow>

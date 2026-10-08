@@ -77,19 +77,17 @@ export default function RecordingSettings({ hallId, state }: { hallId: string; s
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card title="연결 · 입력 장치" hint={`${state.hall.name} 노트북에 꽂은 USB 오디오 인터페이스 (입력 1·2 = 콘솔 녹음 버스)`}>
+      <Card title="연결 · 입력 장치">
         <div className="grid grid-cols-2 gap-2.5">
           <OptionCard
             selected={driver === "bridge"}
             onClick={() => setDriver("bridge")}
             title={`${state.hall.name} 노트북`}
-            hint="노트북의 USB 오디오 인터페이스로 녹음"
           />
           <OptionCard
             selected={driver === "mock"}
             onClick={() => setDriver("mock")}
             title="모의 장비"
-            hint="장비 없이 화면 시험 (삑 소리 파일)"
           />
         </div>
         {driver === "bridge" && (
@@ -103,16 +101,7 @@ export default function RecordingSettings({ hallId, state }: { hallId: string; s
               />
             </Field>
             <NotebookPicker value={bridgeUrl} onPick={setBridgeUrl} need="audio" />
-            <Field
-              label="입력 장치"
-              hint={
-                devices.isError
-                  ? (devices.error as Error).message
-                  : state.configured
-                    ? "이름 일부만 저장해서 USB 구멍을 바꿔 꽂아도 찾아요. 비우면 윈도우 기본 입력"
-                    : "노트북 주소를 저장하면 꽂힌 장치 목록이 보여요"
-              }
-            >
+            <Field label="입력 장치" hint={devices.isError ? (devices.error as Error).message : undefined}>
               <div className="flex gap-2">
                 <input
                   value={input}
@@ -158,7 +147,7 @@ export default function RecordingSettings({ hallId, state }: { hallId: string; s
 
       <Card
         title="녹음 버스에 보낼 채널"
-        hint="콘솔 입력 채널 번호 (예: 1, 2, 3). 지금은 저장만 해요 — 콘솔의 MIX 보내기 주소를 찾으면 ONAIR 가 직접 켭니다"
+        hint="지금은 저장만 해요 — 콘솔의 MIX 보내기 주소를 찾으면 ONAIR 가 직접 켭니다"
       >
         {state.configured ? (
           <>

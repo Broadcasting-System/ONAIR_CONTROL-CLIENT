@@ -253,30 +253,25 @@ export default function MatrixConnectionForm({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="어떻게 연결하나요?" hint="매트릭스 뒷면 RS-232 단자에 꽂은 선에 맞춰 고르세요.">
+      <Card title="어떻게 연결하나요?">
         <div className="grid grid-cols-2 gap-3">
           <OptionCard
             selected={serial}
             onClick={() => edit((c) => ({ ...c, driver: "serial-bridge" }))}
             title="RS-232 (다목적홀 노트북)"
             badge="추천"
-            hint="매트릭스 RS-232 ↔ USB-RS232 케이블 ↔ 노트북. 화면 전환 명령을 노트북이 대신 보내요."
           />
           <OptionCard
             selected={!serial}
             onClick={() => edit((c) => ({ ...c, driver: "mock" }))}
             title="모의 장비"
-            hint="실제 장비 없이 화면 연습용."
           />
         </div>
       </Card>
 
       {serial && (
-        <Card
-          title="다목적홀 노트북"
-          hint="매트릭스 옆 노트북에 'ONAIR Bridge' 창이 켜져 있어야 해요. 켜진 노트북은 아래에 저절로 나타나요."
-        >
-          <Field label="노트북 주소" hint="Tailscale IP 와 포트 — 예: http://100.64.12.3:8765" className="max-w-[420px]">
+        <Card title="다목적홀 노트북">
+          <Field label="노트북 주소" className="max-w-[420px]">
             <input
               value={conn.bridge.url}
               onChange={(e) => setBridge({ url: e.target.value })}
@@ -294,7 +289,6 @@ export default function MatrixConnectionForm({
       {serial && (
         <Card
           title="COM 포트"
-          hint="USB-RS232 케이블을 노트북에 꽂으면 목록에 나타나요. 속도는 대부분 9600bps 예요."
           action={
             nowPort ? (
               <Badge tone="good">
@@ -331,9 +325,6 @@ export default function MatrixConnectionForm({
               이 포트로
             </ActionButton>
           </div>
-          <p className="-mt-1 font-pretendard text-xs text-white/30">
-            속도를 모르면 9600 → 19200 → 38400 → 57600 → 115200 순으로 바꿔 가며 아래 &apos;보내 보기&apos;를 해 보세요.
-          </p>
           <Notice tone="info">
             이 학교 매트릭스의 RS-232 는 <b>DB9 수(핀)</b> 예요. USB-RS232 케이블(수)과 사이에 <b>암-암 스트레이트(1:1)
             젠더</b>를 끼워야 해요. 같은 계열 매뉴얼 기준으로 스트레이트가 맞고, 안 되면 크로스(널모뎀) 젠더로 바꿔
@@ -343,16 +334,9 @@ export default function MatrixConnectionForm({
       )}
 
       {serial && (
-        <Card
-          title="명령 문법"
-          hint="입력 → 출력 전환 명령이에요. 명령표가 있으면 그대로 적고, 없으면 '문법 찾기'로 하나씩 보내 보세요."
-        >
+        <Card title="명령 문법">
           <div className="flex flex-wrap items-end gap-3">
-            <Field
-              label="명령 틀"
-              hint="{input} {output} 자리에 번호가 들어가요. 두 자리면 {input:02d}"
-              className="min-w-[240px] flex-1"
-            >
+            <Field label="명령 틀" className="min-w-[240px] flex-1">
               <input
                 value={conn.protocol.route}
                 onChange={(e) => setProto({ route: e.target.value })}
@@ -368,7 +352,7 @@ export default function MatrixConnectionForm({
                 className={cn(inputCls, okBorder)}
               />
             </Field>
-            <Field label="응답 확인 (선택)" hint="예: OK — 비우면 응답을 기다리지 않아요" className="w-[210px]">
+            <Field label="응답 확인 (선택)" className="w-[210px]">
               <input
                 value={conn.protocol.replyOk}
                 onChange={(e) => setProto({ replyOk: e.target.value })}
@@ -483,12 +467,9 @@ export default function MatrixConnectionForm({
       )}
 
       {serial && (
-        <Card
-          title="현재 상태 읽기 (선택)"
-          hint="장비가 지금 라우팅을 알려 주면 화면에 '추정 상태' 대신 실제 상태가 나와요. 지원하지 않는 장비도 많아서 비워 둬도 괜찮아요."
-        >
+        <Card title="현재 상태 읽기 (선택)">
           <div className="flex flex-wrap items-end gap-3">
-            <Field label="조회 명령" hint="예: Status." className="w-[180px]">
+            <Field label="조회 명령" className="w-[180px]">
               <input
                 value={conn.protocol.query}
                 onChange={(e) => setProto({ query: e.target.value })}
@@ -497,11 +478,7 @@ export default function MatrixConnectionForm({
                 className={cn(inputCls, "font-mono", qProblem ? badBorder : okBorder)}
               />
             </Field>
-            <Field
-              label="응답 해석 규칙"
-              hint="(?P<input>…) 과 (?P<output>…) 이 있어야 해요"
-              className="min-w-[280px] flex-1"
-            >
+            <Field label="응답 해석 규칙" className="min-w-[280px] flex-1">
               <input
                 value={conn.protocol.queryRegex}
                 onChange={(e) => setProto({ queryRegex: e.target.value })}
@@ -543,9 +520,6 @@ export default function MatrixConnectionForm({
               })}
             </div>
           )}
-          <p className="font-pretendard text-xs text-white/30">
-            넣고 <b>연결 시험</b>을 누르면 조회가 되는지 함께 확인해요. 해석에 실패하면 그대로 비우면 됩니다.
-          </p>
         </Card>
       )}
 
@@ -553,7 +527,6 @@ export default function MatrixConnectionForm({
         <ActionButton icon={<PlugZap size={15} />} busy={testing} onClick={runTest} disabled={!canSubmit}>
           연결 시험
         </ActionButton>
-        <span className="font-pretendard text-xs text-white/35">노트북·COM 포트까지 확인해요. 화면은 바꾸지 않아요.</span>
         <div className="ml-auto flex items-center gap-2">
           {dirty && <span className="font-pretendard text-xs text-amber-200/75">저장 안 한 변경이 있어요</span>}
           {dirty && (
@@ -590,9 +563,7 @@ function SentResult({ last }: { last: Sent }) {
         {last.reply ? (
           <code className="break-all font-mono text-[#9dffc1]">{visible(last.reply)}</code>
         ) : (
-          <span className="font-pretendard text-white/40">
-            없음 — 응답을 안 주는 장비도 많아요. 화면이 바뀌었는지로 판단하세요.
-          </span>
+          <span className="font-pretendard text-white/40">없음</span>
         )}
       </p>
       {last.matched !== null && (

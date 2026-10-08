@@ -5,7 +5,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, RefreshCw, RotateCcw, Save } from "lucide-react";
 import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
-import { Notice } from "@/components/hall/HallControls";
 import NotebookPicker from "@/components/hall/setup/NotebookPicker";
 import { ActionButton, Badge, Card, Field, OptionCard, Switch, badBorder, inputCls, okBorder } from "@/components/hall/setup/ui";
 import { hallApi } from "@/lib/hallApi";
@@ -147,37 +146,31 @@ export default function LightingConnectionStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="어떻게 연결하나요?" hint="강당 노트북에 꽂은 장치를 고르세요. 보통은 '조명 노드'예요.">
+      <Card title="어떻게 연결하나요?">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <OptionCard
             selected={form.kind === "esp32"}
             onClick={() => set({ kind: "esp32" })}
             title="조명 노드 (ESP32)"
             badge="추천"
-            hint="콘솔 신호 받기 + 조명으로 내보내기를 한 장치가 해요. 콘솔과 함께 써요."
           />
           <OptionCard
             selected={form.kind === "opendmx"}
             onClick={() => set({ kind: "opendmx" })}
             title="USB-DMX 케이블"
             badge="보험"
-            hint="조명으로 내보내기만 해요. 콘솔 신호는 조명 노드로 받아요."
           />
           <OptionCard
             selected={form.kind === "mock"}
             onClick={() => set({ kind: "mock" })}
             title="모의 장비"
-            hint="장비 없이 화면만 시험해요. 실제 조명은 안 바뀌어요."
           />
         </div>
       </Card>
 
       {bridge && (
-        <Card
-          title="강당 노트북"
-          hint="조명 콘솔 옆 노트북에 'ONAIR Bridge' 창이 켜져 있어야 해요. 켜진 노트북은 아래에 저절로 나타나요."
-        >
-          <Field label="노트북 주소" hint="Tailscale IP 와 포트 — 예: http://100.64.12.3:8765" className="max-w-[420px]">
+        <Card title="강당 노트북">
+          <Field label="노트북 주소" className="max-w-[420px]">
             <input
               value={form.bridgeUrl}
               onChange={(e) => set({ bridgeUrl: e.target.value })}
@@ -199,11 +192,6 @@ export default function LightingConnectionStep({
       {bridge && (
         <Card
           title="COM 포트"
-          hint={
-            form.kind === "esp32"
-              ? "조명 노드(ESP32)를 노트북에 꽂으면 목록에 나타나요. 보통 CP210x 나 CH340 이라고 보여요."
-              : "USB-DMX 케이블(FTDI)과, 콘솔 신호를 받는 조명 노드(ESP32)를 따로 골라요."
-          }
           action={
             state.configured && state.connection?.driver === "bridge" ? (
               <Badge tone={state.connected ? "good" : "off"}>
@@ -255,15 +243,9 @@ export default function LightingConnectionStep({
           <Switch
             checked={form.virtual}
             onChange={(v) => set({ virtual: v })}
-            label="변환기 없이 시험(가상) — 장비가 오기 전에 화면부터 만들어 둘 때"
+            label="변환기 없이 시험(가상)"
           />
         </Card>
-      )}
-
-      {!bridge && (
-        <Notice tone="info">
-          모의 장비는 값만 기억해요. 조명 찾기·목록 만들기 연습은 되지만 실제 무대 조명은 바뀌지 않아요.
-        </Notice>
       )}
 
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#161616]/90 px-5 py-3">

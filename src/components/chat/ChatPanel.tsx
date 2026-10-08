@@ -173,12 +173,7 @@ function HistoryView({
 function EmptyState({ suggestions, onPick }: { suggestions: Suggestion[]; onPick: (s: Suggestion) => void }) {
   return (
     <div className="flex flex-col gap-5 px-5 py-6">
-      <div>
-        <p className="font-mbc text-2xl text-white">무엇을 도와드릴까요?</p>
-        <p className="mt-2 font-pretendard text-[14px] leading-relaxed text-white/55">
-          ONAIR 기능을 말로 시키거나 물어보세요. 무언가 바꾸는 일은 실행 전에 꼭 확인을 받아요.
-        </p>
-      </div>
+      <p className="font-mbc text-2xl text-white">무엇을 도와드릴까요?</p>
       <div className="flex flex-col gap-2">
         {suggestions.map((s) => (
           <button

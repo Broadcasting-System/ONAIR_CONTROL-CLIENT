@@ -76,11 +76,6 @@ export default function EnergyPanel() {
 
   return (
     <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5">
-      <p className="font-pretendard text-xs text-white/30">
-        방송이 끝난 뒤 켜진 채 남은 교실 스피커 구역과 송출 화면을 정해진 시각에 끕니다. 시보·방송이 진행
-        중이면 끝날 때까지(최대 5분) 기다렸다가 끕니다.
-      </p>
-
       <section className="flex flex-col gap-6 rounded-2xl border border-white/5 bg-[#0a0a0a] p-6">
         <div className="flex items-center justify-between">
           <div>

@@ -190,7 +190,6 @@ export default function MergePanel({
               )}
             >
               <b className="mb-1 block font-mbc text-base font-normal text-white/80">여기를 눌러 영상 고르기</b>
-              휴대폰으로 찍은 MP4·MOV — 끌어다 놓아도 돼요
             </button>
             <input
               ref={fileInput}
@@ -259,7 +258,6 @@ export default function MergePanel({
               { value: "mid", label: "보통" },
             ]}
           />
-          <span className="font-pretendard text-xs text-white/40">휴대폰 소리(박수·웃음)를 살짝 깔아요</span>
         </div>
         <div className="mb-1 flex flex-wrap items-center gap-3">
           <span className="min-w-[76px] font-pretendard text-[13px] text-white/55">미세 조정</span>
@@ -273,7 +271,7 @@ export default function MergePanel({
             onChange={(e) => setNudge(Math.max(-1000, Math.min(1000, Math.round(Number(e.target.value) || 0))))}
             className="h-9 w-20 rounded-xl border border-white/10 bg-[#141414] px-2 text-center font-orbitron text-sm text-white focus:outline-none"
           />
-          <span className="font-pretendard text-xs text-white/40">ms · 보통은 0. 소리가 늦게 들리면 - 로</span>
+          <span className="font-pretendard text-xs text-white/40">ms</span>
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-3">

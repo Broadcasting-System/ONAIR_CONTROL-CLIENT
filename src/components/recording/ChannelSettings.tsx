@@ -129,14 +129,10 @@ export default function ChannelSettings({ channels, halls }: { channels: AvChann
     <div className="flex flex-col gap-7">
       <div className="max-w-[860px]">
         <h4 className="mb-1 font-mbc text-lg text-white">채널</h4>
-        <p className="mb-3 font-pretendard text-[13px] text-white/45">
-          이름은 화면 카드와 녹화 파일 이름에 쓰여요. 연결된 홀의 콘솔이 소리로 자동 선택돼요.
-        </p>
         <ChannelTable key={channels.map((c) => `${c.name}${c.hall}`).join("|")} channels={channels} halls={halls} />
       </div>
       <div className="border-t border-white/[0.07] pt-6">
         <h4 className="mb-1 font-mbc text-lg text-white">콘솔 녹음 연결</h4>
-        <p className="mb-3 font-pretendard text-[13px] text-white/45">홀 노트북의 USB 오디오 인터페이스로 콘솔 녹음 버스를 녹음해요.</p>
         <ConsoleRecording />
       </div>
     </div>

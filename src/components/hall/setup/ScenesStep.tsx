@@ -64,7 +64,6 @@ export default function ScenesStep({
   return (
     <Card
       title={`씬 ${draft.scenes.length}개`}
-      hint="번호는 콘솔에 저장된 씬(Cue) 번호예요 · '확인'을 켜면 누를 때 한 번 더 물어요"
       action={
         <ActionButton icon={<Plus size={15} />} onClick={add} disabled={draft.scenes.length >= 128}>
           씬 추가

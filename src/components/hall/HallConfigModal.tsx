@@ -33,7 +33,6 @@ const badBorder = "border-red-500/60 focus:border-red-400";
 
 function Shell({
   title,
-  hint,
   onClose,
   onSave,
   saving,
@@ -42,7 +41,6 @@ function Shell({
   children,
 }: {
   title: string;
-  hint: string;
   onClose: () => void;
   onSave: () => void;
   saving: boolean;
@@ -60,10 +58,7 @@ function Shell({
         )}
       >
         <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4">
-          <div>
-            <h2 className="text-lg font-semibold text-white">{title}</h2>
-            <p className="mt-0.5 font-pretendard text-xs text-white/40">{hint}</p>
-          </div>
+          <h2 className="text-lg font-semibold text-white">{title}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -160,7 +155,6 @@ export function MatrixLabelsModal({
   return (
     <Shell
       title={`${state.hall.name} 영상 매트릭스 이름`}
-      hint="장비 뒷면 단자 번호 순서입니다 · 개수는 장비에 맞춰져 있어 이름만 바꿀 수 있습니다"
       onClose={onClose}
       onSave={save}
       saving={saving}

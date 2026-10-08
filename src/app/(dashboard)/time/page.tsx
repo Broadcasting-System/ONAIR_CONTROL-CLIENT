@@ -143,7 +143,6 @@ export default function TimePage() {
               {liveGroupId
                 ? `현재 송출 중: GROUP ${liveGroupId}`
                 : "송출 중인 시보 없음"}
-              <span className="ml-1 text-emerald-200/40">· 전송하면 그 그룹만 동작</span>
             </span>
           </div>
         </div>

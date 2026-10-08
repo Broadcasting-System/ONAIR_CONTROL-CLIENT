@@ -63,11 +63,7 @@ export default function SchedulerPanel() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <div className="flex items-center justify-between gap-6">
-        <p className="font-pretendard text-xs text-white/30">
-          지금 스케줄러에 실제로 등록되어 울리도록 예약된 시보만 표시됩니다. 시보를 전송하면 이전
-          스케줄은 모두 비워지고 전송한 그룹만 남습니다.
-        </p>
+      <div className="flex items-center justify-end gap-6">
         <div className="flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2">
           <span className="font-mbc text-xs text-white/40">현재 송출 그룹</span>
           <span className="font-orbitron text-sm text-emerald-300">

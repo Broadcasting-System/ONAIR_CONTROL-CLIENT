@@ -124,7 +124,7 @@ export default function RecordingPage() {
       {!canOperate && <Notice tone="info">보기 전용 기기입니다. 녹음·녹화·합치기는 운영 권한이 있는 기기에서 가능합니다.</Notice>}
 
       {isAdmin && showSettings && state && (
-        <Panel title="채널 설정" hint="관리자만 보여요">
+        <Panel title="채널 설정">
           <ChannelSettings channels={channels} halls={halls} />
         </Panel>
       )}
@@ -166,7 +166,7 @@ export default function RecordingPage() {
       />
 
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <Panel title="목록" hint="녹음·녹화가 한곳에">
+        <Panel title="목록">
           <AvList
             items={library.items}
             canOperate={canOperate}
@@ -176,7 +176,7 @@ export default function RecordingPage() {
             onRemove={library.remove}
           />
         </Panel>
-        <Panel title="휴대폰 영상 합치기" hint="휴대폰으로 찍은 영상에 콘솔 소리를 입혀요">
+        <Panel title="휴대폰 영상 합치기">
           {showMerge ? (
             <MergePanel
               recordings={recordings}
@@ -200,7 +200,6 @@ export default function RecordingPage() {
               >
                 + 휴대폰 영상 올리기
               </button>
-              <span className="font-pretendard text-sm text-white/50">소리만 녹음한 것과 시간을 자동으로 맞춰요</span>
             </div>
           )}
         </Panel>
