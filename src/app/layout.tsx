@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Orbitron } from "next/font/google";
 import localFont from "next/font/local";
 import Providers from "@/components/providers/Providers";
+import Splash from "@/components/common/Splash";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -46,6 +47,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} ${mbcFont.variable} ${woojuFont.variable} antialiased`}
       >
         <Providers>{children}</Providers>
+        <Splash />
       </body>
     </html>
   );
