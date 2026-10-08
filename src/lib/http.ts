@@ -1,7 +1,7 @@
 import { getApiBase } from "@/lib/apiBase";
 
 /** 실패한 응답 → 서버가 준 detail 메시지를 담은 Error */
-async function failure(res: Response): Promise<Error> {
+export async function failure(res: Response): Promise<Error> {
   let message = res.status === 403 ? "이 작업을 수행할 권한이 없습니다." : "요청을 처리하지 못했습니다.";
   try {
     const body = await res.json();
