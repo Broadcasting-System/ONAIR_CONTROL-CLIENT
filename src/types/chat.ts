@@ -110,7 +110,8 @@ export interface ChatSettings {
   keySet: boolean;
   keyHint: string | null;
   model: string;
-  models: string[];
+  /** 서버는 {id,label} 로 준다 (예전 계약은 id 문자열) */
+  models: (string | { id: string; label?: string })[];
   enabled: boolean;
   dailyRequestLimit: number;
   userDailyLimit: number;

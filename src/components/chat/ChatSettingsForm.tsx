@@ -138,11 +138,15 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
 
       <Row label="모델">
         <select value={model} onChange={(e) => setModel(e.target.value)} className={cn(field, "appearance-auto")}>
-          {(s.models.length ? s.models : [s.model]).map((m) => (
-            <option key={m} value={m} className="bg-[#1a1a1d]">
-              {MODEL_LABEL[m] ?? m}
-            </option>
-          ))}
+          {(s.models?.length ? s.models : [s.model]).map((m) => {
+            const id = typeof m === "string" ? m : m.id;
+            const label = typeof m === "string" ? undefined : m.label;
+            return (
+              <option key={id} value={id} className="bg-[#1a1a1d]">
+                {label ?? MODEL_LABEL[id] ?? id}
+              </option>
+            );
+          })}
         </select>
       </Row>
 
