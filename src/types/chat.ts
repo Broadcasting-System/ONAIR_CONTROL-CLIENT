@@ -1,4 +1,4 @@
-/** ONAIR 도우미(채팅) — 서버 /api/chat 계약 */
+/** CUE(채팅) — 서버 /api/chat 계약 */
 
 export type UploadKind = "image" | "pdf" | "video" | "audio" | "other";
 

@@ -17,7 +17,7 @@ export interface LiveMessage extends DisplayMessage {
 
 const isAbort = (e: unknown) => e instanceof DOMException && e.name === "AbortError";
 
-/** ONAIR 도우미 대화 — 대화 불러오기·보내기(SSE)·멈추기·확인 카드 갱신 */
+/** CUE 대화 — 대화 불러오기·보내기(SSE)·멈추기·확인 카드 갱신 */
 export function useChatConversation(active: boolean) {
   const qc = useQueryClient();
   const sessionId = useChatPanel((s) => s.sessionId);

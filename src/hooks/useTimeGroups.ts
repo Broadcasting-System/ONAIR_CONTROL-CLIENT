@@ -191,7 +191,7 @@ export const useTimeGroups = () => {
 
   useEffect(() => {
     fetchTimeTable();
-    // ONAIR 도우미가 시보를 바꾸면 다시 읽는다
+    // CUE가 시보를 바꾸면 다시 읽는다
     const onRefresh = () => fetchTimeTable();
     window.addEventListener("onair:refresh", onRefresh);
     return () => window.removeEventListener("onair:refresh", onRefresh);

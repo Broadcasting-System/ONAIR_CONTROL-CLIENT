@@ -11,7 +11,7 @@ import { useMe } from "@/hooks/useMe";
 import ChatPanel, { useChatShortcutLabel } from "@/components/chat/ChatPanel";
 import { useChatPanel } from "@/stores/chatStore";
 
-/** 사이드바 아래 — ONAIR 도우미 열고 닫기 (Cmd/Ctrl + K) */
+/** 사이드바 아래 — CUE 열고 닫기 (Cmd/Ctrl + K) */
 function ChatToggle() {
   const open = useChatPanel((s) => s.open);
   const toggle = useChatPanel((s) => s.toggle);
@@ -21,7 +21,7 @@ function ChatToggle() {
       type="button"
       onClick={toggle}
       aria-pressed={open}
-      title={`ONAIR 도우미 (${shortcut})`}
+      title={`CUE (${shortcut})`}
       className={cn(
         "mb-2 flex w-full items-center gap-2 rounded-lg border px-4 py-3 text-left transition-colors",
         open
@@ -30,7 +30,7 @@ function ChatToggle() {
       )}
     >
       <span className={cn("h-2 w-2 shrink-0 rounded-full", open ? "bg-[#FF3B3B]" : "bg-white/25")} />
-      <span className="flex-1 font-mbc text-[14px]">ONAIR 도우미</span>
+      <span className="flex-1 font-mbc text-[14px]">CUE</span>
       <span className="font-orbitron text-[10px] tracking-widest text-white/30">{shortcut}</span>
     </button>
   );

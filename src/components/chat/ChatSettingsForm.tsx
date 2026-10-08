@@ -27,7 +27,7 @@ function Row({ label, hint, children }: { label: string; hint?: string; children
   );
 }
 
-/** 도우미 설정 (최고 관리자) — 키는 쓰기만 하고 다시 보여 주지 않는다 */
+/** CUE 설정 (최고 관리자) — 키는 쓰기만 하고 다시 보여 주지 않는다 */
 export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
   const qc = useQueryClient();
   const settings = useQuery({ queryKey: ["chat", "settings"], queryFn: chatApi.settings });
@@ -148,10 +148,10 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
 
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="font-pretendard text-[13px] font-semibold text-white/70">도우미 켜기</p>
+          <p className="font-pretendard text-[13px] font-semibold text-white/70">CUE 켜기</p>
           <p className="font-pretendard text-[12px] text-white/50">끄면 키가 있어도 아무도 못 써요</p>
         </div>
-        <OnSwitch checked={enabled} onChange={setEnabled} label="도우미 켜기" />
+        <OnSwitch checked={enabled} onChange={setEnabled} label="CUE 켜기" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">

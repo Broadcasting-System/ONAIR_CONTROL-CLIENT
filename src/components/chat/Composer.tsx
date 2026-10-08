@@ -248,7 +248,7 @@ const Composer = forwardRef<
             addFiles(files);
           }}
           placeholder="무엇이든 말해 주세요"
-          aria-label="도우미에게 보낼 말"
+          aria-label="CUE에게 보낼 말"
           className="max-h-[200px] min-h-9 flex-1 resize-none bg-transparent px-1 py-[7px] font-pretendard text-[15px] leading-[22px] text-white outline-none placeholder:text-white/35"
         />
         {streaming ? (

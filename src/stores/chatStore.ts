@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-/** ONAIR 도우미 패널 — 열림 여부와 마지막 대화는 이 기기에 기억한다 */
+/** CUE 패널 — 열림 여부와 마지막 대화는 이 기기에 기억한다 */
 const OPEN_KEY = "onair.chat.open";
 const SESSION_KEY = "onair.chat.session";
 

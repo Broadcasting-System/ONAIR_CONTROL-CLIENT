@@ -17,7 +17,7 @@ import type { ChatStatus } from "@/types/chat";
 
 type View = "chat" | "history" | "settings";
 
-/** Cmd/Ctrl + K — 도우미 열고 닫기 */
+/** Cmd/Ctrl + K — CUE 열고 닫기 */
 export function useChatShortcutLabel() {
   const [label, setLabel] = useState("Ctrl K");
   useEffect(() => {
@@ -72,13 +72,13 @@ function DisabledState({ status }: { status: ChatStatus }) {
     reason === "no_key" || (!status.keySet && !reason)
       ? "Claude API 키를 넣으면 켜져요"
       : reason === "disabled"
-        ? "도우미가 꺼져 있어요"
+        ? "CUE가 꺼져 있어요"
         : reason.includes("limit")
           ? "오늘 쓸 수 있는 만큼 다 썼어요"
-          : "지금은 도우미를 쓸 수 없어요";
+          : "지금은 CUE를 쓸 수 없어요";
   const body = status.canConfigure
     ? reason === "disabled"
-      ? "아래에서 [도우미 켜기]를 켜고 저장하면 바로 쓸 수 있어요."
+      ? "아래에서 [CUE 켜기]를 켜고 저장하면 바로 쓸 수 있어요."
       : "아래에 키를 넣고 저장하면 바로 쓸 수 있어요."
     : reason.includes("limit")
       ? "내일 다시 써 주세요. 급하면 최고 관리자에게 한도를 늘려 달라고 해 주세요."
@@ -196,7 +196,7 @@ function EmptyState({ suggestions, onPick }: { suggestions: Suggestion[]; onPick
   );
 }
 
-/** ONAIR 도우미 — 모든 대시보드 화면 오른쪽에 붙는 채팅 패널 */
+/** CUE — 모든 대시보드 화면 오른쪽에 붙는 채팅 패널 */
 export default function ChatPanel() {
   const open = useChatPanel((s) => s.open);
   const setOpen = useChatPanel((s) => s.setOpen);
@@ -292,7 +292,7 @@ export default function ChatPanel() {
   return (
     <aside
       ref={panel}
-      aria-label="ONAIR 도우미"
+      aria-label="CUE"
       onKeyDown={(e) => {
         if (e.key === "Escape" && !e.defaultPrevented) setOpen(false);
       }}
@@ -332,7 +332,7 @@ export default function ChatPanel() {
           </button>
         ) : (
           <div className="min-w-0">
-            <p className="font-mbc text-lg leading-none text-white">ONAIR 도우미</p>
+            <p className="font-mbc text-lg leading-none text-white">CUE</p>
             <p className="mt-1 font-orbitron text-[10px] uppercase tracking-widest text-white/30">Assistant</p>
           </div>
         )}
@@ -360,7 +360,7 @@ export default function ChatPanel() {
           )}
           {st?.canConfigure && (
             <IconButton
-              label="도우미 설정"
+              label="CUE 설정"
               active={view === "settings"}
               onClick={() => setView(view === "settings" ? "chat" : "settings")}
             >
@@ -383,7 +383,7 @@ export default function ChatPanel() {
       >
         {view === "settings" && st?.canConfigure ? (
           <div className="px-5 py-6">
-            <p className="mb-5 font-pretendard text-[17px] font-semibold text-white">도우미 설정</p>
+            <p className="mb-5 font-pretendard text-[17px] font-semibold text-white">CUE 설정</p>
             <ChatSettingsForm status={st} />
           </div>
         ) : view === "history" && enabled ? (
@@ -402,9 +402,9 @@ export default function ChatPanel() {
           </p>
         ) : !st ? (
           <div className="flex flex-col items-start gap-3 px-5 py-6">
-            <p className="font-pretendard text-[16px] font-semibold text-white">도우미에 연결하지 못했어요</p>
+            <p className="font-pretendard text-[16px] font-semibold text-white">CUE에 연결하지 못했어요</p>
             <p className="font-pretendard text-[14px] leading-relaxed text-white/60">
-              서버가 꺼져 있거나 아직 도우미가 없는 버전이에요.
+              서버가 꺼져 있거나 아직 CUE가 없는 버전이에요.
             </p>
             <button
               type="button"
