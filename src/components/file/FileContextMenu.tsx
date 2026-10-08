@@ -11,7 +11,8 @@ interface FileContextMenuProps {
   onClose: () => void;
   onPreview: () => void;
   onRename: () => void;
-  onDelete: () => void;
+  /** 없으면 삭제 메뉴를 숨긴다 (파일 지우기는 부장 이상) */
+  onDelete?: () => void;
 }
 
 export default function FileContextMenu({
@@ -89,6 +90,8 @@ export default function FileContextMenu({
         이름 수정
       </button>
 
+      {onDelete && (
+        <>
       <div className="h-px bg-white/10 my-1 w-full" />
 
       <button
@@ -101,6 +104,8 @@ export default function FileContextMenu({
         <Trash2 size={16} className="text-red-500/50" />
         삭제
       </button>
+        </>
+      )}
     </div>
   );
 }

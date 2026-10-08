@@ -12,9 +12,12 @@ import InputModal from "@/components/common/InputModal";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { Pencil } from "lucide-react";
 import { toast } from "@/components/common/Toast";
+import { useMe } from "@/hooks/useMe";
 
 export default function FilesPage() {
   const { files, fetchFiles, deleteFile, renameFile } = useFiles();
+  // 올리기·이름 바꾸기는 부원도, 지우기는 부장 이상
+  const { isAdmin } = useMe();
   const { upload, isUploading } = useFileUpload();
 
   const [contextMenu, setContextMenu] = useState<{
@@ -121,7 +124,7 @@ export default function FilesPage() {
             setRenameFileState(contextMenu.file);
             closeContextMenu();
           }}
-          onDelete={() => handleDeleteRequest(contextMenu.file!)}
+          onDelete={isAdmin ? () => handleDeleteRequest(contextMenu.file!) : undefined}
         />
       )}
 
