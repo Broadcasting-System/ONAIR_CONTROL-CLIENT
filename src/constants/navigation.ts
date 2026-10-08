@@ -28,7 +28,7 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
     items: [
       // 믹서·자동 음향 탭 (옛 /auto-audio → /mixer?tab=auto)
       { label: "오디오", subLabel: "AUDIO", path: "/mixer" },
-      { label: "영상 매트릭스", subLabel: "VIDEO MATRIX", path: "/matrix" },
+      // 영상 매트릭스는 다목적홀 장비가 고쳐질 때까지 메뉴에서 뺌 (/matrix 주소는 그대로)
       { label: "조명", subLabel: "LIGHTING", path: "/lighting" },
       { label: "녹음·녹화", subLabel: "RECORDING", path: "/recording" },
     ],
@@ -49,6 +49,7 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
     items: [
       // 부원(초대·승인·권한·방송부 명단)·Cloudflare·기기·스피커 매핑·강당 장비·접근 로그 탭 — 부장 이상
       { label: "관리", subLabel: "ADMIN", path: "/devices", adminOnly: true },
+      { label: "로그", subLabel: "LOG", path: "/logs", adminOnly: true },
     ],
   },
 ];
