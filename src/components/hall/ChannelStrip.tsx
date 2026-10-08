@@ -344,7 +344,8 @@ export default function ChannelStrip({
       <div className="flex h-[220px] w-full shrink-0 justify-center gap-[5px]">
         <DotMeter value={meter} peak={peak} color={color} />
 
-        <div className="relative w-3.5" aria-hidden>
+        {/* 눈금도 손잡이가 움직이는 범위(위아래 손잡이 반 높이만큼 안쪽)에 맞춘다 */}
+        <div className="relative my-[19px] w-3.5" aria-hidden>
           {SCALE.map((s) => (
             <span
               key={s.at}
@@ -360,7 +361,6 @@ export default function ChannelStrip({
         </div>
 
         <div
-          ref={trackRef}
           role="slider"
           tabIndex={disabled ? -1 : 0}
           aria-label={`${channel.name} 레벨`}
@@ -400,35 +400,39 @@ export default function ChannelStrip({
           }}
         >
           {/* 페이더 홈 */}
-          <div className="absolute inset-y-[-2px] left-1/2 w-1 -translate-x-1/2 rounded-sm bg-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]" />
+          <div className="absolute inset-y-[17px] left-1/2 w-1 -translate-x-1/2 rounded-sm bg-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]" />
 
-          {/* 최대 레벨 — 흰 점선 위로는 못 올린다 */}
-          {limit < 100 && (
-            <div
-              className="pointer-events-none absolute inset-x-[-6px] border-t border-dashed border-white/55"
-              style={{ bottom: `${limit}%` }}
-              aria-hidden
-            >
-              <span className="absolute -top-[11px] right-[-2px] font-orbitron text-[6.5px] tracking-[0.1em] text-white/55">
-                MAX
-              </span>
-            </div>
-          )}
-
-          {/* 손잡이 — 검정 몸통 + 흰 줄 */}
-          <div
-            className={cn(
-              "absolute left-1/2 h-[38px] w-[34px] -translate-x-1/2 translate-y-1/2 rounded border border-black transition-transform",
-              "bg-[linear-gradient(180deg,#3a3a3e_0%,#1f1f22_45%,#141416_55%,#2a2a2e_100%)]",
-              "shadow-[0_8px_12px_-4px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.2)]",
-              dragLevel !== null && "scale-[1.04]",
+          {/* 손잡이가 움직이는 범위 — 손잡이(38px) 반만큼 위아래로 들어가 있어서
+              0 이나 100 에서도 손잡이가 값 창·게인 링을 덮지 않는다 */}
+          <div ref={trackRef} className="absolute inset-x-0 inset-y-[19px]">
+            {/* 최대 레벨 — 흰 점선 위로는 못 올린다 */}
+            {limit < 100 && (
+              <div
+                className="pointer-events-none absolute inset-x-[-6px] border-t border-dashed border-white/55"
+                style={{ bottom: `${limit}%` }}
+                aria-hidden
+              >
+                <span className="absolute -top-[11px] right-[-2px] font-orbitron text-[6.5px] tracking-[0.1em] text-white/55">
+                  MAX
+                </span>
+              </div>
             )}
-            style={{ bottom: `${level}%` }}
-          >
-            <span
-              className="absolute inset-x-1 top-1/2 h-[2px] -translate-y-1/2 rounded-[1px]"
-              style={{ background: muted || !known ? "rgba(255,255,255,0.35)" : "#f2f2f2" }}
-            />
+
+            {/* 손잡이 — 검정 몸통 + 흰 줄 */}
+            <div
+              className={cn(
+                "absolute left-1/2 h-[38px] w-[34px] -translate-x-1/2 translate-y-1/2 rounded border border-black transition-transform",
+                "bg-[linear-gradient(180deg,#3a3a3e_0%,#1f1f22_45%,#141416_55%,#2a2a2e_100%)]",
+                "shadow-[0_8px_12px_-4px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.2)]",
+                dragLevel !== null && "scale-[1.04]",
+              )}
+              style={{ bottom: `${level}%` }}
+            >
+              <span
+                className="absolute inset-x-1 top-1/2 h-[2px] -translate-y-1/2 rounded-[1px]"
+                style={{ background: muted || !known ? "rgba(255,255,255,0.35)" : "#f2f2f2" }}
+              />
+            </div>
           </div>
         </div>
 

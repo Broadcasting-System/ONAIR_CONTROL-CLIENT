@@ -66,7 +66,8 @@ function Fader({
 
   return (
     <div className="flex h-[200px] w-full shrink-0 justify-center gap-[5px]">
-      <div className="relative w-4" aria-hidden>
+      {/* 눈금도 손잡이가 움직이는 범위(위아래 손잡이 반 높이만큼 안쪽)에 맞춘다 */}
+      <div className="relative my-[19px] w-4" aria-hidden>
         {SCALE.map((s) => (
           <span
             key={s}
@@ -78,7 +79,6 @@ function Fader({
         ))}
       </div>
       <div
-        ref={trackRef}
         role="slider"
         tabIndex={disabled ? -1 : 0}
         aria-label={`${label} 밝기`}
@@ -117,23 +117,27 @@ function Fader({
           send(Math.max(0, Math.min(100, v + delta)), true);
         }}
       >
-        <div className="absolute inset-y-[-2px] left-1/2 w-1 -translate-x-1/2 rounded-sm bg-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]" />
-        {/* 켜진 만큼 조명 색으로 */}
-        <div
-          className="absolute bottom-0 left-1/2 w-1 -translate-x-1/2 rounded-sm opacity-75"
-          style={{ height: `${v}%`, background: color }}
-          aria-hidden
-        />
-        <div
-          className={cn(
-            "absolute left-1/2 h-[38px] w-[34px] -translate-x-1/2 translate-y-1/2 rounded border border-black transition-transform",
-            "bg-[linear-gradient(180deg,#3a3a3e_0%,#1f1f22_45%,#141416_55%,#2a2a2e_100%)]",
-            "shadow-[0_8px_12px_-4px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.2)]",
-            drag !== null && "scale-[1.04]",
-          )}
-          style={{ bottom: `${v}%` }}
-        >
-          <span className="absolute inset-x-1 top-1/2 h-[2px] -translate-y-1/2 rounded-[1px] bg-[#f2f2f2]" />
+        <div className="absolute inset-y-[17px] left-1/2 w-1 -translate-x-1/2 rounded-sm bg-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]" />
+        {/* 손잡이가 움직이는 범위 — 손잡이(38px) 반만큼 위아래로 들어가 있어서
+            0 이나 100 에서도 손잡이가 아래 값 창을 덮지 않는다 */}
+        <div ref={trackRef} className="absolute inset-x-0 inset-y-[19px]">
+          {/* 켜진 만큼 조명 색으로 */}
+          <div
+            className="absolute bottom-0 left-1/2 w-1 -translate-x-1/2 rounded-sm opacity-75"
+            style={{ height: `${v}%`, background: color }}
+            aria-hidden
+          />
+          <div
+            className={cn(
+              "absolute left-1/2 h-[38px] w-[34px] -translate-x-1/2 translate-y-1/2 rounded border border-black transition-transform",
+              "bg-[linear-gradient(180deg,#3a3a3e_0%,#1f1f22_45%,#141416_55%,#2a2a2e_100%)]",
+              "shadow-[0_8px_12px_-4px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.2)]",
+              drag !== null && "scale-[1.04]",
+            )}
+            style={{ bottom: `${v}%` }}
+          >
+            <span className="absolute inset-x-1 top-1/2 h-[2px] -translate-y-1/2 rounded-[1px] bg-[#f2f2f2]" />
+          </div>
         </div>
       </div>
     </div>
