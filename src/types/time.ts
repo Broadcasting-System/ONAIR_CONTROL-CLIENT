@@ -17,6 +17,8 @@ export interface Bell {
   time: string;
   audioFile: string;
   speakers: string[];
+  /** 송출 볼륨(%) — 100 이 기본 크기. 예전 시보에는 없다 */
+  volume?: number;
 }
 
 export interface Speaker {

@@ -1,9 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell, Speaker, AudioFile } from "@/types/time";
 import { cn } from "@/lib/utils";
 import TextInput from "@/components/common/TextInput";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
+import { getApiBase } from "@/lib/apiBase";
+
+const VOLUME_MIN = 10;
+const VOLUME_MAX = 150;
 
 /** 시보 음악을 기기 호스트와 무관하게 식별하기 위한 정규화.
  *  절대 URL(http://host:8000/api/files/stream/audio/x.mp3)이 기기마다 호스트가 달라
@@ -36,6 +40,36 @@ export default function BellEditor({
   const [time, setTime] = useState("");
   const [audioFile, setAudioFile] = useState("");
   const [selectedSpeakers, setSelectedSpeakers] = useState<string[]>([]);
+  const [volume, setVolume] = useState(100);
+  const [previewing, setPreviewing] = useState<"idle" | "loading" | "playing">("idle");
+  const previewRef = useRef<HTMLAudioElement | null>(null);
+
+  const stopPreview = () => {
+    const a = previewRef.current;
+    previewRef.current = null;
+    if (a) {
+      a.pause();
+      a.removeAttribute("src");
+      a.load();
+    }
+    setPreviewing("idle");
+  };
+
+  // 서버가 방송과 똑같이 정규화·볼륨을 적용한 음원을 이 기기에서만 튼다 (스피커는 안 켠다)
+  const togglePreview = () => {
+    if (previewing !== "idle") return stopPreview();
+    const a = new Audio(
+      `${getApiBase()}/time/preview?audioFile=${encodeURIComponent(audioKey(audioFile))}&volume=${volume}`,
+    );
+    previewRef.current = a;
+    setPreviewing("loading");
+    a.onplaying = () => previewRef.current === a && setPreviewing("playing");
+    a.onended = a.onerror = () => previewRef.current === a && stopPreview();
+    a.play().catch(() => previewRef.current === a && stopPreview());
+  };
+
+  // 다른 시보로 바꾸거나 창을 닫으면 미리 듣기를 멈춘다
+  useEffect(() => () => stopPreview(), [bell]);
 
   useEffect(() => {
     if (bell) {
@@ -43,11 +77,13 @@ export default function BellEditor({
       setTime(bell.time);
       setAudioFile(audioKey(bell.audioFile)); // 레거시 절대 URL → 경로로 정규화
       setSelectedSpeakers(bell.speakers);
+      setVolume(bell.volume ?? 100);
     } else {
       setLabel("");
       setTime("");
       setAudioFile("");
       setSelectedSpeakers([]);
+      setVolume(100);
     }
   }, [bell]);
 
@@ -93,6 +129,7 @@ export default function BellEditor({
       time,
       audioFile,
       speakers: selectedSpeakers,
+      volume,
     });
   };
 
@@ -173,7 +210,7 @@ export default function BellEditor({
         })}
       </div>
 
-      <div className="flex gap-6 px-2 mt-auto pb-4">
+      <div className="flex gap-6 px-2 mt-auto">
         <div className="flex-1 flex flex-col gap-2">
           <label className="text-white text-[15px] font-bold">시보 시간</label>
           <input
@@ -198,6 +235,42 @@ export default function BellEditor({
             ]}
             className="h-[48px] w-full rounded-xl border-white/5 bg-[#1C1C1C] px-4 text-md focus:border-white/20"
           />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 px-2">
+        <div className="flex items-baseline justify-between">
+          <label htmlFor="bell-volume" className="text-white text-[15px] font-bold">
+            송출 볼륨
+          </label>
+          <span className="font-orbitron text-[15px] tabular-nums text-white">{volume}%</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <input
+            id="bell-volume"
+            type="range"
+            min={VOLUME_MIN}
+            max={VOLUME_MAX}
+            step={5}
+            value={volume}
+            onChange={(e) => setVolume(Number(e.target.value))}
+            onPointerDown={() => previewing !== "idle" && stopPreview()}
+            onDoubleClick={() => setVolume(100)}
+            className="h-2 flex-1 cursor-pointer accent-[#a78bfa]"
+          />
+          <button
+            type="button"
+            onClick={togglePreview}
+            disabled={!audioFile || audioFile === "none"}
+            className={cn(
+              "h-[40px] shrink-0 rounded-lg border px-4 font-mbc text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-35",
+              previewing !== "idle"
+                ? "border-[#c4b5fd] bg-[#a78bfa]/20 text-white"
+                : "border-white/15 bg-white/[0.03] text-white/70 hover:border-white/30 hover:text-white",
+            )}
+          >
+            {previewing === "loading" ? "준비 중" : previewing === "playing" ? "정지" : "미리 듣기"}
+          </button>
         </div>
       </div>
 
