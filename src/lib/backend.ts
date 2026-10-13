@@ -53,6 +53,24 @@ export function backendBase(): string {
   return "http://127.0.0.1:8000";
 }
 
+/** 저장된 파일 URL을 '보는 기기 기준' 서버 주소로 다시 맞춘다.
+ *  보낸 기기가 어떤 주소(127.0.0.1, 테일스케일 IP 등)로 저장했든 우리 파일 경로(/api/files, /uploads)면
+ *  backendBase() 로 바꾼다. 안 그러면 onair.bssmcast.com(https)에서 http 주소를 못 불러 검은 화면이 된다.
+ *  외부 URL(유튜브 등)은 그대로. 송출 화면(onair-display)의 resolveMediaUrl 과 같은 규칙. */
+export function resolveMediaUrl(url?: string | null): string {
+  if (!url) return "";
+  const base = backendBase();
+  try {
+    const u = new URL(url, base);
+    if (u.pathname.startsWith("/api/files/") || u.pathname.startsWith("/uploads/")) {
+      return base + u.pathname + u.search;
+    }
+    return url;
+  } catch {
+    return url;
+  }
+}
+
 export function backendWs(path: string, channel?: number, role?: string): string {
   const override = process.env.NEXT_PUBLIC_WS_URL;
   const base =

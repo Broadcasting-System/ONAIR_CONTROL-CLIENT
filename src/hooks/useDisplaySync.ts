@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { backendBase, backendWs } from '@/lib/backend'
+import { backendBase, backendWs, resolveMediaUrl } from '@/lib/backend'
 
 export type ContentType = 'image' | 'video' | 'presentation' | 'audio' | 'standby' | 'screen' | 'timer' | 'youtube'
 
@@ -68,13 +68,11 @@ export function useDisplaySync(channel: number = 1) {
             : fileId
           finalUrl = `/api/files/stream/${type}/${normalizedFileName}`
         }
-        if (finalUrl && !finalUrl.startsWith('http')) {
-          finalUrl = `${BASE}${finalUrl}`
-        }
+        if (finalUrl) finalUrl = resolveMediaUrl(finalUrl)
       }
 
       if (type === 'presentation' && finalUrls) {
-        finalUrls = finalUrls.map((u: string) => u.startsWith('http') ? u : `${BASE}${u}`)
+        finalUrls = finalUrls.map((u: string) => resolveMediaUrl(u))
       }
 
       return { ...data, url: finalUrl, urls: finalUrls }
