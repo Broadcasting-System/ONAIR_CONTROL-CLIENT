@@ -92,15 +92,17 @@ function Seg<T extends string>({
   value,
   onChange,
   tour,
+  className,
 }: {
   items: { key: T; label: string }[];
   value: T;
   onChange: (v: T) => void;
   /** CUE 튜토리얼 이름표 (data-tour) */
   tour?: string;
+  className?: string;
 }) {
   return (
-    <div data-tour={tour} className="inline-flex flex-wrap gap-2">
+    <div data-tour={tour} className={cn("inline-flex flex-wrap gap-2", className)}>
       {items.map((it) => {
         const on = value === it.key;
         return (
@@ -110,7 +112,7 @@ function Seg<T extends string>({
             aria-pressed={on}
             onClick={() => onChange(it.key)}
             className={cn(
-              "flex h-9 items-center gap-2 rounded-[10px] border border-black bg-[linear-gradient(180deg,#2a2c31,#1c1e22)] px-3.5 font-pretendard text-sm font-semibold transition-colors",
+              "flex h-11 shrink-0 items-center gap-2 rounded-[10px] border border-black md:h-9 bg-[linear-gradient(180deg,#2a2c31,#1c1e22)] px-3.5 font-pretendard text-sm font-semibold transition-colors",
               on
                 ? "text-white shadow-[inset_0_0_0_1.5px_rgba(248,113,113,0.8),0_2px_0_#08090a]"
                 : "text-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_0_#08090a] hover:text-white",
@@ -203,7 +205,7 @@ function PendingCard({
   const [role, setRole] = useState<AssignableRole>(m.rosterRole || "member");
   const choices: AssignableRole[] = m.rosterRole ? ["member", "alumni", "lead", "teacher"] : ["member", "lead", "teacher"];
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 px-5 py-[18px]">
+    <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-4 md:px-5 md:py-[18px]">
       <div className="flex items-center gap-2.5">
         <Cohort n={m.cohort} suffix />
         <span className="font-mbc text-[19px] text-white">{m.name}</span>
@@ -231,10 +233,10 @@ function PendingCard({
           value={role}
           onChange={setRole}
         />
-        <ActionButton className="ml-auto h-9 px-3.5" onClick={onReject} disabled={busy}>
+        <ActionButton className="ml-auto h-11 px-3.5 md:h-9" onClick={onReject} disabled={busy}>
           거절
         </ActionButton>
-        <ActionButton tour="members.pending.approve" tone="primary" className="h-9 px-4" onClick={() => onApprove(role)} busy={busy}>
+        <ActionButton tour="members.pending.approve" tone="primary" className="h-11 px-4 md:h-9" onClick={() => onApprove(role)} busy={busy}>
           승인
         </ActionButton>
       </div>
@@ -295,7 +297,15 @@ export default function MembersPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const toggle = <PageTabs tour="members.view" tabs={VIEWS} value={view} onChange={setView} />;
+  const toggle = (
+    <PageTabs
+      tour="members.view"
+      tabs={VIEWS}
+      value={view}
+      onChange={setView}
+      className="max-md:[&>button]:min-h-[44px] max-md:[&>button]:min-w-[52px] max-md:[&>button]:text-[14px]"
+    />
+  );
   if (view === "crew") return <CrewView toggle={toggle} />;
 
   if (list.error) {
@@ -325,11 +335,80 @@ export default function MembersPanel() {
     run(() => memberApi.update(m.id, { role }), `${m.name} 역할을 ${label}로 바꿨어요`);
   };
 
+  type MenuItem = { t: string; f: () => void; danger?: boolean };
+  /** 부원 한 명의 더 보기 메뉴 (표·폰 카드 같이 쓴다) */
+  const menuItems = (m: Member): MenuItem[] => {
+    const gone = m.status === "revoked";
+    const fixed = m.superadmin;
+    const roster = m.rosterOnly && !gone;
+    const canProfile = !fixed || isSuperadmin;
+    return [
+      roster && {
+        t: "초대 이어 주기",
+        f: () => invite.mutate(m.id),
+      },
+      canProfile && { t: "소개 고치기", f: () => setProfileFor(profileOf(m, me?.memberId)) },
+      !fixed &&
+        !roster &&
+        (m.role === "lead"
+          ? { t: "부장 해제", f: () => setRole(m, "member") }
+          : { t: "부장 임명", f: () => setRole(m, "lead") }),
+      !fixed &&
+        m.role !== "alumni" && {
+        t: "졸업 처리",
+        f: () =>
+          setConfirm({
+            title: "졸업 처리",
+            message: `${m.name} 님을 졸업 처리할까요?\n보기만 할 수 있게 돼요.`,
+            confirmText: "졸업 처리",
+            run: () => memberApi.graduate(m.id),
+          }),
+      },
+      !fixed && { t: "메일 주소 바꾸기", f: () => setMailFor(m) },
+      m.mailStatus === "pending" && {
+        t: "확인 메일 다시 보내기",
+        f: () =>
+          run(
+            () => mailApi.resend(m.id),
+            `${m.personalEmailHint} 로 확인 메일을 보냈어요`,
+          ),
+      },
+      mockMail &&
+        m.mailStatus === "pending" && {
+          t: "메일 확인 처리",
+          f: () => run(() => mailApi.devVerify(m.id), `${m.name} 메일 확인됨`),
+        },
+      roster && {
+        t: "명단에서 지우기",
+        danger: true,
+        f: () =>
+          setConfirm({
+            title: "명단에서 지우기",
+            message: `${m.cohort}기 ${m.name} 님을 명단에서 지울까요?\n직함·소개도 함께 지워져요.`,
+            confirmText: "지우기",
+            run: () => memberApi.deleteRoster(m.id),
+          }),
+      },
+      !fixed &&
+        !roster && {
+        t: "내보내기",
+        danger: true,
+        f: () =>
+          setConfirm({
+            title: "부원 내보내기",
+            message: `${m.name} 님을 내보낼까요?\n되돌릴 수 없어요.`,
+            confirmText: "내보내기",
+            run: () => memberApi.revoke(m.id),
+          }),
+      },
+    ].filter((x): x is MenuItem => !!x);
+  };
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto pb-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 pb-4 md:overflow-auto">
       {/* 요약 · 초대 */}
       <div data-tour="members.summary" className="flex flex-wrap items-center gap-2">
-        <span className="mr-2">{toggle}</span>
+        <span className="mr-1 md:mr-2">{toggle}</span>
         {(
           [
             ["lead", "부장"],
@@ -340,27 +419,28 @@ export default function MembersPanel() {
         ).map(([r, label]) => (
           <span
             key={r}
-            className="flex h-10 items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 font-mbc text-sm text-white/70"
+            className="flex h-11 items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 font-mbc text-sm text-white/70 md:h-10"
           >
             {label}
             <span className="font-mono text-base font-bold tabular-nums text-white">{count(r)}</span>
           </span>
         ))}
         {pending.length > 0 && (
-          <span className="flex h-10 items-center gap-2.5 rounded-xl border border-red-400/50 bg-red-400/[0.12] px-4 font-mbc text-sm text-white">
+          <span className="flex h-11 items-center gap-2.5 rounded-xl border border-red-400/50 md:h-10 bg-red-400/[0.12] px-4 font-mbc text-sm text-white">
             <span className="h-2 w-2 shrink-0 rounded-full bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]" />
             승인 대기 <span className="font-mono text-base font-bold tabular-nums">{pending.length}</span>
           </span>
         )}
-        <div className="ml-auto flex gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 md:ml-auto md:flex md:w-auto">
           <ActionButton
             tour="members.export"
+            className="h-11 md:h-10"
             icon={<Download size={15} />}
             onClick={() => downloadMembersCsv().catch((e: Error) => toast.error(e.message))}
           >
             명단 내보내기
           </ActionButton>
-          <ActionButton tour="members.invite" tone="primary" icon={<UserPlus size={15} />} busy={invite.isPending} onClick={() => invite.mutate("")}>
+          <ActionButton tour="members.invite" tone="primary" className="h-11 md:h-10" icon={<UserPlus size={15} />} busy={invite.isPending} onClick={() => invite.mutate("")}>
             새 부원 초대
           </ActionButton>
         </div>
@@ -369,14 +449,14 @@ export default function MembersPanel() {
       {waiting.length > 0 && (
         <div data-tour="members.invites" className="flex flex-col gap-1.5">
           {(allInvites ? waiting : waiting.slice(0, 2)).map((i) => (
-            <div key={i.id} className="flex items-center gap-2.5 font-pretendard text-[13px] text-white/60">
+            <div key={i.id} className="flex flex-wrap items-center gap-x-2.5 gap-y-1 font-pretendard text-[13px] text-white/60 md:flex-nowrap">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF3B3B]" />
               초대 대기{i.memberId && i.note ? ` · ${i.note}` : ""} · {i.createdAt.slice(11, 16)}
               {i.createdBy && ` ${i.createdBy}`} · {hoursLeft(i.expiresAt)}
               {i.codeActive && <span className="text-white/45">· 코드 유효</span>}
               <button
                 type="button"
-                className="rounded-md px-2 py-0.5 font-mbc text-xs text-white/55 hover:bg-white/[0.06] hover:text-white"
+                className="min-h-[44px] rounded-md px-3 font-mbc text-xs text-white/55 hover:bg-white/[0.06] hover:text-white md:min-h-0 md:px-2 md:py-0.5"
                 onClick={() => run(() => memberApi.cancelInvite(i.id), "초대를 취소했어요")}
               >
                 취소
@@ -387,7 +467,7 @@ export default function MembersPanel() {
             <button
               type="button"
               onClick={() => setAllInvites((v) => !v)}
-              className="w-fit pl-4 font-pretendard text-xs text-white/45 hover:text-white/75"
+              className="min-h-[44px] w-fit pl-4 font-pretendard text-xs text-white/45 hover:text-white/75 md:min-h-0"
             >
               {allInvites ? "접기" : `${waiting.length - 2}개 더 보기`}
             </button>
@@ -397,7 +477,7 @@ export default function MembersPanel() {
 
       {/* 승인 대기 */}
       {pending.length > 0 && (
-        <Panel tour="members.pending" title="승인 대기">
+        <Panel tour="members.pending" title="승인 대기" className="max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:shadow-none max-md:backdrop-blur-none">
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,460px),1fr))] gap-3">
             {pending.map((m) => (
               <PendingCard
@@ -421,9 +501,134 @@ export default function MembersPanel() {
       )}
 
       {/* 부원 목록 */}
-      <Panel tour="members.table" title="부원">
-        <Seg tour="members.filter" items={FILTERS} value={filter} onChange={setFilter} />
-        <div className="mt-4 overflow-x-auto">
+      <Panel tour="members.table" title="부원" className="max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:shadow-none max-md:backdrop-blur-none">
+        <Seg
+          tour="members.filter"
+          items={FILTERS}
+          value={filter}
+          onChange={setFilter}
+          className="no-scrollbar -mx-4 flex flex-nowrap overflow-x-auto px-4 pb-1 pt-0.5 md:mx-0 md:pt-0 md:inline-flex md:flex-wrap md:overflow-visible md:px-0 md:pb-0"
+        />
+
+        {/* 폰 — 표 대신 카드 */}
+        <div className="mt-3 flex flex-col gap-2.5 md:hidden">
+          {shown.length === 0 ? (
+            <p className="px-3 py-8 text-center font-pretendard text-sm text-white/45">
+              {list.isLoading ? "불러오는 중…" : filter === "all" ? "부원이 없어요" : "해당하는 사람이 없어요"}
+            </p>
+          ) : (
+            shown.map((m) => {
+              const gone = m.status === "revoked";
+              const fixed = m.superadmin;
+              const roster = m.rosterOnly && !gone;
+              const canProfile = !fixed || isSuperadmin;
+              return (
+                <div
+                  key={m.id}
+                  className={cn(
+                    "relative flex flex-col gap-2.5 rounded-[20px] border border-white/[0.09] bg-white/[0.045] px-4 py-3.5 backdrop-blur-md",
+                    gone && "text-white/30",
+                    menu === m.id && "z-30",
+                  )}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className={cn(gone && "opacity-50")}>
+                      <Cohort n={m.cohort} />
+                    </span>
+                    <span className={cn("min-w-0 truncate font-mbc text-[17px]", gone ? "text-white/35" : "text-white")}>{m.name}</span>
+                    {(m.wasLead || m.role === "lead") && !gone && (
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF3B3B]" />
+                    )}
+                    {roster && <RosterTag />}
+                    <span className="ml-auto" />
+                    {!gone && (canProfile || m.mailStatus === "pending") && (
+                      <button
+                        type="button"
+                        data-tour="members.row-menu"
+                        aria-label={`${m.name} 더 보기`}
+                        onClick={() => setMenu(menu === m.id ? null : m.id)}
+                        className="-my-1.5 -mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white/75 active:bg-white/[0.08]"
+                      >
+                        <MoreHorizontal size={20} />
+                      </button>
+                    )}
+                  </div>
+                  {m.title && (
+                    <p className={cn("-mt-1.5 truncate font-pretendard text-[13px]", gone ? "text-white/35" : "text-white/60")}>{m.title}</p>
+                  )}
+                  <div className="flex items-center gap-3">
+                    {fixed ? (
+                      <b className="font-pretendard text-sm font-bold text-white">최고 관리자</b>
+                    ) : gone ? (
+                      <span className="font-pretendard text-xs">내보냄{m.hasToken ? " · 토큰 삭제 실패" : ""}</span>
+                    ) : (
+                      <Select
+                        value={m.role}
+                        disabled={act.isPending}
+                        onChange={(role) => setRole(m, role as AssignableRole)}
+                        aria-label={`${m.name} 역할`}
+                        options={ASSIGNABLE.filter((r) => !roster || ROSTER_ROLES.includes(r.value))}
+                        className="h-11 rounded-[10px] border-white/[0.12] bg-[#0c0d0f] text-sm font-bold focus:border-red-400/70"
+                      />
+                    )}
+                    <span className="ml-auto font-pretendard">
+                      <MailState status={m.mailStatus} label={m.mailStatusLabel} error={gone ? "" : m.mailError} />
+                    </span>
+                  </div>
+                  {m.mailAddress && (
+                    <div className="-mt-0.5 min-w-0 break-all">
+                      <MailAddress address={m.mailAddress} domain={domain} dim={gone} />
+                      {m.mailAliases.length > 0 && !gone && (
+                        <p className="mt-0.5 font-mono text-xs text-white/40">
+                          예전 {m.mailAliases[0].address}@ · {m.mailAliases[0].expiresAt.slice(5, 10).replace("-", ".")}까지
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 font-pretendard text-[13px]">
+                    <RoleTags roles={m.mailRoles} dim={gone} />
+                    <span className="text-white/45">
+                      디스코드{" "}
+                      <span className={m.discordLinked ? (gone ? "text-white/35" : "text-white") : "text-white/45"}>
+                        {m.discordLinked ? "연결" : "없음"}
+                      </span>
+                    </span>
+                    {!gone && m.tokenExpiresAt && (
+                      <span className="text-white/45">
+                        기기 키 만료 <span className="font-mono tabular-nums text-white">{m.tokenExpiresAt.slice(0, 10)}</span>
+                      </span>
+                    )}
+                  </div>
+                  {menu === m.id && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setMenu(null)} />
+                      <div className="absolute right-3 top-12 z-20 flex min-w-[200px] flex-col rounded-xl border border-white/10 bg-[#161616] p-1.5 text-left shadow-2xl">
+                        {menuItems(m).map((x) => (
+                          <button
+                            key={x.t}
+                            type="button"
+                            onClick={() => {
+                              setMenu(null);
+                              x.f();
+                            }}
+                            className={cn(
+                              "h-11 rounded-lg px-3 text-left font-mbc text-[15px] active:bg-white/[0.07]",
+                              x.danger ? "text-[#ff9b9b]" : "text-white/80",
+                            )}
+                          >
+                            {x.t}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div className="mt-4 hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1100px] text-left font-pretendard text-sm">
             <thead className="text-white/50">
               <tr className="border-b border-white/[0.07]">
@@ -537,67 +742,7 @@ export default function MembersPanel() {
                               <>
                                 <div className="fixed inset-0 z-10" onClick={() => setMenu(null)} />
                                 <div className="absolute right-3 top-11 z-20 flex min-w-[170px] flex-col rounded-xl border border-white/10 bg-[#161616] p-1.5 text-left shadow-2xl">
-                                  {[
-                                    roster && {
-                                      t: "초대 이어 주기",
-                                      f: () => invite.mutate(m.id),
-                                    },
-                                    canProfile && { t: "소개 고치기", f: () => setProfileFor(profileOf(m, me?.memberId)) },
-                                    !fixed &&
-                                      !roster &&
-                                      (m.role === "lead"
-                                        ? { t: "부장 해제", f: () => setRole(m, "member") }
-                                        : { t: "부장 임명", f: () => setRole(m, "lead") }),
-                                    !fixed &&
-                                      m.role !== "alumni" && {
-                                      t: "졸업 처리",
-                                      f: () =>
-                                        setConfirm({
-                                          title: "졸업 처리",
-                                          message: `${m.name} 님을 졸업 처리할까요?\n보기만 할 수 있게 돼요.`,
-                                          confirmText: "졸업 처리",
-                                          run: () => memberApi.graduate(m.id),
-                                        }),
-                                    },
-                                    !fixed && { t: "메일 주소 바꾸기", f: () => setMailFor(m) },
-                                    m.mailStatus === "pending" && {
-                                      t: "확인 메일 다시 보내기",
-                                      f: () =>
-                                        run(
-                                          () => mailApi.resend(m.id),
-                                          `${m.personalEmailHint} 로 확인 메일을 보냈어요`,
-                                        ),
-                                    },
-                                    mockMail &&
-                                      m.mailStatus === "pending" && {
-                                        t: "메일 확인 처리",
-                                        f: () => run(() => mailApi.devVerify(m.id), `${m.name} 메일 확인됨`),
-                                      },
-                                    roster && {
-                                      t: "명단에서 지우기",
-                                      danger: true,
-                                      f: () =>
-                                        setConfirm({
-                                          title: "명단에서 지우기",
-                                          message: `${m.cohort}기 ${m.name} 님을 명단에서 지울까요?\n직함·소개도 함께 지워져요.`,
-                                          confirmText: "지우기",
-                                          run: () => memberApi.deleteRoster(m.id),
-                                        }),
-                                    },
-                                    !fixed &&
-                                      !roster && {
-                                      t: "내보내기",
-                                      danger: true,
-                                      f: () =>
-                                        setConfirm({
-                                          title: "부원 내보내기",
-                                          message: `${m.name} 님을 내보낼까요?\n되돌릴 수 없어요.`,
-                                          confirmText: "내보내기",
-                                          run: () => memberApi.revoke(m.id),
-                                        }),
-                                    },
-                                  ]
-                                    .filter((x): x is { t: string; f: () => void; danger?: boolean } => !!x)
+                                  {menuItems(m)
                                     .map((x) => (
                                       <button
                                         key={x.t}

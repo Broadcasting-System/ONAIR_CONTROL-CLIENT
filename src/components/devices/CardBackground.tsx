@@ -204,4 +204,4 @@ export function BgTile({
 }
 
 export const tileBtn =
-  "flex h-8 flex-1 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] font-pretendard text-[13px] font-semibold text-white/75 transition-colors enabled:hover:bg-white/10 enabled:hover:text-white disabled:opacity-40";
+  "flex h-11 flex-1 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] font-pretendard text-[13px] md:h-8 font-semibold text-white/75 transition-colors enabled:hover:bg-white/10 enabled:hover:text-white disabled:opacity-40";

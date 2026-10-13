@@ -63,7 +63,7 @@ export default function FileContextMenu({
     <div
       ref={menuRef}
       data-tour="files.menu"
-      className="fixed z-50 flex flex-col w-48 py-1.5 rounded-xl border border-white/10 bg-[#252525] shadow-2xl backdrop-blur-xl"
+      className="fixed z-50 flex flex-col w-48 py-1.5 rounded-xl border border-white/10 bg-[#252525] shadow-2xl backdrop-blur-xl max-md:inset-x-4! max-md:top-auto! max-md:bottom-[calc(76px+env(safe-area-inset-bottom))] max-md:w-auto max-md:rounded-[20px] max-md:py-2"
       style={{
         left: position.x,
         top: position.y,
@@ -75,7 +75,7 @@ export default function FileContextMenu({
           onPreview();
           onClose();
         }}
-        className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/90 hover:bg-white/10 hover:text-white transition-colors w-full text-left"
+        className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/90 max-md:min-h-12 max-md:text-[15px] hover:bg-white/10 hover:text-white transition-colors w-full text-left"
       >
         <Eye size={16} className="text-white/50" />
         미리보기
@@ -87,7 +87,7 @@ export default function FileContextMenu({
           onRename();
           onClose();
         }}
-        className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/90 hover:bg-white/10 hover:text-white transition-colors w-full text-left"
+        className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/90 max-md:min-h-12 max-md:text-[15px] hover:bg-white/10 hover:text-white transition-colors w-full text-left"
       >
         <Pencil size={16} className="text-white/50" />
         이름 수정
@@ -103,7 +103,7 @@ export default function FileContextMenu({
           onDelete();
           onClose();
         }}
-        className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500/90 hover:bg-red-500/10 hover:text-red-500 transition-colors w-full text-left"
+        className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500/90 max-md:min-h-12 max-md:text-[15px] hover:bg-red-500/10 hover:text-red-500 transition-colors w-full text-left"
       >
         <Trash2 size={16} className="text-red-500/50" />
         삭제

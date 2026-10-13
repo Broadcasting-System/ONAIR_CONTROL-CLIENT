@@ -19,7 +19,13 @@ export default function BroadcastPage() {
   const lead = (
     <>
       <SectionHeader className="mb-0">송출</SectionHeader>
-      <PageTabs tabs={BROADCAST_TABS} value={tab} onChange={setTab} tour="media.tab" />
+      <PageTabs
+        tabs={BROADCAST_TABS}
+        value={tab}
+        onChange={setTab}
+        tour="media.tab"
+        className="[&>button]:py-3 md:[&>button]:py-1"
+      />
     </>
   );
 

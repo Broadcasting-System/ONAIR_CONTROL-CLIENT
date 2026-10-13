@@ -8,8 +8,8 @@ import { useMe } from "@/hooks/useMe";
 export default function LogsPage() {
   const { isAdmin, loading } = useMe();
   return (
-    <div className="flex h-full min-h-0 flex-col gap-6">
-      <SectionHeader className="mb-0">로그</SectionHeader>
+    <div className="flex min-h-0 flex-col gap-4 md:h-full md:gap-6">
+      <SectionHeader className="mb-0 max-md:mt-1 max-md:text-[26px] max-md:leading-none">로그</SectionHeader>
       {isAdmin ? <AccessLogPanel /> : loading ? null : <p className="font-pretendard text-white/40">권한 없음</p>}
     </div>
   );

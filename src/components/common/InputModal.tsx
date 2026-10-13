@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect } from "react";
+import Portal from "./Portal";
 import { X } from "lucide-react";
 import Button from "./Button";
 import TextInput from "./TextInput";
@@ -54,7 +55,8 @@ export default function InputModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <Portal>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />
       <div className="relative z-10 w-full max-w-[520px] bg-[#1C1C1C] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/5">
@@ -101,5 +103,6 @@ export default function InputModal({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

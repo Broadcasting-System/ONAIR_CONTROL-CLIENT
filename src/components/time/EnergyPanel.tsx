@@ -75,8 +75,8 @@ export default function EnergyPanel() {
     setDays(form.days.includes(d) ? form.days.filter((x) => x !== d) : [...form.days, d]);
 
   return (
-    <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5">
-      <section data-tour="energy.settings" className="flex flex-col gap-6 rounded-2xl border border-white/5 bg-[#0a0a0a] p-6">
+    <div className="mx-auto flex w-full max-w-[880px] flex-col gap-3 md:gap-5">
+      <section data-tour="energy.settings" className="flex flex-col gap-5 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:gap-6 md:rounded-2xl md:border-white/5 md:bg-[#0a0a0a] md:p-6 md:backdrop-blur-none">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-mbc text-lg text-white">야간 절전</h3>
@@ -92,7 +92,7 @@ export default function EnergyPanel() {
             aria-label="야간 절전 사용"
             onClick={() => setForm({ ...form, enabled: !form.enabled })}
             className={cn(
-              "relative h-8 w-14 shrink-0 rounded-full transition-colors",
+              "relative h-8 w-14 shrink-0 rounded-full transition-colors max-md:before:absolute max-md:before:-inset-2 max-md:before:content-['']",
               form.enabled ? "bg-emerald-500/70" : "bg-white/15",
             )}
           >
@@ -113,15 +113,15 @@ export default function EnergyPanel() {
               value={form.time}
               onChange={(e) => setForm({ ...form, time: e.target.value })}
               className={cn(
-                "h-11 rounded-xl border bg-[#141414] px-4 font-orbitron text-white [color-scheme:dark] focus:outline-none",
+                "h-11 min-w-0 flex-1 rounded-xl border bg-[#141414] px-4 font-orbitron text-white [color-scheme:dark] focus:outline-none max-md:text-base md:flex-none",
                 validTime ? "border-white/10 focus:border-white/30" : "border-red-500/60",
               )}
             />
           </label>
 
-          <div data-tour="energy.days" className="flex flex-wrap items-center gap-4">
+          <div data-tour="energy.days" className="flex flex-wrap items-center gap-x-4 gap-y-2 md:gap-4">
             <span className="w-20 shrink-0 font-mbc text-sm text-white/50">요일</span>
-            <div className="flex gap-2">
+            <div className="grid w-full grid-cols-7 gap-1.5 md:flex md:w-auto md:gap-2">
               {DAY_LABELS.map((d) => {
                 const on = form.days.includes(d.key);
                 return (
@@ -131,7 +131,7 @@ export default function EnergyPanel() {
                     aria-pressed={on}
                     onClick={() => toggleDay(d.key)}
                     className={cn(
-                      "h-10 w-10 rounded-xl border font-mbc text-sm transition-colors",
+                      "h-11 w-full rounded-xl border font-mbc text-sm transition-colors md:h-10 md:w-10",
                       on
                         ? "border-emerald-400/50 bg-emerald-400/15 text-white"
                         : "border-white/10 bg-white/[0.03] text-white/40 hover:bg-white/5",
@@ -147,14 +147,14 @@ export default function EnergyPanel() {
               <button
                 type="button"
                 onClick={() => setDays(WEEKDAYS)}
-                className="rounded-lg px-2.5 py-1 font-mbc text-xs text-white/45 hover:bg-white/10 hover:text-white"
+                className="min-h-[44px] rounded-lg px-3.5 py-1 font-mbc text-xs text-white/45 hover:bg-white/10 hover:text-white md:min-h-0 md:px-2.5"
               >
                 평일
               </button>
               <button
                 type="button"
                 onClick={() => setDays(ORDER)}
-                className="rounded-lg px-2.5 py-1 font-mbc text-xs text-white/45 hover:bg-white/10 hover:text-white"
+                className="min-h-[44px] rounded-lg px-3.5 py-1 font-mbc text-xs text-white/45 hover:bg-white/10 hover:text-white md:min-h-0 md:px-2.5"
               >
                 매일
               </button>
@@ -164,7 +164,7 @@ export default function EnergyPanel() {
             <p className="font-pretendard text-xs text-red-300/80">요일을 고르세요</p>
           )}
 
-          <label data-tour="energy.displays" className="flex cursor-pointer items-center gap-3">
+          <label data-tour="energy.displays" className="flex min-h-[44px] cursor-pointer items-center gap-3 md:min-h-0">
             <input
               type="checkbox"
               checked={form.displays}
@@ -197,7 +197,7 @@ export default function EnergyPanel() {
         </div>
       </section>
 
-      <section data-tour="energy.last-run" className="flex items-center gap-4 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5">
+      <section data-tour="energy.last-run" className="flex items-center gap-4 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:rounded-2xl md:border-white/5 md:bg-[#0a0a0a] md:p-5 md:backdrop-blur-none">
         <div className="min-w-0 flex-1">
           <span className="font-mbc text-sm text-white/50">최근 실행</span>
           <p className="mt-1 truncate font-pretendard text-sm text-white/80" title={state.lastRun ? describeRun(state.lastRun) : undefined}>

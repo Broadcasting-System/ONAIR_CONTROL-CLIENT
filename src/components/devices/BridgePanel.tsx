@@ -38,7 +38,7 @@ function Dot({ on }: { on: boolean }) {
 function BridgeCard({ bridge }: { bridge: BridgeInfo }) {
   const devices = Object.entries(bridge.devices);
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5">
+    <section className="flex flex-col gap-4 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:rounded-2xl md:border-white/5 md:bg-[#0a0a0a] md:p-5 md:backdrop-blur-none">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <Dot on={bridge.online} />
@@ -82,7 +82,7 @@ function BridgeCard({ bridge }: { bridge: BridgeInfo }) {
       )}
 
       {bridge.online && (
-        <div className="overflow-hidden rounded-xl border border-white/5">
+        <div className="overflow-x-auto rounded-xl border border-white/5 md:overflow-hidden">
           <table className="w-full text-left font-pretendard text-sm">
             <thead className="bg-white/[0.03] text-white/40">
               <tr>
@@ -134,13 +134,13 @@ function BridgeCard({ bridge }: { bridge: BridgeInfo }) {
 }
 
 const setupLink =
-  "rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mbc text-xs text-white/70 transition-colors hover:bg-white/10 hover:text-white";
+  "flex min-h-[44px] items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mbc text-xs md:block md:min-h-0 text-white/70 transition-colors hover:bg-white/10 hover:text-white";
 
 /** 켜져 있다고 알려 왔지만 아직 어떤 장비도 쓰지 않는 노트북 */
 function AnnouncedCard({ a }: { a: AnnouncedBridge }) {
   const devices = Object.keys(a.devices).length;
   return (
-    <section className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-dashed border-white/15 bg-[#0a0a0a] px-5 py-4">
+    <section className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[20px] border border-dashed border-white/15 bg-[#0a0a0a] px-4 py-3.5 md:rounded-2xl md:px-5 md:py-4">
       <Dot on={a.online} />
       <div className="min-w-0">
         <h3 className="truncate font-mbc text-base text-white">{a.name || a.hostname || "노트북"}</h3>
@@ -153,7 +153,7 @@ function AnnouncedCard({ a }: { a: AnnouncedBridge }) {
       <span className="font-pretendard text-xs text-white/40">
         {a.online ? `${a.ago}초 전 알림` : `${Math.round(a.ago / 60)}분 전 마지막 알림`} · 장치 {devices}개
       </span>
-      <div className="ml-auto flex gap-2">
+      <div className="grid w-full grid-cols-2 gap-2 md:ml-auto md:flex md:w-auto">
         <Link href="/mixer/setup" className={setupLink}>
           믹서 현장 세팅
         </Link>
@@ -178,7 +178,7 @@ export default function BridgePanel() {
   const online = bridges.filter((b) => b.online).length;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 md:gap-4 md:overflow-auto">
       <NotebookKit />
 
       {bridges.length > 0 && (
@@ -213,7 +213,7 @@ export default function BridgePanel() {
       )}
 
       {data && bridges.length === 0 && (
-        <div className="rounded-2xl border border-white/5 bg-[#0a0a0a] px-6 py-8">
+        <div className="rounded-[20px] border border-white/[0.09] bg-white/[0.045] px-4 py-6 md:rounded-2xl md:border-white/5 md:bg-[#0a0a0a] md:px-6 md:py-8">
           <h3 className="font-mbc text-lg text-white">연결된 노트북이 없어요</h3>
         </div>
       )}

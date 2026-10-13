@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 type Phase = "intro" | "capture" | "review";
 
 const input =
-  "h-10 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white placeholder:text-white/25 focus:border-white/30 focus:outline-none";
+  "h-11 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-base text-white placeholder:text-white/25 focus:border-white/30 focus:outline-none md:h-10 md:text-sm";
 
 /** 신호를 보는 세 가지 길 — 학교 장비가 어떻게 붙어 있느냐에 따라 고른다 */
 const MODES: { key: LearnMode; title: string }[] = [
@@ -33,10 +33,10 @@ const MODES: { key: LearnMode; title: string }[] = [
 
 function Shell({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm max-md:pb-[calc(78px+env(safe-area-inset-bottom))] max-md:pt-[calc(16px+env(safe-area-inset-top))]">
       <div className="absolute inset-0" onClick={onClose} />
-      <div data-tour="mapping.learn-wizard" className="relative z-10 flex max-h-[90vh] w-full max-w-[820px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1C1C1C] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4">
+      <div data-tour="mapping.learn-wizard" className="relative z-10 flex max-h-[90vh] w-full max-md:max-h-full max-w-[820px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1C1C1C] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-4 py-2.5 md:px-6 md:py-4">
           <div className="flex items-center gap-2.5">
             <RadioTower size={18} className="text-red-400" />
             <div>
@@ -47,12 +47,12 @@ function Shell({ onClose, children }: { onClose: () => void; children: React.Rea
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            className="rounded-full p-1 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+            className="-mr-1.5 rounded-full p-2.5 text-white/50 transition-colors hover:bg-white/10 hover:text-white md:mr-0 md:p-1"
           >
             <X size={20} />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">{children}</div>
       </div>
     </div>
   );
@@ -66,7 +66,7 @@ function StepDots({ phase }: { phase: Phase }) {
   ];
   const idx = steps.findIndex((s) => s.key === phase);
   return (
-    <div className="mb-6 flex items-center gap-2">
+    <div className="mb-5 flex flex-wrap items-center gap-2 md:mb-6">
       {steps.map((s, i) => (
         <div key={s.key} className="flex items-center gap-2">
           <span
@@ -82,7 +82,7 @@ function StepDots({ phase }: { phase: Phase }) {
             {i < idx ? <Check size={13} /> : i + 1}
           </span>
           <span className={cn("font-mbc text-sm", i === idx ? "text-white" : "text-white/40")}>{s.label}</span>
-          {i < steps.length - 1 && <span className="mx-1 h-px w-8 bg-white/10" />}
+          {i < steps.length - 1 && <span className="mx-1 h-px w-4 bg-white/10 md:w-8" />}
         </div>
       ))}
     </div>
@@ -246,18 +246,18 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                 aria-pressed={mode === m.key}
                 onClick={() => setMode(m.key)}
                 className={cn(
-                  "flex flex-col items-start gap-1 rounded-xl border px-4 py-3 text-left transition-colors",
+                  "flex flex-col items-start gap-1 rounded-xl border px-3 py-3 text-left transition-colors md:px-4",
                   mode === m.key
                     ? "border-red-500/55 bg-red-500/10"
                     : "border-white/10 bg-white/[0.02] hover:bg-white/[0.06]",
                 )}
               >
-                <span className="font-mbc text-[15px] text-white">{m.title}</span>
+                <span className="font-mbc text-[14px] text-white md:text-[15px]">{m.title}</span>
               </button>
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
             {mode === "manual" && (
               <label className="col-span-2 flex flex-col gap-1.5">
                 <span className="font-mbc text-xs text-white/40">전송 방식</span>
@@ -297,7 +297,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                       type="button"
                       onClick={loadPorts}
                       disabled={busy}
-                      className="h-10 shrink-0 rounded-lg border border-white/10 bg-white/[0.04] px-3 font-mbc text-sm text-white/70 hover:bg-white/10 disabled:opacity-40"
+                      className="h-11 shrink-0 rounded-lg border border-white/10 bg-white/[0.04] px-3 font-mbc md:h-10 text-sm text-white/70 hover:bg-white/10 disabled:opacity-40"
                     >
                       목록
                     </button>
@@ -432,7 +432,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                   type="button"
                   onClick={addPacket}
                   disabled={busy || !paste.trim()}
-                  className="h-10 shrink-0 rounded-lg border border-amber-400/40 bg-amber-400/15 px-4 font-mbc text-sm text-amber-100 hover:bg-amber-400/25 disabled:opacity-40"
+                  className="h-11 shrink-0 rounded-lg border border-amber-400/40 md:h-10 bg-amber-400/15 px-4 font-mbc text-sm text-amber-100 hover:bg-amber-400/25 disabled:opacity-40"
                 >
                   이 단계에 넣기
                 </button>
@@ -460,13 +460,13 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
           {/* on 단계면 교실 이름 */}
           {step?.zone != null && (
             <label className="flex items-center gap-3 pl-1">
-              <span className="font-mbc text-sm text-white/50">이 구역 이름</span>
+              <span className="shrink-0 font-mbc text-sm text-white/50">이 구역 이름</span>
               <input
                 defaultValue={status.names[String(step.zone)] ?? ""}
                 key={step.zone}
                 onBlur={(e) => learnApi.name(step.zone as number, e.target.value).catch(() => {})}
                 placeholder="예: 1-3"
-                className={cn(input, "w-52")}
+                className={cn(input, "min-w-0 flex-1 md:w-52 md:flex-none")}
               />
             </label>
           )}

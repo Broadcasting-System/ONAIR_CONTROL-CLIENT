@@ -63,7 +63,7 @@ export default function SchedulerPanel() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <div className="flex items-center justify-end gap-6">
+      <div className="flex items-center justify-center gap-6 md:justify-end">
         <div data-tour="schedule.live-group" className="flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2">
           <span className="font-mbc text-xs text-white/40">현재 송출 그룹</span>
           <span className="font-orbitron text-sm text-emerald-300">
@@ -72,8 +72,37 @@ export default function SchedulerPanel() {
         </div>
       </div>
 
-      <div data-tour="schedule.table" className="flex-1 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a]">
-        <table className="w-full text-left font-pretendard text-sm">
+      <div data-tour="schedule.table" className="flex-1 overflow-auto rounded-[20px] border border-white/[0.09] bg-white/[0.03] md:rounded-2xl md:border-white/5 md:bg-[#0a0a0a]">
+        {/* 폰 — 표 대신 한 줄씩 */}
+        <div className="divide-y divide-white/[0.06] font-pretendard md:hidden">
+          {jobs.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-white/30">시보가 없어요</p>
+          ) : (
+            jobs.map((j) => (
+              <div key={j.id} className="flex items-start gap-3 px-4 py-3">
+                <span className="w-[52px] shrink-0 font-orbitron text-base text-white">{j.time || "--:--"}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="flex min-w-0 items-center gap-2">
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-md px-2 py-0.5 font-mbc text-xs",
+                        j.dayType === "P" ? "bg-violet-500/20 text-violet-200" : "bg-white/5 text-white/60",
+                      )}
+                    >
+                      {j.dayLabel || j.dayType}
+                    </span>
+                    <span className="truncate text-[15px] text-white/85">{j.label || "이름 없음"}</span>
+                  </p>
+                  <p className="mt-1 truncate text-[13px] text-white/50">{summarizeSpeakers(j.speakers)}</p>
+                  <p className="mt-0.5 font-orbitron text-[11px] text-white/35">
+                    {j.nextRun ? j.nextRun.replace("T", " ").slice(0, 19) : "-"}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        <table className="hidden w-full text-left font-pretendard text-sm md:table">
           <thead className="sticky top-0 bg-[#0a0a0a] text-white/40">
             <tr className="border-b border-white/10">
               <th className="px-4 py-3 font-mbc font-normal">시각</th>

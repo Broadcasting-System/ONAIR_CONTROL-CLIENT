@@ -84,13 +84,13 @@ export function SpeakerTable({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="이름·장소 검색"
-          className="h-[36px] min-w-0 flex-1 rounded-xl border border-white/10 bg-[#1C1C1C] px-3 font-pretendard text-[13px] text-white placeholder:text-white/25 transition-colors focus:border-white/30 focus:outline-none"
+          className="h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-[#1C1C1C] px-3 font-pretendard text-[16px] text-white md:h-[36px] md:text-[13px] placeholder:text-white/25 transition-colors focus:border-white/30 focus:outline-none"
         />
         <button
           data-tour="speakers.only-on"
           onClick={() => setOnlyOn((v) => !v)}
           className={cn(
-            "shrink-0 rounded-xl border px-3 font-mbc text-[13px] transition-colors",
+            "shrink-0 rounded-xl border px-3.5 font-mbc text-[14px] transition-colors md:px-3 md:text-[13px]",
             onlyOn
               ? "border-[#00FF57]/60 bg-[#00FF57]/15 text-[#b6ffd2]"
               : "border-white/10 bg-white/5 text-white/50 hover:text-white/80",
@@ -103,8 +103,7 @@ export function SpeakerTable({
       {/* 목록 */}
       <div
         data-tour="speakers.list"
-        className="min-h-0 flex-1 overflow-y-auto pr-1"
-        style={{ maxHeight: "clamp(320px, calc(100vh - 420px), 760px)" }}
+        className="min-h-0 flex-1 overflow-y-auto md:max-h-[clamp(320px,calc(100vh_-_420px),760px)] md:pr-1"
       >
         {shown === 0 ? (
           <p className="py-8 text-center font-pretendard text-[13px] text-white/30">
@@ -129,7 +128,7 @@ export function SpeakerTable({
                       </span>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-2 gap-2 md:gap-1.5">
                     {g.items.map((z) => {
                       const dead = DEAD.has(z.name);
                       const on = z.status === "on";
@@ -155,7 +154,7 @@ export function SpeakerTable({
                                 : z.name
                           }
                           className={cn(
-                            "flex flex-col items-start rounded-lg border px-2.5 py-1.5 text-left transition-all",
+                            "flex min-w-0 flex-col items-start rounded-xl border px-3 py-2 text-left transition-all md:min-w-[auto] md:rounded-lg md:px-2.5 md:py-1.5",
                             dead
                               ? "cursor-not-allowed border-white/5 bg-black/20 opacity-45"
                               : "cursor-pointer",
@@ -180,10 +179,10 @@ export function SpeakerTable({
                               {dead ? "" : on ? "ON" : err ? "ERR" : "OFF"}
                             </span>
                           </span>
-                          <span className="mt-0.5 truncate font-mbc text-[13px] leading-tight text-white">
+                          <span className="mt-0.5 max-w-full truncate font-mbc text-[15px] leading-tight text-white md:max-w-none md:text-[13px]">
                             {z.name}
                           </span>
-                          <span className="truncate font-pretendard text-[9px] text-white/30">
+                          <span className="max-w-full truncate font-pretendard text-[11px] text-white/30 md:max-w-none md:text-[9px]">
                             {dead ? "미연결" : coverageTag(z.name)}
                           </span>
                         </button>

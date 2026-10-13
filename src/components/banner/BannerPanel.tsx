@@ -191,7 +191,7 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
   );
 
   return (
-    <div className="flex h-full w-full flex-col gap-6 px-[20px]">
+    <div className="flex w-full flex-col gap-5 md:h-full md:gap-6 md:px-[20px]">
       {/* 헤더 */}
       <header className="flex flex-wrap items-center gap-5">
         {lead}
@@ -201,14 +201,14 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
       </header>
 
       {/* scene 탭 */}
-      <div className="flex gap-3" data-tour="banner.scenes">
+      <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0" data-tour="banner.scenes">
         {SCENES.map((s) => (
           <button
             key={s.key}
             data-tour={`banner.scene-${s.key}`}
             onClick={() => setScene(s.key)}
             className={cn(
-              "flex flex-col items-start rounded-2xl border px-6 py-3 transition-all",
+              "flex shrink-0 flex-col items-start whitespace-nowrap rounded-2xl border px-5 py-3 transition-all md:shrink md:whitespace-normal md:px-6",
               scene === s.key
                 ? "border-white/20 bg-white/10 shadow-[0_0_15px_-5px_rgba(255,255,255,0.2)]"
                 : "border-white/5 bg-[#0a0a0a] hover:bg-white/5",
@@ -224,9 +224,9 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
         ))}
       </div>
 
-      <div className="flex flex-1 gap-8 overflow-hidden">
+      <div className="flex flex-1 flex-col gap-5 md:flex-row md:gap-8 md:overflow-hidden">
         {/* 좌측: 컨트롤 */}
-        <div className="w-[460px] shrink-0 overflow-auto" data-tour="banner.editor">
+        <div className="w-full shrink-0 md:w-[460px] md:overflow-auto" data-tour="banner.editor">
           {scene === "default" && (
             <DefaultBannerEditor value={defaultBanner} onChange={setDefaultBanner} />
           )}
@@ -263,12 +263,12 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
             />
           )}
           {scene === "blank" && (
-            <div className="rounded-3xl border border-white/5 bg-[#0a0a0a] p-8">
+            <div className="rounded-3xl border border-white/5 bg-[#0a0a0a] p-5 md:p-8">
               <p className="font-pretendard text-white/50">송출 꺼짐</p>
               <button
                 data-tour="banner.off"
                 onClick={() => clearBanner()}
-                className="mt-4 rounded-xl border border-white/10 bg-white/5 px-5 py-2 font-mbc text-white hover:bg-white/10"
+                className="mt-4 h-11 rounded-xl border border-white/10 bg-white/5 px-5 py-2 font-mbc text-white hover:bg-white/10 md:h-auto"
               >
                 지금 끄기
               </button>
@@ -277,11 +277,11 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
         </div>
 
         {/* 우측: 미리보기 */}
-        <div className="flex flex-1 flex-col gap-3 overflow-hidden" data-tour="banner.preview">
+        <div className="order-first flex flex-1 flex-col gap-3 overflow-hidden md:order-none" data-tour="banner.preview">
           <span className="font-orbitron text-[11px] uppercase tracking-widest text-white/30">
             Preview · 6845 × 552 (12.4:1)
           </span>
-          <div className="rounded-2xl border border-white/10 bg-black p-2">
+          <div className="rounded-2xl border border-white/10 bg-black p-1.5 md:p-2">
             <div
               className="relative w-full overflow-hidden rounded-lg bg-black"
               style={{ aspectRatio: "6845 / 552" }}
@@ -371,7 +371,7 @@ function ScoreboardEditor({
   const clearVictory = () => onScore({ ...value, victory: null });
 
   return (
-    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6" data-tour="banner.scoreboard">
+    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-4 md:p-6" data-tour="banner.scoreboard">
       <Field label="제목">
         <TextInput
           value={value.title}
@@ -419,7 +419,7 @@ function ScoreboardEditor({
         <button
           onClick={() => setField({ showSet: !value.showSet })}
           className={cn(
-            "relative h-7 w-12 rounded-full transition-colors",
+            "relative h-7 w-12 rounded-full transition-colors max-md:after:absolute max-md:after:-inset-2",
             value.showSet ? "bg-green-500/70" : "bg-white/10",
           )}
         >
@@ -446,7 +446,7 @@ function ScoreboardEditor({
                 targetScore: Math.max(2, Math.min(99, Number(e.target.value) || 0)),
               })
             }
-            className="w-20 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-center font-orbitron text-white focus:border-white/30 focus:outline-none"
+            className="h-11 w-20 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-center md:h-auto font-orbitron text-white focus:border-white/30 focus:outline-none"
           />
           <span className="font-pretendard text-sm text-white/40">점</span>
         </div>
@@ -476,7 +476,7 @@ function ScoreboardEditor({
             };
             onScore(reset);
           }}
-          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/70 hover:bg-white/10"
+          className="h-11 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/70 hover:bg-white/10 md:h-auto"
         >
           메인 점수 0:0 리셋
         </button>
@@ -492,7 +492,7 @@ function ScoreboardEditor({
             };
             onScore(swapped);
           }}
-          className="flex-1 rounded-xl border border-sky-400/40 bg-sky-400/10 px-4 py-2 font-mbc text-sm text-sky-200 hover:bg-sky-400/20"
+          className="h-11 flex-1 rounded-xl border border-sky-400/40 bg-sky-400/10 px-4 py-2 font-mbc text-sm text-sky-200 hover:bg-sky-400/20 md:h-auto"
         >
           ⇄ 코트 체인지
         </button>
@@ -514,20 +514,20 @@ function ScoreboardEditor({
         <div className="flex gap-2" data-tour="banner.victory">
           <button
             onClick={() => declareVictory("left")}
-            className="flex-1 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 font-mbc text-sm text-yellow-200 transition-colors hover:border-yellow-400/70 active:bg-yellow-500/25"
+            className="h-11 min-w-0 flex-1 truncate rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 font-mbc text-sm md:h-auto md:min-w-[auto] md:overflow-visible md:text-clip md:whitespace-normal text-yellow-200 transition-colors hover:border-yellow-400/70 active:bg-yellow-500/25"
           >
             {value.teamA.name || "왼쪽"} 승리
           </button>
           <button
             onClick={() => declareVictory("right")}
-            className="flex-1 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 font-mbc text-sm text-yellow-200 transition-colors hover:border-yellow-400/70 active:bg-yellow-500/25"
+            className="h-11 min-w-0 flex-1 truncate rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 font-mbc text-sm md:h-auto md:min-w-[auto] md:overflow-visible md:text-clip md:whitespace-normal text-yellow-200 transition-colors hover:border-yellow-400/70 active:bg-yellow-500/25"
           >
             {value.teamB.name || "오른쪽"} 승리
           </button>
           <button
             onClick={clearVictory}
             className={cn(
-              "rounded-xl border px-3 py-2 font-mbc text-sm transition-colors",
+              "h-11 shrink-0 rounded-xl border px-3 py-2 font-mbc text-sm transition-colors md:h-auto md:shrink",
               value.victory
                 ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
                 : "border-white/5 bg-white/[0.02] text-white/30",
@@ -558,7 +558,7 @@ function AnimSelect({
           key={o.key}
           onClick={() => onChange(o.key)}
           className={cn(
-            "rounded-xl border px-3 py-2 font-mbc text-sm transition-all",
+            "h-11 rounded-xl border px-3 py-2 font-mbc text-sm transition-all md:h-auto",
             value === o.key
               ? "border-white/20 bg-white/10 text-white"
               : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
@@ -587,7 +587,7 @@ function TeamControl({
       <span className="font-orbitron text-[11px] uppercase tracking-widest text-white/30">
         {title}
       </span>
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3 md:gap-6">
         <ScoreStepper
           label="메인"
           value={team.score}
@@ -621,7 +621,7 @@ function ScoreStepper({
   return (
     <div className="flex flex-col items-center gap-1">
       <span className="font-pretendard text-[11px] text-white/40">{label}</span>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 md:gap-2">
         <StepBtn onClick={() => onBump(-1)}>−</StepBtn>
         <span className="w-14 text-center font-orbitron text-3xl font-bold text-white">
           {String(value).padStart(pad, "0")}
@@ -677,7 +677,7 @@ function StepBtn({
     <button
       onClick={onClick}
       className={cn(
-        "flex h-12 w-12 items-center justify-center rounded-xl border text-2xl font-bold transition-all active:scale-95",
+        "flex h-11 w-11 items-center justify-center rounded-xl border text-2xl font-bold transition-all active:scale-95 md:h-12 md:w-12",
         primary
           ? "border-green-500/40 bg-green-500/15 text-green-300 hover:bg-green-500/25"
           : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10",
@@ -731,7 +731,7 @@ function ImageEditor({
     onChange({ ...value, overlay: { ...ov, ...patch } });
 
   return (
-    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
+    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-4 md:p-6">
       <Field label="등록된 이미지">
         <ImagePicker
           files={images}
@@ -753,7 +753,7 @@ function ImageEditor({
               key={fit}
               onClick={() => onChange({ ...value, fit })}
               className={cn(
-                "rounded-xl border px-4 py-2 font-mbc text-sm transition-all",
+                "h-11 rounded-xl border px-4 py-2 font-mbc text-sm transition-all md:h-auto",
                 value.fit === fit
                   ? "border-white/20 bg-white/10 text-white"
                   : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
@@ -774,7 +774,7 @@ function ImageEditor({
               value={ov.title}
               onChange={(title) => patchOverlay({ title })}
               placeholder="제목"
-              className="flex-1"
+              className="min-w-0 flex-1 md:min-w-[auto]"
             />
             <button
               onClick={() => patchOverlay({ visible: !ov.visible })}
@@ -799,7 +799,7 @@ function ImageEditor({
               onChange={(e) =>
                 patchOverlay({ titleSize: Number(e.target.value) })
               }
-              className="w-40 accent-white"
+              className="w-28 accent-white md:w-40"
             />
             <span className="w-10 font-orbitron text-xs text-white/40">
               {ov.titleSize}
@@ -813,7 +813,7 @@ function ImageEditor({
               onChange={(subtitle) => patchOverlay({ subtitle })}
               placeholder="부제목"
               disabled={!ov.showSubtitle}
-              className="flex-1"
+              className="min-w-0 flex-1 md:min-w-[auto]"
             />
             <button
               onClick={() => patchOverlay({ showSubtitle: !ov.showSubtitle })}
@@ -839,7 +839,7 @@ function ImageEditor({
                 onChange={(e) =>
                   patchOverlay({ subtitleSize: Number(e.target.value) })
                 }
-                className="w-40 accent-white"
+                className="w-28 accent-white md:w-40"
               />
               <span className="w-10 font-orbitron text-xs text-white/40">
                 {ov.subtitleSize}
@@ -857,7 +857,7 @@ function ImageEditor({
                   onClick={() => patchOverlay({ color: c })}
                   style={{ backgroundColor: c }}
                   className={cn(
-                    "h-7 w-7 rounded-full border transition-transform",
+                    "h-8 w-8 rounded-full border transition-transform max-md:relative max-md:after:absolute max-md:after:-inset-1.5 md:h-7 md:w-7",
                     ov.color === c
                       ? "scale-110 border-white ring-2 ring-white/40"
                       : "border-white/20 hover:scale-105",
@@ -875,7 +875,7 @@ function ImageEditor({
                     key={p.key}
                     onClick={() => patchOverlay({ position: p.key })}
                     className={cn(
-                      "px-3 py-2 font-mbc text-sm transition-colors",
+                      "h-11 px-3 py-2 font-mbc text-sm transition-colors md:h-auto",
                       ov.position === p.key
                         ? "bg-white/15 text-white"
                         : "bg-transparent text-white/40 hover:bg-white/5",
@@ -903,7 +903,7 @@ function GifEditor({
   gifs: UploadedFile[];
 }) {
   return (
-    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
+    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-4 md:p-6">
       <Field label="등록된 GIF">
         <ImagePicker
           files={gifs}
@@ -940,7 +940,7 @@ function ImagePicker({
     );
   }
   return (
-    <div className="grid max-h-[220px] grid-cols-4 gap-2 overflow-auto rounded-xl border border-white/5 bg-white/[0.02] p-2">
+    <div className="grid max-h-[220px] grid-cols-3 gap-2 md:grid-cols-4 overflow-auto rounded-xl border border-white/5 bg-white/[0.02] p-2">
       {files.map((f) => {
         const active = activeUrl === f.fileUrl;
         return (
@@ -1037,7 +1037,7 @@ function DefaultBannerEditor({
   );
 
   return (
-    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
+    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-4 md:p-6">
       {field("메인 텍스트", "mainText", "예: 2025학년도 2학기 동계캠프")}
       {field("서브 텍스트 1", "subText1", "예: 2025년, BSSM 해커톤")}
       {field("서브 텍스트 2", "subText2", "예: 장소   날짜")}
@@ -1061,7 +1061,7 @@ function BannerTimerEditor({
   const mode = value.mode ?? "down";
 
   return (
-    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
+    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-4 md:p-6">
       {/* 모드 */}
       <div className="flex overflow-hidden rounded-xl border border-white/10">
         {(["down", "up"] as const).map((m) => (
@@ -1069,7 +1069,7 @@ function BannerTimerEditor({
             key={m}
             onClick={() => onChange({ ...value, mode: m })}
             className={cn(
-              "flex-1 py-2.5 font-mbc text-sm transition-colors",
+              "h-11 flex-1 py-2.5 font-mbc text-sm transition-colors md:h-auto",
               mode === m ? "bg-white/15 text-white" : "bg-transparent text-white/40 hover:bg-white/5",
             )}
           >

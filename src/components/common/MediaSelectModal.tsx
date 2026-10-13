@@ -1,4 +1,5 @@
 "use client";
+import Portal from "./Portal";
 
 import { UploadedFile } from "@/types/file";
 import { useFiles } from "@/hooks/useFiles";
@@ -18,7 +19,8 @@ export default function MediaSelectModal({ onSelect, onClose }: MediaSelectModal
   }, [fetchFiles]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-10">
+    <Portal>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-10">
       <div className="bg-[#121212] border border-white/10 rounded-[32px] w-full max-w-5xl max-h-[80vh] overflow-y-auto p-12 custom-scrollbar">
         <div className="flex justify-between items-center mb-10">
           <h2 className="text-3xl font-bold text-white font-wooju">송출 미디어 선택</h2>
@@ -62,5 +64,6 @@ export default function MediaSelectModal({ onSelect, onClose }: MediaSelectModal
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

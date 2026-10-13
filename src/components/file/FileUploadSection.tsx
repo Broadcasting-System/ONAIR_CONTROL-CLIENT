@@ -41,16 +41,16 @@ export default function FileUploadSection({
   return (
     <section data-tour={tour}>
       <SectionHeader>{title}</SectionHeader>
-      <div className="flex flex-col gap-6 rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl relative overflow-hidden h-full">
+      <div className="flex flex-col gap-5 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md shadow-2xl relative overflow-hidden h-full md:gap-6 md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-8">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent opacity-50" />
 
         <div className="flex-1 w-full">
           {files.length === 0 ? (
-            <div className="flex items-center justify-center h-full min-h-[120px] text-white/40 text-sm">
+            <div className="flex items-center justify-center h-full min-h-[72px] text-white/40 text-sm md:min-h-[120px]">
               파일이 없어요
             </div>
           ) : displayType === "grid" ? (
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
               {files.map((file) => (
                 <FileCard
                   key={file.id}
@@ -62,7 +62,7 @@ export default function FileUploadSection({
               ))}
             </div>
           ) : (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2 md:gap-3">
               {files.map((file) => (
                 <AudioChip
                   key={file.id}
@@ -76,7 +76,7 @@ export default function FileUploadSection({
         </div>
 
         {!readonly && (
-          <div className="mt-auto pt-4 flex justify-center">
+          <div className="mt-auto flex justify-center md:pt-4">
             <input
               type="file"
               ref={fileInputRef}
@@ -85,7 +85,7 @@ export default function FileUploadSection({
               multiple
               className="hidden"
             />
-            <div className="w-[340px]">
+            <div className="w-full md:w-[340px]">
               <Button
                 tour={tour ? `${tour}.upload` : undefined}
                 label={isUploading ? "업로드 중..." : `${title} 파일 추가`}

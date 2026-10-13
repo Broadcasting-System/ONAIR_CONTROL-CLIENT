@@ -71,7 +71,7 @@ export default function FilesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-16 h-full pb-10">
+    <div className="flex flex-col gap-8 h-full md:gap-16 md:pb-10">
       <FileUploadSection
         tour="files.image"
         title="이미지"

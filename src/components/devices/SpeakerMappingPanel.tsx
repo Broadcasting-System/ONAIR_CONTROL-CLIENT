@@ -128,15 +128,15 @@ export default function SpeakerMappingPanel() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto pb-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 pb-4 md:gap-4 md:overflow-auto">
       <ConnectionCard />
 
       {/* 세션 */}
       <div
         data-tour="mapping.session"
         className={cn(
-          "flex flex-wrap items-center gap-3 rounded-xl border px-5 py-4",
-          active ? "border-red-400/40 bg-red-400/10" : "border-white/10 bg-white/[0.03]",
+          "flex flex-wrap items-center gap-3 rounded-[20px] border px-4 py-3.5 md:rounded-xl md:px-5 md:py-4",
+          active ? "border-red-400/40 bg-red-400/10" : "border-white/[0.09] bg-white/[0.045] md:border-white/10 md:bg-white/[0.03]",
         )}
       >
         {active ? (
@@ -149,7 +149,7 @@ export default function SpeakerMappingPanel() {
             <span className="font-pretendard text-xs text-white/40">
               울리는 칸 {current ? `${current[0]}행 ${current[1]}열` : "없음"}
             </span>
-            <div data-tour="mapping.session.controls" className="ml-auto flex gap-2">
+            <div data-tour="mapping.session.controls" className="grid w-full grid-cols-3 gap-2 md:ml-auto md:flex md:w-auto">
               <PanelButton onClick={() => ping(nextOf(selected))} disabled={busy}>
                 다음 칸 ▶
               </PanelButton>
@@ -171,8 +171,11 @@ export default function SpeakerMappingPanel() {
       </div>
 
       {/* 좌표 표 */}
-      <div data-tour="mapping.grid" className="rounded-2xl border border-white/5 bg-[#0a0a0a] p-4">
-        <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      <div data-tour="mapping.grid" className="no-scrollbar overflow-x-auto rounded-[20px] border border-white/5 bg-[#0a0a0a] p-3 md:overflow-visible md:rounded-2xl md:p-4">
+        <div
+          className="grid gap-1.5 max-md:min-w-[calc(var(--cols)*78px)]"
+          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, ["--cols" as string]: cols }}
+        >
           {draft.map((row, ri) =>
             row.map((name, ci) => {
               const coord: Coord = [ri + 1, ci + 1];
@@ -197,7 +200,7 @@ export default function SpeakerMappingPanel() {
                     type="button"
                     onClick={() => ping(coord)}
                     title={active ? "소리 확인" : undefined}
-                    className="flex items-center justify-between px-0.5 font-orbitron text-[9px] tracking-wider text-white/30 hover:text-white/60"
+                    className="flex h-6 items-center justify-between px-0.5 font-orbitron text-[10px] tracking-wider text-white/30 hover:text-white/60 md:h-auto md:text-[9px]"
                   >
                     {coord[0]}·{coord[1]}
                     {isCurrent && <span className="text-red-400">●</span>}
@@ -218,7 +221,7 @@ export default function SpeakerMappingPanel() {
                         ping(nextOf(coord));
                       }
                     }}
-                    className="h-7 w-full min-w-0 rounded bg-transparent px-1 text-center font-mbc text-[13px] text-white placeholder:text-white/15 focus:bg-white/10 focus:outline-none"
+                    className="h-10 w-full min-w-0 rounded bg-transparent px-1 text-center font-mbc text-base md:h-7 md:text-[13px] text-white placeholder:text-white/15 focus:bg-white/10 focus:outline-none"
                   />
                 </div>
               );
@@ -228,8 +231,8 @@ export default function SpeakerMappingPanel() {
       </div>
 
       {/* 도구 + 저장 */}
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
-        <div data-tour="mapping.fill" className="flex min-w-[320px] flex-1 flex-col gap-1">
+      <div className="flex flex-wrap items-end gap-3 border px-4 py-3.5 md:px-5 md:py-4 rounded-[20px] border-white/[0.09] bg-white/[0.045] md:rounded-xl md:border-white/10 md:bg-white/[0.03]">
+        <div data-tour="mapping.fill" className="flex w-full flex-1 flex-col gap-1 md:w-auto md:min-w-[320px]">
           <span className="font-mbc text-xs text-white/40">
             연속 채우기 ({selected[0]}·{selected[1]}부터)
           </span>
@@ -239,7 +242,7 @@ export default function SpeakerMappingPanel() {
               onChange={(e) => setFillText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && fillFromSelected()}
               placeholder="예: 1-1, 1-2"
-              className="h-10 min-w-0 flex-1 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white focus:border-white/30 focus:outline-none"
+              className="h-11 min-w-0 flex-1 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-base text-white focus:border-white/30 focus:outline-none md:h-10 md:text-sm"
             />
             <PanelButton onClick={fillFromSelected} disabled={!fillText.trim()}>
               채우기
@@ -294,7 +297,7 @@ function PanelButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "h-10 shrink-0 rounded-lg border px-4 font-mbc text-sm text-white transition-colors disabled:opacity-40",
+        "h-11 shrink-0 rounded-lg border px-4 font-mbc text-sm text-white transition-colors disabled:opacity-40 md:h-10",
         tone === "primary" && "border-emerald-400/40 bg-emerald-500/20 hover:bg-emerald-500/30",
         tone === "danger" && "border-red-400/40 bg-red-500/20 hover:bg-red-500/30",
         tone === "default" && "border-white/15 bg-white/10 hover:bg-white/15",
@@ -343,11 +346,11 @@ function ConnectionCard() {
     }
   };
 
-  const field = "h-10 rounded-lg border border-white/10 bg-[#141414] px-3 text-sm text-white focus:border-white/30 focus:outline-none";
+  const field = "h-11 rounded-lg border border-white/10 bg-[#141414] px-3 text-base text-white focus:border-white/30 focus:outline-none md:h-10 md:text-sm";
 
   return (
-    <div data-tour="mapping.connection" className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
-      <div className="flex items-center gap-2 self-center pr-2">
+    <div data-tour="mapping.connection" className="flex flex-wrap items-end gap-3 border px-4 py-3.5 md:px-5 md:py-4 rounded-[20px] border-white/[0.09] bg-white/[0.045] md:rounded-xl md:border-white/10 md:bg-white/[0.03]">
+      <div className="flex w-full items-center gap-2 self-center pr-2 md:w-auto">
         <span
           className={cn(
             "h-2.5 w-2.5 rounded-full",
@@ -356,18 +359,18 @@ function ConnectionCard() {
         />
         <span className="font-mbc text-sm text-white/70">매트릭스 {data.connected ? "연결됨" : "연결 안 됨"}</span>
       </div>
-      <label className="flex flex-col gap-1">
+      <label className="flex w-full flex-col gap-1 md:w-auto">
         <span className="font-mbc text-xs text-white/40">드라이버</span>
         <Select
           value={form.driver}
           onChange={(driver) => setForm({ ...form, driver })}
           options={data.drivers.map((d) => ({ value: d, label: d }))}
-          className={field}
+          className={cn(field, "max-md:w-full")}
         />
       </label>
-      <label className="flex flex-col gap-1">
+      <label className="flex w-full flex-col gap-1 md:w-auto">
         <span className="font-mbc text-xs text-white/40">주소</span>
-        <input value={form.host} onChange={(e) => setForm({ ...form, host: e.target.value })} className={cn(field, "w-44 font-orbitron")} />
+        <input value={form.host} onChange={(e) => setForm({ ...form, host: e.target.value })} className={cn(field, "w-full font-orbitron md:w-44")} />
       </label>
       <label className="flex flex-col gap-1">
         <span className="font-mbc text-xs text-white/40">포트</span>
@@ -380,12 +383,12 @@ function ConnectionCard() {
         저장
       </PanelButton>
       {testResult && <span className="self-center font-pretendard text-sm text-white/55">{testResult}</span>}
-      <div className="ml-auto flex items-center gap-3 self-center">
+      <div className="flex w-full items-center justify-between gap-3 self-center md:ml-auto md:w-auto md:justify-start">
         <button
           type="button"
           data-tour="mapping.learn"
           onClick={() => setLearning(true)}
-          className="flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3.5 py-2 font-mbc text-sm text-red-100 transition-colors hover:bg-red-500/20"
+          className="flex min-h-[44px] items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3.5 py-2 font-mbc text-sm text-red-100 md:min-h-0 transition-colors hover:bg-red-500/20"
         >
           <RadioTower size={15} />
           새 장비 배우기
@@ -421,7 +424,7 @@ function BackupRestore({ onRestored }: { onRestored: (m: SpeakerMatrix) => void 
 
   if (!backups.length) return null;
   return (
-    <div data-tour="mapping.backup" className="flex flex-col gap-1">
+    <div data-tour="mapping.backup" className="flex w-full flex-col gap-1 md:w-auto">
       <span className="font-mbc text-xs text-white/40">저장 이력</span>
       <div className="flex gap-2">
         <Select
@@ -429,6 +432,7 @@ function BackupRestore({ onRestored }: { onRestored: (m: SpeakerMatrix) => void 
           onChange={setName}
           placeholder="백업 선택"
           aria-label="백업 선택"
+          className="max-md:h-11 max-md:flex-1"
           options={backups.map((b) => ({ value: b.name, label: new Date(b.savedAt * 1000).toLocaleString("ko-KR") }))}
         />
         <PanelButton onClick={() => setConfirm(true)} disabled={!name}>

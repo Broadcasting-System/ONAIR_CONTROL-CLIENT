@@ -1,4 +1,5 @@
 import { X, AlertTriangle } from "lucide-react";
+import Portal from "./Portal";
 import Button from "./Button";
 
 interface ConfirmModalProps {
@@ -34,7 +35,8 @@ export default function ConfirmModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <Portal>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />
       <div className="relative z-10 w-full max-w-[520px] bg-[#1C1C1C] border border-white/10 rounded-2xl shadow-2xl overflow-hidden translate-y-0 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/5">
@@ -71,5 +73,6 @@ export default function ConfirmModal({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

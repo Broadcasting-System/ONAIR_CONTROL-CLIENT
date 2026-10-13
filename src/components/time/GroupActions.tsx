@@ -14,13 +14,13 @@ export default function GroupActions({
   hasCopiedData,
 }: GroupActionsProps) {
   return (
-    <div className="flex flex-col gap-[16px] w-[340px]">
+    <div className="flex w-full flex-col gap-3 md:w-[340px] md:gap-[16px]">
       <Button
         tour="time.copy"
         label="요일 시보 복사"
         onClick={onCopy}
         color="white"
-        className="h-[64px]"
+        className="h-[56px] md:h-[64px]"
       />
       <Button
         tour="time.paste"
@@ -28,14 +28,14 @@ export default function GroupActions({
         onClick={onPaste}
         disabled={!hasCopiedData}
         color="white"
-        className="h-[64px]"
+        className="h-[56px] md:h-[64px]"
       />
       <Button
         tour="time.reset"
         label="초기화"
         onClick={onReset}
         color="red"
-        className="h-[64px]"
+        className="h-[56px] md:h-[64px]"
       />
     </div>
   );

@@ -33,17 +33,17 @@ export default function FileCard({
           )
         ) : fileName.match(/\.(pdf)$/i) ? (
           <div className="absolute inset-0 bg-gradient-to-br from-red-700/20 to-red-900/20 flex flex-col items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-red-500/80 mb-2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><path d="M10 12v6" /><path d="M14 12v6" /><path d="M10 15h4" /></svg>
-            <span className="text-white/60 font-bold tracking-wider">PDF</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10 text-red-500/80 mb-1 md:w-16 md:h-16 md:mb-2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><path d="M10 12v6" /><path d="M14 12v6" /><path d="M10 15h4" /></svg>
+            <span className="text-[11px] text-white/60 font-bold tracking-wider md:text-base">PDF</span>
           </div>
         ) : fileName.match(/\.(ppt|pptx)$/i) ? (
           <div className="absolute inset-0 bg-gradient-to-br from-orange-700/20 to-red-900/20 flex flex-col items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-orange-500/80 mb-2"><path d="M2 3h20" /><path d="M21 3m-1 12h-4L21 12z" /><path d="m12 15 3 6" /><path d="m12 15-3 6" /><rect width="16" height="12" x="4" y="3" rx="2" /></svg>
-            <span className="text-white/60 font-bold tracking-wider">PRESENTATION</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10 text-orange-500/80 mb-1 md:w-16 md:h-16 md:mb-2"><path d="M2 3h20" /><path d="M21 3m-1 12h-4L21 12z" /><path d="m12 15 3 6" /><path d="m12 15-3 6" /><rect width="16" height="12" x="4" y="3" rx="2" /></svg>
+            <span className="text-[11px] text-white/60 font-bold tracking-wider md:text-base">PRESENTATION</span>
           </div>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-t from-red-900/10 to-transparent flex flex-col items-center justify-center">
-            <h3 className="text-xl font-black italic tracking-wider text-white/50 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+            <h3 className="text-sm font-black italic tracking-wider text-white/50 md:text-xl drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
               NO THUMBNAIL
             </h3>
           </div>
@@ -51,7 +51,7 @@ export default function FileCard({
       </div>
 
       {/* File Name Header/Overlay */}
-      <div className="absolute bottom-0 w-full p-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute bottom-0 w-full p-2 bg-gradient-to-t from-black/80 to-transparent opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
         <p className="text-xs font-medium text-white truncate px-1 text-center">
           {fileName}
         </p>

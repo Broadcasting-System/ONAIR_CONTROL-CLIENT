@@ -134,7 +134,7 @@ export default function BellEditor({
   };
 
   return (
-    <div data-tour="time.editor" className="flex flex-col w-full max-w-[600px] h-full gap-6">
+    <div data-tour="time.editor" className="flex w-full max-w-[600px] flex-col gap-5 md:h-full md:gap-6">
       <TextInput
         tour="time.editor.label"
         value={label}
@@ -144,7 +144,7 @@ export default function BellEditor({
       />
 
       {/* 빠른 선택 버튼 (학년/전체 일괄 토글) */}
-      <div data-tour="time.editor.quick" className="flex flex-col gap-2 px-2">
+      <div data-tour="time.editor.quick" className="flex flex-col gap-2 md:px-2">
         <span className="font-mbc text-sm text-white/50">빠른 선택</span>
         <div className="flex flex-wrap gap-2">
           {QUICK_GROUPS.map((g) => {
@@ -157,7 +157,7 @@ export default function BellEditor({
                 type="button"
                 onClick={() => toggleGroup(ids)}
                 className={cn(
-                  "rounded-lg border px-4 py-2 font-mbc text-sm transition-colors",
+                  "min-h-[44px] rounded-lg border px-4 py-2 font-mbc text-sm transition-colors md:min-h-0",
                   active
                     ? "border-[#c4b5fd] bg-[#a78bfa]/20 text-white"
                     : "border-white/15 bg-white/[0.03] text-white/60 hover:border-white/30 hover:text-white",
@@ -171,7 +171,7 @@ export default function BellEditor({
       </div>
 
       {staleSpeakers.length > 0 && (
-        <div className="flex flex-col gap-2 px-2">
+        <div className="flex flex-col gap-2 md:px-2">
           <span className="font-mbc text-sm text-amber-200/80">
             목록에 없는 대상
           </span>
@@ -181,7 +181,7 @@ export default function BellEditor({
                 key={id}
                 type="button"
                 onClick={() => toggleSpeaker(id)}
-                className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 font-mbc text-sm text-amber-100 transition-colors hover:bg-amber-500/20"
+                className="min-h-[44px] rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 md:min-h-0 font-mbc text-sm text-amber-100 transition-colors hover:bg-amber-500/20"
               >
                 {id} ×
               </button>
@@ -190,7 +190,7 @@ export default function BellEditor({
         </div>
       )}
 
-      <div data-tour="time.editor.speakers" className="grid grid-cols-3 gap-x-4 gap-y-3 px-2 max-h-[350px] overflow-y-auto pr-4 custom-scrollbar">
+      <div data-tour="time.editor.speakers" className="custom-scrollbar grid grid-cols-3 gap-x-2.5 gap-y-2.5 md:max-h-[350px] md:gap-x-4 md:gap-y-3 md:overflow-y-auto md:px-2 md:pr-4">
         {speakers.map((speaker) => {
           const isSelected = selectedSpeakers.includes(speaker.id);
           return (
@@ -211,7 +211,7 @@ export default function BellEditor({
         })}
       </div>
 
-      <div className="flex gap-6 px-2 mt-auto">
+      <div className="mt-auto flex flex-col gap-4 md:flex-row md:gap-6 md:px-2">
         <div className="flex-1 flex flex-col gap-2">
           <label className="text-white text-[15px] font-bold">시보 시간</label>
           <input
@@ -219,7 +219,7 @@ export default function BellEditor({
             data-tour="time.editor.time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="h-[48px] w-full rounded-xl border border-white/5 bg-[#1C1C1C] px-4 text-md font-pretendard text-white focus:border-white/20 focus:outline-none transition-all [color-scheme:dark]"
+            className="h-[48px] w-full rounded-xl border border-white/5 bg-[#1C1C1C] px-4 text-md font-pretendard max-md:text-base text-white focus:border-white/20 focus:outline-none transition-all [color-scheme:dark]"
           />
         </div>
         <div className="flex-1 flex flex-col gap-2">
@@ -236,12 +236,12 @@ export default function BellEditor({
               // value·저장값 모두 호스트 없는 경로로 통일 → 기기 간 동기화
               ...audioFiles.map((file) => ({ value: audioKey(file.url), label: file.name })),
             ]}
-            className="h-[48px] w-full rounded-xl border-white/5 bg-[#1C1C1C] px-4 text-md focus:border-white/20"
+            className="h-[48px] w-full rounded-xl border-white/5 bg-[#1C1C1C] px-4 text-md focus:border-white/20 max-md:text-base"
           />
         </div>
       </div>
 
-      <div data-tour="time.editor.volume" className="flex flex-col gap-3 px-2">
+      <div data-tour="time.editor.volume" className="flex flex-col gap-3 md:px-2">
         <div className="flex items-baseline justify-between">
           <label htmlFor="bell-volume" className="text-white text-[15px] font-bold">
             송출 볼륨
@@ -259,7 +259,7 @@ export default function BellEditor({
             onChange={(e) => setVolume(Number(e.target.value))}
             onPointerDown={() => previewing !== "idle" && stopPreview()}
             onDoubleClick={() => setVolume(100)}
-            className="h-2 flex-1 cursor-pointer accent-[#a78bfa]"
+            className="h-11 flex-1 cursor-pointer accent-[#a78bfa] max-md:min-w-0 md:h-2"
           />
           <button
             type="button"
@@ -267,7 +267,7 @@ export default function BellEditor({
             onClick={togglePreview}
             disabled={!audioFile || audioFile === "none"}
             className={cn(
-              "h-[40px] shrink-0 rounded-lg border px-4 font-mbc text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-35",
+              "h-11 shrink-0 rounded-lg border px-4 font-mbc md:h-[40px] text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-35",
               previewing !== "idle"
                 ? "border-[#c4b5fd] bg-[#a78bfa]/20 text-white"
                 : "border-white/15 bg-white/[0.03] text-white/70 hover:border-white/30 hover:text-white",
@@ -278,7 +278,7 @@ export default function BellEditor({
         </div>
       </div>
 
-      <div className="flex gap-4 mt-2 px-2 pb-4">
+      <div className="mt-2 flex gap-3 pb-4 md:gap-4 md:px-2">
         {bell && onDelete && (
           <div className="flex-1">
             <Button

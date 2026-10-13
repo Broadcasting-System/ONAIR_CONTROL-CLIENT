@@ -25,7 +25,12 @@ import type {
 /* ---------------- 공통 조각 ---------------- */
 
 const field =
-  "h-10 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 font-pretendard text-[14px] text-white outline-none placeholder:text-white/30 focus:border-white/30";
+  "h-11 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 font-pretendard text-base text-white outline-none placeholder:text-white/30 focus:border-white/30 md:h-10 md:text-[14px]";
+
+/** 폰은 패널 여백을 줄인다 */
+const panelCls = "rounded-[20px] p-4 md:rounded-[24px] md:p-7";
+/** 폰 카드 목록의 한 줄 */
+const mRow = "flex flex-col gap-1.5 border-b border-white/[0.06] px-4 py-3 last:border-b-0";
 
 /** 상태 점 — 정상(흰 점) · 문제(빨간 점) · 확인 못 함·꺼짐(회색) */
 function Dot({ ok }: { ok: boolean | null }) {
@@ -135,7 +140,7 @@ function StatusSection() {
   const s = status.data;
 
   return (
-    <Panel tour="cloudflare.status" title="연결 상태">
+    <Panel tour="cloudflare.status" title="연결 상태" className={panelCls}>
       {loadError(status) ? (
         <Problem>{errText(loadError(status))}</Problem>
       ) : !s ? (
@@ -151,7 +156,7 @@ function StatusSection() {
             </span>
             <ActionButton
               tour="cloudflare.status.recheck"
-              className="ml-auto"
+              className="ml-auto max-md:h-11"
               busy={refresh.isPending}
               icon={<RefreshCw size={14} />}
               onClick={() => refresh.mutate()}
@@ -169,13 +174,27 @@ function StatusSection() {
           <button
             type="button"
             onClick={() => setShowPerms(!showPerms)}
-            className="w-fit font-pretendard text-[13.5px] text-white/60 underline-offset-4 hover:text-white hover:underline"
+            className="min-h-[44px] w-fit font-pretendard text-[13.5px] text-white/60 underline-offset-4 hover:text-white hover:underline md:min-h-0"
           >
             {showPerms ? "토큰 권한 접기" : "토큰 권한"}
           </button>
           {showPerms && (
             <div className="rounded-xl border border-white/10 bg-black/20">
-              <table className="w-full text-left font-pretendard text-[14px]">
+              <ul className="font-pretendard text-[14px] md:hidden">
+                {s.permissions.map((p) => (
+                  <li key={p.key} className={mRow}>
+                    <span className="flex items-start justify-between gap-3">
+                      <span className="min-w-0 break-words font-mono text-[13px] text-white/90">{p.name}</span>
+                      <span className="flex shrink-0 items-center gap-2 text-white/80">
+                        <Dot ok={p.ok} />
+                        <span className="mt-0.5">{p.ok === true ? "있음" : p.ok === false ? "없음" : "확인 못 함"}</span>
+                      </span>
+                    </span>
+                    <span className="text-[13px] text-white/60">{p.usedFor}</span>
+                  </li>
+                ))}
+              </ul>
+              <table className="hidden w-full text-left font-pretendard text-[14px] md:table">
                 <thead className="text-white/45">
                   <tr className="border-b border-white/10">
                     <th className="px-4 py-2.5 font-normal">권한</th>
@@ -226,7 +245,7 @@ function Seg<T extends string>({ items, value, onChange }: { items: { key: T; la
           aria-pressed={value === it.key}
           onClick={() => onChange(it.key)}
           className={cn(
-            "h-9 rounded-lg border px-3.5 font-pretendard text-[14px] font-semibold transition-colors",
+            "h-11 rounded-lg border px-3.5 font-pretendard text-[14px] font-semibold transition-colors md:h-9",
             value === it.key
               ? "border-[#FF3B3B]/60 bg-white/[0.06] text-white"
               : "border-white/10 text-white/60 hover:bg-white/[0.05] hover:text-white",
@@ -288,7 +307,7 @@ function IssueForm({ domain, onDone }: { domain: string; onDone: () => void }) {
   });
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-black/25 px-5 py-5">
+    <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-black/25 px-4 py-4 md:px-5 md:py-5">
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <label className="flex flex-col gap-1.5">
           <span className="font-pretendard text-[13px] font-semibold text-white/70">주소</span>
@@ -301,7 +320,7 @@ function IssueForm({ domain, onDone }: { domain: string; onDone: () => void }) {
               spellCheck={false}
               className={cn(field, "font-mono")}
             />
-            <span className="shrink-0 font-mono text-[14px] text-white/45">@{domain}</span>
+            <span className="min-w-0 shrink truncate font-mono text-[14px] text-white/45 md:shrink-0">@{domain}</span>
           </div>
           {problem && <span className="font-pretendard text-[12.5px] text-[#FF8B8B]">{problem}</span>}
         </label>
@@ -327,15 +346,16 @@ function IssueForm({ domain, onDone }: { domain: string; onDone: () => void }) {
           className={field}
         />
       </label>
-      <div className="flex items-center gap-2">
-        <span className="mr-auto font-pretendard text-[13px] text-white/50">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="mr-auto min-w-0 break-all font-pretendard text-[13px] text-white/50 max-md:w-full">
           {l && !problem && emails.length ? `${l}@${domain} → ${emails.join(", ")}` : ""}
         </span>
-        <ActionButton tone="ghost" onClick={onDone}>
+        <ActionButton tone="ghost" className="max-md:h-11" onClick={onDone}>
           닫기
         </ActionButton>
         <ActionButton
           tone="primary"
+          className="max-md:h-11"
           busy={issue.isPending}
           disabled={!l || !emails.length || !!problem}
           onClick={() => issue.mutate()}
@@ -387,7 +407,7 @@ function MailSection() {
   const s = d?.settings;
 
   return (
-    <Panel tour="cloudflare.mail" title="메일 주소" hint={`@${domain}`}>
+    <Panel tour="cloudflare.mail" title="메일 주소" hint={`@${domain}`} className={panelCls}>
       {loadError(mail) ? (
         <Problem>{errText(loadError(mail))}</Problem>
       ) : !d ? (
@@ -411,11 +431,11 @@ function MailSection() {
             <span className="text-white/55">
               워커 비밀값 {s?.workerSecretSet ? "있음" : "없음"}
             </span>
-            <div data-tour="cloudflare.mail.actions" className="ml-auto flex gap-2">
-              <ActionButton busy={sync.isPending} icon={<RefreshCw size={14} />} onClick={() => sync.mutate()}>
+            <div data-tour="cloudflare.mail.actions" className="grid w-full grid-cols-2 gap-2 md:ml-auto md:flex md:w-auto">
+              <ActionButton className="max-md:h-11" busy={sync.isPending} icon={<RefreshCw size={14} />} onClick={() => sync.mutate()}>
                 규칙 다시 맞추기
               </ActionButton>
-              <ActionButton tone="primary" icon={<Plus size={15} />} onClick={() => setIssuing(true)} disabled={issuing}>
+              <ActionButton tone="primary" className="max-md:h-11" icon={<Plus size={15} />} onClick={() => setIssuing(true)} disabled={issuing}>
                 주소 발급
               </ActionButton>
             </div>
@@ -428,7 +448,71 @@ function MailSection() {
 
           <Seg items={ADDR_FILTERS} value={filter} onChange={setFilter} />
           <div data-tour="cloudflare.mail.table" className="overflow-x-auto rounded-xl border border-white/10">
-            <table className="w-full min-w-[720px] text-left font-pretendard text-[14px]">
+            <ul className="font-pretendard text-[14px] md:hidden">
+              {rows.length === 0 ? (
+                <li className="px-4 py-8 text-center text-white/45">
+                  {filter === "extra" ? "추가 주소가 없어요" : "주소가 없어요"}
+                </li>
+              ) : (
+                rows.map((a) => (
+                  <li key={`${a.kind}-${a.id}`} className={mRow}>
+                    <span className="flex items-start justify-between gap-3">
+                      <span className="min-w-0 break-all font-mono text-[15px] font-semibold text-white">
+                        {a.address}
+                        <span className="font-medium text-white/40">@{domain}</span>
+                      </span>
+                      <span className="shrink-0">
+                        <AddrStatus a={a} />
+                      </span>
+                    </span>
+                    <span className="min-w-0 break-all text-[13px] text-white/75">
+                      {a.kind === "member" ? (
+                        <>
+                          {a.cohort}기 {a.memberName}
+                          {a.forwardHint && <span className="text-white/45"> · {a.forwardHint}</span>}
+                        </>
+                      ) : a.kind === "role" ? (
+                        a.forwardHint
+                      ) : (
+                        a.forwardTo.join(", ")
+                      )}
+                    </span>
+                    {a.kind === "member" && a.error && (
+                      <span className="text-[13px] text-[#FF8B8B]" title={a.error}>
+                        Cloudflare 실패
+                      </span>
+                    )}
+                    {(a.kind === "extra" || a.kind === "member") && (
+                      <span className="flex items-center gap-3">
+                        <span className="min-w-0 flex-1 text-[13px] text-white/55">
+                          {a.kind === "extra"
+                            ? [a.note, a.createdBy && `${a.createdBy} · ${day(a.createdAt)}`].filter(Boolean).join(" · ")
+                            : a.roleLabel}
+                        </span>
+                        {a.kind === "extra" && (
+                          <ActionButton
+                            tone="ghost"
+                            className="-mr-2 h-11 px-3"
+                            onClick={() =>
+                              setConfirm({
+                                title: "주소 지우기",
+                                message: `${a.address}@${domain} 를 지울까요?\n메일이 더는 전달되지 않아요.`,
+                                confirmText: "지우기",
+                                run: () => cloudflareApi.deleteAddress(a.id),
+                                done: `${a.address}@${domain} 를 지웠어요`,
+                              })
+                            }
+                          >
+                            지우기
+                          </ActionButton>
+                        )}
+                      </span>
+                    )}
+                  </li>
+                ))
+              )}
+            </ul>
+            <table className="hidden w-full min-w-[720px] text-left font-pretendard text-[14px] md:table">
               <thead className="text-white/45">
                 <tr className="border-b border-white/10">
                   <th className="px-4 py-3 font-normal">주소</th>
@@ -510,7 +594,35 @@ function MailSection() {
           <div data-tour="cloudflare.mail.inbox" className="flex flex-col gap-2">
             <h4 className="font-mbc text-[17px] text-white">받을 메일</h4>
             <div className="overflow-x-auto rounded-xl border border-white/10">
-              <table className="w-full min-w-[560px] text-left font-pretendard text-[14px]">
+              <ul className="font-pretendard text-[14px] md:hidden">
+                {d.destinations.length === 0 ? (
+                  <li className="px-4 py-6 text-center text-white/45">받을 메일이 없어요</li>
+                ) : (
+                  d.destinations.map((x) => (
+                    <li key={x.id} className={mRow}>
+                      <span className="flex items-start justify-between gap-3">
+                        <span className="min-w-0 break-all font-mono text-[14px] text-white/90">{x.email}</span>
+                        <span className="flex shrink-0 items-start gap-2 text-white/85">
+                          <Dot ok={x.verified} />
+                          <span className="mt-0.5">{x.verified ? "확인됨" : "확인 대기"}</span>
+                        </span>
+                      </span>
+                      {x.usedBy.length > 0 && <span className="text-[13px] text-white/60">{x.usedBy.join(", ")}</span>}
+                      {!x.verified && (
+                        <ActionButton
+                          tone="ghost"
+                          className="-ml-2 h-11 w-fit px-3"
+                          busy={resend.isPending && resend.variables === x.id}
+                          onClick={() => resend.mutate(x.id)}
+                        >
+                          확인 메일 다시 보내기
+                        </ActionButton>
+                      )}
+                    </li>
+                  ))
+                )}
+              </ul>
+              <table className="hidden w-full min-w-[560px] text-left font-pretendard text-[14px] md:table">
                 <thead className="text-white/45">
                   <tr className="border-b border-white/10">
                     <th className="px-4 py-3 font-normal">메일</th>
@@ -590,6 +702,7 @@ function AccessEmailSection() {
   return (
     <Panel
       tour="cloudflare.access"
+      className={panelCls}
       title="로그인 허용 이메일"
       hint={d ? `${d.app.domain} · 정책 '${d.policy.name}'` : undefined}
     >
@@ -611,14 +724,14 @@ function AccessEmailSection() {
               spellCheck={false}
               className={cn(field, "max-w-[420px]")}
             />
-            <ActionButton tone="primary" busy={add.isPending} disabled={!valid} onClick={() => add.mutate(value)}>
+            <ActionButton tone="primary" className="max-md:h-11" busy={add.isPending} disabled={!valid} onClick={() => add.mutate(value)}>
               더하기
             </ActionButton>
           </div>
           <ul className="flex flex-col rounded-xl border border-white/10">
             {d.emails.map((e) => (
-              <li key={e.email} className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3 last:border-b-0">
-                <span className="font-mono text-[14.5px] text-white">{e.email}</span>
+              <li key={e.email} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/[0.06] px-4 py-3 last:border-b-0 md:flex-nowrap">
+                <span className="min-w-0 break-all font-mono text-[14.5px] text-white">{e.email}</span>
                 {e.member && <span className="font-pretendard text-[14px] text-white/55">{e.member}</span>}
                 <span className="ml-auto font-pretendard text-[13.5px] text-white/50">
                   {e.protected ? `${e.reason} · 고정` : ""}
@@ -626,7 +739,7 @@ function AccessEmailSection() {
                 {!e.protected && (
                   <ActionButton
                     tone="ghost"
-                    className="h-9 px-3"
+                    className="h-11 px-3 md:h-9"
                     onClick={() =>
                       setConfirm({
                         title: "로그인 허용 빼기",
@@ -681,14 +794,60 @@ function DeviceSection() {
   const d = list.data;
 
   return (
-    <Panel tour="cloudflare.device-keys" title="기기 접속 키">
+    <Panel tour="cloudflare.device-keys" title="기기 접속 키" className={panelCls}>
       {loadError(list) ? (
         <Problem>{errText(loadError(list))}</Problem>
       ) : !d ? (
         <Loading />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-white/10">
-          <table className="w-full min-w-[720px] text-left font-pretendard text-[14px]">
+          <ul className="font-pretendard text-[14px] md:hidden">
+            {d.devices.length === 0 ? (
+              <li className="px-4 py-8 text-center text-white/45">기기 접속 키가 없어요</li>
+            ) : (
+              d.devices.map((x) => (
+                <li key={x.tokenId} className={mRow}>
+                  <span>
+                    <span className={cn("font-mbc text-[15px]", x.owner.kind === "member" ? "text-white" : "text-white/60")}>
+                      {ownerText(x)}
+                    </span>
+                    {x.owner.roleLabel && <span className="ml-2 text-[13px] text-white/45">{x.owner.roleLabel}</span>}
+                    {x.mine && <span className="ml-2 text-[13px] text-white/45">· 이 기기</span>}
+                  </span>
+                  <span className="break-all text-[13px] text-white/70">
+                    {x.name} <span className="font-mono text-white/45">· {x.clientIdTail}</span>
+                  </span>
+                  <span className="flex items-center gap-3">
+                    <span className="min-w-0 flex-1 font-mono text-[12.5px] tabular-nums text-white/60">
+                      {day(x.createdAt)} → {day(x.expiresAt)}
+                    </span>
+                    {x.canDisconnect ? (
+                      <ActionButton
+                        tone="ghost"
+                        className="-mr-2 h-11 px-3 text-[#ff9b9b] enabled:hover:text-[#ffb3b3]"
+                        onClick={() =>
+                          setConfirm({
+                            title: "기기 키 끊기",
+                            message: disconnectMessage(x),
+                            confirmText: "끊기",
+                            run: () => cloudflareApi.disconnect(x.tokenId),
+                            done: x.owner.kind === "member" ? `${x.owner.name} 님의 기기를 끊었어요` : "키를 끊었어요",
+                          })
+                        }
+                      >
+                        끊기
+                      </ActionButton>
+                    ) : (
+                      <span className="shrink-0 text-[13px] text-white/35">
+                        {x.mine ? "내 기기" : x.owner.superadmin ? "최고 관리자" : x.owner.kind === "other" ? "최고 관리자만" : ""}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))
+            )}
+          </ul>
+          <table className="hidden w-full min-w-[720px] text-left font-pretendard text-[14px] md:table">
             <thead className="text-white/45">
               <tr className="border-b border-white/10">
                 <th className="px-4 py-3 font-normal">누구</th>
@@ -815,8 +974,8 @@ function SettingsSection() {
     onError: (e) => setMsg({ text: errText(e), error: true }),
   });
 
-  if (loadError(settings)) return <Panel title="연결 설정"><Problem>{errText(loadError(settings))}</Problem></Panel>;
-  if (!s) return <Panel title="연결 설정"><Loading /></Panel>;
+  if (loadError(settings)) return <Panel title="연결 설정" className={panelCls}><Problem>{errText(loadError(settings))}</Problem></Panel>;
+  if (!s) return <Panel title="연결 설정" className={panelCls}><Loading /></Panel>;
 
   const submit = () => {
     setMsg(null);
@@ -835,7 +994,7 @@ function SettingsSection() {
   };
 
   return (
-    <Panel tour="cloudflare.settings" title="연결 설정">
+    <Panel tour="cloudflare.settings" title="연결 설정" className={panelCls}>
       <div className="flex flex-col gap-5">
         <label className="flex flex-col gap-1.5">
           <span className="font-pretendard text-[13px] font-semibold text-white/70">API 토큰</span>
@@ -855,7 +1014,7 @@ function SettingsSection() {
                 disabled={save.isPending}
                 onClick={() => (clearArmed ? save.mutate({ apiToken: null }) : setClearArmed(true))}
                 className={cn(
-                  "h-10 shrink-0 rounded-lg border px-3 font-pretendard text-[13px] transition-colors disabled:opacity-50",
+                  "h-11 shrink-0 rounded-lg border px-3 font-pretendard text-[13px] transition-colors disabled:opacity-50 md:h-10",
                   clearArmed
                     ? "border-[#FF3B3B] bg-[#FF3B3B] text-white"
                     : "border-white/10 text-white/60 hover:bg-white/[0.06] hover:text-white",
@@ -885,7 +1044,7 @@ function SettingsSection() {
                 placeholder={r.placeholder}
                 autoComplete="off"
                 spellCheck={false}
-                className={cn(field, "font-mono text-[13.5px]")}
+                className={cn(field, "font-mono md:text-[13.5px]")}
               />
             </label>
           ))}
@@ -912,13 +1071,14 @@ function SettingsSection() {
             data-tour="cloudflare.settings.save"
             onClick={submit}
             disabled={save.isPending}
-            className="flex h-10 items-center gap-1.5 rounded-lg border border-white/20 bg-white px-4 font-pretendard text-[14px] font-semibold text-black transition-colors enabled:hover:bg-white/85 disabled:opacity-50"
+            className="flex h-11 items-center gap-1.5 rounded-lg border border-white/20 bg-white px-4 md:h-10 font-pretendard text-[14px] font-semibold text-black transition-colors enabled:hover:bg-white/85 disabled:opacity-50"
           >
             {save.isPending && <Loader2 size={14} className="animate-spin" />}
             저장
           </button>
           <ActionButton
             tour="cloudflare.settings.test"
+            className="max-md:h-11"
             busy={runTest.isPending}
             onClick={() => {
               setTest(null);
@@ -953,7 +1113,7 @@ function SettingsSection() {
 export default function CloudflarePanel() {
   const { isSuperadmin } = useMe();
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-auto pb-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 pb-4 md:gap-5 md:overflow-auto">
       <StatusSection />
       <MailSection />
       <AccessEmailSection />

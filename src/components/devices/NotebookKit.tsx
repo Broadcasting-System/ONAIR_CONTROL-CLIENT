@@ -70,7 +70,7 @@ export default function NotebookKit() {
     : "";
 
   return (
-    <section data-tour="bridges.kit" className="flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-5">
+    <section data-tour="bridges.kit" className="flex flex-col gap-4 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:rounded-2xl md:border-white/[0.08] md:bg-[#0a0a0a] md:p-5 md:backdrop-blur-none">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-mbc text-lg text-white">노트북 설치 파일</h3>
@@ -90,7 +90,7 @@ export default function NotebookKit() {
       </ol>
 
       <div data-tour="bridges.kit.download" className="flex flex-wrap items-end gap-3">
-        <Field label="노트북 이름" className="w-[190px]">
+        <Field label="노트북 이름" className="w-full md:w-[190px]">
           <input
             list="onair-kit-names"
             value={name}
@@ -104,7 +104,7 @@ export default function NotebookKit() {
             ))}
           </datalist>
         </Field>
-        <Field label="ONAIR 서버 주소" className="min-w-[250px] flex-1">
+        <Field label="ONAIR 서버 주소" className="w-full flex-1 md:w-auto md:min-w-[250px]">
           <input
             value={server}
             onChange={(e) => setServer(e.target.value)}
@@ -112,10 +112,10 @@ export default function NotebookKit() {
             className={cn(inputCls, "font-orbitron", serverBad ? badBorder : okBorder)}
           />
         </Field>
-        <ActionButton tour="bridges.kit.zip" tone="primary" icon={<Download size={15} />} busy={busy === "zip"} disabled={blocked} onClick={downloadZip}>
+        <ActionButton tour="bridges.kit.zip" tone="primary" icon={<Download size={15} />} busy={busy === "zip"} disabled={blocked} onClick={downloadZip} className="max-md:h-11 max-md:w-full">
           이 컴퓨터로 받기
         </ActionButton>
-        <ActionButton tour="bridges.kit.link" icon={<Link2 size={15} />} busy={busy === "link"} disabled={blocked} onClick={makeLink}>
+        <ActionButton tour="bridges.kit.link" icon={<Link2 size={15} />} busy={busy === "link"} disabled={blocked} onClick={makeLink} className="max-md:h-11 max-md:w-full">
           노트북에서 받을 주소
         </ActionButton>
       </div>
@@ -128,7 +128,7 @@ export default function NotebookKit() {
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#00FF57]/25 bg-[#00FF57]/[0.05] px-4 py-3">
           <span className="font-pretendard text-xs text-white/50">{until} 까지</span>
           <code className="min-w-0 break-all font-mono text-sm text-[#9dffc1]">{link.url}</code>
-          <ActionButton tone="ghost" icon={<Copy size={14} />} onClick={copy} className="ml-auto">
+          <ActionButton tone="ghost" icon={<Copy size={14} />} onClick={copy} className="ml-auto max-md:h-11">
             복사
           </ActionButton>
         </div>

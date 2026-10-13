@@ -22,7 +22,7 @@ export default function SpeakersPage() {
         )}
       </header>
 
-      <div className="rounded-[24px] border border-sidebar-border bg-sidebar p-6 backdrop-blur-md shadow-2xl">
+      <div className="rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md shadow-2xl md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-6">
         <SpeakerPanel
           zones={zones}
           onToggle={toggleSpeaker}

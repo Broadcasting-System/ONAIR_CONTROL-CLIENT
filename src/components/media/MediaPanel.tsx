@@ -110,11 +110,11 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
   const activeFiles = files[tab] ?? [];
 
   return (
-    <div className="flex h-full w-full flex-col gap-6 px-[20px]">
+    <div className="flex w-full flex-col gap-6 md:h-full md:px-[20px]">
       <header className="flex flex-wrap items-center gap-5">{lead}</header>
-      <div className="flex min-h-0 flex-1 gap-10">
+      <div className="flex min-h-0 flex-1 flex-col gap-8 md:flex-row md:gap-10">
         {/* 좌측: 미디어 목록 */}
-        <div className="flex w-[420px] shrink-0 flex-col gap-5" data-tour="media.select">
+        <div className="flex w-full shrink-0 flex-col gap-5 md:w-[420px]" data-tour="media.select">
           <SectionHeader>미디어 선택</SectionHeader>
 
           {!canOperate && (
@@ -133,7 +133,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                   setYtMode(false);
                 }}
                 className={cn(
-                  "rounded-xl border px-4 py-2 font-mbc text-sm transition-all",
+                  "h-11 rounded-xl border px-4 py-2 font-mbc text-sm transition-all md:h-auto",
                   tab === t.key && !timerMode && !ytMode
                     ? "border-white/20 bg-white/10 text-white"
                     : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
@@ -151,7 +151,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
               }}
               disabled={!canOperate}
               className={cn(
-                "rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40",
+                "h-11 rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40 md:h-auto",
                 ytMode
                   ? "border-red-500/40 bg-red-500/15 text-red-100"
                   : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
@@ -168,7 +168,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
               }}
               disabled={!canOperate}
               className={cn(
-                "rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40",
+                "h-11 rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40 md:h-auto",
                 timerMode
                   ? "border-white/20 bg-white/10 text-white"
                   : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
@@ -182,7 +182,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
               onClick={isSharing ? stopShare : startShare}
               disabled={!canOperate && !isSharing}
               className={cn(
-                "flex items-center gap-2 rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40",
+                "flex h-11 items-center gap-2 rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40 md:h-auto",
                 isSharing
                   ? "border-red-500/50 bg-red-500/15 text-red-200 hover:bg-red-500/25"
                   : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
@@ -222,7 +222,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
               onClear={clearDisplay}
             />
           ) : (
-          <div className="flex flex-1 flex-col gap-2 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a] p-3" data-tour="media.file-list">
+          <div className="flex max-h-[50vh] flex-1 flex-col gap-2 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a] p-3 md:max-h-none" data-tour="media.file-list">
             {isLoading ? (
               <p className="p-4 font-pretendard text-white/40">불러오는 중…</p>
             ) : activeFiles.length === 0 ? (
@@ -250,10 +250,10 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
 
         {/* 우측: 미리보기 + 재생 제어 */}
         <div className="flex flex-1 flex-col gap-5 overflow-hidden">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col items-start md:flex-row md:items-center md:justify-between">
             <SectionHeader>송출 미리보기</SectionHeader>
             {/* 채널 선택 — 채널마다 독립 송출(CH1=기본). 송출 화면 연결되면 초록 점 */}
-            <div className="flex items-center gap-2" data-tour="media.channel-select">
+            <div className="flex flex-wrap items-center gap-2 pr-1 pt-1 md:flex-nowrap md:pr-0 md:pt-0" data-tour="media.channel-select">
               {/* 스피커 매트릭스 연결 상태 */}
               {health && !health.matrix.connected && (
                 <span
@@ -280,7 +280,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                     title={title}
                     aria-pressed={channel === ch}
                     className={cn(
-                      "relative flex h-9 w-12 items-center justify-center rounded-xl border font-orbitron text-sm transition-all",
+                      "relative flex h-11 w-12 items-center justify-center rounded-xl border font-orbitron text-sm transition-all md:h-9",
                       channel === ch
                         ? "border-red-400/50 bg-red-400/15 text-white"
                         : "border-white/10 bg-white/[0.03] text-white/45 hover:bg-white/5",
@@ -303,7 +303,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
           </div>
 
           {/* 미리보기 (높이 고정) — 화면 공유 중이면 내 화면 로컬 프리뷰 */}
-          <div className="relative h-[48vh] w-full shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black" data-tour="media.preview">
+          <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black md:aspect-auto md:h-[48vh]" data-tour="media.preview">
             {sharingHere ? (
               <ScreenLocalPreview stream={localStream} />
             ) : (
@@ -312,7 +312,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
           </div>
 
           {/* 재생 제어 바: 하단 고정 */}
-          <div className="shrink-0 rounded-2xl border border-white/5 bg-[#0a0a0a] p-6" data-tour="media.controls">
+          <div className="shrink-0 rounded-2xl border border-white/5 bg-[#0a0a0a] p-4 md:p-6" data-tour="media.controls">
             {content?.type === "video" && pb ? (
               <div className="flex flex-col gap-4">
                 {/* 진행바 */}
@@ -353,7 +353,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                   <button
                     onClick={() => setLoop(!pb.loop)}
                     className={cn(
-                      "shrink-0 whitespace-nowrap rounded-xl border px-4 py-2 font-mbc text-sm transition-colors",
+                      "h-11 shrink-0 whitespace-nowrap rounded-xl border px-4 py-2 font-mbc text-sm transition-colors md:h-auto",
                       pb.loop
                         ? "border-green-500/40 bg-green-500/15 text-green-300 hover:bg-green-500/25"
                         : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10",
@@ -366,7 +366,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                     <button
                       onClick={() => setMuted(!pb.muted)}
                       className={cn(
-                        "shrink-0 whitespace-nowrap rounded-lg border px-3 py-2 font-mbc text-sm transition-colors",
+                        "h-11 shrink-0 whitespace-nowrap rounded-lg border px-3 py-2 font-mbc text-sm transition-colors md:h-auto",
                         pb.muted
                           ? "border-red-400/40 bg-red-400/10 text-red-300"
                           : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10",
@@ -385,7 +385,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                         setVolume(v);
                         if (v > 0 && pb.muted) setMuted(false);
                       }}
-                      className="w-36 accent-white"
+                      className="w-28 accent-white md:w-36"
                     />
                     <span className="w-9 shrink-0 font-orbitron text-xs text-white/40">
                       {Math.round((pb.muted ? 0 : pb.volume) * 100)}
@@ -399,7 +399,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                         key={m}
                         onClick={() => setFit(m)}
                         className={cn(
-                          "whitespace-nowrap px-3 py-2 font-mbc text-sm transition-colors",
+                          "h-11 whitespace-nowrap px-3 py-2 font-mbc text-sm transition-colors md:h-auto",
                           (pb.fit ?? "contain") === m
                             ? "bg-white/15 text-white"
                             : "bg-transparent text-white/40 hover:bg-white/5",
@@ -412,7 +412,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
 
                   <button
                     onClick={clearDisplay}
-                    className="shrink-0 whitespace-nowrap rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10"
+                    className="h-11 shrink-0 whitespace-nowrap rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10 md:h-auto"
                   >
                     송출 끄기
                   </button>
@@ -430,7 +430,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                 <button
                   onClick={() => setLoop(!pb.loop)}
                   className={cn(
-                    "rounded-xl border px-4 py-2 font-mbc text-sm transition-colors",
+                    "h-11 rounded-xl border px-4 py-2 font-mbc text-sm transition-colors md:h-auto",
                     pb.loop
                       ? "border-green-500/40 bg-green-500/15 text-green-300 hover:bg-green-500/25"
                       : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10",
@@ -442,7 +442,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                   <button
                     onClick={() => setMuted(!pb.muted)}
                     className={cn(
-                      "rounded-lg border px-3 py-2 font-mbc text-sm transition-colors",
+                      "h-11 rounded-lg border px-3 py-2 font-mbc text-sm transition-colors md:h-auto",
                       pb.muted
                         ? "border-red-400/40 bg-red-400/10 text-red-300"
                         : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10",
@@ -461,12 +461,12 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                       setVolume(v);
                       if (v > 0 && pb.muted) setMuted(false);
                     }}
-                    className="w-36 accent-white"
+                    className="w-28 accent-white md:w-36"
                   />
                 </div>
                 <button
                   onClick={clearDisplay}
-                  className="ml-auto rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10"
+                  className="ml-auto h-11 rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10 md:h-auto"
                 >
                   송출 끄기
                 </button>
@@ -488,13 +488,13 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                 onClear={clearDisplay}
               />
             ) : content && content.type !== "standby" ? (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <p className="font-pretendard text-white/50">
                   CH{channel} 송출 중: {TYPE_LABEL[content.type] ?? content.type}
                 </p>
                 <button
                   onClick={clearDisplay}
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10"
+                  className="h-11 shrink-0 rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10 md:h-auto md:shrink"
                 >
                   송출 끄기
                 </button>
@@ -553,20 +553,20 @@ function PresentationNav({
         <div className="flex gap-2">
           <button
             onClick={() => onGo(0)}
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mbc text-sm text-white/70 hover:bg-white/10"
+            className="h-11 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mbc text-sm text-white/70 hover:bg-white/10 md:h-auto"
           >
             처음
           </button>
           <button
             onClick={() => onGo(total - 1)}
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mbc text-sm text-white/70 hover:bg-white/10"
+            className="h-11 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mbc text-sm text-white/70 hover:bg-white/10 md:h-auto"
           >
             마지막
           </button>
         </div>
         <button
           onClick={onClear}
-          className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10"
+          className="h-11 shrink-0 rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mbc text-sm text-white/60 hover:bg-white/10 md:h-auto md:shrink"
         >
           송출 끄기
         </button>
@@ -603,7 +603,7 @@ function TimerComposer({
             key={m}
             onClick={() => setMode(m)}
             className={cn(
-              "flex-1 py-2.5 font-mbc text-sm transition-colors",
+              "h-11 flex-1 py-2.5 font-mbc text-sm transition-colors md:h-auto",
               mode === m ? "bg-white/15 text-white" : "bg-transparent text-white/40 hover:bg-white/5",
             )}
           >
@@ -801,7 +801,7 @@ function ImageOverlayEditor({
           }}
           rows={2}
           placeholder="텍스트"
-          className="flex-1 resize-none rounded-xl border border-white/10 bg-[#141414] px-4 py-3 font-pretendard text-[15px] text-white placeholder:text-white/25 focus:border-white/25 focus:outline-none"
+          className="min-w-0 flex-1 resize-none rounded-xl border border-white/10 bg-[#141414] px-4 py-3 font-pretendard text-[16px] text-white md:min-w-[auto] md:text-[15px] placeholder:text-white/25 focus:border-white/25 focus:outline-none"
         />
         <button
           onClick={() => {
@@ -835,7 +835,7 @@ function ImageOverlayEditor({
               setSize(v);
               onChange({ size: v });
             }}
-            className="w-40 accent-white"
+            className="w-32 accent-white md:w-40"
           />
           <span className="w-8 font-orbitron text-xs text-white/40">
             {size.toFixed(1)}
@@ -854,7 +854,7 @@ function ImageOverlayEditor({
               }}
               style={{ backgroundColor: c }}
               className={cn(
-                "h-7 w-7 rounded-full border transition-transform",
+                "h-8 w-8 rounded-full border transition-transform max-md:relative max-md:after:absolute max-md:after:-inset-1.5 md:h-7 md:w-7",
                 color === c
                   ? "scale-110 border-white ring-2 ring-white/40"
                   : "border-white/20 hover:scale-105",
@@ -876,7 +876,7 @@ function ImageOverlayEditor({
                   onChange({ position: p.key });
                 }}
                 className={cn(
-                  "px-3 py-2 font-mbc text-sm transition-colors",
+                  "h-11 px-3 py-2 font-mbc text-sm transition-colors md:h-auto",
                   position === p.key
                     ? "bg-white/15 text-white"
                     : "bg-transparent text-white/40 hover:bg-white/5",

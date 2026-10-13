@@ -61,12 +61,12 @@ function Monitor({ p }: { p: CrewMember }) {
       {/* 큰 기수 숫자 워터마크 */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-2.5 -top-10 select-none font-orbitron font-black leading-none tracking-[-0.04em]"
-        style={{ fontSize: 250, color: "transparent", WebkitTextStroke: "1.5px rgba(255,255,255,0.14)" }}
+        className="pointer-events-none absolute -right-1.5 -top-5 select-none font-orbitron text-[130px] font-black leading-none tracking-[-0.04em] md:-right-2.5 md:-top-10 md:text-[250px]"
+        style={{ color: "transparent", WebkitTextStroke: "1.5px rgba(255,255,255,0.14)" }}
       >
         {two(p.cohort)}
       </span>
-      <div className="absolute left-[18px] top-4">
+      <div className="absolute left-3 top-3 md:left-[18px] md:top-4">
         <span
           className={cn(
             "inline-flex h-6 items-center rounded-md px-2.5 font-orbitron text-[10px] font-bold tracking-[0.2em]",
@@ -76,21 +76,21 @@ function Monitor({ p }: { p: CrewMember }) {
           {live ? "ON AIR" : "ALUMNI"}
         </span>
       </div>
-      <div className="absolute right-[18px] top-[18px] font-mono text-sm font-bold text-white/75 [text-shadow:0_1px_4px_#000]">
+      <div className="absolute right-3 top-3.5 font-mono text-[11px] font-bold md:right-[18px] md:top-[18px] md:text-sm text-white/75 [text-shadow:0_1px_4px_#000]">
         BSSM BROADCASTING · {two(p.cohort)}기
       </div>
       {/* 방송 자막 (로워서드) */}
-      <div className="absolute bottom-6 left-[22px] right-[22px] flex items-stretch">
-        <div className="min-w-0 bg-[rgba(8,8,10,0.82)] px-5 pb-3.5 pt-3 backdrop-blur-[6px]">
-          <div className="truncate font-mbc text-[44px] leading-[1.05] text-white">{p.name}</div>
-          <div className="mt-1.5 truncate font-mbc text-[17px] text-white/75">
+      <div className="absolute bottom-3 left-3 right-3 flex items-stretch md:bottom-6 md:left-[22px] md:right-[22px]">
+        <div className="min-w-0 bg-[rgba(8,8,10,0.82)] px-3.5 pb-2.5 pt-2 backdrop-blur-[6px] md:px-5 md:pb-3.5 md:pt-3">
+          <div className="truncate font-mbc text-[28px] leading-[1.05] text-white md:text-[44px]">{p.name}</div>
+          <div className="mt-1 truncate font-mbc text-[13px] text-white/75 md:mt-1.5 md:text-[17px]">
             방송부 {p.cohort}기 {rank(p.lead)}
             {p.title ? ` · ${p.title}` : ""}
           </div>
         </div>
         {p.lead && (
           <span
-            className="ml-2 flex h-[26px] shrink-0 items-center self-start px-2.5 font-orbitron text-[11px] font-bold tracking-[0.18em] text-white"
+            className="ml-2 flex h-[22px] shrink-0 items-center self-start px-2 font-orbitron text-[10px] md:h-[26px] md:px-2.5 md:text-[11px] font-bold tracking-[0.18em] text-white"
             style={{ background: RED }}
           >
             CHIEF
@@ -103,7 +103,7 @@ function Monitor({ p }: { p: CrewMember }) {
 
 function Meta({ label, children, mono }: { label: string; children: ReactNode; mono?: boolean }) {
   return (
-    <div className="min-w-0 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
+    <div className="min-w-0 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 md:px-3.5 md:py-3">
       <span className="mb-1 block font-pretendard text-xs text-white/45">{label}</span>
       <b className={cn("block truncate text-white", mono ? "font-mono text-[13px] font-semibold" : "font-pretendard text-sm font-bold")}>
         {children}
@@ -116,7 +116,7 @@ function Profile({ p, domain, onEdit }: { p: CrewMember; domain: string; onEdit:
   return (
     <div className="grid gap-3.5">
       <Monitor p={p} />
-      <div className="rounded-2xl border border-white/[0.07] bg-black/35 px-[22px] py-5">
+      <div className="rounded-2xl border border-white/[0.07] bg-black/35 px-4 py-4 md:px-[22px] md:py-5">
         <span aria-hidden className="mb-1.5 block font-serif text-[48px] font-bold leading-[0.5]" style={{ color: RED }}>
           &ldquo;
         </span>
@@ -129,7 +129,7 @@ function Profile({ p, domain, onEdit }: { p: CrewMember; domain: string; onEdit:
           {p.bio || defaultBio(p)}
         </p>
       </div>
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-3 gap-2 md:gap-2.5">
         <Meta label="지금">{p.roleLabel}</Meta>
         <Meta label="ONAIR 메일" mono>
           <span title={p.mailAddress ? `${p.mailAddress}@${domain}` : undefined}>
@@ -140,7 +140,7 @@ function Profile({ p, domain, onEdit }: { p: CrewMember; domain: string; onEdit:
       </div>
       {p.canEdit && (
         <div data-tour="crew.edit" className="flex justify-end">
-          <ActionButton className="h-9 px-3.5" onClick={onEdit}>
+          <ActionButton className="h-11 px-4 md:h-9 md:px-3.5" onClick={onEdit}>
             소개 고치기
           </ActionButton>
         </div>
@@ -153,15 +153,15 @@ function Profile({ p, domain, onEdit }: { p: CrewMember; domain: string; onEdit:
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm max-md:pb-[calc(78px+env(safe-area-inset-bottom))] max-md:pt-[calc(16px+env(safe-area-inset-top))]">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative z-10 grid max-h-[calc(100dvh-2rem)] w-full max-w-[560px] gap-5 overflow-y-auto rounded-[24px] border border-white/10 bg-[#151515] p-7 shadow-2xl">
+      <div className="relative z-10 grid max-h-[calc(100dvh-2rem)] w-full max-w-[560px] gap-5 overflow-y-auto rounded-[20px] border border-white/10 bg-[#151515] p-5 shadow-2xl max-md:max-h-full md:rounded-[24px] md:p-7">
         <div className="flex items-center gap-3">
           <h2 className="min-w-0 truncate font-mbc text-2xl text-white">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="ml-auto rounded-full p-1 text-white/50 hover:bg-white/10 hover:text-white"
+            className="-mr-2 ml-auto rounded-full p-2.5 text-white/50 hover:bg-white/10 hover:text-white md:mr-0 md:p-1"
             aria-label="닫기"
           >
             <X size={20} />
@@ -175,7 +175,7 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
 
 const lblCls = "flex items-baseline justify-between font-mbc text-[13px] text-white/60";
 const inpCls =
-  "w-full rounded-[10px] border border-white/[0.12] bg-[#0c0d0f] px-3.5 font-pretendard text-[15px] text-white placeholder:text-white/30 focus:border-red-400/70 focus:outline-none";
+  "w-full rounded-[10px] border border-white/[0.12] bg-[#0c0d0f] px-3.5 font-pretendard text-[15px] text-white placeholder:text-white/30 focus:border-red-400/70 focus:outline-none max-md:text-base";
 
 function Count({ n, max }: { n: number; max: number }) {
   return <span className={cn("font-mono text-xs tabular-nums", n > max ? "text-[#ff9b9b]" : "text-white/35")}>{n}/{max}</span>;
@@ -374,10 +374,10 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
           setPhotoUrl={setPhotoUrl}
         />
         <div className="flex justify-end gap-2">
-          <ActionButton tone="ghost" onClick={onClose}>
+          <ActionButton tone="ghost" className="max-md:h-11" onClick={onClose}>
             취소
           </ActionButton>
-          <ActionButton tone="primary" busy={save.isPending} disabled={!ok} onClick={() => save.mutate()}>
+          <ActionButton tone="primary" className="max-md:h-11 max-md:px-6" busy={save.isPending} disabled={!ok} onClick={() => save.mutate()}>
             저장
           </ActionButton>
         </div>
@@ -429,7 +429,7 @@ function AddRosterModal({
           if (ok) add.mutate();
         }}
       >
-        <div className="grid grid-cols-[minmax(0,1fr)_110px] gap-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-3 md:grid-cols-[minmax(0,1fr)_110px]">
           <label className="grid gap-1.5">
             <span className={lblCls}>이름</span>
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} autoFocus placeholder="홍길동" className={cn(inpCls, "h-11")} />
@@ -453,7 +453,7 @@ function AddRosterModal({
               aria-pressed={shownRole === r}
               onClick={() => setRole(r)}
               className={cn(
-                "flex h-9 items-center gap-2 rounded-[10px] border px-3.5 font-pretendard text-sm font-semibold",
+                "flex h-11 items-center gap-2 rounded-[10px] border px-3.5 font-pretendard text-sm font-semibold md:h-9",
                 shownRole === r ? "border-red-400/60 bg-[#FF3B3B]/10 text-white" : "border-white/10 text-white/65 hover:text-white",
               )}
             >
@@ -461,7 +461,7 @@ function AddRosterModal({
               {r === "member" ? "부원" : "졸업"}
             </button>
           ))}
-          <label className="ml-2 flex cursor-pointer items-center gap-2 font-pretendard text-sm text-white/70">
+          <label className="ml-2 flex min-h-[44px] cursor-pointer items-center gap-2 font-pretendard text-sm text-white/70 md:min-h-0">
             <input type="checkbox" checked={wasLead} onChange={(e) => setWasLead(e.target.checked)} className="h-4 w-4 accent-[#FF3B3B]" />
             부장
           </label>
@@ -473,10 +473,10 @@ function AddRosterModal({
           <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={TITLE_MAX + 10} placeholder="예: 화영" className={cn(inpCls, "h-11")} />
         </label>
         <div className="flex justify-end gap-2">
-          <ActionButton tone="ghost" onClick={onClose}>
+          <ActionButton tone="ghost" className="max-md:h-11" onClick={onClose}>
             취소
           </ActionButton>
-          <ActionButton tone="primary" busy={add.isPending} disabled={!ok} onClick={() => add.mutate()}>
+          <ActionButton tone="primary" className="max-md:h-11 max-md:px-6" busy={add.isPending} disabled={!ok} onClick={() => add.mutate()}>
             올리기
           </ActionButton>
         </div>
@@ -493,6 +493,14 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<ProfileTarget | null>(null);
   const [adding, setAdding] = useState(false);
+  const profileRef = useRef<HTMLElement>(null);
+  // 폰은 프로필이 목록 아래라 — 고르면 프로필로 내려 준다
+  const pick = (id: string) => {
+    setSelectedId(id);
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      requestAnimationFrame(() => profileRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
+  };
 
   const list = useMemo(() => crew.data?.crew ?? [], [crew.data]);
   const groups = useMemo(() => {
@@ -513,7 +521,7 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
 
   return (
     <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,480px)] 2xl:grid-cols-[minmax(0,1fr)_520px]">
-      <section data-tour="crew.list" className="rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
+      <section data-tour="crew.list" className="rounded-[20px] border border-sidebar-border bg-sidebar p-4 shadow-2xl backdrop-blur-md md:rounded-[24px] md:p-7">
         <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
           <h3 className="whitespace-nowrap font-mbc text-2xl text-white">방송부</h3>
           {toggle && <span className="ml-auto">{toggle}</span>}
@@ -532,7 +540,7 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
               return (
                 <div
                   key={cohort}
-                  className="grid gap-x-6 gap-y-3 border-t border-white/[0.06] py-[22px] first:border-t-0 first:pt-1 sm:grid-cols-[150px_minmax(0,1fr)]"
+                  className="grid gap-x-6 gap-y-3 border-t border-white/[0.06] py-4 first:border-t-0 md:py-[22px] first:pt-1 sm:grid-cols-[150px_minmax(0,1fr)]"
                 >
                   <div>
                     <CohortNumber n={cohort} on={now} size={64} stroke="1.2px rgba(255,255,255,0.35)" />
@@ -548,13 +556,13 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
                           key={p.id}
                           type="button"
                           aria-pressed={on}
-                          onClick={() => setSelectedId(p.id)}
+                          onClick={() => pick(p.id)}
                           className={cn(
-                            "grid min-w-[150px] gap-0.5 rounded-xl border px-4 pb-[11px] pt-2.5 text-left transition-colors",
+                            "grid min-w-[calc(50%-5px)] gap-0.5 rounded-xl border px-3 pb-2.5 pt-2 text-left transition-colors md:min-w-[150px] md:px-4 md:pb-[11px] md:pt-2.5",
                             on ? "border-red-400/55 bg-[#FF3B3B]/10" : "border-transparent hover:bg-white/[0.04]",
                           )}
                         >
-                          <b className="flex items-center gap-2.5 font-mbc text-[26px] font-normal leading-tight text-white">
+                          <b className="flex items-center gap-2.5 font-mbc text-[22px] font-normal leading-tight text-white md:text-[26px]">
                             {p.name}
                             {p.lead && (
                               <i
@@ -564,7 +572,7 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
                               />
                             )}
                           </b>
-                          <span className="max-w-[220px] truncate font-pretendard text-[13px] text-white/50">{nameLine(p)}</span>
+                          <span className="max-w-[150px] truncate font-pretendard text-[13px] text-white/50 md:max-w-[220px]">{nameLine(p)}</span>
                         </button>
                       );
                     })}
@@ -587,7 +595,7 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
         )}
       </section>
 
-      <aside data-tour="crew.profile" className="xl:sticky xl:top-6">
+      <aside ref={profileRef} data-tour="crew.profile" className="scroll-mt-3 xl:sticky xl:top-6">
         {selected && data ? (
           <Profile
             p={selected}

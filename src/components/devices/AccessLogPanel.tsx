@@ -88,7 +88,7 @@ export default function AccessLogPanel() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <div data-tour="logs.filters" className="flex flex-wrap items-center gap-2.5">
+      <div data-tour="logs.filters" className="grid grid-cols-2 items-center gap-2 md:flex md:flex-wrap md:gap-2.5">
         <Select
           value={person}
           onChange={(v) => {
@@ -98,7 +98,7 @@ export default function AccessLogPanel() {
           options={[{ value: "", label: "모든 사람" }, ...options.people]}
           aria-label="사람"
           tour="logs.filter.person"
-          className="h-10 min-w-[150px]"
+          className="h-11 w-full md:h-10 md:w-auto md:min-w-[150px]"
         />
         <Select
           value={group}
@@ -109,7 +109,7 @@ export default function AccessLogPanel() {
           options={[{ value: "", label: "모든 동작" }, ...options.groups]}
           aria-label="동작"
           tour="logs.filter.action"
-          className="h-10 min-w-[140px]"
+          className="h-11 w-full md:h-10 md:w-auto md:min-w-[140px]"
         />
         <Select
           value={day}
@@ -120,7 +120,7 @@ export default function AccessLogPanel() {
           options={[{ value: "", label: "모든 날짜" }, ...options.days]}
           aria-label="날짜"
           tour="logs.filter.day"
-          className="h-10 min-w-[140px]"
+          className="h-11 w-full md:h-10 md:w-auto md:min-w-[140px]"
         />
         <Select<Result>
           value={result}
@@ -134,7 +134,7 @@ export default function AccessLogPanel() {
           ]}
           aria-label="결과"
           tour="logs.filter.result"
-          className="h-10 min-w-[120px]"
+          className="h-11 w-full md:h-10 md:w-auto md:min-w-[120px]"
         />
         {filtering && (
           <button
@@ -147,18 +147,32 @@ export default function AccessLogPanel() {
               setResult("all");
               setShown(PAGE);
             }}
-            className="h-10 rounded-lg px-3 font-pretendard text-sm text-white/50 hover:bg-white/5 hover:text-white"
+            className="h-11 justify-self-start rounded-lg px-3 font-pretendard text-sm text-white/50 hover:bg-white/5 hover:text-white md:h-10"
           >
             초기화
           </button>
         )}
-        <span data-tour="logs.count" className="ml-auto font-pretendard text-sm tabular-nums text-white/40">
+        <span data-tour="logs.count" className="col-start-2 justify-self-end font-pretendard md:col-auto md:ml-auto text-sm tabular-nums text-white/40">
           {filtered.reduce((n, r) => n + r.count, 0)}건
         </span>
       </div>
 
-      <div data-tour="logs.table" className="min-h-0 flex-1 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a]">
-        <table className="w-full border-separate border-spacing-0 text-left font-pretendard">
+      <div data-tour="logs.table" className="min-h-0 flex-1 rounded-[20px] border border-white/[0.09] bg-[#0a0a0a]/85 md:overflow-auto md:rounded-2xl md:border-white/5 md:bg-[#0a0a0a]">
+        {/* 폰 — 표 대신 한 줄씩 */}
+        <div className="md:hidden">
+          {logs.isLoading ? (
+            <p className="px-4 py-10 text-center font-pretendard text-[15px] text-white/35">불러오는 중…</p>
+          ) : visible.length === 0 ? (
+            <p className="px-4 py-10 text-center font-pretendard text-[15px] text-white/35">
+              {rows.length === 0 ? "기록이 없어요" : "맞는 기록이 없어요"}
+            </p>
+          ) : (
+            visible.map((r, i) => (
+              <MobileRow key={`${r.entry.ts}-${i}`} row={r} dayHead={i === 0 || visible[i - 1].day !== r.day} />
+            ))
+          )}
+        </div>
+        <table className="hidden w-full border-separate border-spacing-0 text-left font-pretendard md:table">
           <thead className="sticky top-0 z-10 bg-[#0a0a0a] text-white/40">
             <tr>
               <th className="w-[112px] border-b border-white/10 px-5 py-3 text-[13px] font-semibold">시각</th>
@@ -193,7 +207,7 @@ export default function AccessLogPanel() {
               type="button"
               data-tour="logs.more"
               onClick={() => setShown((n) => n + PAGE)}
-              className="h-10 rounded-lg border border-white/10 bg-white/[0.04] px-5 font-pretendard text-sm text-white/70 hover:bg-white/10 hover:text-white"
+              className="h-11 rounded-lg border border-white/10 bg-white/[0.04] px-5 font-pretendard text-sm text-white/70 hover:bg-white/10 hover:text-white md:h-10"
             >
               더 보기
             </button>
@@ -201,6 +215,52 @@ export default function AccessLogPanel() {
         )}
       </div>
     </div>
+  );
+}
+
+function MobileRow({ row, dayHead }: { row: LogRow; dayHead: boolean }) {
+  const { entry, person, what, failed, count } = row;
+  return (
+    <>
+      {dayHead && (
+        <div className="sticky top-0 z-[5] border-b border-white/[0.06] bg-[#111113] px-4 py-2 font-pretendard text-[13px] font-semibold text-white/55 first:rounded-t-[20px]">
+          {dayLabel(row.day)}
+        </div>
+      )}
+      <div
+        className={cn(
+          "flex gap-3 border-b border-l-2 border-b-white/[0.04] px-4 py-3 font-pretendard",
+          failed ? "border-l-[#e5484d]/70 bg-[#e5484d]/[0.045]" : "border-l-transparent",
+        )}
+      >
+        <span className="w-[62px] shrink-0 pt-0.5 font-orbitron text-[12px] tabular-nums text-white/50">{entry.ts.slice(11, 19)}</span>
+        <div className="min-w-0 flex-1">
+          <p className="flex min-w-0 items-baseline gap-2">
+            <span className="shrink-0 text-[15px] font-semibold text-white/90">{person.name}</span>
+            {person.sub && <span className="min-w-0 truncate text-[12px] text-white/35">{person.sub}</span>}
+          </p>
+          <p className="mt-0.5 break-words">
+            <span className={cn("text-[14px]", failed ? "text-white/60" : "text-white/85")}>{what.label}</span>
+            {what.extra && <span className="ml-2 break-all text-[13px] text-white/40">{what.extra}</span>}
+            {count > 1 && (
+              <span className="ml-2 rounded-md bg-white/[0.06] px-1.5 py-0.5 font-orbitron text-[11px] tabular-nums text-white/45">
+                ×{count}
+              </span>
+            )}
+          </p>
+        </div>
+        <span className="shrink-0 pt-0.5 text-right text-[12px]">
+          {failed ? (
+            <span className="text-[#ff8a8d]">
+              {failWord(entry.status)}
+              <span className="ml-1 font-orbitron text-[10px] text-[#ff8a8d]/60">{entry.status}</span>
+            </span>
+          ) : (
+            <span className="text-white/25">완료</span>
+          )}
+        </span>
+      </div>
+    </>
   );
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import SectionHeader from "@/components/common/SectionHeader";
 import Select from "@/components/common/Select";
 import { getApiBase } from "@/lib/apiBase";
@@ -49,6 +49,16 @@ export default function DevicesPage() {
   const [newIp, setNewIp] = useState("");
   const [newRole, setNewRole] = useState<DeviceRole>("operator");
   const [tab, setTab] = useTabParam(DEVICE_TAB_KEYS, "members");
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  // 폰에서 탭 줄이 옆으로 넘치면 고른 탭이 보이게 밀어 둔다
+  useEffect(() => {
+    const box = tabsRef.current;
+    const btn = box?.querySelector<HTMLElement>(`[data-tour="devices.tab.${tab}"]`);
+    if (!box || !btn || box.scrollWidth <= box.clientWidth) return;
+    const offset = btn.getBoundingClientRect().left - box.getBoundingClientRect().left;
+    box.scrollTo({ left: box.scrollLeft + offset - (box.clientWidth - btn.offsetWidth) / 2, behavior: "smooth" });
+  }, [tab, isAdmin]);
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -100,8 +110,8 @@ export default function DevicesPage() {
   if (!isAdmin) {
     if (loading) return null;
     return (
-      <div className="flex flex-col gap-6">
-        <SectionHeader className="mb-0">방송부</SectionHeader>
+      <div className="flex flex-col gap-4 md:gap-6">
+        <SectionHeader className="mb-0 max-md:mt-1 max-md:text-[26px] max-md:leading-none">방송부</SectionHeader>
         <CrewView />
       </div>
     );
@@ -117,10 +127,18 @@ export default function DevicesPage() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <SectionHeader className="mb-0">관리</SectionHeader>
-        <PageTabs tour="devices.tab" tabs={DEVICE_TABS} value={tab} onChange={setTab} />
+    <div className="flex flex-col gap-4 md:h-full md:gap-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-0">
+        <SectionHeader className="mb-0 max-md:mt-1 max-md:text-[26px] max-md:leading-none">관리</SectionHeader>
+        <div ref={tabsRef} className="no-scrollbar -mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
+          <PageTabs
+            tour="devices.tab"
+            tabs={DEVICE_TABS}
+            value={tab}
+            onChange={setTab}
+            className="max-md:[&>button]:min-h-[44px] max-md:[&>button]:shrink-0 max-md:[&>button]:whitespace-nowrap max-md:[&>button]:text-[15px]"
+          />
+        </div>
       </div>
 
       {tab === "members" ? (
@@ -137,7 +155,7 @@ export default function DevicesPage() {
       <>
       {/* 내 기기 안내 */}
       {me && (
-        <div data-tour="devices.my-ip" className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
+        <div data-tour="devices.my-ip" className="rounded-[20px] border border-white/[0.09] bg-white/[0.045] px-4 py-3.5 md:rounded-xl md:border-white/10 md:bg-white/[0.03] md:px-5 md:py-4">
           <p className="font-mbc text-sm text-white/50">
             내 기기 IP{" "}
             <span className="font-orbitron text-white/80">{me.ip}</span>
@@ -147,34 +165,69 @@ export default function DevicesPage() {
       )}
 
       {/* IP로 기기 추가 */}
-      <div data-tour="devices.add" className="flex items-end gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
-        <div className="flex flex-col gap-1">
+      <div data-tour="devices.add" className="grid grid-cols-[1fr_auto] items-end gap-3 rounded-[20px] border border-white/[0.09] bg-white/[0.045] px-4 py-3.5 md:flex md:rounded-xl md:border-white/10 md:bg-white/[0.03] md:px-5 md:py-4">
+        <div className="col-span-2 flex flex-col gap-1">
           <span className="font-mbc text-xs text-white/40">Tailscale IP</span>
           <input
             data-tour="devices.add.ip"
             value={newIp}
             onChange={(e) => setNewIp(e.target.value)}
             placeholder="100.x.x.x"
-            className="h-10 w-48 rounded-lg border border-white/10 bg-[#141414] px-3 font-orbitron text-sm text-white focus:border-white/30 focus:outline-none"
+            className="h-11 w-full rounded-lg border border-white/10 bg-[#141414] px-3 font-orbitron text-base text-white focus:border-white/30 focus:outline-none md:h-10 md:w-48 md:text-sm"
           />
         </div>
         <div className="flex flex-col gap-1">
           <span className="font-mbc text-xs text-white/40">역할</span>
-          <Select tour="devices.add.role" value={newRole} onChange={setNewRole} options={ROLES} aria-label="역할" />
+          <Select tour="devices.add.role" value={newRole} onChange={setNewRole} options={ROLES} aria-label="역할" className="max-md:h-11" />
         </div>
         <button
           data-tour="devices.add.submit"
           onClick={addDevice}
           disabled={!newIp.trim()}
-          className="h-10 rounded-lg border border-white/15 bg-white/10 px-5 font-mbc text-sm text-white hover:bg-white/15 disabled:opacity-40"
+          className="h-11 rounded-lg border border-white/15 bg-white/10 px-5 font-mbc text-sm text-white hover:bg-white/15 disabled:opacity-40 md:h-10"
         >
           등록
         </button>
       </div>
 
       {/* 등록 기기 목록 */}
-      <div data-tour="devices.table" className="flex-1 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a]">
-        <table className="w-full text-left font-pretendard text-sm">
+      <div data-tour="devices.table" className="flex-1 overflow-auto rounded-[20px] border border-white/[0.09] bg-white/[0.045] md:rounded-2xl md:border-white/5 md:bg-[#0a0a0a]">
+        {/* 폰 — 표 대신 카드 */}
+        <div className="flex flex-col divide-y divide-white/[0.07] md:hidden">
+          {devices.length === 0 ? (
+            <p className="px-4 py-8 text-center font-pretendard text-sm text-white/30">등록된 기기가 없어요</p>
+          ) : (
+            devices.map((d) => (
+              <div key={d.ip} className="flex flex-col gap-2.5 px-4 py-3.5">
+                <div className="flex items-baseline justify-between gap-3 font-pretendard text-sm">
+                  <span className="min-w-0 truncate text-white/80">
+                    {d.name}
+                    {d.owner ? <span className="text-white/30"> · {d.owner}</span> : null}
+                  </span>
+                  <span className="shrink-0 font-orbitron text-xs text-white/50">{d.ip}</span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    defaultValue={d.label}
+                    onBlur={(e) => {
+                      if (e.target.value !== d.label) save(d.ip, { label: e.target.value });
+                    }}
+                    placeholder="이름"
+                    className="h-11 min-w-0 flex-1 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-base text-white/80 focus:border-white/30 focus:outline-none"
+                  />
+                  <Select
+                    value={d.role}
+                    onChange={(role) => save(d.ip, { role })}
+                    options={ROLES}
+                    aria-label={`${d.name} 역할`}
+                    className="h-11"
+                  />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        <table className="hidden w-full text-left font-pretendard text-sm md:table">
           <thead className="sticky top-0 bg-[#0a0a0a] text-white/40">
             <tr className="border-b border-white/10">
               <th className="px-4 py-3 font-mbc font-normal">기기</th>

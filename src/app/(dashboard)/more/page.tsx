@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { ChevronRight } from "lucide-react";
 import { useMe } from "@/hooks/useMe";
 import { GlassCard, MobileHeader } from "@/components/mobile/ui";
@@ -16,9 +17,21 @@ const ITEMS: { href: string; label: string; sub: string; admin?: boolean }[] = [
   { href: "/logs", label: "로그", sub: "누가 무엇을 했는지", admin: true },
 ];
 
+const noop = () => () => {};
+
+/** ONAIR 앱(iOS·안드로이드·맥·윈도우) 안에서 열렸는지 — 앱이 심어 두는 값 */
+function useAppPlatform(): string | null {
+  return useSyncExternalStore(
+    noop,
+    () => (window as unknown as { __ONAIR_APP_PLATFORM__?: string }).__ONAIR_APP_PLATFORM__ ?? null,
+    () => null,
+  );
+}
+
 export default function MobileMorePage() {
   useMobileOnly("/main");
   const { isAdmin } = useMe();
+  const app = useAppPlatform();
   return (
     <div className="flex flex-col">
       <MobileHeader title="더보기" />
@@ -32,6 +45,19 @@ export default function MobileMorePage() {
             <ChevronRight size={18} className="text-white/35" />
           </GlassCard>
         ))}
+        {app && (
+          <button
+            type="button"
+            onClick={() => void fetch("/__onair/action/settings", { method: "POST" })}
+            className="flex items-center justify-between rounded-[20px] border border-white/[0.09] bg-white/[0.045] px-4 py-4 text-left backdrop-blur-md active:bg-white/[0.08]"
+          >
+            <div>
+              <p className="font-pretendard text-[16px] font-semibold">앱 설정</p>
+              <p className="mt-0.5 font-pretendard text-[12.5px] text-white/45">서버 주소 · 접속 키</p>
+            </div>
+            <ChevronRight size={18} className="text-white/35" />
+          </button>
+        )}
       </div>
     </div>
   );

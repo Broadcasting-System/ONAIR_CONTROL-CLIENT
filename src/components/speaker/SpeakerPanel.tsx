@@ -40,9 +40,9 @@ export function SpeakerPanel({
   );
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_340px] items-start gap-6">
+    <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-[minmax(0,1fr)_340px]">
       {/* 지도 칸이 이보다 좁으면 방 이름이 사라지고 글자가 7px 로 줄어든다 (창 너비 약 1260px) */}
-      <MinSizeGuard minWidth={520} fallbackClassName="h-[clamp(480px,calc(100vh_-_206px),944px)]">
+      <MinSizeGuard minWidth={520} className="hidden md:block" fallbackClassName="h-[clamp(480px,calc(100vh_-_206px),944px)]">
         <SpeakerFloorMap
           zones={zones}
           onToggle={canOperate ? onToggle : () => {}}

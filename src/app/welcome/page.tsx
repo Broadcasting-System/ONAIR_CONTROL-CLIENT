@@ -39,10 +39,10 @@ function Tally({ lamp }: { lamp: Lamp }) {
 function Tuner({ at, device, status }: { at: Step; device: string; status: string }) {
   const pos = [12.5, 37.5, 62.5, 87.5][at];
   return (
-    <div className="rounded-[14px] border border-white/[0.06] bg-[#0a0a0c] px-[22px] pt-[18px] pb-3.5 shadow-[inset_0_2px_12px_rgba(0,0,0,0.9)]">
+    <div className="rounded-[14px] border border-white/[0.06] bg-[#0a0a0c] px-4 pt-4 pb-3 shadow-[inset_0_2px_12px_rgba(0,0,0,0.9)] md:px-[22px] md:pt-[18px] md:pb-3.5">
       <div className="mb-2 flex items-baseline justify-between gap-4">
         <span className="truncate font-pretendard text-sm font-semibold text-white/45">{device}</span>
-        <span className="text-right font-pretendard text-xl font-bold text-white" aria-live="polite">
+        <span className="text-right font-pretendard text-lg font-bold text-white md:text-xl" aria-live="polite">
           {status}
         </span>
       </div>
@@ -65,7 +65,7 @@ function Tuner({ at, device, status }: { at: Step; device: string; status: strin
             key={t}
             aria-current={i === at ? "step" : undefined}
             className={cn(
-              "pt-2 text-center font-pretendard text-[15px] font-bold",
+              "pt-2 text-center font-pretendard text-[13px] font-bold md:text-[15px]",
               i === at ? "text-white" : i < at ? "text-white/60" : "text-white/30",
             )}
           >
@@ -311,16 +311,16 @@ export default function WelcomePage() {
   const device = me?.ip ? `이 기기 · ${me.ip}` : "이 기기";
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-background px-5 py-12 text-foreground">
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-background px-4 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(32px+env(safe-area-inset-top))] text-foreground md:px-5 md:py-12">
       <div className="pointer-events-none absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-br from-[#1a0505] to-black opacity-80" />
         <div className="absolute inset-0 bg-[url('/onair_background.png')] bg-cover bg-center opacity-45 mix-blend-screen" />
       </div>
 
-      <div className="relative z-10 grid w-full max-w-[860px] gap-[22px]">
+      <div className="relative z-10 grid w-full max-w-[860px] gap-4 md:gap-[22px]">
         <div className="flex items-center gap-3.5">
           <div>
-            <h1 className="font-mbc text-[34px] leading-none text-white">ONAIR</h1>
+            <h1 className="font-mbc text-[30px] leading-none text-white md:text-[34px]">ONAIR</h1>
             <p className="mt-1.5 font-orbitron text-[11px] tracking-[0.3em] text-white/40">DEVICE REGISTRATION</p>
           </div>
           <span className="ml-auto">
@@ -328,7 +328,7 @@ export default function WelcomePage() {
           </span>
         </div>
 
-        <section className="grid gap-[22px] rounded-[24px] border border-white/10 bg-[rgba(32,32,32,0.6)] p-7 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6)] backdrop-blur-md">
+        <section className="grid gap-5 rounded-[20px] border border-white/10 bg-[rgba(32,32,32,0.6)] p-4 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6)] backdrop-blur-md md:gap-[22px] md:rounded-[24px] md:p-7">
           <Tuner at={at} device={device} status={title} />
 
           {showForm && (
@@ -339,7 +339,7 @@ export default function WelcomePage() {
                 if (valid) submit.mutate();
               }}
             >
-              <div className="grid grid-cols-[minmax(0,1fr)_140px] gap-4">
+              <div className="grid grid-cols-[minmax(0,1fr)_96px] gap-3 md:grid-cols-[minmax(0,1fr)_140px] md:gap-4">
                 <div>
                   <label htmlFor="reg-name" className={lblCls}>
                     이름
@@ -445,11 +445,11 @@ export default function WelcomePage() {
               />
               <div className="flex flex-wrap items-center justify-end gap-2.5">
                 {editing && (
-                  <button type="button" className={ghostCls} onClick={() => setEditing(false)}>
+                  <button type="button" className={cn(ghostCls, "max-md:h-[54px] max-md:flex-1")} onClick={() => setEditing(false)}>
                     취소
                   </button>
                 )}
-                <button type="submit" disabled={!valid || submit.isPending} className={goCls}>
+                <button type="submit" disabled={!valid || submit.isPending} className={cn(goCls, "max-md:flex-1")}>
                   {submit.isPending ? "보내는 중…" : editing ? "다시 보내기" : "승인 요청"}
                 </button>
               </div>

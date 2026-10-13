@@ -14,7 +14,7 @@ interface DaySelectorProps {
 
 export default function DaySelector({ days, activeDay, onSelect }: DaySelectorProps) {
   return (
-    <div className="flex gap-4">
+    <div className="grid grid-cols-6 gap-2 md:flex md:gap-4">
       {days.map((day) => {
         const isActive = day.value === activeDay;
         return (
@@ -22,13 +22,13 @@ export default function DaySelector({ days, activeDay, onSelect }: DaySelectorPr
             key={day.value}
             onClick={() => onSelect(day.value)}
             className={cn(
-              "flex items-center justify-center w-[58px] h-[58px] rounded-[6px] transition-all",
+              "flex h-[52px] w-full items-center justify-center rounded-[6px] transition-all md:h-[58px] md:w-[58px]",
               isActive
                 ? "bg-[#111] border-[1.5px] border-white text-white shadow-[0_0_15px_rgba(255,255,255,0.15)]"
                 : "bg-[#111] border border-white/20 text-white/40 hover:border-white/40 hover:text-white/80"
             )}
           >
-            <span className="font-pretendard font-medium text-[22px]">
+            <span className="font-pretendard font-medium text-[20px] md:text-[22px]">
               {day.label}
             </span>
           </button>
