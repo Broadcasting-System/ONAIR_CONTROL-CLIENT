@@ -8,7 +8,8 @@ interface BroadcastResponse {
   message: string;
 }
 
-export function useTts() {
+/** targets 를 주면 그 대상으로, 없으면 지금 켜진 스피커로. voice·rate 는 GET /api/tts/voices 의 값 */
+export function useTts(opts?: { targets?: string[]; voice?: string; rate?: number }) {
   const [text, setText] = useState("");
   const [isSending, setIsSending] = useState(false);
   // TTS 앞/뒤로 재생할 음원("none"=안 함)
@@ -19,9 +20,7 @@ export function useTts() {
   const handleSend = async () => {
     if (!text.trim()) return;
 
-    const targets = zones
-      .filter((z) => z.status === "on")
-      .map((z) => z.name);
+    const targets = opts?.targets ?? zones.filter((z) => z.status === "on").map((z) => z.name);
 
     if (targets.length === 0) {
       toast.error("선택한 스피커가 없어요");
@@ -41,6 +40,8 @@ export function useTts() {
           restoreState: true,
           startSound,
           endSound,
+          ...(opts?.voice ? { voice: opts.voice } : {}),
+          ...(opts?.voice && opts.rate !== undefined ? { rate: opts.rate } : {}),
         }),
       });
       const data: BroadcastResponse & { detail?: unknown } = await res.json().catch(() => ({}));

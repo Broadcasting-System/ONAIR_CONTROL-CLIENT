@@ -134,7 +134,8 @@ export default function MobileHomePage() {
 
       <SectionLabel>QUICK</SectionLabel>
       <div className="grid grid-cols-2 gap-2.5" data-tour="home.quick">
-        <QuickLink href="/main" label="TTS 방송" />
+        <QuickLink href="/main" label="방송" />
+        <QuickLink href="/main?mic=1" label="마이크 방송" />
         <button
           type="button"
           onClick={() => setConfirmOff(true)}
@@ -143,7 +144,7 @@ export default function MobileHomePage() {
           스피커 모두 끄기
         </button>
         <QuickLink href="/recording" label={session ? `● ${session.kindName} 중` : "녹음·녹화"} live={!!session} />
-        <QuickLink href="/cue" label="CUE에게 묻기" />
+        <QuickLink href="/cue" label="CUE에게 묻기" className="col-span-2" />
       </div>
 
       <ConfirmModal
@@ -162,13 +163,14 @@ export default function MobileHomePage() {
   );
 }
 
-function QuickLink({ href, label, live }: { href: string; label: string; live?: boolean }) {
+function QuickLink({ href, label, live, className }: { href: string; label: string; live?: boolean; className?: string }) {
   return (
     <Link
       href={href}
       className={cn(
         "flex h-16 items-center rounded-2xl border border-white/[0.09] bg-white/[0.05] px-4 font-pretendard text-[15px] font-semibold active:bg-white/[0.1]",
         live && "text-[#FF3B3B]",
+        className,
       )}
     >
       {label}

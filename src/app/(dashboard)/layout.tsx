@@ -55,8 +55,14 @@ export default function DashboardLayout({
 
   // 폰으로 처음 열면(주소 없이 들어오면 /main) 폰 홈으로 — 한 번만, 그 뒤 방송 화면은 더보기에서
   useEffect(() => {
-    if (pathname !== "/main" || !window.matchMedia("(max-width: 767px)").matches) return;
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
     try {
+      // 홈을 이미 봤으면(홈의 '방송'·'마이크 방송' 바로가기로 /main 에 가는 경우) 되돌리지 않는다
+      if (pathname === "/home") {
+        window.sessionStorage.setItem("onair.m.home", "1");
+        return;
+      }
+      if (pathname !== "/main") return;
       if (window.sessionStorage.getItem("onair.m.home")) return;
       window.sessionStorage.setItem("onair.m.home", "1");
     } catch {

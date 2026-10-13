@@ -1,37 +1,22 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/components/common/Button";
-import TextInput from "@/components/common/TextInput";
 import StatusCard from "@/components/StatusCard";
 import SectionHeader from "@/components/common/SectionHeader";
-import Select from "@/components/common/Select";
 
-import { useTts } from "@/hooks/useTts";
 import { useSpeakers } from "@/hooks/useSpeakers";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useHallsStatus } from "@/hooks/useHalls";
-import { useFiles } from "@/hooks/useFiles";
 import { useMe } from "@/hooks/useMe";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
+import BroadcastCard from "@/components/broadcast/BroadcastCard";
 
 export default function MainPage() {
-  const {
-    text,
-    setText,
-    handleSend,
-    isSending: isTtsSending,
-    startSound,
-    setStartSound,
-    endSound,
-    setEndSound,
-  } = useTts();
   const { zones, toggleSpeaker } = useSpeakers();
   const { statuses } = useNetworkStatus();
   const { summary: hallSummary, isError: hallError } = useHallsStatus();
-  const { files, fetchFiles } = useFiles();
   const { canOperate } = useMe();
   const router = useRouter();
 
@@ -50,52 +35,10 @@ export default function MainPage() {
         }
       : null;
 
-  useEffect(() => {
-    fetchFiles();
-  }, [fetchFiles]);
-
-  const audioFiles = files.audio ?? [];
-
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-16 md:h-full">
       <div className="flex flex-col gap-6 md:col-span-5 md:gap-10 md:h-full">
-        <section data-tour="main.tts">
-          <SectionHeader>TTS</SectionHeader>
-          <div className="flex flex-col gap-5 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md shadow-2xl md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:gap-8 md:p-8">
-            <TextInput
-              value={text}
-              onChange={setText}
-              placeholder="방송할 텍스트"
-              tour="main.tts-input"
-            />
-
-            {/* TTS 시작/끝 음원 (선택 — '안 함' 가능) */}
-            <div className="flex gap-4">
-              <SoundSelect
-                label="시작 음원"
-                tour="main.tts-start-sound"
-                value={startSound}
-                onChange={setStartSound}
-                options={audioFiles}
-              />
-              <SoundSelect
-                label="끝 음원"
-                tour="main.tts-end-sound"
-                value={endSound}
-                onChange={setEndSound}
-                options={audioFiles}
-              />
-            </div>
-
-            <Button
-              label={isTtsSending ? "송출 중..." : "TTS 송출하기"}
-              onClick={handleSend}
-              disabled={!text.trim() || isTtsSending || !canOperate}
-              className="h-[64px]"
-              tour="main.tts-send"
-            />
-          </div>
-        </section>
+        <BroadcastCard />
 
         <section className="flex-1 flex flex-col" data-tour="main.monitor">
           <SectionHeader>방송 모니터링</SectionHeader>
@@ -182,36 +125,6 @@ export default function MainPage() {
           </div>
         </section>
       </div>
-    </div>
-  );
-}
-
-function SoundSelect({
-  label,
-  value,
-  onChange,
-  options,
-  tour,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: { id: string; fileName: string; fileUrl: string }[];
-  tour?: string;
-}) {
-  return (
-    <div className="flex flex-1 flex-col gap-2">
-      <span className="font-mbc text-sm text-white/50">{label}</span>
-      <Select
-        value={value}
-        onChange={onChange}
-        options={[
-          { value: "none", label: "미사용" },
-          ...options.map((f) => ({ value: f.fileUrl, label: f.fileName })),
-        ]}
-        className="h-[48px] w-full rounded-xl bg-[#1C1C1C] px-4 text-[15px]"
-        tour={tour}
-      />
     </div>
   );
 }
