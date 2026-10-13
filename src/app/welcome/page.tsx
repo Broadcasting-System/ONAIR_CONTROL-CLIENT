@@ -382,6 +382,8 @@ export default function WelcomePage() {
                       onChange={(e) => setPersonalEmail(e.target.value)}
                       maxLength={120}
                       autoComplete="email"
+                      autoCapitalize="off"
+                      autoCorrect="off"
                       spellCheck={false}
                       placeholder="name@gmail.com"
                       className={cn(inpCls, "h-12", emailProblem && "border-red-400/50")}
@@ -413,8 +415,9 @@ export default function WelcomePage() {
                         maxLength={20}
                         autoComplete="off"
                         autoCapitalize="off"
+                        autoCorrect="off"
                         spellCheck={false}
-                        placeholder="junghyun"
+                        placeholder="gildong"
                         className="h-full min-w-0 flex-1 bg-transparent px-3 font-mono text-base text-white outline-none placeholder:text-white/35"
                       />
                       <span className="shrink-0 pr-3.5 font-mono text-[15px] text-white/40">@{domain}</span>

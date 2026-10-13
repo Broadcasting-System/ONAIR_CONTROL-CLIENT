@@ -1014,7 +1014,7 @@ export default function MembersPanel() {
         isOpen={!!mailFor}
         onClose={() => setMailFor(null)}
         title={`${mailFor?.name ?? ""} · ${String(mailFor?.cohort ?? "").padStart(2, "0")}□@${domain}`}
-        placeholder="junghyun"
+        placeholder="gildong"
         initialValue={mailFor?.mailId ?? ""}
         confirmText="바꾸기"
         onConfirm={async (v) => {

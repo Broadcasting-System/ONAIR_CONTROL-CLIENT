@@ -603,6 +603,8 @@ pub fn run() {
             #[allow(unused_mut)]
             let mut b = WebviewWindowBuilder::new(app, MAIN, start_url)
                 .title("ONAIR")
+                // 앱 화면이 어두워서 첫 페이지가 그려지기 전 흰 화면이 번쩍이지 않게
+                .background_color(tauri::webview::Color(16, 16, 16, 255))
                 .initialization_script(init_script())
                 .on_page_load(move |_w, p| {
                     ON_PROXY_PAGE.store(is_proxy_url(p.url(), proxy_port), std::sync::atomic::Ordering::SeqCst);
