@@ -138,7 +138,7 @@ function Waveform({
   const pct = (t: number) => `${(t / L) * 100}%`;
 
   return (
-    <div className="flex flex-col gap-1.5 select-none">
+    <div data-tour="music.waveform" className="flex flex-col gap-1.5 select-none">
       <div
         className={cn("relative h-[120px] rounded-lg bg-white/[0.03]", onSeek && "cursor-pointer")}
         onClick={(e) => {
@@ -324,7 +324,7 @@ function MeterBridge({ hallId, fast }: { hallId: string; fast: boolean }) {
     groups.set(g, [...(groups.get(g) ?? []), f]);
   }
   return (
-    <div className="flex gap-3.5 overflow-x-auto rounded-xl border border-black bg-[#0a0a0c] px-[18px] pb-3 pt-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.9)]">
+    <div data-tour="music.meter" className="flex gap-3.5 overflow-x-auto rounded-xl border border-black bg-[#0a0a0c] px-[18px] pb-3 pt-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.9)]">
       {[...groups].map(([g, fx]) => (
         <div
           key={g}
@@ -395,6 +395,7 @@ function UploadBox({
           }}
         />
         <button
+          data-tour="music.upload"
           type="button"
           disabled={disabled}
           onClick={() => input.current?.click()}
@@ -406,7 +407,7 @@ function UploadBox({
     );
   }
   return (
-    <div className="flex flex-col gap-2 rounded-[14px] border border-white/15 bg-black/30 p-3">
+    <div data-tour="music.upload-form" className="flex flex-col gap-2 rounded-[14px] border border-white/15 bg-black/30 p-3">
       <span className="truncate font-pretendard text-xs text-white/45">{file.name}</span>
       <input
         value={name}
@@ -616,13 +617,14 @@ export default function MusicLightPanel({
       {state.lastError && <Notice>{state.lastError}</Notice>}
       {(playing?.error || live?.error) && <Notice>{playing?.error || live?.error}</Notice>}
 
-      <section className="flex flex-col gap-5 rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
+      <section data-tour="music.player" className="flex flex-col gap-5 rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
         {!summary || !show ? (
           <p className="font-pretendard text-sm text-white/45">쇼가 없어요</p>
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-[18px]">
               <button
+                data-tour="music.play"
                 type="button"
                 disabled={!operable}
                 onClick={press}
@@ -661,7 +663,7 @@ export default function MusicLightPanel({
             <Waveform show={show} position={position} onSeek={seek} />
 
             {summary.hasAudio && (
-              <div className="flex flex-wrap items-center gap-3 font-pretendard text-[12.5px] text-white/50">
+              <div data-tour="music.audio" className="flex flex-wrap items-center gap-3 font-pretendard text-[12.5px] text-white/50">
                 <audio
                   ref={setAudio}
                   key={summary.id}
@@ -692,8 +694,9 @@ export default function MusicLightPanel({
           </p>
         )}
 
-        <div className="flex flex-wrap items-center gap-3 border-t border-white/[0.07] pt-4 font-pretendard text-sm">
+        <div data-tour="music.live" className="flex flex-wrap items-center gap-3 border-t border-white/[0.07] pt-4 font-pretendard text-sm">
           <OnSwitch
+            tour="music.live-switch"
             checked={!!live}
             disabled={!operable || (!live && !state.feed)}
             onChange={(on) => setLive(on)}
@@ -714,7 +717,7 @@ export default function MusicLightPanel({
 
         {summary && show && (
           <div className="flex flex-col gap-3 border-t border-white/[0.07] pt-4">
-            <div className="flex flex-wrap items-center gap-2 font-pretendard text-[13px] text-white/55">
+            <div data-tour="music.options" className="flex flex-wrap items-center gap-2 font-pretendard text-[13px] text-white/55">
               <span className="mr-1">분위기</span>
               {(["basic", "calm", "party"] as ShowStyle[]).map((s) => (
                 <ChoiceButton
@@ -756,6 +759,7 @@ export default function MusicLightPanel({
                 </>
               )}
               <button
+                data-tour="music.edit-cues"
                 type="button"
                 onClick={() => setEditCues((v) => !v)}
                 className="ml-auto h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/60 hover:text-white"
@@ -763,6 +767,7 @@ export default function MusicLightPanel({
                 {editCues ? "큐 편집 닫기" : "큐 편집"}
               </button>
               <button
+                data-tour="music.delete"
                 type="button"
                 disabled={!operable || !!playing}
                 onClick={() => {
@@ -787,7 +792,7 @@ export default function MusicLightPanel({
         )}
       </section>
 
-      <Panel title="조명 쇼">
+      <Panel tour="music.shows" title="조명 쇼">
         <div className="flex flex-col">
           {state.shows.map((s) => {
             const isPlaying = state.playing?.showId === s.id;
@@ -841,6 +846,7 @@ export default function MusicLightPanel({
       {isAdmin && (
         <div>
           <button
+            data-tour="music.settings-toggle"
             type="button"
             onClick={() => setShowSettings((v) => !v)}
             className="font-pretendard text-xs text-white/40 hover:text-white/75"
@@ -848,7 +854,7 @@ export default function MusicLightPanel({
             {showSettings ? "▴ 음악 조명 설정 접기" : "▾ 음악 조명 설정"}
           </button>
           {showSettings && (
-            <Panel title="음악 조명 설정" className="mt-3">
+            <Panel tour="music.settings" title="음악 조명 설정" className="mt-3">
               <MusicSettings key={hallId} settings={state.settings} onSave={saveSettings} />
             </Panel>
           )}

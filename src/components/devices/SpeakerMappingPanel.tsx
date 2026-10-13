@@ -133,6 +133,7 @@ export default function SpeakerMappingPanel() {
 
       {/* 세션 */}
       <div
+        data-tour="mapping.session"
         className={cn(
           "flex flex-wrap items-center gap-3 rounded-xl border px-5 py-4",
           active ? "border-red-400/40 bg-red-400/10" : "border-white/10 bg-white/[0.03]",
@@ -148,7 +149,7 @@ export default function SpeakerMappingPanel() {
             <span className="font-pretendard text-xs text-white/40">
               울리는 칸 {current ? `${current[0]}행 ${current[1]}열` : "없음"}
             </span>
-            <div className="ml-auto flex gap-2">
+            <div data-tour="mapping.session.controls" className="ml-auto flex gap-2">
               <PanelButton onClick={() => ping(nextOf(selected))} disabled={busy}>
                 다음 칸 ▶
               </PanelButton>
@@ -162,7 +163,7 @@ export default function SpeakerMappingPanel() {
           </>
         ) : (
           <div className="ml-auto">
-            <PanelButton tone="primary" onClick={() => session("start")} disabled={busy}>
+            <PanelButton tour="mapping.start" tone="primary" onClick={() => session("start")} disabled={busy}>
               매핑 시작
             </PanelButton>
           </div>
@@ -170,7 +171,7 @@ export default function SpeakerMappingPanel() {
       </div>
 
       {/* 좌표 표 */}
-      <div className="rounded-2xl border border-white/5 bg-[#0a0a0a] p-4">
+      <div data-tour="mapping.grid" className="rounded-2xl border border-white/5 bg-[#0a0a0a] p-4">
         <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
           {draft.map((row, ri) =>
             row.map((name, ci) => {
@@ -228,7 +229,7 @@ export default function SpeakerMappingPanel() {
 
       {/* 도구 + 저장 */}
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
-        <div className="flex min-w-[320px] flex-1 flex-col gap-1">
+        <div data-tour="mapping.fill" className="flex min-w-[320px] flex-1 flex-col gap-1">
           <span className="font-mbc text-xs text-white/40">
             연속 채우기 ({selected[0]}·{selected[1]}부터)
           </span>
@@ -248,10 +249,10 @@ export default function SpeakerMappingPanel() {
         <BackupRestore onRestored={(m) => setDraft(copyCells(m))} />
         <div className="ml-auto flex items-center gap-3">
           {changed > 0 && <span className="font-pretendard text-sm text-amber-200/80">바뀐 칸 {changed}개</span>}
-          <PanelButton onClick={() => setDraft(copyCells(matrix))} disabled={!changed || busy}>
+          <PanelButton tour="mapping.revert" onClick={() => setDraft(copyCells(matrix))} disabled={!changed || busy}>
             되돌리기
           </PanelButton>
-          <PanelButton tone="primary" onClick={save} disabled={!changed || busy}>
+          <PanelButton tour="mapping.save" tone="primary" onClick={save} disabled={!changed || busy}>
             저장
           </PanelButton>
         </div>
@@ -277,15 +278,19 @@ function PanelButton({
   onClick,
   disabled,
   tone = "default",
+  tour,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
   tone?: "default" | "primary" | "danger";
+  /** CUE 튜토리얼 이름표 (data-tour) */
+  tour?: string;
 }) {
   return (
     <button
       type="button"
+      data-tour={tour}
       onClick={onClick}
       disabled={disabled}
       className={cn(
@@ -341,7 +346,7 @@ function ConnectionCard() {
   const field = "h-10 rounded-lg border border-white/10 bg-[#141414] px-3 text-sm text-white focus:border-white/30 focus:outline-none";
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
+    <div data-tour="mapping.connection" className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
       <div className="flex items-center gap-2 self-center pr-2">
         <span
           className={cn(
@@ -368,7 +373,7 @@ function ConnectionCard() {
         <span className="font-mbc text-xs text-white/40">포트</span>
         <input value={form.port} onChange={(e) => setForm({ ...form, port: e.target.value })} className={cn(field, "w-24 font-orbitron")} />
       </label>
-      <PanelButton onClick={test} disabled={!valid}>
+      <PanelButton tour="mapping.connection.test" onClick={test} disabled={!valid}>
         연결 테스트
       </PanelButton>
       <PanelButton tone="primary" onClick={save} disabled={!valid || !dirty}>
@@ -378,6 +383,7 @@ function ConnectionCard() {
       <div className="ml-auto flex items-center gap-3 self-center">
         <button
           type="button"
+          data-tour="mapping.learn"
           onClick={() => setLearning(true)}
           className="flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3.5 py-2 font-mbc text-sm text-red-100 transition-colors hover:bg-red-500/20"
         >
@@ -415,7 +421,7 @@ function BackupRestore({ onRestored }: { onRestored: (m: SpeakerMatrix) => void 
 
   if (!backups.length) return null;
   return (
-    <div className="flex flex-col gap-1">
+    <div data-tour="mapping.backup" className="flex flex-col gap-1">
       <span className="font-mbc text-xs text-white/40">저장 이력</span>
       <div className="flex gap-2">
         <Select

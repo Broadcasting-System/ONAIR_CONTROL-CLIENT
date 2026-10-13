@@ -16,12 +16,14 @@ export default function GroupActions({
   return (
     <div className="flex flex-col gap-[16px] w-[340px]">
       <Button
+        tour="time.copy"
         label="요일 시보 복사"
         onClick={onCopy}
         color="white"
         className="h-[64px]"
       />
       <Button
+        tour="time.paste"
         label="요일 시보 붙여넣기"
         onClick={onPaste}
         disabled={!hasCopiedData}
@@ -29,6 +31,7 @@ export default function GroupActions({
         className="h-[64px]"
       />
       <Button
+        tour="time.reset"
         label="초기화"
         onClick={onReset}
         color="red"

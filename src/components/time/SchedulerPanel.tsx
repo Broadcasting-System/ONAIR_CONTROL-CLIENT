@@ -64,7 +64,7 @@ export default function SchedulerPanel() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div className="flex items-center justify-end gap-6">
-        <div className="flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2">
+        <div data-tour="schedule.live-group" className="flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2">
           <span className="font-mbc text-xs text-white/40">현재 송출 그룹</span>
           <span className="font-orbitron text-sm text-emerald-300">
             {status?.activeGroupId ? `GROUP ${status.activeGroupId}` : "없음"}
@@ -72,7 +72,7 @@ export default function SchedulerPanel() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a]">
+      <div data-tour="schedule.table" className="flex-1 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a]">
         <table className="w-full text-left font-pretendard text-sm">
           <thead className="sticky top-0 bg-[#0a0a0a] text-white/40">
             <tr className="border-b border-white/10">

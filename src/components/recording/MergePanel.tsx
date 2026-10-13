@@ -170,6 +170,7 @@ export default function MergePanel({
         ) : (
           <div className="flex flex-col gap-2">
             <button
+              data-tour="recording.merge-upload"
               type="button"
               disabled={!canOperate}
               onClick={() => fileInput.current?.click()}
@@ -220,6 +221,7 @@ export default function MergePanel({
 
       <Step n={2} done={!!recording} title="녹음 고르기">
         <Select
+          tour="recording.merge-recording"
           value={recording?.id ?? ""}
           onChange={onRecording}
           disabled={running || !ready.length}
@@ -276,6 +278,7 @@ export default function MergePanel({
 
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <button
+            data-tour="recording.merge-start"
             type="button"
             onClick={start}
             disabled={!canOperate || !video || !recording || !video.hasAudio || running || isMerging || !!upload}

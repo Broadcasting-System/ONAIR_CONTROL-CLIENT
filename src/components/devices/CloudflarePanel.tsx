@@ -135,7 +135,7 @@ function StatusSection() {
   const s = status.data;
 
   return (
-    <Panel title="연결 상태">
+    <Panel tour="cloudflare.status" title="연결 상태">
       {loadError(status) ? (
         <Problem>{errText(loadError(status))}</Problem>
       ) : !s ? (
@@ -150,6 +150,7 @@ function StatusSection() {
               {s.checkedAt.replace("T", " ").slice(5, 16)} 확인
             </span>
             <ActionButton
+              tour="cloudflare.status.recheck"
               className="ml-auto"
               busy={refresh.isPending}
               icon={<RefreshCw size={14} />}
@@ -386,7 +387,7 @@ function MailSection() {
   const s = d?.settings;
 
   return (
-    <Panel title="메일 주소" hint={`@${domain}`}>
+    <Panel tour="cloudflare.mail" title="메일 주소" hint={`@${domain}`}>
       {loadError(mail) ? (
         <Problem>{errText(loadError(mail))}</Problem>
       ) : !d ? (
@@ -410,7 +411,7 @@ function MailSection() {
             <span className="text-white/55">
               워커 비밀값 {s?.workerSecretSet ? "있음" : "없음"}
             </span>
-            <div className="ml-auto flex gap-2">
+            <div data-tour="cloudflare.mail.actions" className="ml-auto flex gap-2">
               <ActionButton busy={sync.isPending} icon={<RefreshCw size={14} />} onClick={() => sync.mutate()}>
                 규칙 다시 맞추기
               </ActionButton>
@@ -426,7 +427,7 @@ function MailSection() {
           {issuing && <IssueForm domain={domain} onDone={() => setIssuing(false)} />}
 
           <Seg items={ADDR_FILTERS} value={filter} onChange={setFilter} />
-          <div className="overflow-x-auto rounded-xl border border-white/10">
+          <div data-tour="cloudflare.mail.table" className="overflow-x-auto rounded-xl border border-white/10">
             <table className="w-full min-w-[720px] text-left font-pretendard text-[14px]">
               <thead className="text-white/45">
                 <tr className="border-b border-white/10">
@@ -506,7 +507,7 @@ function MailSection() {
             </table>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div data-tour="cloudflare.mail.inbox" className="flex flex-col gap-2">
             <h4 className="font-mbc text-[17px] text-white">받을 메일</h4>
             <div className="overflow-x-auto rounded-xl border border-white/10">
               <table className="w-full min-w-[560px] text-left font-pretendard text-[14px]">
@@ -588,6 +589,7 @@ function AccessEmailSection() {
 
   return (
     <Panel
+      tour="cloudflare.access"
       title="로그인 허용 이메일"
       hint={d ? `${d.app.domain} · 정책 '${d.policy.name}'` : undefined}
     >
@@ -597,7 +599,7 @@ function AccessEmailSection() {
         <Loading />
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="flex gap-2">
+          <div data-tour="cloudflare.access.add" className="flex gap-2">
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -679,7 +681,7 @@ function DeviceSection() {
   const d = list.data;
 
   return (
-    <Panel title="기기 접속 키">
+    <Panel tour="cloudflare.device-keys" title="기기 접속 키">
       {loadError(list) ? (
         <Problem>{errText(loadError(list))}</Problem>
       ) : !d ? (
@@ -833,7 +835,7 @@ function SettingsSection() {
   };
 
   return (
-    <Panel title="연결 설정">
+    <Panel tour="cloudflare.settings" title="연결 설정">
       <div className="flex flex-col gap-5">
         <label className="flex flex-col gap-1.5">
           <span className="font-pretendard text-[13px] font-semibold text-white/70">API 토큰</span>
@@ -907,6 +909,7 @@ function SettingsSection() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            data-tour="cloudflare.settings.save"
             onClick={submit}
             disabled={save.isPending}
             className="flex h-10 items-center gap-1.5 rounded-lg border border-white/20 bg-white px-4 font-pretendard text-[14px] font-semibold text-black transition-colors enabled:hover:bg-white/85 disabled:opacity-50"
@@ -915,6 +918,7 @@ function SettingsSection() {
             저장
           </button>
           <ActionButton
+            tour="cloudflare.settings.test"
             busy={runTest.isPending}
             onClick={() => {
               setTest(null);

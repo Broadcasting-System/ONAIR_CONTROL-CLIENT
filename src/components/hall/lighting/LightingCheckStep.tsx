@@ -85,7 +85,7 @@ export default function LightingCheckStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="확인">
+      <Card tour="lighting-setup.check" title="확인">
         <div className="flex flex-col gap-2">
           <CheckRow tone={conn.tone}>{conn.text}</CheckRow>
           <CheckRow tone={list.tone}>{list.text}</CheckRow>
@@ -94,6 +94,7 @@ export default function LightingCheckStep({
 
         <div className="flex flex-wrap items-center gap-2">
           <ActionButton
+            tour="lighting-setup.all-on"
             icon={<Sun size={15} />}
             busy={busy === "on"}
             disabled={!configured || rows.length === 0 || dirty}
@@ -102,6 +103,7 @@ export default function LightingCheckStep({
             전체 켜기
           </ActionButton>
           <ActionButton
+            tour="lighting-setup.all-off"
             icon={<PowerOff size={15} />}
             busy={busy === "off"}
             disabled={!configured || rows.length === 0 || dirty}
@@ -119,6 +121,7 @@ export default function LightingCheckStep({
             시험 값 모두 해제
           </ActionButton>
           <ActionButton
+            tour="lighting-setup.finish"
             tone="primary"
             icon={dirty ? <Save size={15} /> : <Check size={15} />}
             busy={finishing}
@@ -133,6 +136,7 @@ export default function LightingCheckStep({
 
       {configured && (
         <Card
+          tour="lighting-setup.remove"
           title="이 공간 조명 끄기"
           className="border-red-500/20"
           action={

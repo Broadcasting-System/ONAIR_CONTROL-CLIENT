@@ -70,6 +70,20 @@ export interface DisplayMessage {
   tools?: ChatTool[];
   actions?: ChatAction[];
   links?: ChatLink[];
+  tours?: ChatTour[];
+}
+
+/** CUE 화면 튜토리얼 한 단계 — target 은 화면 요소의 data-tour 이름표(없으면 설명만 가운데) */
+export interface TourStep {
+  href: string;
+  target?: string;
+  title: string;
+  text: string;
+}
+
+export interface ChatTour {
+  title: string;
+  steps: TourStep[];
 }
 
 export interface ChatSessionSummary {
@@ -147,5 +161,6 @@ export type ChatStreamEvent =
   | ({ type: "tool" } & ChatTool)
   | { type: "action"; action: ChatAction }
   | ({ type: "link" } & ChatLink)
+  | ({ type: "tour" } & ChatTour)
   | { type: "error"; message: string }
   | { type: "done"; message: DisplayMessage; usage?: { inputTokens: number; outputTokens: number } };

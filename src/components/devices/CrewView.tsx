@@ -55,7 +55,7 @@ function CohortNumber({ n, on, size, stroke }: { n: number; on: boolean; size: n
 function Monitor({ p }: { p: CrewMember }) {
   const live = p.role !== "alumni";
   return (
-    <div className="relative aspect-[16/10] overflow-hidden rounded-[18px] border border-black bg-[#050506] shadow-[0_20px_60px_rgba(0,0,0,0.6),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+    <div data-tour="crew.card" className="relative aspect-[16/10] overflow-hidden rounded-[18px] border border-black bg-[#050506] shadow-[0_20px_60px_rgba(0,0,0,0.6),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
       {/* 배경 — 부원마다 ① 소리 파형(이름으로 만든 그림) 또는 ③ 본인 사진 */}
       <CardBackground key={p.id} name={p.name} cohort={p.cohort} cardBg={p.cardBg} photoUrl={p.photoUrl} />
       {/* 큰 기수 숫자 워터마크 */}
@@ -139,7 +139,7 @@ function Profile({ p, domain, onEdit }: { p: CrewMember; domain: string; onEdit:
         <Meta label="기기">{p.hasDevice ? "등록됨" : "명단만"}</Meta>
       </div>
       {p.canEdit && (
-        <div className="flex justify-end">
+        <div data-tour="crew.edit" className="flex justify-end">
           <ActionButton className="h-9 px-3.5" onClick={onEdit}>
             소개 고치기
           </ActionButton>
@@ -332,6 +332,7 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
   return (
     <ModalShell title={`${target.name} 소개 고치기`} onClose={onClose}>
       <form
+        data-tour="crew.editor"
         className="grid gap-4"
         onSubmit={(e) => {
           e.preventDefault();
@@ -346,6 +347,7 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={TITLE_MAX + 10}
+            data-tour="crew.editor.title"
             placeholder="예: 강당 음향 담당"
             autoFocus
             className={cn(inpCls, "h-11")}
@@ -356,6 +358,7 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
             소개글 <Count n={bioLen} max={BIO_MAX} />
           </span>
           <textarea
+            data-tour="crew.editor.bio"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={6}
@@ -510,7 +513,7 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
 
   return (
     <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,480px)] 2xl:grid-cols-[minmax(0,1fr)_520px]">
-      <section className="rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
+      <section data-tour="crew.list" className="rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
         <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
           <h3 className="whitespace-nowrap font-mbc text-2xl text-white">방송부</h3>
           {toggle && <span className="ml-auto">{toggle}</span>}
@@ -575,6 +578,7 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
         {data?.canManage && (
           <button
             type="button"
+            data-tour="crew.add"
             onClick={() => setAdding(true)}
             className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/20 py-3 font-mbc text-sm text-white/60 transition-colors hover:border-white/40 hover:text-white"
           >
@@ -583,7 +587,7 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
         )}
       </section>
 
-      <aside className="xl:sticky xl:top-6">
+      <aside data-tour="crew.profile" className="xl:sticky xl:top-6">
         {selected && data ? (
           <Profile
             p={selected}

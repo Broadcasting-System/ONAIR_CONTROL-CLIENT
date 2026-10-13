@@ -79,8 +79,9 @@ export default function LightingPage() {
     <div className="flex h-full flex-col gap-6">
       <header className="flex flex-wrap items-center gap-5">
         <SectionHeader className="mb-0">조명</SectionHeader>
-        <HallSwitcher halls={halls} value={current?.id} onChange={setHallId} />
+        <HallSwitcher tour="lighting.hall-select" halls={halls} value={current?.id} onChange={setHallId} />
         <PageTabs
+          tour="lighting.tab"
           tabs={[
             { key: "control", label: "조작" },
             { key: "music", label: "음악 조명" },
@@ -90,11 +91,12 @@ export default function LightingPage() {
         />
         <div className="ml-auto flex items-center gap-2.5">
           <StatusChip
+            tour="lighting.status"
             tone={connected ? "good" : "off"}
             label={`${state?.driver === "mock" ? "모의 장비" : "DMX"} ${connected ? "online" : "offline"}`}
           />
-          {isAdmin && <ConfigButton label="현장 세팅" onClick={() => router.push("/lighting/setup")} />}
-          <LockToggle checked={locked} onChange={setLocked} />
+          {isAdmin && <ConfigButton tour="lighting.setup" label="현장 세팅" onClick={() => router.push("/lighting/setup")} />}
+          <LockToggle tour="lighting.lock" checked={locked} onChange={setLocked} />
         </div>
       </header>
 
@@ -107,7 +109,7 @@ export default function LightingPage() {
       )}
 
       {/* 음악 조명 탭에서는 조작 화면을 숨긴다 (페이더 상태는 그대로 유지) */}
-      <Panel title="장면" className={cn(tab !== "control" && "hidden")}>
+      <Panel tour="lighting.scenes" title="장면" className={cn(tab !== "control" && "hidden")}>
         <div className="flex flex-wrap items-center gap-2.5">
           {(state?.scenes ?? []).map((scene) => {
             const active = state?.current === scene.id;
@@ -151,6 +153,7 @@ export default function LightingPage() {
           {isAdmin &&
             (saving ? (
               <form
+                data-tour="lighting.scene-save-form"
                 className="flex items-center gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -199,6 +202,7 @@ export default function LightingPage() {
               </form>
             ) : (
               <button
+                data-tour="lighting.scene-save"
                 type="button"
                 disabled={!connected}
                 onClick={() => setSaving(true)}
@@ -215,6 +219,7 @@ export default function LightingPage() {
       </Panel>
 
       <Panel
+        tour="lighting.fixtures"
         title="조명"
         className={cn("flex min-h-[520px] flex-1 flex-col", tab !== "control" && "hidden")}
       >
@@ -233,7 +238,7 @@ export default function LightingPage() {
         ) : (
           <div className="flex min-h-0 flex-1 gap-3">
             {/* 조명이 많으면 줄을 바꿔 쌓는다 */}
-            <div className={cn(BOARD, "min-w-0 flex-1 overflow-y-auto p-3")}>
+            <div data-tour="lighting.faders" className={cn(BOARD, "min-w-0 flex-1 overflow-y-auto p-3")}>
               <div className="flex flex-wrap content-start gap-1.5">
                 {fixtures.map((f) => (
                   <LightStrip
@@ -249,7 +254,7 @@ export default function LightingPage() {
               </div>
             </div>
             {/* '전체' 줄은 오른쪽에 고정 — 조명이 몇 줄이 되든 같은 자리 */}
-            <div className={cn(BOARD, "flex shrink-0 items-start p-3")}>
+            <div data-tour="lighting.master" className={cn(BOARD, "flex shrink-0 items-start p-3")}>
               <LightMasterStrip
                 master={state?.master ?? 100}
                 blackout={!!state?.blackout}

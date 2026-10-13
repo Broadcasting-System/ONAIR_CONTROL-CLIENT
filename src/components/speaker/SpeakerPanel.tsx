@@ -68,6 +68,7 @@ export function SpeakerPanel({
             onClick={() => onToggle("all")}
             disabled={!canOperate}
             className="h-[52px]"
+            tour="speakers.all"
           />
           <Button
             label="학년 전체"
@@ -75,6 +76,7 @@ export function SpeakerPanel({
             onClick={() => onToggle("grade")}
             disabled={!canOperate}
             className="h-[52px]"
+            tour="speakers.grade"
           />
         </div>
       </div>

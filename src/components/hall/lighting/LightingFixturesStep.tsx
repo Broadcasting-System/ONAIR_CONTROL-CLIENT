@@ -188,9 +188,9 @@ export default function LightingFixturesStep({
     <div className="flex flex-col gap-5">
       {!canTest && <Notice>연결 저장 안 됨</Notice>}
 
-      <Card title="조명 찾기·목록">
+      <Card tour="lighting-setup.fixtures" title="조명 찾기·목록">
         <div className="flex flex-wrap items-center gap-3">
-          <ActionButton tone="primary" icon={<Radio size={15} />} busy={reading} disabled={!canTest} onClick={readConsole}>
+          <ActionButton tour="lighting-setup.read-console" tone="primary" icon={<Radio size={15} />} busy={reading} disabled={!canTest} onClick={readConsole}>
             {reading ? "읽는 중… 3초" : "콘솔 신호 읽기 (3초)"}
           </ActionButton>
           {capture && (
@@ -237,6 +237,7 @@ export default function LightingFixturesStep({
             );
           })}
           <button
+            data-tour="lighting-setup.address-test"
             type="button"
             onClick={() => setTester((v) => !v)}
             aria-expanded={tester}
@@ -304,7 +305,7 @@ export default function LightingFixturesStep({
           </div>
         )}
 
-        <div className="overflow-x-auto">
+        <div data-tour="lighting-setup.fixture-list" className="overflow-x-auto">
           <div className="flex min-w-[720px] flex-col gap-1.5">
             <div className={cn("grid items-center gap-2 px-2 pb-1", COLS)}>
               <Th>이름</Th>
@@ -456,7 +457,7 @@ export default function LightingFixturesStep({
           </div>
         </div>
 
-        <ActionButton tone="ghost" icon={<Plus size={14} />} onClick={addBlank} className="self-start">
+        <ActionButton tour="lighting-setup.add-fixture" tone="ghost" icon={<Plus size={14} />} onClick={addBlank} className="self-start">
           직접 추가
         </ActionButton>
 

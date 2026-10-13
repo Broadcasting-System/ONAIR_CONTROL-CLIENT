@@ -76,7 +76,7 @@ export default function EnergyPanel() {
 
   return (
     <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5">
-      <section className="flex flex-col gap-6 rounded-2xl border border-white/5 bg-[#0a0a0a] p-6">
+      <section data-tour="energy.settings" className="flex flex-col gap-6 rounded-2xl border border-white/5 bg-[#0a0a0a] p-6">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-mbc text-lg text-white">야간 절전</h3>
@@ -87,6 +87,7 @@ export default function EnergyPanel() {
           <button
             type="button"
             role="switch"
+            data-tour="energy.toggle"
             aria-checked={form.enabled}
             aria-label="야간 절전 사용"
             onClick={() => setForm({ ...form, enabled: !form.enabled })}
@@ -105,7 +106,7 @@ export default function EnergyPanel() {
         </div>
 
         <div className={cn("flex flex-col gap-5 transition-opacity", !form.enabled && "opacity-40")}>
-          <label className="flex items-center gap-4">
+          <label data-tour="energy.time" className="flex items-center gap-4">
             <span className="w-20 shrink-0 font-mbc text-sm text-white/50">끄는 시각</span>
             <input
               type="time"
@@ -118,7 +119,7 @@ export default function EnergyPanel() {
             />
           </label>
 
-          <div className="flex flex-wrap items-center gap-4">
+          <div data-tour="energy.days" className="flex flex-wrap items-center gap-4">
             <span className="w-20 shrink-0 font-mbc text-sm text-white/50">요일</span>
             <div className="flex gap-2">
               {DAY_LABELS.map((d) => {
@@ -163,7 +164,7 @@ export default function EnergyPanel() {
             <p className="font-pretendard text-xs text-red-300/80">요일을 고르세요</p>
           )}
 
-          <label className="flex cursor-pointer items-center gap-3">
+          <label data-tour="energy.displays" className="flex cursor-pointer items-center gap-3">
             <input
               type="checkbox"
               checked={form.displays}
@@ -186,6 +187,7 @@ export default function EnergyPanel() {
           )}
           <button
             type="button"
+            data-tour="energy.save"
             disabled={!canSave || isSaving}
             onClick={() => save(toConfig(form))}
             className="h-11 rounded-xl border border-white/15 bg-white/10 px-6 font-mbc text-white transition-colors hover:bg-white/15 disabled:opacity-40"
@@ -195,7 +197,7 @@ export default function EnergyPanel() {
         </div>
       </section>
 
-      <section className="flex items-center gap-4 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5">
+      <section data-tour="energy.last-run" className="flex items-center gap-4 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5">
         <div className="min-w-0 flex-1">
           <span className="font-mbc text-sm text-white/50">최근 실행</span>
           <p className="mt-1 truncate font-pretendard text-sm text-white/80" title={state.lastRun ? describeRun(state.lastRun) : undefined}>
@@ -204,6 +206,7 @@ export default function EnergyPanel() {
         </div>
         <button
           type="button"
+          data-tour="energy.run-now"
           onClick={() => setConfirm(true)}
           disabled={isRunning}
           className="h-11 shrink-0 rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 font-mbc text-sm text-amber-100 transition-colors hover:bg-amber-500/20 disabled:opacity-40"

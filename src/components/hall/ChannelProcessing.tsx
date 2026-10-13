@@ -387,6 +387,7 @@ export default function ChannelProcessing({
         )}
         {isAdmin && realDevice && (
           <button
+            data-tour="mixer.address-link"
             type="button"
             onClick={() => {
               setLinkMode((v) => !v);
@@ -420,7 +421,7 @@ export default function ChannelProcessing({
       )}
 
       {/* 실제 콘솔 화면처럼 한 줄 — 좁으면 EQ 가 먼저 줄을 바꾼다 */}
-      <div className="flex flex-wrap items-stretch gap-3">
+      <div data-tour="mixer.processing-modules" className="flex flex-wrap items-stretch gap-3">
         {/* INPUT */}
         <Module label="INPUT" color={C_INPUT} className="w-[150px]">
           <div className="flex flex-1 items-center justify-center px-2">

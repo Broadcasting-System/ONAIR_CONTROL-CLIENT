@@ -16,7 +16,7 @@ export default function SpeakersPage() {
       <header className="flex flex-wrap items-center gap-5">
         <SectionHeader className="mb-0">스피커 지도</SectionHeader>
         {!canOperate && (
-          <span className="font-pretendard text-[13px] text-white/40">
+          <span className="font-pretendard text-[13px] text-white/40" data-tour="speakers.view-only">
             보기 전용
           </span>
         )}

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ChevronLeft, History, ImagePlus, Loader2, Settings, SquarePen, Trash2, X } from "lucide-react";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatSettingsForm from "@/components/chat/ChatSettingsForm";
+import TourOverlay from "@/components/tour/TourOverlay";
 import Composer, { type ComposerHandle } from "@/components/chat/Composer";
 import { suggestionsFor, type Suggestion } from "@/components/chat/suggestions";
 import { useChatConversation } from "@/hooks/useChatConversation";
@@ -183,8 +184,17 @@ function EmptyState({ suggestions, onPick }: { suggestions: Suggestion[]; onPick
   );
 }
 
-/** CUE — 모든 대시보드 화면 오른쪽에 붙는 채팅 패널 */
+/** CUE — 모든 대시보드 화면 오른쪽에 붙는 채팅 패널 + 화면 튜토리얼 막 */
 export default function ChatPanel() {
+  return (
+    <>
+      <ChatPanelBody />
+      <TourOverlay />
+    </>
+  );
+}
+
+function ChatPanelBody() {
   const open = useChatPanel((s) => s.open);
   const setOpen = useChatPanel((s) => s.setOpen);
   const toggle = useChatPanel((s) => s.toggle);

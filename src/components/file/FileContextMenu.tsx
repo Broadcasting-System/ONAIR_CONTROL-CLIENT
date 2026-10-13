@@ -62,6 +62,7 @@ export default function FileContextMenu({
   return (
     <div
       ref={menuRef}
+      data-tour="files.menu"
       className="fixed z-50 flex flex-col w-48 py-1.5 rounded-xl border border-white/10 bg-[#252525] shadow-2xl backdrop-blur-xl"
       style={{
         left: position.x,
@@ -69,6 +70,7 @@ export default function FileContextMenu({
       }}
     >
       <button
+        data-tour="files.menu.preview"
         onClick={() => {
           onPreview();
           onClose();
@@ -80,6 +82,7 @@ export default function FileContextMenu({
       </button>
 
       <button
+        data-tour="files.menu.rename"
         onClick={() => {
           onRename();
           onClose();
@@ -95,6 +98,7 @@ export default function FileContextMenu({
       <div className="h-px bg-white/10 my-1 w-full" />
 
       <button
+        data-tour="files.menu.delete"
         onClick={() => {
           onDelete();
           onClose();

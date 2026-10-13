@@ -41,8 +41,8 @@ export default function AudioPage() {
   const lead = (
     <>
       <SectionHeader className="mb-0">오디오</SectionHeader>
-      <HallSwitcher halls={halls} value={current?.id} onChange={setHallId} />
-      <PageTabs tabs={AUDIO_TABS} value={tab} onChange={setTab} />
+      <HallSwitcher tour="mixer.hall-select" halls={halls} value={current?.id} onChange={setHallId} />
+      <PageTabs tour="mixer.tab" tabs={AUDIO_TABS} value={tab} onChange={setTab} />
     </>
   );
 

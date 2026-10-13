@@ -58,8 +58,8 @@ export default function InviteModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative z-10 grid w-full max-w-[720px] items-center gap-6 rounded-[24px] border border-white/10 bg-[#151515] p-7 shadow-2xl sm:grid-cols-[230px_minmax(0,1fr)]">
-        <div className="aspect-square w-full max-w-[230px] justify-self-center rounded-xl bg-white p-3">
+      <div data-tour="members.invite-modal" className="relative z-10 grid w-full max-w-[720px] items-center gap-6 rounded-[24px] border border-white/10 bg-[#151515] p-7 shadow-2xl sm:grid-cols-[230px_minmax(0,1fr)]">
+        <div data-tour="members.invite-qr" className="aspect-square w-full max-w-[230px] justify-self-center rounded-xl bg-white p-3">
           {svg ? (
             // qrcode 가 만든 SVG 문자열 (서버가 준 링크만 담는다)
             <div className="h-full w-full [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />
@@ -84,7 +84,7 @@ export default function InviteModal({
             </button>
           </div>
 
-          <div className="flex flex-col gap-1.5 rounded-[14px] border border-white/[0.08] bg-[#0a0a0c] px-[18px] py-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]">
+          <div data-tour="members.invite-code" className="flex flex-col gap-1.5 rounded-[14px] border border-white/[0.08] bg-[#0a0a0c] px-[18px] py-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]">
             <span className="font-pretendard text-[13px] font-semibold text-white/50">
               {codeAlive ? `코드 · ${codeLeft} 남음` : "코드 만료"}
             </span>

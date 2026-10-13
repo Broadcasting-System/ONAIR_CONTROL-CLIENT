@@ -8,6 +8,8 @@ interface TextInputProps {
   placeholder?: string;
   width?: string | number;
   disabled?: boolean;
+  /** CUE 튜토리얼이 가리킬 이름표 (data-tour) */
+  tour?: string;
 }
 
 export default function TextInput({
@@ -16,9 +18,11 @@ export default function TextInput({
   placeholder,
   width = "100%",
   disabled = false,
+  tour,
 }: TextInputProps) {
   return (
     <input
+      data-tour={tour}
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}

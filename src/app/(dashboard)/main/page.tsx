@@ -59,25 +59,28 @@ export default function MainPage() {
   return (
     <div className="grid grid-cols-12 gap-16 h-full">
       <div className="col-span-5 flex flex-col gap-10 h-full">
-        <section>
+        <section data-tour="main.tts">
           <SectionHeader>TTS</SectionHeader>
           <div className="flex flex-col gap-8 rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl">
             <TextInput
               value={text}
               onChange={setText}
               placeholder="방송할 텍스트"
+              tour="main.tts-input"
             />
 
             {/* TTS 시작/끝 음원 (선택 — '안 함' 가능) */}
             <div className="flex gap-4">
               <SoundSelect
                 label="시작 음원"
+                tour="main.tts-start-sound"
                 value={startSound}
                 onChange={setStartSound}
                 options={audioFiles}
               />
               <SoundSelect
                 label="끝 음원"
+                tour="main.tts-end-sound"
                 value={endSound}
                 onChange={setEndSound}
                 options={audioFiles}
@@ -89,11 +92,12 @@ export default function MainPage() {
               onClick={handleSend}
               disabled={!text.trim() || isTtsSending || !canOperate}
               className="h-[64px]"
+              tour="main.tts-send"
             />
           </div>
         </section>
 
-        <section className="flex-1 flex flex-col">
+        <section className="flex-1 flex flex-col" data-tour="main.monitor">
           <SectionHeader>방송 모니터링</SectionHeader>
           <div className="flex-1 flex flex-col gap-6 rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl">
             <div className="aspect-video w-full rounded-xl bg-black flex items-center justify-center border border-white/10 relative overflow-hidden shadow-inner">
@@ -106,7 +110,7 @@ export default function MainPage() {
       </div>
 
       <div className="col-span-7 flex flex-col gap-14 h-full">
-        <section>
+        <section data-tour="main.network">
           <SectionHeader>네트워크 상태</SectionHeader>
           <div className="rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl bg-gradient-to-br from-white/5 to-transparent">
             <div className="grid grid-cols-2 gap-8">
@@ -126,12 +130,13 @@ export default function MainPage() {
           </div>
         </section>
 
-        <section className="flex-1 flex flex-col">
+        <section className="flex-1 flex flex-col" data-tour="main.speakers">
           <div className="flex items-center justify-between">
             <SectionHeader>스피커 관리</SectionHeader>
             {/* 지도·분류 표는 '스피커 지도' 페이지에 따로 있다 */}
             <Link
               href="/speakers"
+              data-tour="main.speaker-map-link"
               className="mb-4 rounded-lg bg-white/5 px-4 py-1.5 font-mbc text-sm text-white/60 transition-colors hover:bg-white/10 hover:text-white"
             >
               지도로 보기 →
@@ -139,7 +144,7 @@ export default function MainPage() {
           </div>
           <div className="flex-1 flex flex-col rounded-[24px] border border-sidebar-border bg-sidebar p-6 backdrop-blur-md shadow-2xl">
             <div className="min-h-0 flex-1">
-              <div className="grid grid-cols-5 gap-4">
+              <div className="grid grid-cols-5 gap-4" data-tour="main.speaker-list">
                 {zones.map((zone) => (
                   <StatusCard
                     key={zone.id}
@@ -158,6 +163,7 @@ export default function MainPage() {
                   onClick={() => toggleSpeaker("all")}
                   disabled={!canOperate}
                   className="h-[64px]"
+                  tour="main.speaker-all"
                 />
               </div>
               <div className="w-[360px]">
@@ -167,6 +173,7 @@ export default function MainPage() {
                   onClick={() => toggleSpeaker("grade")}
                   disabled={!canOperate}
                   className="h-[64px]"
+                  tour="main.speaker-grade"
                 />
               </div>
             </div>
@@ -182,11 +189,13 @@ function SoundSelect({
   value,
   onChange,
   options,
+  tour,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: { id: string; fileName: string; fileUrl: string }[];
+  tour?: string;
 }) {
   return (
     <div className="flex flex-1 flex-col gap-2">
@@ -199,6 +208,7 @@ function SoundSelect({
           ...options.map((f) => ({ value: f.fileUrl, label: f.fileName })),
         ]}
         className="h-[48px] w-full rounded-xl bg-[#1C1C1C] px-4 text-[15px]"
+        tour={tour}
       />
     </div>
   );

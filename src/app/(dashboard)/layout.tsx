@@ -19,6 +19,7 @@ function ChatToggle() {
   return (
     <button
       type="button"
+      data-tour="nav.cue"
       onClick={toggle}
       aria-pressed={open}
       title={`CUE (${shortcut})`}
@@ -74,6 +75,7 @@ export default function DashboardLayout({
                     <Link
                       key={item.path}
                       href={item.path}
+                      data-tour={`nav.${item.path.slice(1)}`}
                       className={cn(
                         "group flex h-[56px] flex-col justify-center rounded-lg border border-transparent px-5 transition-all duration-200",
                         isActive

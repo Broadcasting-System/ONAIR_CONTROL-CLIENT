@@ -50,6 +50,7 @@ export default function Select<T extends SelectValue>({
   name,
   "aria-label": ariaLabel,
   "aria-invalid": ariaInvalid,
+  tour,
 }: {
   value: T | null | undefined;
   onChange: (value: T) => void;
@@ -64,6 +65,8 @@ export default function Select<T extends SelectValue>({
   name?: string;
   "aria-label"?: string;
   "aria-invalid"?: boolean;
+  /** CUE 튜토리얼이 가리킬 이름표 (data-tour) */
+  tour?: string;
 }) {
   // Radix 는 값이 문자열이고 ""를 못 쓰므로, 옵션 순번을 값으로 쓴다
   const flat = useMemo(() => options.flatMap((o) => (isGroup(o) ? o.options : [o])), [options]);
@@ -102,7 +105,7 @@ export default function Select<T extends SelectValue>({
       disabled={disabled}
       name={name}
     >
-      <S.Trigger id={id} aria-label={ariaLabel} aria-invalid={ariaInvalid} className={cn(triggerBase, className)}>
+      <S.Trigger data-tour={tour} id={id} aria-label={ariaLabel} aria-invalid={ariaInvalid} className={cn(triggerBase, className)}>
         {/* 기본 <select> 처럼 가장 긴 옵션 너비에 맞춘다 — 숨은 글자들을 같은 칸에 겹쳐 둔다 */}
         <span className="grid min-w-0 flex-1">
           <span className={cn("col-start-1 row-start-1 truncate", index < 0 && "text-white/40")}>

@@ -8,13 +8,16 @@ export function HallSwitcher({
   halls,
   value,
   onChange,
+  tour,
 }: {
   halls: HallSummary[];
   value: string | undefined;
   onChange: (id: string) => void;
+  /** CUE 튜토리얼 이름표 (data-tour) */
+  tour?: string;
 }) {
   return (
-    <div className="flex items-center gap-1.5">
+    <div data-tour={tour} className="flex items-center gap-1.5">
       {halls.map((h) => (
         <button
           key={h.id}
@@ -35,9 +38,18 @@ export function HallSwitcher({
 }
 
 /** 연결 상태 표시 */
-export function StatusChip({ tone, label }: { tone: "good" | "warn" | "off"; label: string }) {
+export function StatusChip({
+  tone,
+  label,
+  tour,
+}: {
+  tone: "good" | "warn" | "off";
+  label: string;
+  /** CUE 튜토리얼 이름표 (data-tour) */
+  tour?: string;
+}) {
   return (
-    <span className="flex h-9 items-center gap-2 rounded-xl bg-black/40 px-3.5 font-orbitron text-[11px] uppercase tracking-[0.12em] text-white/70">
+    <span data-tour={tour} className="flex h-9 items-center gap-2 rounded-xl bg-black/40 px-3.5 font-orbitron text-[11px] uppercase tracking-[0.12em] text-white/70">
       <span
         className={cn(
           "h-2.5 w-2.5 rounded-full",
@@ -52,9 +64,19 @@ export function StatusChip({ tone, label }: { tone: "good" | "warn" | "off"; lab
 }
 
 /** 행사 중 실수로 건드리지 않도록 조작을 막는 스위치 */
-export function LockToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+export function LockToggle({
+  checked,
+  onChange,
+  tour,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  /** CUE 튜토리얼 이름표 (data-tour) */
+  tour?: string;
+}) {
   return (
     <button
+      data-tour={tour}
       type="button"
       role="switch"
       aria-checked={checked}
@@ -85,14 +107,18 @@ export function Panel({
   hint,
   className,
   children,
+  tour,
 }: {
   title: string;
   hint?: string;
   className?: string;
   children: React.ReactNode;
+  /** CUE 튜토리얼 이름표 (data-tour) */
+  tour?: string;
 }) {
   return (
     <section
+      data-tour={tour}
       className={cn(
         "rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md",
         className,

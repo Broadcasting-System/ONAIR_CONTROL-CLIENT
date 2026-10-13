@@ -114,7 +114,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
       <header className="flex flex-wrap items-center gap-5">{lead}</header>
       <div className="flex min-h-0 flex-1 gap-10">
         {/* 좌측: 미디어 목록 */}
-        <div className="flex w-[420px] shrink-0 flex-col gap-5">
+        <div className="flex w-[420px] shrink-0 flex-col gap-5" data-tour="media.select">
           <SectionHeader>미디어 선택</SectionHeader>
 
           {!canOperate && (
@@ -123,7 +123,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
             </p>
           )}
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" data-tour="media.type-tabs">
             {TYPE_TABS.map((t) => (
               <button
                 key={t.key}
@@ -144,6 +144,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
             ))}
             {/* 유튜브 — 링크 입력 송출 */}
             <button
+              data-tour="media.youtube"
               onClick={() => {
                 setYtMode((v) => !v);
                 setTimerMode(false);
@@ -160,6 +161,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
             </button>
             {/* 타이머 — 파일이 아니라 카운트다운/업 송출 */}
             <button
+              data-tour="media.timer"
               onClick={() => {
                 setTimerMode((v) => !v);
                 setYtMode(false);
@@ -176,6 +178,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
             </button>
             {/* 화면 공유 — 파일 종류 옆에 탭처럼 (선택이 아니라 시작/중지 동작) */}
             <button
+              data-tour="media.screen-share"
               onClick={isSharing ? stopShare : startShare}
               disabled={!canOperate && !isSharing}
               className={cn(
@@ -219,7 +222,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
               onClear={clearDisplay}
             />
           ) : (
-          <div className="flex flex-1 flex-col gap-2 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a] p-3">
+          <div className="flex flex-1 flex-col gap-2 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a] p-3" data-tour="media.file-list">
             {isLoading ? (
               <p className="p-4 font-pretendard text-white/40">불러오는 중…</p>
             ) : activeFiles.length === 0 ? (
@@ -250,7 +253,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
           <div className="flex items-center justify-between">
             <SectionHeader>송출 미리보기</SectionHeader>
             {/* 채널 선택 — 채널마다 독립 송출(CH1=기본). 송출 화면 연결되면 초록 점 */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" data-tour="media.channel-select">
               {/* 스피커 매트릭스 연결 상태 */}
               {health && !health.matrix.connected && (
                 <span
@@ -300,7 +303,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
           </div>
 
           {/* 미리보기 (높이 고정) — 화면 공유 중이면 내 화면 로컬 프리뷰 */}
-          <div className="relative h-[48vh] w-full shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black">
+          <div className="relative h-[48vh] w-full shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black" data-tour="media.preview">
             {sharingHere ? (
               <ScreenLocalPreview stream={localStream} />
             ) : (
@@ -309,7 +312,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
           </div>
 
           {/* 재생 제어 바: 하단 고정 */}
-          <div className="shrink-0 rounded-2xl border border-white/5 bg-[#0a0a0a] p-6">
+          <div className="shrink-0 rounded-2xl border border-white/5 bg-[#0a0a0a] p-6" data-tour="media.controls">
             {content?.type === "video" && pb ? (
               <div className="flex flex-col gap-4">
                 {/* 진행바 */}
@@ -592,7 +595,7 @@ function TimerComposer({
   const durationSec = Math.max(0, Math.floor(min) * 60 + Math.floor(sec));
 
   return (
-    <div className="flex flex-1 flex-col gap-5 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5">
+    <div className="flex flex-1 flex-col gap-5 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5" data-tour="media.timer-panel">
       {/* 모드 */}
       <div className="flex overflow-hidden rounded-xl border border-white/10">
         {(["down", "up"] as const).map((m) => (
@@ -649,6 +652,7 @@ function TimerComposer({
 
       <div className="mt-auto flex gap-3">
         <button
+          data-tour="media.timer-send"
           onClick={() => onSend({ label: label.trim() || undefined, durationSec, mode })}
           disabled={disabled || (mode === "down" && durationSec <= 0)}
           className="h-12 flex-1 rounded-xl border border-white/15 bg-white/10 font-mbc text-white hover:bg-white/15 disabled:opacity-40"
@@ -684,7 +688,7 @@ function YouTubeComposer({
   const valid = !!videoId;
 
   return (
-    <div className="flex flex-1 flex-col gap-5 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5">
+    <div className="flex flex-1 flex-col gap-5 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5" data-tour="media.youtube-panel">
       <div className="flex flex-col gap-1.5">
         <span className="font-mbc text-xs text-white/40">유튜브 링크</span>
         <input
@@ -715,6 +719,7 @@ function YouTubeComposer({
 
       <div className="mt-auto flex gap-3">
         <button
+          data-tour="media.youtube-send"
           onClick={() => videoId && onSend(videoId, loop)}
           disabled={disabled || !valid}
           className="h-12 flex-1 rounded-xl border border-red-500/40 bg-red-500/15 font-mbc text-red-100 hover:bg-red-500/25 disabled:opacity-40"

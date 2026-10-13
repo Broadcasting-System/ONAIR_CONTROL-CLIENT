@@ -150,6 +150,7 @@ export default function MixerSetupPage() {
     <div className="flex min-h-full flex-col gap-6">
       <header className="flex flex-wrap items-center gap-4">
         <Link
+          data-tour="mixer-setup.back"
           href="/mixer"
           className="flex h-9 items-center gap-1 rounded-xl px-2 font-mbc text-sm text-white/50 transition-colors hover:bg-white/5 hover:text-white"
         >
@@ -157,9 +158,10 @@ export default function MixerSetupPage() {
           오디오
         </Link>
         <SectionHeader className="mb-0">믹서 현장 세팅</SectionHeader>
-        <HallSwitcher halls={halls} value={current?.id} onChange={switchHall} />
+        <HallSwitcher tour="mixer-setup.hall-select" halls={halls} value={current?.id} onChange={switchHall} />
         <div className="ml-auto flex items-center gap-2.5">
           <StatusChip
+            tour="mixer-setup.status"
             tone={connected ? "good" : "off"}
             label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "믹서"} ${connected ? "online" : "offline"}`}
           />
@@ -173,10 +175,11 @@ export default function MixerSetupPage() {
       )}
 
       {/* 단계 */}
-      <nav className="grid grid-cols-4 gap-2.5">
+      <nav data-tour="mixer-setup.steps" className="grid grid-cols-4 gap-2.5">
         {steps.map((s, i) => (
           <button
             key={s.key}
+            data-tour={`mixer-setup.step.${s.key}`}
             type="button"
             onClick={() => setStep(s.key)}
             aria-current={step === s.key ? "step" : undefined}
@@ -229,7 +232,7 @@ export default function MixerSetupPage() {
 
       {/* 채널·씬·조작 범위는 한 번에 저장 */}
       {step !== "connection" && draft && dirty && (
-        <div className="sticky bottom-0 z-20 mt-auto flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-[#161616]/95 px-5 py-3 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.8)] backdrop-blur">
+        <div data-tour="mixer-setup.save-bar" className="sticky bottom-0 z-20 mt-auto flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-[#161616]/95 px-5 py-3 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.8)] backdrop-blur">
           <span className="font-mbc text-sm text-amber-200/85">저장 안 한 변경이 있어요</span>
           {problems.length > 0 && (
             <span className="font-pretendard text-xs text-red-300/85">· {problems.join(" · ")}</span>
@@ -239,6 +242,7 @@ export default function MixerSetupPage() {
               되돌리기
             </ActionButton>
             <ActionButton
+              tour="mixer-setup.save"
               tone="primary"
               icon={<Save size={15} />}
               busy={saving}

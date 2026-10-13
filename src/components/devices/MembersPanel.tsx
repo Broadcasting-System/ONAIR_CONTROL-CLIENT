@@ -91,13 +91,16 @@ function Seg<T extends string>({
   items,
   value,
   onChange,
+  tour,
 }: {
   items: { key: T; label: string }[];
   value: T;
   onChange: (v: T) => void;
+  /** CUE 튜토리얼 이름표 (data-tour) */
+  tour?: string;
 }) {
   return (
-    <div className="inline-flex flex-wrap gap-2">
+    <div data-tour={tour} className="inline-flex flex-wrap gap-2">
       {items.map((it) => {
         const on = value === it.key;
         return (
@@ -219,7 +222,7 @@ function PendingCard({
           {m.personalEmailHint && <span>→ {m.personalEmailHint}</span>}
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-2">
+      <div data-tour="members.pending.actions" className="flex flex-wrap items-center gap-2">
         <Seg
           items={choices.map((r) => ({
             key: r,
@@ -231,7 +234,7 @@ function PendingCard({
         <ActionButton className="ml-auto h-9 px-3.5" onClick={onReject} disabled={busy}>
           거절
         </ActionButton>
-        <ActionButton tone="primary" className="h-9 px-4" onClick={() => onApprove(role)} busy={busy}>
+        <ActionButton tour="members.pending.approve" tone="primary" className="h-9 px-4" onClick={() => onApprove(role)} busy={busy}>
           승인
         </ActionButton>
       </div>
@@ -292,7 +295,7 @@ export default function MembersPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const toggle = <PageTabs tabs={VIEWS} value={view} onChange={setView} />;
+  const toggle = <PageTabs tour="members.view" tabs={VIEWS} value={view} onChange={setView} />;
   if (view === "crew") return <CrewView toggle={toggle} />;
 
   if (list.error) {
@@ -325,7 +328,7 @@ export default function MembersPanel() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto pb-4">
       {/* 요약 · 초대 */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div data-tour="members.summary" className="flex flex-wrap items-center gap-2">
         <span className="mr-2">{toggle}</span>
         {(
           [
@@ -351,19 +354,20 @@ export default function MembersPanel() {
         )}
         <div className="ml-auto flex gap-2">
           <ActionButton
+            tour="members.export"
             icon={<Download size={15} />}
             onClick={() => downloadMembersCsv().catch((e: Error) => toast.error(e.message))}
           >
             명단 내보내기
           </ActionButton>
-          <ActionButton tone="primary" icon={<UserPlus size={15} />} busy={invite.isPending} onClick={() => invite.mutate("")}>
+          <ActionButton tour="members.invite" tone="primary" icon={<UserPlus size={15} />} busy={invite.isPending} onClick={() => invite.mutate("")}>
             새 부원 초대
           </ActionButton>
         </div>
       </div>
 
       {waiting.length > 0 && (
-        <div className="flex flex-col gap-1.5">
+        <div data-tour="members.invites" className="flex flex-col gap-1.5">
           {(allInvites ? waiting : waiting.slice(0, 2)).map((i) => (
             <div key={i.id} className="flex items-center gap-2.5 font-pretendard text-[13px] text-white/60">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF3B3B]" />
@@ -393,7 +397,7 @@ export default function MembersPanel() {
 
       {/* 승인 대기 */}
       {pending.length > 0 && (
-        <Panel title="승인 대기">
+        <Panel tour="members.pending" title="승인 대기">
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,460px),1fr))] gap-3">
             {pending.map((m) => (
               <PendingCard
@@ -417,8 +421,8 @@ export default function MembersPanel() {
       )}
 
       {/* 부원 목록 */}
-      <Panel title="부원">
-        <Seg items={FILTERS} value={filter} onChange={setFilter} />
+      <Panel tour="members.table" title="부원">
+        <Seg tour="members.filter" items={FILTERS} value={filter} onChange={setFilter} />
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[1100px] text-left font-pretendard text-sm">
             <thead className="text-white/50">
@@ -522,6 +526,7 @@ export default function MembersPanel() {
                           <>
                             <button
                               type="button"
+                              data-tour="members.row-menu"
                               aria-label={`${m.name} 더 보기`}
                               onClick={() => setMenu(menu === m.id ? null : m.id)}
                               className="rounded-lg border border-white/15 p-1.5 text-white/75 hover:bg-white/[0.06] hover:text-white"

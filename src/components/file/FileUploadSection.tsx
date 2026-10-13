@@ -14,6 +14,8 @@ interface FileUploadSectionProps {
   acceptedFormats?: string;
   isUploading?: boolean;
   readonly?: boolean;
+  /** CUE 튜토리얼 이름표 — 칸은 {tour}, 추가 버튼은 {tour}.upload */
+  tour?: string;
 }
 
 export default function FileUploadSection({
@@ -25,6 +27,7 @@ export default function FileUploadSection({
   acceptedFormats = "",
   isUploading = false,
   readonly = false,
+  tour,
 }: FileUploadSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,7 +39,7 @@ export default function FileUploadSection({
   };
 
   return (
-    <section>
+    <section data-tour={tour}>
       <SectionHeader>{title}</SectionHeader>
       <div className="flex flex-col gap-6 rounded-[24px] border border-sidebar-border bg-sidebar p-8 backdrop-blur-md shadow-2xl relative overflow-hidden h-full">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent opacity-50" />
@@ -84,6 +87,7 @@ export default function FileUploadSection({
             />
             <div className="w-[340px]">
               <Button
+                tour={tour ? `${tour}.upload` : undefined}
                 label={isUploading ? "업로드 중..." : `${title} 파일 추가`}
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}

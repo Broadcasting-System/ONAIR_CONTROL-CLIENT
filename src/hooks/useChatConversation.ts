@@ -131,6 +131,9 @@ export function useChatConversation(active: boolean) {
           case "link":
             patch(liveId, (m) => ({ ...m, links: [...(m.links ?? []), { label: ev.label, href: ev.href }] }));
             break;
+          case "tour":
+            patch(liveId, (m) => ({ ...m, tours: [...(m.tours ?? []), { title: ev.title, steps: ev.steps }] }));
+            break;
           case "error":
             patch(liveId, (m) => ({ ...m, error: ev.message }));
             break;

@@ -70,7 +70,7 @@ export default function NotebookKit() {
     : "";
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-5">
+    <section data-tour="bridges.kit" className="flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-mbc text-lg text-white">노트북 설치 파일</h3>
@@ -78,7 +78,7 @@ export default function NotebookKit() {
         {info && <span className="font-orbitron text-[11px] tracking-[0.12em] text-white/35">BRIDGE v{info.version}</span>}
       </div>
 
-      <ol className="grid grid-cols-1 gap-2 md:grid-cols-3">
+      <ol data-tour="bridges.kit.steps" className="grid grid-cols-1 gap-2 md:grid-cols-3">
         {STEPS.map((s, i) => (
           <li key={s} className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3.5 py-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 font-orbitron text-xs text-white/70">
@@ -89,7 +89,7 @@ export default function NotebookKit() {
         ))}
       </ol>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div data-tour="bridges.kit.download" className="flex flex-wrap items-end gap-3">
         <Field label="노트북 이름" className="w-[190px]">
           <input
             list="onair-kit-names"
@@ -112,10 +112,10 @@ export default function NotebookKit() {
             className={cn(inputCls, "font-orbitron", serverBad ? badBorder : okBorder)}
           />
         </Field>
-        <ActionButton tone="primary" icon={<Download size={15} />} busy={busy === "zip"} disabled={blocked} onClick={downloadZip}>
+        <ActionButton tour="bridges.kit.zip" tone="primary" icon={<Download size={15} />} busy={busy === "zip"} disabled={blocked} onClick={downloadZip}>
           이 컴퓨터로 받기
         </ActionButton>
-        <ActionButton icon={<Link2 size={15} />} busy={busy === "link"} disabled={blocked} onClick={makeLink}>
+        <ActionButton tour="bridges.kit.link" icon={<Link2 size={15} />} busy={busy === "link"} disabled={blocked} onClick={makeLink}>
           노트북에서 받을 주소
         </ActionButton>
       </div>

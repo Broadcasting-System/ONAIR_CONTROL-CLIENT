@@ -35,7 +35,7 @@ function Shell({ onClose, children }: { onClose: () => void; children: React.Rea
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[820px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1C1C1C] shadow-2xl">
+      <div data-tour="mapping.learn-wizard" className="relative z-10 flex max-h-[90vh] w-full max-w-[820px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1C1C1C] shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4">
           <div className="flex items-center gap-2.5">
             <RadioTower size={18} className="text-red-400" />

@@ -170,16 +170,17 @@ export default function ChannelsStep({
 
   return (
     <Card
+      tour="mixer-setup.channels"
       title={`채널 ${draft.channels.length}개`}
       hint={hiqnet ? `콘솔 주소 ${withAddr}/${draft.channels.length}` : undefined}
       action={
         <div className="flex gap-2">
           {hiqnet && (
-            <ActionButton icon={<Wand2 size={15} />} onClick={fillSi}>
+            <ActionButton tour="mixer-setup.fill-si" icon={<Wand2 size={15} />} onClick={fillSi}>
               Si 기본 주소 채우기
             </ActionButton>
           )}
-          <ActionButton icon={<Plus size={15} />} onClick={addChannel} disabled={draft.channels.length >= 64}>
+          <ActionButton tour="mixer-setup.add-channel" icon={<Plus size={15} />} onClick={addChannel} disabled={draft.channels.length >= 64}>
             채널 추가
           </ActionButton>
         </div>

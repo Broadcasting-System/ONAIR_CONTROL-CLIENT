@@ -73,6 +73,7 @@ export default function FilesPage() {
   return (
     <div className="flex flex-col gap-16 h-full pb-10">
       <FileUploadSection
+        tour="files.image"
         title="이미지"
         files={files.image}
         displayType="grid"
@@ -83,6 +84,7 @@ export default function FilesPage() {
       />
 
       <FileUploadSection
+        tour="files.video"
         title="동영상"
         files={files.video}
         displayType="grid"
@@ -93,6 +95,7 @@ export default function FilesPage() {
       />
 
       <FileUploadSection
+        tour="files.audio"
         title="음원"
         files={files.audio}
         displayType="chips"
@@ -103,6 +106,7 @@ export default function FilesPage() {
       />
 
       <FileUploadSection
+        tour="files.presentation"
         title="프리젠테이션"
         files={files.presentation}
         displayType="grid"

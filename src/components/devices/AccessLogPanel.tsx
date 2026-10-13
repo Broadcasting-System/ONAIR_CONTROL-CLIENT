@@ -88,7 +88,7 @@ export default function AccessLogPanel() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div data-tour="logs.filters" className="flex flex-wrap items-center gap-2.5">
         <Select
           value={person}
           onChange={(v) => {
@@ -97,6 +97,7 @@ export default function AccessLogPanel() {
           }}
           options={[{ value: "", label: "모든 사람" }, ...options.people]}
           aria-label="사람"
+          tour="logs.filter.person"
           className="h-10 min-w-[150px]"
         />
         <Select
@@ -107,6 +108,7 @@ export default function AccessLogPanel() {
           }}
           options={[{ value: "", label: "모든 동작" }, ...options.groups]}
           aria-label="동작"
+          tour="logs.filter.action"
           className="h-10 min-w-[140px]"
         />
         <Select
@@ -117,6 +119,7 @@ export default function AccessLogPanel() {
           }}
           options={[{ value: "", label: "모든 날짜" }, ...options.days]}
           aria-label="날짜"
+          tour="logs.filter.day"
           className="h-10 min-w-[140px]"
         />
         <Select<Result>
@@ -130,11 +133,13 @@ export default function AccessLogPanel() {
             { value: "fail", label: "실패만" },
           ]}
           aria-label="결과"
+          tour="logs.filter.result"
           className="h-10 min-w-[120px]"
         />
         {filtering && (
           <button
             type="button"
+            data-tour="logs.filter.reset"
             onClick={() => {
               setPerson("");
               setGroup("");
@@ -147,12 +152,12 @@ export default function AccessLogPanel() {
             초기화
           </button>
         )}
-        <span className="ml-auto font-pretendard text-sm tabular-nums text-white/40">
+        <span data-tour="logs.count" className="ml-auto font-pretendard text-sm tabular-nums text-white/40">
           {filtered.reduce((n, r) => n + r.count, 0)}건
         </span>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a]">
+      <div data-tour="logs.table" className="min-h-0 flex-1 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a]">
         <table className="w-full border-separate border-spacing-0 text-left font-pretendard">
           <thead className="sticky top-0 z-10 bg-[#0a0a0a] text-white/40">
             <tr>
@@ -186,6 +191,7 @@ export default function AccessLogPanel() {
           <div className="flex justify-center py-4">
             <button
               type="button"
+              data-tour="logs.more"
               onClick={() => setShown((n) => n + PAGE)}
               className="h-10 rounded-lg border border-white/10 bg-white/[0.04] px-5 font-pretendard text-sm text-white/70 hover:bg-white/10 hover:text-white"
             >

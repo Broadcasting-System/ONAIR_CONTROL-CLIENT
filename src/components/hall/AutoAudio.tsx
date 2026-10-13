@@ -21,14 +21,18 @@ export function OnSwitch({
   disabled,
   onChange,
   label,
+  tour,
 }: {
   checked: boolean;
   disabled?: boolean;
   onChange: (v: boolean) => void;
   label: string;
+  /** CUE 튜토리얼 이름표 (data-tour) */
+  tour?: string;
 }) {
   return (
     <button
+      data-tour={tour}
       type="button"
       role="switch"
       aria-checked={checked}
@@ -129,6 +133,7 @@ export function FeatureCard({
 
   return (
     <div
+      data-tour={`auto.feature.${feature}`}
       className={cn(
         "flex flex-col gap-3 rounded-[18px] border p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
         f.enabled
@@ -142,6 +147,7 @@ export function FeatureCard({
           <div className="mt-1 truncate font-mbc text-[23px] leading-tight text-white">{f.name}</div>
         </div>
         <OnSwitch
+          tour={`auto.feature.${feature}.switch`}
           checked={f.enabled}
           disabled={!canOperate}
           onChange={onToggle}

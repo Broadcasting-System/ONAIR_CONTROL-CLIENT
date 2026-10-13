@@ -109,7 +109,7 @@ export default function TimePage() {
   return (
     <div className="flex flex-col h-full w-full pb-10">
       {isAdmin && (
-        <PageTabs tabs={TIME_TABS} value={tab} onChange={setTab} className="mx-auto mt-2" />
+        <PageTabs tour="time.tab" tabs={TIME_TABS} value={tab} onChange={setTab} className="mx-auto mt-2" />
       )}
       {isAdmin && tab === "schedule" ? (
         <div className="mt-6 flex min-h-0 flex-1 flex-col">
@@ -122,7 +122,7 @@ export default function TimePage() {
       ) : (
       <div className="flex flex-1 flex-col mt-4 h-full overflow-hidden relative">
         <div className="flex-shrink-0 mb-2 w-full flex justify-center">
-          <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5">
+          <div data-tour="time.live-badge" className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5">
             <span className="font-mbc text-xs text-emerald-200/90">
               {liveGroupId
                 ? `GROUP ${liveGroupId} 송출 중${isSpecialActive ? " · 특별(P) 모드" : ""}`
@@ -130,7 +130,7 @@ export default function TimePage() {
             </span>
           </div>
         </div>
-        <div className="flex-shrink-0 mb-6 w-full flex justify-center">
+        <div data-tour="time.group-tabs" className="flex-shrink-0 mb-6 w-full flex justify-center">
           <GroupTab
             groups={groups}
             activeGroupId={activeGroup.id}
@@ -140,7 +140,7 @@ export default function TimePage() {
 
         <div className="flex flex-1 gap-[40px] min-h-0 relative max-w-[1500px] mx-auto w-full">
           <div className="flex flex-col w-[600px] h-full flex-shrink-0">
-            <div className="mb-[24px]">
+            <div data-tour="time.days" className="mb-[24px]">
               <DaySelector
                 days={DAYS}
                 activeDay={activeDay}
@@ -149,7 +149,7 @@ export default function TimePage() {
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-4">
-              <div className="grid grid-cols-2 gap-x-[16px] gap-y-[10px] w-full">
+              <div data-tour="time.bells" className="grid grid-cols-2 gap-x-[16px] gap-y-[10px] w-full">
                 {bells.map((bell) => (
                   <BellCard
                     key={bell.id}
@@ -189,6 +189,7 @@ export default function TimePage() {
               <div className="flex flex-col gap-[20px] w-full max-w-[340px]">
                 {/* 특별(P) 모드 — 보고 있는 탭과 상관없이 송출 중인 그룹에 켜고 끈다 */}
                 <Button
+                  tour="time.special"
                   label={`특별(P) 모드 ${isSpecialActive ? "ON" : "OFF"}`}
                   onClick={() => setSpecialMode(!isSpecialActive)}
                   disabled={liveGroupId == null}
@@ -197,12 +198,14 @@ export default function TimePage() {
                   className="h-[64px]"
                 />
                 <Button
+                  tour="time.add"
                   label="시보 추가"
                   onClick={handleCreateNew}
                   color={isAddingNew ? "red" : "white"}
                   className="h-[64px]"
                 />
                 <Button
+                  tour="time.send"
                   label="시보 전송"
                   onClick={sendTimeTable}
                   color="#9EFAE1"

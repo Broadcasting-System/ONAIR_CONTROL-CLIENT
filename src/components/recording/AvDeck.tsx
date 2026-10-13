@@ -133,9 +133,10 @@ export default function AvDeck({
   const nextFps = fpsOptions.find((f) => f !== fps) ?? fps;
 
   return (
-    <section className="grid items-center gap-7 rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md md:grid-cols-[auto_minmax(0,1fr)] xl:grid-cols-[auto_minmax(0,1fr)_auto]">
+    <section data-tour="recording.deck" className="grid items-center gap-7 rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md md:grid-cols-[auto_minmax(0,1fr)] xl:grid-cols-[auto_minmax(0,1fr)_auto]">
       <div className="flex flex-col items-center gap-2">
         <button
+          data-tour="recording.start"
           type="button"
           onClick={press}
           disabled={!canPress}
@@ -173,6 +174,7 @@ export default function AvDeck({
           {hasScreen &&
             (onFps && !recording && fpsOptions.length > 1 ? (
               <button
+                data-tour="recording.fps"
                 type="button"
                 onClick={() => onFps(nextFps)}
                 className={cn(tag, "hover:bg-white/10")}
@@ -191,6 +193,7 @@ export default function AvDeck({
           </div>
         ) : (
           <input
+            data-tour="recording.name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && press()}
@@ -206,7 +209,7 @@ export default function AvDeck({
       </div>
 
       {hasAudio && (
-        <div className="flex gap-3 md:col-span-2 xl:col-span-1">
+        <div data-tour="recording.meters" className="flex gap-3 md:col-span-2 xl:col-span-1">
           {(lanes.length ? lanes : ["마이크", "음악"]).slice(0, 2).map((n, i) => (
             <VuMeter key={i} name={`${i + 1} ${n}`} dbfs={levels[i] ?? null} />
           ))}

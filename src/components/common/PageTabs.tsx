@@ -12,16 +12,19 @@ interface PageTabsProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   className?: string;
+  /** 있으면 탭마다 data-tour="{tour}.{key}" (CUE 튜토리얼) */
+  tour?: string;
 }
 
 /** 페이지 안의 보조 화면 전환 (메인 세팅의 표/지도 토글과 같은 모양) */
-export default function PageTabs<T extends string>({ tabs, value, onChange, className }: PageTabsProps<T>) {
+export default function PageTabs<T extends string>({ tabs, value, onChange, className, tour }: PageTabsProps<T>) {
   return (
     <div className={cn("flex w-fit gap-1 rounded-lg bg-white/5 p-1", className)}>
       {tabs.map((tab) => (
         <button
           key={tab.key}
           type="button"
+          data-tour={tour ? `${tour}.${tab.key}` : undefined}
           onClick={() => onChange(tab.key)}
           className={cn(
             "rounded-md px-4 py-1 font-mbc text-sm transition-colors",

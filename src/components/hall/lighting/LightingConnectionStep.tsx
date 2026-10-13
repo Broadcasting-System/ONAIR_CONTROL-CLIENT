@@ -146,7 +146,7 @@ export default function LightingConnectionStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="연결 방식">
+      <Card tour="lighting-setup.connection-type" title="연결 방식">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <OptionCard
             selected={form.kind === "esp32"}
@@ -169,7 +169,7 @@ export default function LightingConnectionStep({
       </Card>
 
       {bridge && (
-        <Card title="강당 노트북">
+        <Card tour="lighting-setup.notebook" title="강당 노트북">
           <Field label="노트북 주소" className="max-w-[420px]">
             <input
               value={form.bridgeUrl}
@@ -191,6 +191,7 @@ export default function LightingConnectionStep({
 
       {bridge && (
         <Card
+          tour="lighting-setup.port"
           title="COM 포트"
           action={
             state.configured && state.connection?.driver === "bridge" ? (
@@ -261,11 +262,11 @@ export default function LightingConnectionStep({
             </>
           )}
           {state.configured && !dirty ? (
-            <ActionButton tone="primary" icon={<ArrowRight size={15} />} onClick={onNext}>
+            <ActionButton tour="lighting-setup.next" tone="primary" icon={<ArrowRight size={15} />} onClick={onNext}>
               다음: 조명 찾기
             </ActionButton>
           ) : (
-            <ActionButton tone="primary" icon={<Save size={15} />} busy={saving} onClick={save} disabled={!canSave}>
+            <ActionButton tour="lighting-setup.connect" tone="primary" icon={<Save size={15} />} busy={saving} onClick={save} disabled={!canSave}>
               저장하고 연결
             </ActionButton>
           )}

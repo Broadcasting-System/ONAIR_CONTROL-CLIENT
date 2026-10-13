@@ -54,16 +54,18 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
       <header className="flex flex-wrap items-center gap-5">
         {lead}
         <div className="ml-auto flex items-center gap-2.5">
-          {isAdmin && <ConfigButton label="현장 세팅" onClick={() => router.push("/mixer/setup")} />}
+          {isAdmin && <ConfigButton tour="mixer.setup" label="현장 세팅" onClick={() => router.push("/mixer/setup")} />}
           <StatusChip
+            tour="mixer.status"
             tone={connected ? "good" : "off"}
             label={`${DRIVER_LABEL[state?.driver ?? ""] ?? state?.driver ?? "믹서"} ${connected ? "online" : "offline"}`}
           />
           <StatusChip
+            tour="mixer.mode"
             tone={channelMode ? "good" : connected ? "warn" : "off"}
             label={channelMode ? "채널 제어" : "씬 전환만"}
           />
-          <LockToggle checked={locked} onChange={setLocked} />
+          <LockToggle tour="mixer.lock" checked={locked} onChange={setLocked} />
         </div>
       </header>
 
@@ -71,7 +73,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
       {state && !connected && <Notice>믹서 연결 안 됨 · {state.detail}</Notice>}
       {!canOperate && <Notice tone="info">보기 전용</Notice>}
 
-      <Panel title="씬">
+      <Panel tour="mixer.scenes" title="씬">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3.5">
           {(state?.scenes ?? []).map((scene) => {
             const active = state?.currentScene === scene.pc;
@@ -106,6 +108,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
 
       {processing && state && hallId && (
         <Panel
+          tour="mixer.processing"
           title="채널 처리"
         >
           <ChannelProcessing
@@ -123,12 +126,13 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
 
       {!scenesOnly && (
         <Panel
+          tour="mixer.channels"
           title="채널"
           className="flex min-h-[520px] flex-1 flex-col"
         >
           <div className="relative flex min-h-0 flex-1 gap-3">
             {/* 콘솔 본체 — 채널이 많으면 한 줄로 늘어놓지 않고 줄을 바꿔 쌓는다 */}
-            <div className={cn(BOARD, "min-w-0 flex-1 overflow-y-auto p-3", !channelMode && "opacity-30")}>
+            <div data-tour="mixer.faders" className={cn(BOARD, "min-w-0 flex-1 overflow-y-auto p-3", !channelMode && "opacity-30")}>
               <div className="flex flex-wrap content-start gap-1.5">
                 {channels.map((ch) => (
                   <div key={ch.id} className={STRIP_BOX}>
@@ -175,7 +179,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
             </div>
             {state?.master && (
               // 마스터는 따로 떼어 오른쪽에 고정 — 채널이 몇 줄이 되든 항상 같은 자리
-              <div className={cn(BOARD, "flex shrink-0 items-start p-3", !channelMode && "opacity-30")}>
+              <div data-tour="mixer.master" className={cn(BOARD, "flex shrink-0 items-start p-3", !channelMode && "opacity-30")}>
                 <div className={STRIP_BOX}>
                   <ChannelStrip
                     master

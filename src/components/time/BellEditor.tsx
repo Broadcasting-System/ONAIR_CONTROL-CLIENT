@@ -134,8 +134,9 @@ export default function BellEditor({
   };
 
   return (
-    <div className="flex flex-col w-full max-w-[600px] h-full gap-6">
+    <div data-tour="time.editor" className="flex flex-col w-full max-w-[600px] h-full gap-6">
       <TextInput
+        tour="time.editor.label"
         value={label}
         onChange={setLabel}
         placeholder="라벨"
@@ -143,7 +144,7 @@ export default function BellEditor({
       />
 
       {/* 빠른 선택 버튼 (학년/전체 일괄 토글) */}
-      <div className="flex flex-col gap-2 px-2">
+      <div data-tour="time.editor.quick" className="flex flex-col gap-2 px-2">
         <span className="font-mbc text-sm text-white/50">빠른 선택</span>
         <div className="flex flex-wrap gap-2">
           {QUICK_GROUPS.map((g) => {
@@ -189,7 +190,7 @@ export default function BellEditor({
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-x-4 gap-y-3 px-2 max-h-[350px] overflow-y-auto pr-4 custom-scrollbar">
+      <div data-tour="time.editor.speakers" className="grid grid-cols-3 gap-x-4 gap-y-3 px-2 max-h-[350px] overflow-y-auto pr-4 custom-scrollbar">
         {speakers.map((speaker) => {
           const isSelected = selectedSpeakers.includes(speaker.id);
           return (
@@ -215,6 +216,7 @@ export default function BellEditor({
           <label className="text-white text-[15px] font-bold">시보 시간</label>
           <input
             type="time"
+            data-tour="time.editor.time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
             className="h-[48px] w-full rounded-xl border border-white/5 bg-[#1C1C1C] px-4 text-md font-pretendard text-white focus:border-white/20 focus:outline-none transition-all [color-scheme:dark]"
@@ -225,6 +227,7 @@ export default function BellEditor({
             시보 음악
           </label>
           <Select
+            tour="time.editor.audio"
             value={audioKey(audioFile)}
             onChange={setAudioFile}
             placeholder="음악 선택"
@@ -238,7 +241,7 @@ export default function BellEditor({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 px-2">
+      <div data-tour="time.editor.volume" className="flex flex-col gap-3 px-2">
         <div className="flex items-baseline justify-between">
           <label htmlFor="bell-volume" className="text-white text-[15px] font-bold">
             송출 볼륨
@@ -260,6 +263,7 @@ export default function BellEditor({
           />
           <button
             type="button"
+            data-tour="time.editor.preview"
             onClick={togglePreview}
             disabled={!audioFile || audioFile === "none"}
             className={cn(
@@ -278,6 +282,7 @@ export default function BellEditor({
         {bell && onDelete && (
           <div className="flex-1">
             <Button
+              tour="time.editor.delete"
               label="삭제"
               onClick={onDelete}
               color="red"
@@ -287,6 +292,7 @@ export default function BellEditor({
         )}
         <div className="flex-1">
           <Button
+            tour="time.editor.save"
             label="저장"
             onClick={handleSave}
             color="white"

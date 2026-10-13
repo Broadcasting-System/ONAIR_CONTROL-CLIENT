@@ -56,9 +56,10 @@ export default function ScenesStep({
 
   return (
     <Card
+      tour="mixer-setup.scenes"
       title={`씬 ${draft.scenes.length}개`}
       action={
-        <ActionButton icon={<Plus size={15} />} onClick={add} disabled={draft.scenes.length >= 128}>
+        <ActionButton tour="mixer-setup.add-scene" icon={<Plus size={15} />} onClick={add} disabled={draft.scenes.length >= 128}>
           씬 추가
         </ActionButton>
       }

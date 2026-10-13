@@ -195,16 +195,17 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
       {/* 헤더 */}
       <header className="flex flex-wrap items-center gap-5">
         {lead}
-        <div className="ml-auto">
+        <div className="ml-auto" data-tour="banner.live">
           <LiveBadge displays={displays} />
         </div>
       </header>
 
       {/* scene 탭 */}
-      <div className="flex gap-3">
+      <div className="flex gap-3" data-tour="banner.scenes">
         {SCENES.map((s) => (
           <button
             key={s.key}
+            data-tour={`banner.scene-${s.key}`}
             onClick={() => setScene(s.key)}
             className={cn(
               "flex flex-col items-start rounded-2xl border px-6 py-3 transition-all",
@@ -225,7 +226,7 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
 
       <div className="flex flex-1 gap-8 overflow-hidden">
         {/* 좌측: 컨트롤 */}
-        <div className="w-[460px] shrink-0 overflow-auto">
+        <div className="w-[460px] shrink-0 overflow-auto" data-tour="banner.editor">
           {scene === "default" && (
             <DefaultBannerEditor value={defaultBanner} onChange={setDefaultBanner} />
           )}
@@ -265,6 +266,7 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
             <div className="rounded-3xl border border-white/5 bg-[#0a0a0a] p-8">
               <p className="font-pretendard text-white/50">송출 꺼짐</p>
               <button
+                data-tour="banner.off"
                 onClick={() => clearBanner()}
                 className="mt-4 rounded-xl border border-white/10 bg-white/5 px-5 py-2 font-mbc text-white hover:bg-white/10"
               >
@@ -275,7 +277,7 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
         </div>
 
         {/* 우측: 미리보기 */}
-        <div className="flex flex-1 flex-col gap-3 overflow-hidden">
+        <div className="flex flex-1 flex-col gap-3 overflow-hidden" data-tour="banner.preview">
           <span className="font-orbitron text-[11px] uppercase tracking-widest text-white/30">
             Preview · 6845 × 552 (12.4:1)
           </span>
@@ -369,7 +371,7 @@ function ScoreboardEditor({
   const clearVictory = () => onScore({ ...value, victory: null });
 
   return (
-    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
+    <div className="flex flex-col gap-5 rounded-3xl border border-white/5 bg-[#0a0a0a] p-6" data-tour="banner.scoreboard">
       <Field label="제목">
         <TextInput
           value={value.title}
@@ -465,6 +467,7 @@ function ScoreboardEditor({
 
       <div className="mt-1 flex gap-2">
         <button
+          data-tour="banner.score-reset"
           onClick={() => {
             const reset = {
               ...value,
@@ -478,6 +481,7 @@ function ScoreboardEditor({
           메인 점수 0:0 리셋
         </button>
         <button
+          data-tour="banner.court-change"
           onClick={() => {
             // 코트 체인지: 양 팀 좌우 전체 교체 (이름·메인·세트) + 전용 애니메이션 트리거
             const swapped = {
@@ -507,7 +511,7 @@ function ScoreboardEditor({
 
       {/* 승리 선언 */}
       <Field label="승리 선언">
-        <div className="flex gap-2">
+        <div className="flex gap-2" data-tour="banner.victory">
           <button
             onClick={() => declareVictory("left")}
             className="flex-1 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 font-mbc text-sm text-yellow-200 transition-colors hover:border-yellow-400/70 active:bg-yellow-500/25"
@@ -1119,6 +1123,7 @@ function BannerTimerEditor({
 
       <div className="flex gap-3">
         <button
+          data-tour="banner.timer-send"
           onClick={onSend}
           disabled={mode === "down" && (value.durationSec ?? 0) <= 0}
           className="h-12 flex-1 rounded-xl border border-white/15 bg-white/10 font-mbc text-white hover:bg-white/15 disabled:opacity-40"

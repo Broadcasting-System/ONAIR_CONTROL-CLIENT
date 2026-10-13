@@ -19,15 +19,18 @@ export function Card({
   action,
   children,
   className,
+  tour,
 }: {
   title?: string;
   hint?: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** CUE 튜토리얼 이름표 (data-tour) */
+  tour?: string;
 }) {
   return (
-    <section className={cn("flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-black/30 p-5", className)}>
+    <section data-tour={tour} className={cn("flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-black/30 p-5", className)}>
       {(title || action) && (
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -121,6 +124,7 @@ export function ActionButton({
   icon,
   title,
   className,
+  tour,
 }: {
   onClick: () => void;
   children?: ReactNode;
@@ -130,9 +134,12 @@ export function ActionButton({
   icon?: ReactNode;
   title?: string;
   className?: string;
+  /** CUE 튜토리얼 이름표 (data-tour) */
+  tour?: string;
 }) {
   return (
     <button
+      data-tour={tour}
       type="button"
       onClick={onClick}
       disabled={disabled || busy}

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, Check, Minus, X } from "lucide-react";
+import { ArrowUpRight, Check, Minus, Play, X } from "lucide-react";
 import ActionCard from "@/components/chat/ActionCard";
 import CueRing from "@/components/common/CueRing";
 import ChatMarkdown from "@/components/chat/ChatMarkdown";
@@ -9,6 +9,7 @@ import type { LiveMessage } from "@/hooks/useChatConversation";
 import { chatAssetUrl } from "@/lib/chatApi";
 import { cn } from "@/lib/utils";
 import type { ChatAction, ChatUpload } from "@/types/chat";
+import { useTour } from "@/stores/tourStore";
 
 function sizeText(n: number) {
   if (n >= 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)}MB`;
@@ -43,6 +44,22 @@ function UploadThumbs({ uploads }: { uploads: ChatUpload[] }) {
         );
       })}
     </div>
+  );
+}
+
+/** 답 아래 [화면에서 보기] — 누르면 CUE 창을 접고 그 화면에서 단계별로 강조해 보여 준다 */
+function TourButton({ tour }: { tour: import("@/types/chat").ChatTour }) {
+  const start = useTour((s) => s.start);
+  return (
+    <button
+      type="button"
+      onClick={() => start(tour)}
+      className="flex h-10 w-fit items-center gap-2 rounded-lg border border-white/20 bg-white/[0.07] px-3.5 font-pretendard text-[14px] font-semibold text-white transition-colors hover:bg-white/[0.12]"
+    >
+      <Play size={14} className="fill-current" />
+      화면에서 보기
+      <span className="font-normal text-white/50">{tour.steps.length}단계</span>
+    </button>
   );
 }
 
@@ -130,6 +147,10 @@ export default function ChatMessage({
           ))}
         </div>
       )}
+
+      {(m.tours ?? []).map((t, i) => (
+        <TourButton key={`tour-${i}`} tour={t} />
+      ))}
 
       {(m.actions ?? []).map((a) => (
         <ActionCard key={a.id} action={a} onUpdate={onActionUpdate} onDone={onActionDone} />

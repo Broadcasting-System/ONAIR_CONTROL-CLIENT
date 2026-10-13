@@ -157,7 +157,7 @@ export default function ConnectionStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="연결 방식">
+      <Card tour="mixer-setup.connection-type" title="연결 방식">
         <div className="grid grid-cols-3 gap-3">
           <OptionCard
             selected={isHiqnet}
@@ -179,7 +179,7 @@ export default function ConnectionStep({
       </Card>
 
       {isHiqnet && (
-        <Card title="콘솔">
+        <Card tour="mixer-setup.console" title="콘솔">
           <div className="grid grid-cols-2 gap-3">
             <OptionCard
               selected={hq.via === "bridge"}
@@ -214,6 +214,7 @@ export default function ConnectionStep({
               />
             </Field>
             <ActionButton
+              tour="mixer-setup.find-console"
               icon={<Radar size={15} />}
               busy={finding}
               onClick={find}
@@ -258,7 +259,7 @@ export default function ConnectionStep({
       )}
 
       {usesBridge && (
-        <Card title="강당 노트북">
+        <Card tour="mixer-setup.notebook" title="강당 노트북">
           <Field label="노트북 주소" className="max-w-[420px]">
             <input
               value={conn.bridge.url}
@@ -280,6 +281,7 @@ export default function ConnectionStep({
 
       {(isHiqnet || conn.driver === "midi-bridge") && (
         <Card
+          tour="mixer-setup.midi"
           title="씬 전환 (MIDI)"
           action={isHiqnet ? <Switch checked={conn.midi.enabled} onChange={(v) => setMidi({ enabled: v })} label="사용" /> : undefined}
         >
@@ -326,7 +328,7 @@ export default function ConnectionStep({
       )}
 
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#161616]/90 px-5 py-3">
-        <ActionButton icon={<PlugZap size={15} />} busy={testing} onClick={runTest} disabled={!canSubmit}>
+        <ActionButton tour="mixer-setup.test" icon={<PlugZap size={15} />} busy={testing} onClick={runTest} disabled={!canSubmit}>
           연결 시험
         </ActionButton>
         <div className="ml-auto flex items-center gap-2">
@@ -343,7 +345,7 @@ export default function ConnectionStep({
               되돌리기
             </ActionButton>
           )}
-          <ActionButton tone="primary" icon={<Save size={15} />} busy={saving} onClick={save} disabled={!dirty || !canSubmit}>
+          <ActionButton tour="mixer-setup.connection-save" tone="primary" icon={<Save size={15} />} busy={saving} onClick={save} disabled={!dirty || !canSubmit}>
             저장
           </ActionButton>
         </div>

@@ -14,7 +14,7 @@ import type {
   SendMessageBody,
 } from "@/types/chat";
 
-const STREAM_TYPES = new Set(["user", "text", "tool", "action", "link", "error", "done"]);
+const STREAM_TYPES = new Set(["user", "text", "tool", "action", "link", "tour", "error", "done"]);
 
 /** SSE 이벤트 한 덩어리("event: …\ndata: …") → 이벤트. 모르는 이벤트·깨진 JSON 은 버린다 */
 function parseBlock(block: string): ChatStreamEvent | null {

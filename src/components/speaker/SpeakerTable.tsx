@@ -65,7 +65,7 @@ export function SpeakerTable({
   const shown = groups.reduce((n, g) => n + g.items.length, 0);
 
   return (
-    <div className="flex min-h-0 flex-col gap-3">
+    <div className="flex min-h-0 flex-col gap-3" data-tour="speakers.table">
       {/* 머리말 — 켜짐 수 */}
       <div className="flex shrink-0 items-baseline justify-between">
         <span className="font-mbc text-sm text-white/50">전체 스피커</span>
@@ -80,12 +80,14 @@ export function SpeakerTable({
       {/* 검색 + 켜진 것만 */}
       <div className="flex shrink-0 gap-2">
         <input
+          data-tour="speakers.search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="이름·장소 검색"
           className="h-[36px] min-w-0 flex-1 rounded-xl border border-white/10 bg-[#1C1C1C] px-3 font-pretendard text-[13px] text-white placeholder:text-white/25 transition-colors focus:border-white/30 focus:outline-none"
         />
         <button
+          data-tour="speakers.only-on"
           onClick={() => setOnlyOn((v) => !v)}
           className={cn(
             "shrink-0 rounded-xl border px-3 font-mbc text-[13px] transition-colors",
@@ -100,6 +102,7 @@ export function SpeakerTable({
 
       {/* 목록 */}
       <div
+        data-tour="speakers.list"
         className="min-h-0 flex-1 overflow-y-auto pr-1"
         style={{ maxHeight: "clamp(320px, calc(100vh - 420px), 760px)" }}
       >

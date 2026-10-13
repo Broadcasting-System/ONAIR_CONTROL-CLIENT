@@ -120,7 +120,7 @@ export default function DevicesPage() {
     <div className="flex h-full flex-col gap-6">
       <div className="flex items-center justify-between">
         <SectionHeader className="mb-0">관리</SectionHeader>
-        <PageTabs tabs={DEVICE_TABS} value={tab} onChange={setTab} />
+        <PageTabs tour="devices.tab" tabs={DEVICE_TABS} value={tab} onChange={setTab} />
       </div>
 
       {tab === "members" ? (
@@ -137,7 +137,7 @@ export default function DevicesPage() {
       <>
       {/* 내 기기 안내 */}
       {me && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
+        <div data-tour="devices.my-ip" className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
           <p className="font-mbc text-sm text-white/50">
             내 기기 IP{" "}
             <span className="font-orbitron text-white/80">{me.ip}</span>
@@ -147,10 +147,11 @@ export default function DevicesPage() {
       )}
 
       {/* IP로 기기 추가 */}
-      <div className="flex items-end gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
+      <div data-tour="devices.add" className="flex items-end gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
         <div className="flex flex-col gap-1">
           <span className="font-mbc text-xs text-white/40">Tailscale IP</span>
           <input
+            data-tour="devices.add.ip"
             value={newIp}
             onChange={(e) => setNewIp(e.target.value)}
             placeholder="100.x.x.x"
@@ -159,9 +160,10 @@ export default function DevicesPage() {
         </div>
         <div className="flex flex-col gap-1">
           <span className="font-mbc text-xs text-white/40">역할</span>
-          <Select value={newRole} onChange={setNewRole} options={ROLES} aria-label="역할" />
+          <Select tour="devices.add.role" value={newRole} onChange={setNewRole} options={ROLES} aria-label="역할" />
         </div>
         <button
+          data-tour="devices.add.submit"
           onClick={addDevice}
           disabled={!newIp.trim()}
           className="h-10 rounded-lg border border-white/15 bg-white/10 px-5 font-mbc text-sm text-white hover:bg-white/15 disabled:opacity-40"
@@ -171,7 +173,7 @@ export default function DevicesPage() {
       </div>
 
       {/* 등록 기기 목록 */}
-      <div className="flex-1 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a]">
+      <div data-tour="devices.table" className="flex-1 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a]">
         <table className="w-full text-left font-pretendard text-sm">
           <thead className="sticky top-0 bg-[#0a0a0a] text-white/40">
             <tr className="border-b border-white/10">

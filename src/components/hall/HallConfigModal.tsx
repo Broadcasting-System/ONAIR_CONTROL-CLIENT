@@ -13,9 +13,19 @@ import type { VideoMatrixState } from "@/types/hall";
  *  여기에는 페이지 머리의 설정 버튼과 영상 매트릭스 입출력 이름 창이 남아 있다. */
 
 /** 페이지 머리의 관리자용 '설정' 버튼 */
-export function ConfigButton({ label = "설정", onClick }: { label?: string; onClick: () => void }) {
+export function ConfigButton({
+  label = "설정",
+  onClick,
+  tour,
+}: {
+  label?: string;
+  onClick: () => void;
+  /** CUE 튜토리얼 이름표 (data-tour) */
+  tour?: string;
+}) {
   return (
     <button
+      data-tour={tour}
       type="button"
       onClick={onClick}
       className="flex h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 font-mbc text-sm text-white/65 transition-colors hover:bg-white/10 hover:text-white"

@@ -358,6 +358,7 @@ export function LightMasterStrip({
       )}
 
       <button
+        data-tour="lighting.blackout"
         type="button"
         disabled={disabled}
         aria-pressed={blackout}

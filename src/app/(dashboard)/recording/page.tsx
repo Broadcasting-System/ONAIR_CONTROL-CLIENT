@@ -100,6 +100,7 @@ export default function RecordingPage() {
         <SectionHeader className="mb-0">녹음·녹화</SectionHeader>
         <div className="relative ml-auto flex items-center gap-2.5">
           <button
+            data-tour="recording.status"
             type="button"
             onClick={() => setShowInfo((v) => !v)}
             title={recorder ? `${recorder.encoder ?? ""} · ${recorder.fps}fps` : undefined}
@@ -108,7 +109,7 @@ export default function RecordingPage() {
             <StatusChip tone={recorder?.ready ? "good" : "off"} label={chipLabel} />
           </button>
           {isAdmin && (
-            <button type="button" onClick={() => setShowSettings((v) => !v)} className={topBtn}>
+            <button data-tour="recording.settings-toggle" type="button" onClick={() => setShowSettings((v) => !v)} className={topBtn}>
               {showSettings ? "설정 닫기" : "채널 설정"}
             </button>
           )}
@@ -124,7 +125,7 @@ export default function RecordingPage() {
       {!canOperate && <Notice tone="info">보기 전용</Notice>}
 
       {isAdmin && showSettings && state && (
-        <Panel title="채널 설정">
+        <Panel tour="recording.settings" title="채널 설정">
           <ChannelSettings channels={channels} halls={halls} />
         </Panel>
       )}
@@ -166,7 +167,7 @@ export default function RecordingPage() {
       />
 
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <Panel title="목록">
+        <Panel tour="recording.list" title="목록">
           <AvList
             items={library.items}
             canOperate={canOperate}
@@ -176,7 +177,7 @@ export default function RecordingPage() {
             onRemove={library.remove}
           />
         </Panel>
-        <Panel title="휴대폰 영상 합치기">
+        <Panel tour="recording.merge" title="휴대폰 영상 합치기">
           {showMerge ? (
             <MergePanel
               recordings={recordings}
@@ -193,6 +194,7 @@ export default function RecordingPage() {
           ) : (
             <div className="flex flex-wrap items-center gap-3.5">
               <button
+                data-tour="recording.merge-open"
                 type="button"
                 disabled={!canOperate}
                 onClick={() => setMergeOpen(true)}

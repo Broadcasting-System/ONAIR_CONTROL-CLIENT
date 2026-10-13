@@ -38,13 +38,15 @@ export default function AutoAudioPanel({ hallId, lead }: { hallId: string | null
         {lead}
         <div className="ml-auto flex items-center gap-2.5">
           {isAdmin && (
-            <ConfigButton label="미터·사람 우선" onClick={() => setShowSettings((v) => !v)} />
+            <ConfigButton tour="auto.settings-toggle" label="미터·사람 우선" onClick={() => setShowSettings((v) => !v)} />
           )}
           <StatusChip
+            tour="auto.meter"
             tone={state?.meter.ok ? (state.meter.source === "demo" ? "warn" : "good") : "off"}
             label={METER_LABEL[state?.meter.source ?? "none"]}
           />
           <StatusChip
+            tour="auto.running"
             tone={state?.running ? "good" : "off"}
             label={state?.running ? "자동 동작 중" : "쉬는 중"}
           />
@@ -60,7 +62,7 @@ export default function AutoAudioPanel({ hallId, lead }: { hallId: string | null
       {!canOperate && <Notice tone="info">보기 전용</Notice>}
 
       {isAdmin && showSettings && state && (
-        <Panel title="미터·사람 우선">
+        <Panel tour="auto.settings" title="미터·사람 우선">
           <AutoSettings
             key={state.hall.id}
             state={state}
@@ -71,7 +73,7 @@ export default function AutoAudioPanel({ hallId, lead }: { hallId: string | null
       )}
 
       {state && (
-        <div className="grid grid-cols-1 items-start gap-3.5 md:grid-cols-2 2xl:grid-cols-4">
+        <div data-tour="auto.features" className="grid grid-cols-1 items-start gap-3.5 md:grid-cols-2 2xl:grid-cols-4">
           {AUTO_FEATURES.map((f) => (
             <FeatureCard
               key={`${state.hall.id}-${f}`}
@@ -89,10 +91,10 @@ export default function AutoAudioPanel({ hallId, lead }: { hallId: string | null
 
       {state && (
         <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-          <Panel title="채널">
+          <Panel tour="auto.channels" title="채널">
             <ChannelTable state={state} canOperate={canOperate} onResume={resume} />
           </Panel>
-          <Panel title="최근 동작">
+          <Panel tour="auto.log" title="최근 동작">
             <AutoLog log={state.log} />
           </Panel>
         </div>

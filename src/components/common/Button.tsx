@@ -10,6 +10,8 @@ interface ButtonProps {
   glowSize?: string | number;
   disabled?: boolean;
   className?: string;
+  /** CUE 튜토리얼이 가리킬 이름표 (data-tour) */
+  tour?: string;
 }
 
 export default function Button({
@@ -20,9 +22,11 @@ export default function Button({
   glowSize = "10px",
   disabled = false,
   className,
+  tour,
 }: ButtonProps) {
   return (
     <button
+      data-tour={tour}
       onClick={onClick}
       disabled={disabled}
       style={{ width }}

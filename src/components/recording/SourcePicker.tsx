@@ -74,12 +74,12 @@ export default function SourcePicker({
   onAudio: (hall: string | null) => void;
 }) {
   return (
-    <section className="grid gap-[18px] rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
+    <section data-tour="recording.sources" className="grid gap-[18px] rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
       <div className="grid gap-[18px] lg:grid-cols-[220px_minmax(0,1fr)]">
         <div className="pt-1 font-pretendard text-sm font-bold text-white/60">
           화면
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        <div data-tour="recording.screen" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           <button
             type="button"
             disabled={locked}
@@ -137,7 +137,7 @@ export default function SourcePicker({
         <div className="pt-1 font-pretendard text-sm font-bold text-white/60">
           소리
         </div>
-        <div className="flex flex-wrap gap-2.5">
+        <div data-tour="recording.audio" className="flex flex-wrap gap-2.5">
           {halls.map((h) => {
             const on = audio === h.id;
             const sub = !h.configured ? "설정 안 됨" : on && laneNames.length ? `${laneNames.join("·")} ${laneNames.length}통로` : "2통로";

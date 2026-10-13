@@ -205,6 +205,7 @@ export default function LightingSetupPage() {
     <div className="flex min-h-full flex-col gap-6">
       <header className="flex flex-wrap items-center gap-4">
         <Link
+          data-tour="lighting-setup.back"
           href="/lighting"
           className="flex h-9 items-center gap-1 rounded-xl px-2 font-mbc text-sm text-white/50 transition-colors hover:bg-white/5 hover:text-white"
         >
@@ -212,9 +213,10 @@ export default function LightingSetupPage() {
           조명
         </Link>
         <SectionHeader className="mb-0">조명 세팅</SectionHeader>
-        <HallSwitcher halls={halls} value={current?.id} onChange={switchHall} />
+        <HallSwitcher tour="lighting-setup.hall-select" halls={halls} value={current?.id} onChange={switchHall} />
         <div className="ml-auto flex items-center gap-2.5">
           <StatusChip
+            tour="lighting-setup.status"
             tone={configured && connected ? "good" : "off"}
             label={configured ? `${kindLabel(state)} ${connected ? "online" : "offline"}` : "조명 없음"}
           />
@@ -226,10 +228,11 @@ export default function LightingSetupPage() {
       {state && configured && !connected && <Notice>조명 연결 안 됨 · {state.detail}</Notice>}
 
       {/* 단계 */}
-      <nav className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+      <nav data-tour="lighting-setup.steps" className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
         {steps.map((s, i) => (
           <button
             key={s.key}
+            data-tour={`lighting-setup.step.${s.key}`}
             type="button"
             onClick={() => setStep(s.key)}
             aria-current={step === s.key ? "step" : undefined}
@@ -305,7 +308,7 @@ export default function LightingSetupPage() {
 
       {/* 조명 목록은 한 번에 저장 */}
       {step !== "connection" && rows && dirty && (
-        <div className="sticky bottom-0 z-20 mt-auto flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-[#161616]/95 px-5 py-3 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.8)] backdrop-blur">
+        <div data-tour="lighting-setup.save-bar" className="sticky bottom-0 z-20 mt-auto flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-[#161616]/95 px-5 py-3 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.8)] backdrop-blur">
           <span className="font-mbc text-sm text-amber-200/85">저장 안 한 변경이 있어요</span>
           {problems.length > 0 && (
             <span className="font-pretendard text-xs text-red-300/85">· {problems.join(" · ")}</span>
@@ -315,6 +318,7 @@ export default function LightingSetupPage() {
               되돌리기
             </ActionButton>
             <ActionButton
+              tour="lighting-setup.save"
               tone="primary"
               icon={<Save size={15} />}
               busy={saving}

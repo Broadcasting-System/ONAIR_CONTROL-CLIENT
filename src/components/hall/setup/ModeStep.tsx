@@ -25,7 +25,7 @@ export default function ModeStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card title="방송부 조작 범위">
+      <Card tour="mixer-setup.mode" title="방송부 조작 범위">
         <div className="grid grid-cols-2 gap-3">
           <OptionCard
             selected={draft.mode === "channels"}
@@ -43,7 +43,7 @@ export default function ModeStep({
         )}
       </Card>
 
-      <Card title="걸린 안전장치">
+      <Card tour="mixer-setup.safety" title="걸린 안전장치">
         <ul className="grid grid-cols-2 gap-3">
           <Item
             icon={<Gauge size={16} />}

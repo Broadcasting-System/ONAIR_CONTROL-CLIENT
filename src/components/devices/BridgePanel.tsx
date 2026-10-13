@@ -183,7 +183,7 @@ export default function BridgePanel() {
 
       {bridges.length > 0 && (
         <div className="flex items-center justify-end gap-6">
-          <div className="flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2">
+          <div data-tour="bridges.count" className="flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2">
             <span className="font-mbc text-xs text-white/40">연결</span>
             <span className={cn("font-orbitron text-sm", online === bridges.length ? "text-emerald-300" : "text-amber-300")}>
               {online}/{bridges.length}
@@ -204,7 +204,7 @@ export default function BridgePanel() {
       {isLoading && <p className="font-pretendard text-sm text-white/30">확인하는 중…</p>}
 
       {fresh.length > 0 && (
-        <div className="flex flex-col gap-3">
+        <div data-tour="bridges.announced" className="flex flex-col gap-3">
           <h3 className="font-mbc text-sm text-white/60">새로 켜진 노트북</h3>
           {fresh.map((a) => (
             <AnnouncedCard key={a.url} a={a} />
@@ -219,7 +219,7 @@ export default function BridgePanel() {
       )}
 
       {bridges.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div data-tour="bridges.list" className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {bridges.map((b) => (
             <BridgeCard key={b.url} bridge={b} />
           ))}

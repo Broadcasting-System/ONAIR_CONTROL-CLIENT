@@ -89,7 +89,7 @@ export function SpeakerFloorMap({
   return (
     <div className="flex h-full min-w-0 flex-col gap-3">
       {/* 층 탭 */}
-      <div className="flex shrink-0 gap-2">
+      <div className="flex shrink-0 gap-2" data-tour="speakers.floor-tabs">
         {FLOOR_KEYS.map((k) => (
           <button
             key={k}
@@ -117,6 +117,7 @@ export function SpeakerFloorMap({
       {/* 지도 (확대/축소 없음) */}
       <div
         className="min-h-0"
+        data-tour="speakers.map"
         style={{ height: "clamp(480px, calc(100vh - 250px), 900px)" }}
       >
         <div
