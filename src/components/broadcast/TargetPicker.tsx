@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { X } from "lucide-react";
+import { SpeakerFloorMap } from "@/components/speaker/SpeakerFloorMap";
+import { FLOOR_KEYS } from "@/lib/speakerCoverage";
+import type { SpeakerZone } from "@/types/speaker";
 import Portal from "@/components/common/Portal";
 import { Chip } from "@/components/mobile/ui";
 import { useSpeakerStore } from "@/stores/speakerStore";
@@ -45,6 +48,8 @@ export default function TargetPicker({
   disabled?: boolean;
 }) {
   const [sheet, setSheet] = useState(false);
+  const [view, setView] = useState<"map" | "list">("map");
+  const [floor, setFloor] = useState(FLOOR_KEYS[0]);
   const grades = useMemo(() => gradesOf(names), [names]);
   const sel = useMemo(() => new Set(selected), [selected]);
   const all = names.length > 0 && names.every((n) => sel.has(n));
@@ -61,6 +66,11 @@ export default function TargetPicker({
     else onChange(Array.from(new Set([...selected, ...ids])));
   };
   const toggleOne = (n: string) => onChange(sel.has(n) ? selected.filter((x) => x !== n) : [...selected, n]);
+  // 지도는 스피커 상태(on/off)로 칸을 칠한다 — 여기서는 '골랐는지'를 그 자리에 넣는다
+  const zones = useMemo<SpeakerZone[]>(
+    () => names.map((n) => ({ id: n, name: n, status: sel.has(n) ? "on" : "off" })),
+    [names, sel],
+  );
 
   return (
     <div data-tour="main.broadcast.targets" className="flex flex-col gap-2.5">
@@ -93,12 +103,31 @@ export default function TargetPicker({
             <div
               role="dialog"
               aria-label="대상 직접 고르기"
-              className="relative z-10 flex max-h-[82dvh] w-full flex-col rounded-t-[24px] border border-white/10 bg-[#161618] pb-[env(safe-area-inset-bottom)] shadow-2xl md:max-h-[80vh] md:max-w-[640px] md:rounded-2xl md:pb-0"
+              className={cn(
+                "relative z-10 flex max-h-[88dvh] w-full flex-col rounded-t-[24px] border border-white/10 bg-[#161618] pb-[env(safe-area-inset-bottom)] shadow-2xl md:max-h-[88vh] md:rounded-2xl md:pb-0",
+                view === "map" ? "md:max-w-[1040px]" : "md:max-w-[640px]",
+              )}
             >
               <div className="flex items-center justify-between px-5 pb-3 pt-4 md:px-6">
                 <h2 className="font-mbc text-xl text-white">
                   대상 <span className="font-pretendard text-base text-white/50">{selected.length}곳</span>
                 </h2>
+                <div className="ml-auto mr-2 flex gap-1 rounded-lg bg-white/[0.06] p-1">
+                  {(["map", "list"] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      aria-pressed={view === v}
+                      onClick={() => setView(v)}
+                      className={cn(
+                        "h-9 rounded-md px-3.5 font-pretendard text-[14px] font-semibold transition-colors md:h-8",
+                        view === v ? "bg-white/20 text-white" : "text-white/50 hover:text-white/80",
+                      )}
+                    >
+                      {v === "map" ? "지도" : "목록"}
+                    </button>
+                  ))}
+                </div>
                 <button
                   type="button"
                   aria-label="닫기"
@@ -108,6 +137,21 @@ export default function TargetPicker({
                   <X size={20} />
                 </button>
               </div>
+              {view === "map" ? (
+                <div className="no-scrollbar min-h-0 flex-1 overflow-auto px-5 pb-2 pt-1 md:px-6">
+                  {/* 폰에서는 지도를 넓게 그려 옆으로 밀어 본다 (좁으면 방 이름이 안 보인다) */}
+                  <div className="min-w-[720px] md:min-w-0">
+                    <SpeakerFloorMap
+                      zones={zones}
+                      onToggle={toggleOne}
+                      floor={floor}
+                      onFloorChange={setFloor}
+                      mapHeight="clamp(360px, calc(88dvh - 210px), 640px)"
+                      countLabel="선택"
+                    />
+                  </div>
+                </div>
+              ) : (
               <div className="custom-scrollbar grid min-h-0 flex-1 grid-cols-3 gap-2.5 overflow-y-auto px-5 pb-2 pt-1 md:grid-cols-4 md:gap-3 md:px-6">
                 {names.map((n) => {
                   const on = sel.has(n);
@@ -129,6 +173,7 @@ export default function TargetPicker({
                   );
                 })}
               </div>
+              )}
               <div className="flex gap-2.5 border-t border-white/[0.08] px-5 py-4 md:px-6">
                 <button
                   type="button"

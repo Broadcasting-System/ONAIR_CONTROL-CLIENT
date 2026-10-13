@@ -23,6 +23,8 @@ export function SpeakerFloorMap({
   onFloorChange,
   highlight,
   onHover,
+  mapHeight = "clamp(480px, calc(100vh - 250px), 900px)",
+  countLabel = "켜짐",
 }: {
   zones: SpeakerZone[];
   onToggle: (id: string) => void;
@@ -30,6 +32,10 @@ export function SpeakerFloorMap({
   onFloorChange: (floor: string) => void;
   highlight?: string | null;
   onHover?: (speaker: string | null) => void;
+  /** 지도 높이 (CSS 값) — 방송 대상 고르기 창처럼 좁은 곳에서 줄인다 */
+  mapHeight?: string;
+  /** 층 탭 숫자 뒤 글자 (스피커 화면은 '켜짐', 대상 고르기는 '선택') */
+  countLabel?: string;
 }) {
   const elements = useMemo(() => FLOORS[floor]?.elements ?? [], [floor]);
   const zoneByName = useMemo(
@@ -108,7 +114,7 @@ export function SpeakerFloorMap({
                 liveByFloor[k] ? "text-[#00FF57]" : "text-white/30",
               )}
             >
-              {liveByFloor[k] ? `${liveByFloor[k]} 켜짐` : "대기"}
+              {liveByFloor[k] ? `${liveByFloor[k]} ${countLabel}` : "대기"}
             </span>
           </button>
         ))}
@@ -118,7 +124,7 @@ export function SpeakerFloorMap({
       <div
         className="min-h-0"
         data-tour="speakers.map"
-        style={{ height: "clamp(480px, calc(100vh - 250px), 900px)" }}
+        style={{ height: mapHeight }}
       >
         <div
           className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30"
