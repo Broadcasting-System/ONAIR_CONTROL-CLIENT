@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Group, DayType, Bell, DaySchedule } from "@/types/time";
 import { useBellClipboard } from "./useBellClipboard";
 import { getApiBase } from "@/lib/apiBase";
@@ -37,8 +37,32 @@ export const useTimeGroups = () => {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [activeGroupId, setActiveGroupId] = useState<number>(1);
   const [activeDay, setActiveDay] = useState<DayType>("M");
-  // 그룹별 특별(P) 모드 활성 여부 (서버 isSpecialActive)
-  const [specialActive, setSpecialActive] = useState<Record<number, boolean>>({});
+  // 지금 울리는 그룹과 특별(P) 모드 — 특별 모드는 송출 중인 그룹에 하나뿐인 스위치
+  const [live, setLive] = useState<{ groupId: number | null; special: boolean }>({ groupId: null, special: false });
+  const pickedLiveTab = useRef(false);
+
+  const fetchLive = useCallback(async () => {
+    try {
+      const res = await fetch(`${getApiBase()}/time/active`);
+      if (!res.ok) return;
+      const j = await res.json();
+      const groupId = j.activeGroupId != null ? Number(j.activeGroupId) : null;
+      setLive({ groupId, special: !!j.special });
+      // 화면을 처음 열면 송출 중인 그룹 탭부터
+      if (!pickedLiveTab.current) {
+        pickedLiveTab.current = true;
+        if (groupId) setActiveGroupId(groupId);
+      }
+    } catch {
+      /* 다음 주기에 다시 */
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLive();
+    const id = setInterval(fetchLive, 4000);
+    return () => clearInterval(id);
+  }, [fetchLive]);
 
   const { clipboard, copy, paste } = useBellClipboard();
 
@@ -156,15 +180,6 @@ export const useTimeGroups = () => {
       const json = await res.json();
       if (json.success && json.data) {
         const serverData = json.data;
-        // 그룹별 특별모드 플래그 동기화
-        setSpecialActive((prev) => {
-          if (sync) return { ...prev, [sync.group]: !!serverData[sync.group]?.isSpecialActive };
-          const map: Record<number, boolean> = {};
-          for (const key of Object.keys(serverData)) {
-            map[Number(key)] = !!serverData[key]?.isSpecialActive;
-          }
-          return map;
-        });
         setGroups((prev) =>
           prev.map((g) => {
             if (sync && g.id !== sync.group) return g;
@@ -223,43 +238,44 @@ export const useTimeGroups = () => {
       }
 
       fetchTimeTable({ group: activeGroupId, days: payload.schedule.map((d) => d.dayType) });
-      // 전송 = 이 그룹이 지금부터 울리는 그룹이 된다 (P 탭이면 특별 모드도 켜짐) — 그대로 알려준다
+      fetchLive();
+      // 전송 = 이 그룹이 지금부터 울리는 그룹. 다른 그룹에서 넘어오면 기본 송출(특별 모드 꺼짐)로 시작
       toast.success(
-        activeDay === "P"
-          ? `GROUP ${activeGroupId} 특별(P) 시보를 적용했습니다.`
-          : `GROUP ${activeGroupId} 평일 시보를 적용했습니다.`,
+        live.groupId === activeGroupId
+          ? `GROUP ${activeGroupId} 시보를 적용했습니다.`
+          : `GROUP ${activeGroupId} 기본 송출을 시작했습니다.`,
       );
     } catch (err: unknown) {
       console.error(err);
       toast.error("시보 전송 중 오류가 발생했습니다.");
     }
-  }, [activeGroupId, activeDay, activeGroup.days, fetchTimeTable]);
+  }, [activeGroupId, activeDay, activeGroup.days, fetchTimeTable, fetchLive, live.groupId]);
 
-  /** 특별(P) 모드 ON/OFF를 서버에 전송. ON이면 P 스케줄이 매일 동작(평일 억제). */
+  /** 송출 중인 그룹의 특별(P) 모드를 켜고 끈다. 송출 그룹은 그대로. ON이면 그 그룹 P 시보가 매일 울린다. */
   const setSpecialMode = useCallback(
     async (active: boolean) => {
-      // 낙관적 반영
-      setSpecialActive((prev) => ({ ...prev, [activeGroupId]: active }));
+      if (live.groupId == null) return;
       try {
         const res = await fetch(`${getApiBase()}/time/special`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ groupId: activeGroupId, active }),
+          body: JSON.stringify({ active }),
         });
-        if (!res.ok) throw new Error(await errorText(res));
-        toast.success(
-          active
-            ? `GROUP ${activeGroupId} 특별(P) 모드 ON`
-            : `GROUP ${activeGroupId} 특별(P) 모드 OFF`,
-        );
+        if (!res.ok) {
+          const msg = await errorText(res);
+          toast.error(msg || "특별(P) 모드 전환에 실패했습니다.");
+          return;
+        }
+        setLive((prev) => ({ ...prev, special: active }));
+        toast.success(`GROUP ${live.groupId} 특별(P) 모드 ${active ? "ON" : "OFF"}`);
       } catch (err) {
-        // 롤백
-        setSpecialActive((prev) => ({ ...prev, [activeGroupId]: !active }));
         console.error(err);
         toast.error("특별(P) 모드 전환에 실패했습니다.");
+      } finally {
+        fetchLive();
       }
     },
-    [activeGroupId],
+    [live.groupId, fetchLive],
   );
 
   return {
@@ -277,7 +293,8 @@ export const useTimeGroups = () => {
     pasteBells,
     resetBells,
     sendTimeTable,
-    isSpecialActive: !!specialActive[activeGroupId],
+    liveGroupId: live.groupId,
+    isSpecialActive: live.special,
     setSpecialMode,
   };
 };

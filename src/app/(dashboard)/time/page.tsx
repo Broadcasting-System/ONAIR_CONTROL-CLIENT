@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 
-import { getApiBase } from "@/lib/apiBase";
 import GroupTab from "@/components/time/GroupTab";
 import DaySelector from "@/components/time/DaySelector";
 import BellCard from "@/components/time/BellCard";
@@ -44,6 +43,7 @@ export default function TimePage() {
     pasteBells,
     resetBells,
     sendTimeTable,
+    liveGroupId,
     isSpecialActive,
     setSpecialMode,
   } = useTimeGroups();
@@ -58,26 +58,10 @@ export default function TimePage() {
   const [tab, setTab] = useTabParam(TIME_TAB_KEYS, "table");
   const [editingBellId, setEditingBellId] = useState<string | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  // 현재 실제 송출 중(라이브)인 그룹 — 시보 전송 1개만 활성이므로 운영자에게 표시
-  const [liveGroupId, setLiveGroupId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
-
-  useEffect(() => {
-    const fetchActive = async () => {
-      try {
-        const res = await fetch(`${getApiBase()}/time/active`);
-        if (res.ok) setLiveGroupId((await res.json()).activeGroupId ?? null);
-      } catch {
-        /* ignore */
-      }
-    };
-    fetchActive();
-    const id = setInterval(fetchActive, 4000);
-    return () => clearInterval(id);
-  }, []);
 
   const audioFiles: AudioFile[] = (files.audio || []).map((file) => ({
     id: file.id,
@@ -141,7 +125,7 @@ export default function TimePage() {
           <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5">
             <span className="font-mbc text-xs text-emerald-200/90">
               {liveGroupId
-                ? `GROUP ${liveGroupId} 송출 중`
+                ? `GROUP ${liveGroupId} 송출 중${isSpecialActive ? " · 특별(P) 모드" : ""}`
                 : "송출 중인 시보 없음"}
             </span>
           </div>
@@ -203,10 +187,11 @@ export default function TimePage() {
 
             <div className="flex-shrink-0 flex justify-end pb-4">
               <div className="flex flex-col gap-[20px] w-full max-w-[340px]">
-                {/* 특별(P) 모드 토글 — ON이면 P 시보가 매일 동작(평일 억제) */}
+                {/* 특별(P) 모드 — 보고 있는 탭과 상관없이 송출 중인 그룹에 켜고 끈다 */}
                 <Button
                   label={`특별(P) 모드 ${isSpecialActive ? "ON" : "OFF"}`}
                   onClick={() => setSpecialMode(!isSpecialActive)}
+                  disabled={liveGroupId == null}
                   color={isSpecialActive ? "#c4b5fd" : "white"}
                   glowSize={isSpecialActive ? "18px" : "8px"}
                   className="h-[64px]"
