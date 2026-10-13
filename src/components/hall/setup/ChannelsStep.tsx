@@ -201,8 +201,8 @@ export default function ChannelsStep({
       )}
 
       <div className="overflow-x-auto">
-        <div className={cn("flex flex-col gap-1.5", hiqnet ? "min-w-[1080px]" : "min-w-[640px]")}>
-          <div className={cn("grid items-center gap-2 px-2 pb-1", cols)}>
+        <div className={cn("flex flex-col gap-2 md:gap-1.5", hiqnet ? "md:min-w-[1080px]" : "md:min-w-[640px]")}>
+          <div className={cn("hidden items-center gap-2 px-2 pb-1 md:grid", cols)}>
             <Th>순서</Th>
             <Th>CH</Th>
             <Th>이름</Th>
@@ -223,12 +223,12 @@ export default function ChannelsStep({
               <div
                 key={c.key}
                 className={cn(
-                  "grid items-center gap-2 rounded-xl border px-2 py-2 transition-colors",
+                  "flex flex-wrap items-center gap-2 rounded-xl border px-2 py-2 transition-colors md:grid",
                   cols,
                   c.hidden ? "border-white/[0.04] bg-white/[0.01]" : "border-white/[0.07] bg-white/[0.025]",
                 )}
               >
-                <div className="flex">
+                <div className="order-1 flex md:order-none">
                   <IconBtn label="위로" disabled={i === 0} onClick={() => setChannels((l) => move(l, i, -1))}>
                     <ChevronUp size={15} />
                   </IconBtn>
@@ -245,7 +245,7 @@ export default function ChannelsStep({
                   maxLength={8}
                   aria-label={`${i + 1}번째 채널 번호`}
                   onChange={(e) => patchRow(i, { id: e.target.value })}
-                  className={cn(inputCls, "px-2 text-center font-orbitron", badId(c.id) ? badBorder : okBorder)}
+                  className={cn(inputCls, "order-2 px-2 text-center font-orbitron max-md:w-16 md:order-none", badId(c.id) ? badBorder : okBorder)}
                 />
                 <input
                   value={c.name}
@@ -253,7 +253,7 @@ export default function ChannelsStep({
                   placeholder="예: 무선 1"
                   aria-label={`CH ${c.id} 이름`}
                   onChange={(e) => patchRow(i, { name: e.target.value })}
-                  className={cn(inputCls, c.name.trim() ? okBorder : badBorder, c.hidden && "opacity-40")}
+                  className={cn(inputCls, "order-3 basis-[calc(100%-176px)] max-md:grow md:order-none", c.name.trim() ? okBorder : badBorder, c.hidden && "opacity-40")}
                 />
                 {hiqnet && (
                   <AddrInput
@@ -262,10 +262,11 @@ export default function ChannelsStep({
                     learning={learningRole(i) === "fader"}
                     onLearn={() => beginLearn({ row: i, role: "fader", label: c.name || `CH ${c.id}` })}
                     label={`CH ${c.id} 페이더 주소`}
+                    className="order-4 basis-full md:order-none"
                   />
                 )}
                 {hiqnet && (
-                  <div className="flex items-center gap-1.5">
+                  <div className="order-5 flex basis-full items-center gap-1.5 md:order-none">
                     <AddrInput
                       value={c.mute}
                       onChange={(v) => patchRow(i, { mute: v })}
@@ -273,7 +274,7 @@ export default function ChannelsStep({
                       onLearn={() => beginLearn({ row: i, role: "mute", label: c.name || `CH ${c.id}` })}
                       label={`CH ${c.id} 뮤트 주소`}
                     />
-                    <label className="flex shrink-0 cursor-pointer items-center gap-1 font-pretendard text-[11px] text-white/45">
+                    <label className="flex shrink-0 cursor-pointer items-center gap-1 font-pretendard text-[11px] text-white/45 max-md:h-11 max-md:px-1 max-md:text-[13px]">
                       <input
                         type="checkbox"
                         checked={c.muteInvert}
@@ -293,7 +294,7 @@ export default function ChannelsStep({
                   onUp={() => tryLevel(c.id, c.max, 5)}
                   onMute={() => tryMute(c.id)}
                 />
-                <div className="flex justify-end">
+                <div className="order-8 flex justify-end max-md:ml-auto md:order-none">
                   <IconBtn
                     label={c.hidden ? "보이기" : "숨기기"}
                     onClick={() => patchRow(i, { hidden: !c.hidden })}
@@ -316,18 +317,18 @@ export default function ChannelsStep({
           {draft.master && (
             <div
               className={cn(
-                "mt-2 grid items-center gap-2 rounded-xl border border-[#FF3B3B]/25 bg-[#FF3B3B]/[0.05] px-2 py-2",
+                "mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-[#FF3B3B]/25 bg-[#FF3B3B]/[0.05] px-2 py-2 md:grid",
                 cols,
               )}
             >
-              <span className="text-center font-orbitron text-[10px] tracking-[0.14em] text-[#FF3B3B]/80">MAIN</span>
-              <span className="text-center font-orbitron text-sm text-white/50">{draft.master.id}</span>
+              <span className="order-1 text-center font-orbitron text-[10px] tracking-[0.14em] text-[#FF3B3B]/80 max-md:w-[88px] md:order-none">MAIN</span>
+              <span className="order-2 text-center font-orbitron text-sm text-white/50 max-md:w-16 md:order-none">{draft.master.id}</span>
               <input
                 value={draft.master.name}
                 maxLength={12}
                 aria-label="마스터 이름"
                 onChange={(e) => patchMaster({ name: e.target.value })}
-                className={cn(inputCls, draft.master.name.trim() ? okBorder : badBorder)}
+                className={cn(inputCls, "order-3 basis-[calc(100%-176px)] max-md:grow md:order-none", draft.master.name.trim() ? okBorder : badBorder)}
               />
               {hiqnet && (
                 <AddrInput
@@ -336,10 +337,11 @@ export default function ChannelsStep({
                   learning={learningRole("master") === "fader"}
                   onLearn={() => beginLearn({ row: "master", role: "fader", label: draft.master?.name || "MAIN" })}
                   label="마스터 페이더 주소"
+                  className="order-4 basis-full md:order-none"
                 />
               )}
               {hiqnet && (
-                <div className="flex items-center gap-1.5">
+                <div className="order-5 flex basis-full items-center gap-1.5 md:order-none">
                   <AddrInput
                     value={draft.master.mute}
                     onChange={(v) => patchMaster({ mute: v })}
@@ -347,7 +349,7 @@ export default function ChannelsStep({
                     onLearn={() => beginLearn({ row: "master", role: "mute", label: draft.master?.name || "MAIN" })}
                     label="마스터 뮤트 주소"
                   />
-                  <label className="flex shrink-0 cursor-pointer items-center gap-1 font-pretendard text-[11px] text-white/45">
+                  <label className="flex shrink-0 cursor-pointer items-center gap-1 font-pretendard text-[11px] text-white/45 max-md:h-11 max-md:px-1 max-md:text-[13px]">
                     <input
                       type="checkbox"
                       checked={draft.master.muteInvert}
@@ -367,7 +369,7 @@ export default function ChannelsStep({
                 onUp={() => tryLevel(draft.master!.id, draft.master!.max, 5)}
                 onMute={() => tryMute(draft.master!.id)}
               />
-              <span />
+              <span className="max-md:hidden" />
             </div>
           )}
         </div>
@@ -397,7 +399,7 @@ function IconBtn({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex h-9 w-8 shrink-0 items-center justify-center rounded-lg text-white/45 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent",
+        "flex h-9 w-8 shrink-0 items-center justify-center rounded-lg text-white/45 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent max-md:h-11 max-md:w-11",
         className,
       )}
     >
@@ -413,22 +415,24 @@ function AddrInput({
   learning,
   onLearn,
   label,
+  className,
 }: {
   value: string;
   onChange: (v: string) => void;
   learning: boolean;
   onLearn: () => void;
   label: string;
+  className?: string;
 }) {
   return (
-    <div className="flex items-center gap-1">
+    <div className={cn("flex items-center gap-1", className)}>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="1.0.0.21/61"
         aria-label={label}
         className={cn(
-          "h-9 w-[122px] min-w-0 rounded-lg border bg-[#101010] px-2 font-mono text-xs text-white placeholder:text-white/20 focus:outline-none",
+          "h-9 w-[122px] min-w-0 rounded-lg border bg-[#101010] px-2 font-mono text-xs text-white placeholder:text-white/20 focus:outline-none max-md:h-11 max-md:flex-1 max-md:text-base",
           badAddr(value) ? badBorder : okBorder,
         )}
       />
@@ -436,7 +440,7 @@ function AddrInput({
         type="button"
         onClick={onLearn}
         className={cn(
-          "flex h-9 shrink-0 items-center gap-1 rounded-lg border px-2 font-mbc text-xs transition-colors",
+          "flex h-9 shrink-0 items-center gap-1 rounded-lg border px-2 font-mbc text-xs transition-colors max-md:h-11 max-md:px-3 max-md:text-[13px]",
           learning
             ? "border-[#FF3B3B]/60 bg-[#FF3B3B]/15 text-[#ff8a8a]"
             : "border-white/10 text-white/50 hover:bg-white/10 hover:text-white",
@@ -454,7 +458,7 @@ function MaxInput({ value, onChange, label }: { value: number; onChange: (v: num
   const bad = badMax(value);
   const limited = !bad && value < 100;
   return (
-    <div className="flex flex-col gap-1">
+    <div className="order-6 flex flex-col gap-1 max-md:w-20 md:order-none">
       <input
         type="number"
         min={0}
@@ -495,9 +499,9 @@ function TryCell({
   const levelUnknown = level == null;
   const muteUnknown = muted == null;
   const btn =
-    "flex h-8 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-white/70 transition-colors enabled:hover:bg-white/10 enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-30";
+    "flex h-8 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-white/70 transition-colors enabled:hover:bg-white/10 enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-30 max-md:h-11";
   return (
-    <div className="flex items-center gap-1">
+    <div className="order-7 flex items-center gap-1 md:order-none">
       <span
         className={cn(
           "w-9 text-center font-orbitron text-[11px] tabular-nums",
@@ -506,10 +510,10 @@ function TryCell({
       >
         {muted ? "MUTE" : level == null ? "--" : String(level).padStart(2, "0")}
       </span>
-      <button type="button" aria-label="조금 내리기" disabled={disabled || levelUnknown} onClick={onDown} className={cn(btn, "w-7")}>
+      <button type="button" aria-label="조금 내리기" disabled={disabled || levelUnknown} onClick={onDown} className={cn(btn, "w-7 max-md:w-11")}>
         <Minus size={13} />
       </button>
-      <button type="button" aria-label="조금 올리기" disabled={disabled || levelUnknown} onClick={onUp} className={cn(btn, "w-7")}>
+      <button type="button" aria-label="조금 올리기" disabled={disabled || levelUnknown} onClick={onUp} className={cn(btn, "w-7 max-md:w-11")}>
         <Plus size={13} />
       </button>
       <button
@@ -517,7 +521,7 @@ function TryCell({
         aria-label="뮤트 켜고 끄기"
         disabled={disabled || muteUnknown}
         onClick={onMute}
-        className={cn(btn, "w-9 font-orbitron text-[9px] tracking-wider", muted && "border-[#FF3B3B]/50 text-[#ff8a8a]")}
+        className={cn(btn, "w-9 font-orbitron text-[9px] tracking-wider max-md:w-11", muted && "border-[#FF3B3B]/50 text-[#ff8a8a]")}
       >
         M
       </button>

@@ -38,7 +38,7 @@ function ChoiceButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "h-8 rounded-xl border px-3 font-mbc text-[13px] transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+        "h-8 rounded-xl border px-3 font-mbc text-[13px] transition-colors disabled:cursor-not-allowed disabled:opacity-40 max-md:h-11 max-md:px-3.5 max-md:text-[14px]",
         on
           ? "border-red-400/50 bg-red-400/15 text-white"
           : "border-white/10 bg-white/[0.03] text-white/50 enabled:hover:bg-white/5",
@@ -244,13 +244,13 @@ function CueEditor({
                 )
               }
               className={cn(
-                "text-right font-pretendard text-xs enabled:hover:text-white",
+                "text-right font-pretendard text-xs enabled:hover:text-white max-md:h-11",
                 allOn ? "text-white/55" : "text-white/30 line-through",
               )}
             >
               {l.label}
             </button>
-            <div className="relative h-[22px] rounded-md bg-black/35">
+            <div className="relative h-[22px] rounded-md bg-black/35 max-md:h-11">
               {cues.map((c) => (
                 <button
                   key={c.id}
@@ -259,7 +259,7 @@ function CueEditor({
                   onClick={() => onToggleCue(c.id, !c.enabled)}
                   title={`${fmt(c.t)} · ${c.label}${c.enabled ? "" : " (꺼짐)"}`}
                   className={cn(
-                    "absolute top-[3px] h-4 min-w-[4px] rounded-[3px] border border-black/60 disabled:cursor-default",
+                    "absolute top-[3px] h-4 min-w-[4px] rounded-[3px] border border-black/60 disabled:cursor-default max-md:top-1 max-md:h-9 max-md:min-w-[8px]",
                     !c.enabled && "opacity-20",
                   )}
                   style={{
@@ -399,7 +399,7 @@ function UploadBox({
           type="button"
           disabled={disabled}
           onClick={() => input.current?.click()}
-          className="rounded-[14px] border border-dashed border-white/20 p-3.5 text-center font-mbc text-[15px] text-white/50 enabled:hover:text-white/80 disabled:opacity-40"
+          className="rounded-[14px] border border-dashed border-white/20 p-3.5 text-center font-mbc text-[15px] text-white/50 enabled:hover:text-white/80 disabled:opacity-40 max-md:w-full"
         >
           + MR 올리기
         </button>
@@ -414,7 +414,7 @@ function UploadBox({
         onChange={(e) => setName(e.target.value)}
         maxLength={30}
         placeholder="쇼 이름"
-        className="h-9 rounded-lg border border-white/10 bg-[#141414] px-2.5 font-pretendard text-sm text-white focus:border-white/30 focus:outline-none"
+        className="h-9 rounded-lg border border-white/10 bg-[#141414] px-2.5 font-pretendard text-sm text-white focus:border-white/30 focus:outline-none max-md:h-11 max-md:text-base"
       />
       <div className="flex flex-wrap gap-1.5">
         {(["basic", "calm", "party"] as ShowStyle[]).map((s) => (
@@ -432,7 +432,7 @@ function UploadBox({
               .then(() => setFile(null))
               .catch(() => undefined)
           }
-          className="h-9 flex-1 rounded-lg border border-red-400/50 bg-red-400/15 font-mbc text-sm text-white disabled:opacity-50"
+          className="h-9 flex-1 rounded-lg border border-red-400/50 bg-red-400/15 font-mbc text-sm text-white disabled:opacity-50 max-md:h-11"
         >
           {uploading ? "분석하는 중…" : "분석해서 쇼 만들기"}
         </button>
@@ -440,7 +440,7 @@ function UploadBox({
           type="button"
           disabled={uploading}
           onClick={() => setFile(null)}
-          className="h-9 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-sm text-white/60"
+          className="h-9 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-sm text-white/60 max-md:h-11"
         >
           취소
         </button>
@@ -459,7 +459,7 @@ function MusicSettings({
 }) {
   const [draft, setDraft] = useState(settings);
   const field =
-    "h-8 rounded-lg border border-white/10 bg-[#141414] px-2.5 font-pretendard text-sm text-white focus:border-white/30 focus:outline-none";
+    "h-8 rounded-lg border border-white/10 bg-[#141414] px-2.5 font-pretendard text-sm text-white focus:border-white/30 focus:outline-none max-md:h-11 max-md:text-base";
   return (
     <div className="flex flex-col gap-3 font-pretendard text-sm text-white/65">
       <div className="flex items-center gap-3">
@@ -520,7 +520,7 @@ function MusicSettings({
               value={draft.feed.url ?? ""}
               onChange={(e) => setDraft({ ...draft, feed: { ...draft.feed, url: e.target.value } })}
               placeholder="http://100.x.x.x:8765"
-              className={cn(field, "w-52")}
+              className={cn(field, "w-52 max-md:w-full")}
             />
             <input
               value={draft.feed.name ?? ""}
@@ -528,7 +528,7 @@ function MusicSettings({
                 setDraft({ ...draft, feed: { ...draft.feed, name: e.target.value } })
               }
               placeholder="녹음 장치 이름"
-              className={cn(field, "w-32")}
+              className={cn(field, "w-32 max-md:w-full")}
             />
           </>
         )}
@@ -536,7 +536,7 @@ function MusicSettings({
       <button
         type="button"
         onClick={() => onSave(draft)}
-        className="h-9 w-fit rounded-lg border border-white/15 bg-white/10 px-4 font-mbc text-[13px] text-white hover:bg-white/15"
+        className="h-9 w-fit rounded-lg border border-white/15 bg-white/10 px-4 font-mbc text-[13px] text-white hover:bg-white/15 max-md:h-11"
       >
         저장
       </button>
@@ -617,19 +617,19 @@ export default function MusicLightPanel({
       {state.lastError && <Notice>{state.lastError}</Notice>}
       {(playing?.error || live?.error) && <Notice>{playing?.error || live?.error}</Notice>}
 
-      <section data-tour="music.player" className="flex flex-col gap-5 rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
+      <section data-tour="music.player" className="flex flex-col gap-4 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:gap-5 md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-7 md:shadow-2xl">
         {!summary || !show ? (
           <p className="font-pretendard text-sm text-white/45">쇼가 없어요</p>
         ) : (
           <>
-            <div className="flex flex-wrap items-center gap-[18px]">
+            <div className="flex flex-wrap items-center gap-[18px] max-md:gap-3">
               <button
                 data-tour="music.play"
                 type="button"
                 disabled={!operable}
                 onClick={press}
                 className={cn(
-                  "flex h-10 items-center gap-2 rounded-xl border px-4 font-pretendard text-[15px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40",
+                  "flex h-10 items-center gap-2 rounded-xl border px-4 font-pretendard text-[15px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 max-md:order-last max-md:h-14 max-md:w-full max-md:justify-center max-md:text-[18px]",
                   playing
                     ? "border-red-400/60 bg-red-400/25 shadow-[0_0_18px_rgba(255,59,59,0.35)]"
                     : "border-red-400/50 bg-red-400/15 enabled:hover:bg-red-400/20",
@@ -637,8 +637,8 @@ export default function MusicLightPanel({
               >
                 {playing ? "■ 멈춤" : "▶ 시작"}
               </button>
-              <div className="min-w-0">
-                <div className="truncate font-pretendard text-xl font-extrabold text-white">
+              <div className="min-w-0 max-md:flex-1">
+                <div className="truncate font-pretendard text-xl font-extrabold text-white max-md:text-[18px]">
                   {summary.name}
                 </div>
                 <div className="font-pretendard text-sm text-white/55">
@@ -646,7 +646,7 @@ export default function MusicLightPanel({
                   {summary.enabledCues !== summary.cues && ` (전체 ${summary.cues})`}
                 </div>
               </div>
-              <div className="ml-auto flex gap-[26px] text-right">
+              <div className="ml-auto flex gap-[26px] text-right max-md:gap-4">
                 <div className="grid gap-0.5">
                   <b className="font-mono text-xl font-bold tabular-nums text-white">{fmt(position)}</b>
                   <span className="font-pretendard text-xs text-white/50">/ {fmt(summary.duration)}</span>
@@ -670,9 +670,9 @@ export default function MusicLightPanel({
                   src={musicLightApi.audioUrl(hallId, summary.id)}
                   controls
                   preload="none"
-                  className="h-8 w-60 [color-scheme:dark]"
+                  className="h-8 w-60 [color-scheme:dark] max-md:h-11 max-md:w-full"
                 />
-                <label className="flex items-center gap-1.5">
+                <label className="flex items-center gap-1.5 max-md:h-11 max-md:text-[14px]">
                   <input
                     type="checkbox"
                     checked={withAudio}
@@ -712,7 +712,7 @@ export default function MusicLightPanel({
                 ? null
                 : "소리 입력 없음"}
           </span>
-          <span className="ml-auto text-white/50">{safety}</span>
+          <span className="ml-auto text-white/50 max-md:ml-0 max-md:basis-full max-md:text-[13px]">{safety}</span>
         </div>
 
         {summary && show && (
@@ -745,7 +745,7 @@ export default function MusicLightPanel({
                     onChange={(id) => update(summary.id, { options: { startScene: id } })}
                     aria-label="시작 장면"
                     options={[{ value: "", label: "없음" }, ...state.scenes.map((sc) => ({ value: sc.id, label: sc.name }))]}
-                    className="h-8 px-2"
+                    className="h-8 px-2 max-md:h-11 max-md:text-base"
                   />
                   <span>끝 장면</span>
                   <Select
@@ -754,7 +754,7 @@ export default function MusicLightPanel({
                     onChange={(id) => update(summary.id, { options: { endScene: id } })}
                     aria-label="끝 장면"
                     options={[{ value: "", label: "천천히 끄기" }, ...state.scenes.map((sc) => ({ value: sc.id, label: sc.name }))]}
-                    className="h-8 px-2"
+                    className="h-8 px-2 max-md:h-11 max-md:text-base"
                   />
                 </>
               )}
@@ -762,7 +762,7 @@ export default function MusicLightPanel({
                 data-tour="music.edit-cues"
                 type="button"
                 onClick={() => setEditCues((v) => !v)}
-                className="ml-auto h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/60 hover:text-white"
+                className="ml-auto h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/60 hover:text-white max-md:ml-0 max-md:h-11 max-md:px-4"
               >
                 {editCues ? "큐 편집 닫기" : "큐 편집"}
               </button>
@@ -773,7 +773,7 @@ export default function MusicLightPanel({
                 onClick={() => {
                   if (window.confirm(`'${summary.name}' 쇼를 지울까요?`)) remove(summary.id);
                 }}
-                className="h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/50 enabled:hover:text-red-300 disabled:opacity-40"
+                className="h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/50 enabled:hover:text-red-300 disabled:opacity-40 max-md:h-11 max-md:px-4"
               >
                 쇼 지우기
               </button>
@@ -800,7 +800,7 @@ export default function MusicLightPanel({
               <div
                 key={s.id}
                 className={cn(
-                  "grid grid-cols-[minmax(0,1fr)_90px_60px_auto] items-center gap-3.5 border-t border-white/[0.07] px-2 py-3.5 first:border-t-0",
+                  "grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3.5 border-t border-white/[0.07] px-2 py-3.5 first:border-t-0 max-md:gap-3 md:grid-cols-[minmax(0,1fr)_90px_60px_auto]",
                   s.id === showId && "rounded-xl bg-white/[0.04]",
                 )}
               >
@@ -815,7 +815,7 @@ export default function MusicLightPanel({
                     {state.styles[s.options.style ?? "basic"]} · 큐 {s.enabledCues}/{s.cues}
                   </span>
                 </button>
-                <span className="font-mono text-sm tabular-nums text-white/50">{Math.round(s.bpm)} BPM</span>
+                <span className="font-mono text-sm tabular-nums text-white/50 max-md:hidden">{Math.round(s.bpm)} BPM</span>
                 <span className="font-mono text-sm tabular-nums text-white/50">{fmt(s.duration)}</span>
                 <button
                   type="button"
@@ -824,7 +824,7 @@ export default function MusicLightPanel({
                     setSelected(s.id);
                     start(s.id, 0);
                   }}
-                  className="h-10 rounded-xl border border-white/[0.12] bg-white/5 px-4 font-pretendard text-[15px] font-bold text-white enabled:hover:bg-white/10 disabled:cursor-default disabled:opacity-60"
+                  className="h-10 rounded-xl border border-white/[0.12] bg-white/5 px-4 font-pretendard text-[15px] font-bold text-white enabled:hover:bg-white/10 disabled:cursor-default disabled:opacity-60 max-md:h-11"
                 >
                   {isPlaying ? "재생 중" : "▶ 틀기"}
                 </button>
@@ -849,7 +849,7 @@ export default function MusicLightPanel({
             data-tour="music.settings-toggle"
             type="button"
             onClick={() => setShowSettings((v) => !v)}
-            className="font-pretendard text-xs text-white/40 hover:text-white/75"
+            className="font-pretendard text-xs text-white/40 hover:text-white/75 max-md:h-11 max-md:text-[13px]"
           >
             {showSettings ? "▴ 음악 조명 설정 접기" : "▾ 음악 조명 설정"}
           </button>

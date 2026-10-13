@@ -147,17 +147,17 @@ export default function MixerSetupPage() {
   ];
 
   return (
-    <div className="flex min-h-full flex-col gap-6">
-      <header className="flex flex-wrap items-center gap-4">
+    <div className="flex min-h-full flex-col gap-4 md:gap-6">
+      <header className="flex flex-wrap items-center gap-3 md:gap-4">
         <Link
           data-tour="mixer-setup.back"
           href="/mixer"
-          className="flex h-9 items-center gap-1 rounded-xl px-2 font-mbc text-sm text-white/50 transition-colors hover:bg-white/5 hover:text-white"
+          className="flex h-9 items-center gap-1 rounded-xl px-2 font-mbc text-sm text-white/50 transition-colors hover:bg-white/5 hover:text-white max-md:-ml-2 max-md:h-11 max-md:text-[15px]"
         >
           <ChevronLeft size={16} />
           오디오
         </Link>
-        <SectionHeader className="mb-0">믹서 현장 세팅</SectionHeader>
+        <SectionHeader className="mb-0 max-md:text-[26px]">믹서 현장 세팅</SectionHeader>
         <HallSwitcher tour="mixer-setup.hall-select" halls={halls} value={current?.id} onChange={switchHall} />
         <div className="ml-auto flex items-center gap-2.5">
           <StatusChip
@@ -175,7 +175,7 @@ export default function MixerSetupPage() {
       )}
 
       {/* 단계 */}
-      <nav data-tour="mixer-setup.steps" className="grid grid-cols-4 gap-2.5">
+      <nav data-tour="mixer-setup.steps" className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
         {steps.map((s, i) => (
           <button
             key={s.key}
@@ -184,7 +184,7 @@ export default function MixerSetupPage() {
             onClick={() => setStep(s.key)}
             aria-current={step === s.key ? "step" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors",
+              "flex min-w-0 items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors max-md:gap-2.5 max-md:px-3",
               step === s.key
                 ? "border-[#FF3B3B]/55 bg-[#FF3B3B]/10"
                 : "border-white/[0.08] bg-black/25 hover:bg-white/[0.05]",
@@ -232,7 +232,7 @@ export default function MixerSetupPage() {
 
       {/* 채널·씬·조작 범위는 한 번에 저장 */}
       {step !== "connection" && draft && dirty && (
-        <div data-tour="mixer-setup.save-bar" className="sticky bottom-0 z-20 mt-auto flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-[#161616]/95 px-5 py-3 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.8)] backdrop-blur">
+        <div data-tour="mixer-setup.save-bar" className="sticky bottom-0 z-20 mt-auto flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-[#161616]/95 px-5 py-3 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.8)] backdrop-blur max-md:bottom-[calc(70px+env(safe-area-inset-bottom))] max-md:px-4">
           <span className="font-mbc text-sm text-amber-200/85">저장 안 한 변경이 있어요</span>
           {problems.length > 0 && (
             <span className="font-pretendard text-xs text-red-300/85">· {problems.join(" · ")}</span>

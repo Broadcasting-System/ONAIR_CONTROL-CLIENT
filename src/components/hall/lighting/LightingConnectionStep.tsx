@@ -205,7 +205,7 @@ export default function LightingConnectionStep({
           }
         >
           <div className="flex flex-wrap items-end gap-3">
-            <Field label={portLabel} className="min-w-[260px] flex-1">
+            <Field label={portLabel} className="min-w-[260px] flex-1 max-md:min-w-0 max-md:basis-full">
               <Select
                 value={form.port}
                 onChange={(port) => set({ port })}
@@ -215,7 +215,7 @@ export default function LightingConnectionStep({
               />
             </Field>
             {form.kind === "opendmx" && (
-              <Field label="콘솔 입력 조명 노드" className="min-w-[260px] flex-1">
+              <Field label="콘솔 입력 조명 노드" className="min-w-[260px] flex-1 max-md:min-w-0 max-md:basis-full">
                 <Select
                   value={form.inputPort}
                   onChange={(inputPort) => set({ inputPort })}
@@ -244,7 +244,7 @@ export default function LightingConnectionStep({
         </Card>
       )}
 
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#161616]/90 px-5 py-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#161616]/90 px-5 py-3 max-md:px-4">
         <span className="font-pretendard text-xs text-white/35">
           {state.configured
             ? state.connected

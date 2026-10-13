@@ -33,10 +33,10 @@ export default function AutoAudioPanel({ hallId, lead }: { hallId: string | null
   const anyOn = !!state && AUTO_FEATURES.some((f) => state.features[f].enabled);
 
   return (
-    <div className="flex h-full flex-col gap-6">
-      <header className="flex flex-wrap items-center gap-5">
+    <div className="flex h-full flex-col gap-4 md:gap-6">
+      <header className="flex flex-wrap items-center gap-3 md:gap-5">
         {lead}
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="ml-auto flex items-center gap-2.5 max-md:ml-0 max-md:flex-wrap">
           {isAdmin && (
             <ConfigButton tour="auto.settings-toggle" label="미터·사람 우선" onClick={() => setShowSettings((v) => !v)} />
           )}

@@ -237,7 +237,7 @@ function Key({
       aria-label={ariaLabel}
       onClick={onClick}
       className={cn(
-        "flex h-6 flex-1 items-center justify-center gap-1 rounded-[5px] border border-black font-orbitron text-[8.5px] tracking-[0.14em] transition-all",
+        "flex h-11 w-full flex-none items-center justify-center gap-1 rounded-[7px] border border-black font-orbitron text-[10px] tracking-[0.14em] transition-all md:h-6 md:w-auto md:flex-1 md:rounded-[5px] md:text-[8.5px]",
         "bg-[linear-gradient(180deg,#303035,#1e1e22)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_3px_6px_rgba(0,0,0,0.55)]",
         "active:translate-y-px disabled:cursor-not-allowed",
         on ? "text-white" : "text-white/42 enabled:hover:text-white/75",
@@ -299,9 +299,9 @@ export default function ChannelStrip({
   return (
     <div
       className={cn(
-        "relative flex shrink-0 flex-col items-center gap-2.5 rounded-xl border border-black/80 px-[9px] pb-2.5 pt-3",
+        "relative flex shrink-0 flex-col items-center gap-2.5 rounded-xl border border-black/80 px-1.5 pb-2.5 pt-3 md:px-[9px]",
         "bg-[linear-gradient(180deg,#141418,#0d0d10)] transition-shadow",
-        master ? "w-[124px]" : "w-[110px]",
+        master ? "w-[96px] md:w-[124px]" : "w-[88px] md:w-[110px]",
       )}
       style={{
         boxShadow: selected
@@ -447,7 +447,7 @@ export default function ChannelStrip({
       </div>
 
       {/* SEL · MUTE */}
-      <div className="flex w-full gap-[5px]">
+      <div className="flex w-full flex-col gap-[5px] md:flex-row">
         {inputChannel && onSelect && (
           <Key
             label="SEL"

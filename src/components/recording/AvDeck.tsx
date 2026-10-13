@@ -21,7 +21,7 @@ function needleDeg(dbfs: number | null): number {
 export function VuMeter({ name, dbfs }: { name: string; dbfs: number | null }) {
   return (
     <div
-      className="relative h-[86px] w-[150px] overflow-hidden rounded-[10px] border border-black bg-[radial-gradient(ellipse_at_50%_120%,#26272c,#141518_70%)] shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)]"
+      className="relative h-[86px] w-[150px] overflow-hidden rounded-[10px] max-md:w-full border border-black bg-[radial-gradient(ellipse_at_50%_120%,#26272c,#141518_70%)] shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)]"
       role="meter"
       aria-label={`${name} 레벨`}
       aria-valuemin={-60}
@@ -133,7 +133,7 @@ export default function AvDeck({
   const nextFps = fpsOptions.find((f) => f !== fps) ?? fps;
 
   return (
-    <section data-tour="recording.deck" className="grid items-center gap-7 rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md md:grid-cols-[auto_minmax(0,1fr)] xl:grid-cols-[auto_minmax(0,1fr)_auto]">
+    <section data-tour="recording.deck" className="grid items-center gap-7 max-md:gap-4 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-7 md:shadow-2xl md:grid-cols-[auto_minmax(0,1fr)] xl:grid-cols-[auto_minmax(0,1fr)_auto]">
       <div className="flex flex-col items-center gap-2">
         <button
           data-tour="recording.start"
@@ -188,7 +188,7 @@ export default function AvDeck({
           {hoursLeft != null && <span className={tag}>남은 공간 {Math.floor(hoursLeft)}시간</span>}
         </div>
         {recording ? (
-          <div className="flex h-[42px] max-w-[420px] items-center rounded-[10px] border border-white/12 bg-[#0c0d0f] px-3.5 font-pretendard text-base text-white">
+          <div className="flex h-[42px] max-w-[420px] items-center rounded-[10px] max-md:h-12 max-md:max-w-none border border-white/12 bg-[#0c0d0f] px-3.5 font-pretendard text-base text-white">
             <span className="truncate">{label || "이름 없음"}</span>
           </div>
         ) : (
@@ -200,7 +200,7 @@ export default function AvDeck({
             maxLength={60}
             disabled={disabled}
             placeholder="예: 2학기 학예회 1부"
-            className="h-[42px] w-full max-w-[420px] rounded-[10px] border border-white/12 bg-[#0c0d0f] px-3.5 font-pretendard text-base text-white outline-none placeholder:text-white/35 focus:border-white/35 disabled:opacity-50"
+            className="h-[42px] w-full max-w-[420px] rounded-[10px] border border-white/12 bg-[#0c0d0f] px-3.5 font-pretendard text-base text-white outline-none placeholder:text-white/35 focus:border-white/35 disabled:opacity-50 max-md:h-12 max-md:max-w-none"
           />
         )}
         {(error || (!recording && reason)) && (
@@ -209,7 +209,7 @@ export default function AvDeck({
       </div>
 
       {hasAudio && (
-        <div data-tour="recording.meters" className="flex gap-3 md:col-span-2 xl:col-span-1">
+        <div data-tour="recording.meters" className="flex gap-3 max-md:grid max-md:grid-cols-2 md:col-span-2 xl:col-span-1">
           {(lanes.length ? lanes : ["마이크", "음악"]).slice(0, 2).map((n, i) => (
             <VuMeter key={i} name={`${i + 1} ${n}`} dbfs={levels[i] ?? null} />
           ))}

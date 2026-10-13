@@ -14,7 +14,7 @@ import { usePersistentState } from "@/hooks/usePersistentState";
 import { useMerge, useRecording, useRecordings } from "@/hooks/useRecording";
 
 const topBtn =
-  "flex h-9 items-center rounded-xl border border-white/10 bg-white/[0.05] px-3.5 font-mbc text-sm text-white/70 hover:bg-white/10 hover:text-white";
+  "flex h-9 items-center rounded-xl border border-white/10 bg-white/[0.05] px-3.5 font-mbc text-sm text-white/70 hover:bg-white/10 hover:text-white max-md:h-11";
 
 /** 녹음·녹화 — 화면(없음·CH1~5)과 소리(홀 콘솔·없음)를 골라 한 번에. 목록 하나, 휴대폰 영상 합치기는 맨 아래 */
 export default function RecordingPage() {
@@ -95,9 +95,9 @@ export default function RecordingPage() {
   const mergeRecordingId = mergeRec ?? recordings.find((r) => r.status === "ready")?.id ?? null;
 
   return (
-    <div className="flex h-full flex-col gap-6">
-      <header className="flex flex-wrap items-center gap-5">
-        <SectionHeader className="mb-0">녹음·녹화</SectionHeader>
+    <div className="flex h-full flex-col gap-4 md:gap-6">
+      <header className="flex flex-wrap items-center gap-3 md:gap-5">
+        <SectionHeader className="mb-0 max-md:text-[26px]">녹음·녹화</SectionHeader>
         <div className="relative ml-auto flex items-center gap-2.5">
           <button
             data-tour="recording.status"
@@ -105,6 +105,7 @@ export default function RecordingPage() {
             onClick={() => setShowInfo((v) => !v)}
             title={recorder ? `${recorder.encoder ?? ""} · ${recorder.fps}fps` : undefined}
             aria-expanded={showInfo}
+            className="max-md:flex max-md:h-11 max-md:items-center"
           >
             <StatusChip tone={recorder?.ready ? "good" : "off"} label={chipLabel} />
           </button>
@@ -114,7 +115,7 @@ export default function RecordingPage() {
             </button>
           )}
           {showInfo && recorder && (
-            <div className="absolute right-0 top-11 z-40 w-[300px] rounded-2xl border border-white/10 bg-[#161618] p-4 shadow-2xl">
+            <div className="absolute right-0 top-11 z-40 w-[300px] max-md:top-12 rounded-2xl border border-white/10 bg-[#161618] p-4 shadow-2xl">
               <RecorderInfo recorder={recorder} onRecheck={recheck} />
             </div>
           )}
@@ -198,7 +199,7 @@ export default function RecordingPage() {
                 type="button"
                 disabled={!canOperate}
                 onClick={() => setMergeOpen(true)}
-                className="inline-flex h-[38px] items-center rounded-[10px] border border-white/12 bg-white/5 px-3.5 font-pretendard text-sm font-bold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35"
+                className="inline-flex h-[38px] items-center rounded-[10px] border border-white/12 bg-white/5 px-3.5 font-pretendard text-sm font-bold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35 max-md:h-11"
               >
                 + 휴대폰 영상 올리기
               </button>

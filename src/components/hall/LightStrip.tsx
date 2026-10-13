@@ -38,12 +38,14 @@ function Fader({
   label,
   disabled,
   onChange,
+  className,
 }: {
   value: number;
   color: string;
   label: string;
   disabled?: boolean;
   onChange: (v: number) => void;
+  className?: string;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const lastSent = useRef(0);
@@ -65,7 +67,7 @@ function Fader({
   };
 
   return (
-    <div className="flex h-[200px] w-full shrink-0 justify-center gap-[5px]">
+    <div className={cn("flex h-[200px] w-full shrink-0 justify-center gap-[5px] max-md:h-[222px]", className)}>
       {/* 눈금도 손잡이가 움직이는 범위(위아래 손잡이 반 높이만큼 안쪽)에 맞춘다 */}
       <div className="relative my-[19px] w-4" aria-hidden>
         {SCALE.map((s) => (
@@ -150,14 +152,16 @@ function ColorKeys({
   disabled,
   label,
   onPick,
+  className,
 }: {
   selected: ColorPreset | null;
   disabled?: boolean;
   label: string;
   onPick: (p: ColorPreset) => void;
+  className?: string;
 }) {
   return (
-    <div className="grid w-full grid-cols-2 gap-1">
+    <div className={cn("grid w-full grid-cols-2 gap-1 max-md:grid-cols-3", className)}>
       {COLOR_PRESETS.map((p, i) => {
         const on = selected?.name === p.name;
         const alone = i === COLOR_PRESETS.length - 1 && COLOR_PRESETS.length % 2 === 1;
@@ -170,9 +174,9 @@ function ColorKeys({
             aria-label={`${label} ${p.name}`}
             onClick={() => onPick(p)}
             className={cn(
-              "flex h-[22px] items-center gap-[5px] rounded-[5px] border border-black px-[5px] font-pretendard text-[10px] transition-all",
+              "flex h-[22px] items-center gap-[5px] rounded-[5px] border border-black px-[5px] font-pretendard text-[10px] transition-all max-md:h-11 max-md:justify-center max-md:rounded-[7px] max-md:text-[12px]",
               "bg-[linear-gradient(180deg,#303035,#1e1e22)] active:translate-y-px disabled:cursor-not-allowed",
-              alone && "col-span-2",
+              alone && "md:col-span-2",
               on ? "text-white" : "text-white/45 enabled:hover:text-white/80",
             )}
             style={{
@@ -203,7 +207,7 @@ function Key({ on, color, disabled, onClick, label }: { on: boolean; color: stri
       aria-label={`${label} ${on ? "끄기" : "켜기"}`}
       onClick={onClick}
       className={cn(
-        "flex h-6 w-full items-center justify-center gap-1 rounded-[5px] border border-black font-orbitron text-[8.5px] tracking-[0.14em] transition-all",
+        "flex h-6 w-full items-center justify-center gap-1 rounded-[5px] border border-black font-orbitron text-[8.5px] tracking-[0.14em] transition-all max-md:h-11 max-md:rounded-[7px] max-md:text-[10px]",
         "bg-[linear-gradient(180deg,#303035,#1e1e22)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_3px_6px_rgba(0,0,0,0.55)]",
         "active:translate-y-px disabled:cursor-not-allowed",
         on ? "text-white" : "text-white/42 enabled:hover:text-white/75",
@@ -220,10 +224,10 @@ function Key({ on, color, disabled, onClick, label }: { on: boolean; color: stri
 }
 
 /** 값 창 — 콘솔의 작은 숫자 창 */
-function ValueWindow({ value, color }: { value: number; color: string }) {
+function ValueWindow({ value, color, className }: { value: number; color: string; className?: string }) {
   return (
     <div
-      className="min-w-[58px] rounded-[3px] border border-black bg-[#07090b] px-1.5 py-[3px] text-center font-orbitron text-xs leading-none tabular-nums shadow-[inset_0_1px_4px_#000]"
+      className={cn("min-w-[58px] rounded-[3px] border border-black bg-[#07090b] px-1.5 py-[3px] text-center font-orbitron text-xs leading-none tabular-nums shadow-[inset_0_1px_4px_#000]", className)}
       style={{ color, textShadow: `0 0 6px ${color}b3` }}
     >
       {value}%
@@ -258,7 +262,7 @@ export default function LightStrip({
 
   return (
     <div
-      className={cn(FRAME, "w-[108px]")}
+      className={cn(FRAME, "w-[108px] snap-start max-md:w-[154px]")}
       style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), inset 0 0 0 1px rgba(255,255,255,0.025)" }}
     >
       <span
@@ -297,7 +301,7 @@ export default function LightStrip({
         />
       ) : (
         // 색 버튼 자리 높이를 맞춰 이름 줄이 나란히 오게
-        <div className="grid h-[100px] place-items-center text-center font-pretendard text-[11px] leading-snug text-white/30">
+        <div className="grid h-[100px] place-items-center text-center font-pretendard text-[11px] leading-snug text-white/30 max-md:h-[140px] max-md:text-[12px]">
           밝기만
           <br />
           되는 조명
@@ -338,23 +342,36 @@ export function LightMasterStrip({
 }) {
   return (
     <div
-      className={cn(FRAME, "w-[124px]")}
+      className={cn(FRAME, "w-[124px] max-md:grid max-md:w-full max-md:grid-cols-[110px_minmax(0,1fr)] max-md:items-start max-md:gap-x-3 max-md:px-3")}
       style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), inset 0 0 0 1px rgba(255,59,59,0.18)" }}
     >
       <span className="absolute inset-x-2.5 top-0 h-px" style={{ background: `linear-gradient(90deg,${MASTER},transparent)` }} aria-hidden />
-      <div className="flex h-3.5 w-full items-center gap-[5px]">
+      <div className="flex h-3.5 w-full items-center gap-[5px] max-md:col-span-2">
         <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: MASTER, boxShadow: `0 0 8px ${MASTER}` }} />
         <span className="font-orbitron text-[9px] tracking-[0.16em] text-white/60">MASTER</span>
       </div>
-      <div className="grid h-[46px] place-items-center font-orbitron text-[8px] tracking-[0.2em] text-white/28">ALL</div>
+      <div className="grid h-[46px] place-items-center font-orbitron text-[8px] tracking-[0.2em] text-white/28 max-md:hidden">ALL</div>
 
-      <Fader value={master} color={MASTER} label="전체" disabled={disabled} onChange={onMaster} />
-      <ValueWindow value={master} color={MASTER} />
+      <Fader
+        value={master}
+        color={MASTER}
+        label="전체"
+        disabled={disabled}
+        onChange={onMaster}
+        className="max-md:col-start-1 max-md:row-span-3 max-md:row-start-2"
+      />
+      <ValueWindow value={master} color={MASTER} className="max-md:col-start-1 max-md:row-start-5 max-md:justify-self-center" />
 
       {hasColor ? (
-        <ColorKeys selected={allColor} disabled={disabled} label="전체" onPick={(p) => onAllColor(p.value)} />
+        <ColorKeys
+          selected={allColor}
+          disabled={disabled}
+          label="전체"
+          onPick={(p) => onAllColor(p.value)}
+          className="max-md:col-start-2 max-md:row-start-2"
+        />
       ) : (
-        <div className="h-[100px]" />
+        <div className="h-[100px] max-md:hidden" />
       )}
 
       <button
@@ -364,7 +381,7 @@ export function LightMasterStrip({
         aria-pressed={blackout}
         onClick={() => onBlackout(!blackout)}
         className={cn(
-          "flex h-[42px] w-full items-center justify-center gap-1.5 rounded-[10px] border font-mbc text-[15px] transition-all disabled:cursor-not-allowed",
+          "flex h-[42px] w-full items-center justify-center gap-1.5 rounded-[10px] border font-mbc text-[15px] transition-all disabled:cursor-not-allowed max-md:col-start-2 max-md:row-start-3 max-md:h-14 max-md:rounded-[14px] max-md:text-[18px]",
           blackout
             ? "border-[#FF3B3B] bg-[#FF3B3B] text-white shadow-[0_0_24px_rgba(255,59,59,0.55)]"
             : "border-[#FF3B3B]/35 bg-[#FF3B3B]/[0.08] text-[#ff8a8a] enabled:hover:bg-[#FF3B3B]/15",
@@ -373,7 +390,7 @@ export function LightMasterStrip({
         <Power size={15} aria-hidden />
         {blackout ? "암전 중" : "암전"}
       </button>
-      <span className="flex h-9 items-center font-mbc text-[14px] leading-tight text-[#ff9a9a]">전체</span>
+      <span className="flex h-9 items-center font-mbc text-[14px] leading-tight text-[#ff9a9a] max-md:hidden">전체</span>
     </div>
   );
 }

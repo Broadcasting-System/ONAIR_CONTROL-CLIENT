@@ -40,9 +40,15 @@ export default function AudioPage() {
 
   const lead = (
     <>
-      <SectionHeader className="mb-0">오디오</SectionHeader>
+      <SectionHeader className="mb-0 max-md:order-[-2] max-md:text-[26px]">오디오</SectionHeader>
       <HallSwitcher tour="mixer.hall-select" halls={halls} value={current?.id} onChange={setHallId} />
-      <PageTabs tour="mixer.tab" tabs={AUDIO_TABS} value={tab} onChange={setTab} />
+      <PageTabs
+        tour="mixer.tab"
+        tabs={AUDIO_TABS}
+        value={tab}
+        onChange={setTab}
+        className="max-md:[&>button]:h-10 max-md:[&>button]:text-[15px]"
+      />
     </>
   );
 

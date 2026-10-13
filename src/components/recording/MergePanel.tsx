@@ -16,7 +16,7 @@ const STAGES: { key: MergeJob["stage"]; name: string }[] = [
 ];
 
 const btn =
-  "h-[34px] rounded-[10px] border border-white/12 bg-white/5 px-3 font-mbc text-[13px] text-white/75 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-35";
+  "h-[34px] rounded-[10px] border border-white/12 bg-white/5 px-3 font-mbc text-[13px] text-white/75 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-35 max-md:h-11 max-md:px-3.5";
 
 function Step({ n, done, title, children }: { n: number; done: boolean; title: string; children: React.ReactNode }) {
   return (
@@ -57,7 +57,7 @@ function Seg<T extends string>({
           disabled={disabled}
           onClick={() => onChange(o.value)}
           className={cn(
-            "h-9 px-3.5 font-mbc text-sm transition-colors disabled:cursor-not-allowed",
+            "h-9 px-3.5 font-mbc text-sm transition-colors disabled:cursor-not-allowed max-md:h-11",
             i > 0 && "border-l border-white/[0.08]",
             value === o.value ? "bg-red-400/[0.18] text-white" : "bg-white/[0.03] text-white/50 enabled:hover:text-white/80",
           )}
@@ -271,7 +271,7 @@ export default function MergePanel({
             value={nudge}
             disabled={running}
             onChange={(e) => setNudge(Math.max(-1000, Math.min(1000, Math.round(Number(e.target.value) || 0))))}
-            className="h-9 w-20 rounded-xl border border-white/10 bg-[#141414] px-2 text-center font-orbitron text-sm text-white focus:outline-none"
+            className="h-9 w-20 rounded-xl border border-white/10 bg-[#141414] px-2 text-center font-orbitron text-sm text-white focus:outline-none max-md:h-11 max-md:text-base"
           />
           <span className="font-pretendard text-xs text-white/40">ms</span>
         </div>
@@ -282,7 +282,7 @@ export default function MergePanel({
             type="button"
             onClick={start}
             disabled={!canOperate || !video || !recording || !video.hasAudio || running || isMerging || !!upload}
-            className="h-12 rounded-[10px] border border-[#FF3B3B]/55 bg-[linear-gradient(180deg,rgba(255,59,59,0.28),rgba(255,59,59,0.12))] px-[22px] font-mbc text-base text-white disabled:cursor-not-allowed disabled:opacity-35"
+            className="h-12 rounded-[10px] border border-[#FF3B3B]/55 max-md:w-full bg-[linear-gradient(180deg,rgba(255,59,59,0.28),rgba(255,59,59,0.12))] px-[22px] font-mbc text-base text-white disabled:cursor-not-allowed disabled:opacity-35"
           >
             영상 합치기
           </button>

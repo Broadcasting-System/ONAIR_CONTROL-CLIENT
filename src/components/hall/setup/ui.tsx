@@ -8,7 +8,7 @@ import type { ConnectionTestResult } from "@/types/hall";
 /** 믹서 현장 세팅 화면에서 같이 쓰는 작은 부품들 */
 
 export const inputCls =
-  "h-10 min-w-0 rounded-lg border bg-[#141414] px-3 font-pretendard text-sm text-white placeholder:text-white/25 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40";
+  "h-10 min-w-0 rounded-lg border bg-[#141414] px-3 font-pretendard text-sm text-white placeholder:text-white/25 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40 max-md:h-11 max-md:text-base";
 export const okBorder = "border-white/10 focus:border-white/30";
 export const badBorder = "border-red-500/60 focus:border-red-400";
 
@@ -30,7 +30,7 @@ export function Card({
   tour?: string;
 }) {
   return (
-    <section data-tour={tour} className={cn("flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-black/30 p-5", className)}>
+    <section data-tour={tour} className={cn("flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-black/30 p-5 max-md:p-4", className)}>
       {(title || action) && (
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -145,7 +145,7 @@ export function ActionButton({
       disabled={disabled || busy}
       title={title}
       className={cn(
-        "flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-4 font-mbc text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+        "flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-4 font-mbc text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 max-md:h-11",
         tone === "primary" && "border-[#FF3B3B]/60 bg-[#FF3B3B]/20 text-white enabled:hover:bg-[#FF3B3B]/30",
         tone === "default" &&
           "border-white/10 bg-white/[0.04] text-white/75 enabled:hover:bg-white/10 enabled:hover:text-white",
@@ -178,7 +178,7 @@ export function Switch({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="flex items-center gap-2.5 font-pretendard text-sm text-white/70 disabled:opacity-40"
+      className="flex items-center gap-2.5 font-pretendard text-sm text-white/70 disabled:opacity-40 max-md:min-h-11"
     >
       <span className={cn("relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors", checked ? "bg-[#00FF57]/55" : "bg-white/15")}>
         <span

@@ -158,7 +158,7 @@ export default function ConnectionStep({
   return (
     <div className="flex flex-col gap-5">
       <Card tour="mixer-setup.connection-type" title="연결 방식">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <OptionCard
             selected={isHiqnet}
             onClick={() => setDriver("hiqnet")}
@@ -180,7 +180,7 @@ export default function ConnectionStep({
 
       {isHiqnet && (
         <Card tour="mixer-setup.console" title="콘솔">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <OptionCard
               selected={hq.via === "bridge"}
               onClick={() => setHq({ via: "bridge" })}
@@ -195,7 +195,7 @@ export default function ConnectionStep({
           </div>
 
           <div className="flex flex-wrap items-end gap-3">
-            <Field label="콘솔 IP" className="w-[220px]">
+            <Field label="콘솔 IP" className="w-full md:w-[220px]">
               <input
                 value={hq.host}
                 onChange={(e) => setHq({ host: e.target.value })}
@@ -225,7 +225,7 @@ export default function ConnectionStep({
             <button
               type="button"
               onClick={() => setAdvanced((v) => !v)}
-              className="ml-auto h-10 font-pretendard text-xs text-white/40 hover:text-white/70"
+              className="ml-auto h-10 font-pretendard text-xs text-white/40 hover:text-white/70 max-md:h-11 max-md:text-[13px]"
             >
               고급 설정 {advanced ? "접기" : "보기"}
             </button>
@@ -233,7 +233,7 @@ export default function ConnectionStep({
 
           {advanced && (
             <div className="flex flex-wrap gap-3 rounded-xl bg-white/[0.02] p-3">
-              <Field label="HiQnet 포트" className="w-[130px]">
+              <Field label="HiQnet 포트" className="w-[130px] max-md:min-w-0 max-md:flex-1">
                 <input
                   type="number"
                   value={hq.port}
@@ -242,7 +242,7 @@ export default function ConnectionStep({
                 />
               </Field>
               {viaBridge && (
-                <Field label="노트북 중계 포트" className="w-[150px]">
+                <Field label="노트북 중계 포트" className="w-[150px] max-md:min-w-0 max-md:flex-1">
                   <input
                     type="number"
                     value={hq.relayPort}
@@ -288,15 +288,15 @@ export default function ConnectionStep({
           {midiOn && (
             <>
               <div className="flex flex-wrap items-end gap-3">
-                <Field label="MIDI 포트" className="min-w-[280px] flex-1">
-                  <div className="flex gap-2">
+                <Field label="MIDI 포트" className="w-full min-w-0 md:w-auto md:min-w-[280px] md:flex-1">
+                  <div className="flex flex-wrap gap-2 md:flex-nowrap">
                     <Select
                       value={port}
                       onChange={setPort}
                       disabled={!ports || ports.out.length === 0}
                       placeholder={ports && ports.out.length === 0 ? "USB-MIDI 없음" : "포트 고르기"}
                       options={(ports?.out ?? []).map((p) => ({ value: p, label: p }))}
-                      className={cn(inputCls, okBorder, "flex-1")}
+                      className={cn(inputCls, okBorder, "flex-1 max-md:basis-full")}
                     />
                     <ActionButton icon={<RefreshCw size={14} />} busy={portsBusy} onClick={loadPorts} disabled={urlBad}>
                       불러오기
@@ -327,7 +327,7 @@ export default function ConnectionStep({
         </Card>
       )}
 
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#161616]/90 px-5 py-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#161616]/90 px-5 py-3 max-md:px-4">
         <ActionButton tour="mixer-setup.test" icon={<PlugZap size={15} />} busy={testing} onClick={runTest} disabled={!canSubmit}>
           연결 시험
         </ActionButton>

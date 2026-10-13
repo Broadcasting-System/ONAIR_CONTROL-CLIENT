@@ -303,7 +303,7 @@ export function LedKey({
       aria-pressed={lit}
       onClick={() => onToggle(!lit)}
       className={cn(
-        "flex h-7 items-center gap-1.5 rounded-md border border-black px-2.5 font-orbitron text-[10px] font-semibold tracking-[0.18em] transition-all",
+        "flex h-11 items-center gap-1.5 rounded-md border border-black px-3.5 font-orbitron text-[11px] font-semibold tracking-[0.18em] transition-all md:h-7 md:px-2.5 md:text-[10px]",
         "shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_3px_6px_rgba(0,0,0,0.55)] active:translate-y-px disabled:cursor-not-allowed",
         lit ? "bg-[linear-gradient(180deg,#26313a,#141b21)] text-white" : "bg-[linear-gradient(180deg,#34343a,#202024)] text-white/45",
         (disabled || unlinked) && "opacity-45",

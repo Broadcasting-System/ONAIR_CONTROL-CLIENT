@@ -118,7 +118,7 @@ export default function RecordingSettings({ hallId, state }: { hallId: string; s
                       value: d.name,
                       label: `${d.name} ${d.hostapi ? `· ${d.hostapi}` : ""} · ${d.channels}ch`,
                     }))}
-                    className={cn(inputCls, okBorder, "w-48")}
+                    className={cn(inputCls, okBorder, "w-48 max-md:w-28")}
                   />
                 )}
               </div>

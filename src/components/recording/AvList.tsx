@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import type { AvItem } from "@/types/av";
 
 const btn =
-  "inline-flex h-[38px] items-center justify-center gap-2 rounded-[10px] border border-white/12 bg-white/5 px-3.5 font-pretendard text-sm font-bold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35";
+  "inline-flex h-[38px] items-center justify-center gap-2 rounded-[10px] border border-white/12 bg-white/5 px-3.5 font-pretendard text-sm font-bold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35 max-md:h-11 max-md:min-w-11";
 
 const busy = (i: AvItem) => ["recording", "processing", "importing"].includes(i.status);
 
@@ -129,7 +129,7 @@ export default function AvList({
                         maxLength={60}
                         onChange={(e) => setEditing({ id: it.id, label: e.target.value })}
                         onBlur={() => setEditing(null)}
-                        className="h-8 w-full rounded-lg border border-white/15 bg-[#141414] px-2 font-pretendard text-[15px] font-bold text-white focus:outline-none"
+                        className="h-8 w-full rounded-lg border border-white/15 bg-[#141414] px-2 font-pretendard text-[15px] font-bold text-white focus:outline-none max-md:h-11 max-md:text-base"
                       />
                     </form>
                   ) : (

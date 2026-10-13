@@ -127,7 +127,7 @@ export default function LightingCheckStep({
             busy={finishing}
             disabled={!configured && rows.length === 0}
             onClick={onFinish}
-            className="ml-auto"
+            className="ml-auto max-md:w-full"
           >
             {dirty ? "저장하고 조명 화면으로" : "조명 화면으로"}
           </ActionButton>

@@ -18,7 +18,7 @@ const BOARD =
   "rounded-2xl border border-black/80 bg-[linear-gradient(180deg,#1d1d20_0%,#141416_55%,#101012_100%)] " +
   "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_-1px_0_rgba(0,0,0,0.6),0_20px_40px_-16px_rgba(0,0,0,0.8)]";
 // 채널 한 칸은 스스로 모듈 틀을 갖는다 — 감싸는 칸은 자리만 잡는다
-const STRIP_BOX = "flex";
+const STRIP_BOX = "flex snap-start";
 
 /** 오디오 › 믹서 탭. 공간은 페이지가 고른다 (자동 음향 탭과 같은 공간). lead = 페이지 제목·공간·탭 */
 export default function MixerPanel({ hallId, lead }: { hallId: string | null; lead: ReactNode }) {
@@ -50,10 +50,10 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
   };
 
   return (
-    <div className="flex h-full flex-col gap-6">
-      <header className="flex flex-wrap items-center gap-5">
+    <div className="flex h-full flex-col gap-4 md:gap-6">
+      <header className="flex flex-wrap items-center gap-3 md:gap-5">
         {lead}
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="ml-auto flex items-center gap-2.5 max-md:contents">
           {isAdmin && <ConfigButton tour="mixer.setup" label="현장 세팅" onClick={() => router.push("/mixer/setup")} />}
           <StatusChip
             tour="mixer.status"
@@ -65,7 +65,10 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
             tone={channelMode ? "good" : connected ? "warn" : "off"}
             label={channelMode ? "채널 제어" : "씬 전환만"}
           />
-          <LockToggle tour="mixer.lock" checked={locked} onChange={setLocked} />
+          <div className="ml-auto max-md:order-[-1] md:ml-0 md:contents">
+            <LockToggle tour="mixer.lock" checked={locked} onChange={setLocked} />
+          </div>
+          <span className="hidden max-md:order-[-1] max-md:block max-md:basis-full" aria-hidden />
         </div>
       </header>
 
@@ -74,7 +77,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
       {!canOperate && <Notice tone="info">보기 전용</Notice>}
 
       <Panel tour="mixer.scenes" title="씬">
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3.5">
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] md:gap-3.5">
           {(state?.scenes ?? []).map((scene) => {
             const active = state?.currentScene === scene.pc;
             return (
@@ -84,7 +87,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
                 disabled={!operable || !connected || isRecalling}
                 onClick={() => pressScene(scene)}
                 className={cn(
-                  "flex h-[100px] flex-col justify-between rounded-2xl border px-4 py-3.5 text-left transition-all disabled:cursor-not-allowed",
+                  "flex h-[80px] min-w-0 flex-col justify-between rounded-2xl border px-3.5 py-3 text-left transition-all disabled:cursor-not-allowed md:h-[100px] md:px-4 md:py-3.5",
                   active
                     ? "border-red-400/50 bg-red-400/15 shadow-[0_0_18px_-6px_#ff5a5a]"
                     : "border-transparent bg-black/40 enabled:hover:bg-white/[0.07]",
@@ -99,7 +102,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
                     <ShieldAlert size={13} className="ml-auto text-[#FFB23F]/80" aria-label="확인 필요" />
                   )}
                 </span>
-                <span className="font-mbc text-xl text-white">{scene.name}</span>
+                <span className="truncate font-mbc text-[18px] text-white md:text-xl">{scene.name}</span>
               </button>
             );
           })}
@@ -110,6 +113,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
         <Panel
           tour="mixer.processing"
           title="채널 처리"
+          className="max-md:order-1"
         >
           <ChannelProcessing
             hallId={hallId}
@@ -128,12 +132,12 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
         <Panel
           tour="mixer.channels"
           title="채널"
-          className="flex min-h-[520px] flex-1 flex-col"
+          className="flex flex-1 flex-col p-3 md:min-h-[520px] md:p-7"
         >
-          <div className="relative flex min-h-0 flex-1 gap-3">
+          <div className="relative flex min-h-0 flex-1 gap-2 md:gap-3">
             {/* 콘솔 본체 — 채널이 많으면 한 줄로 늘어놓지 않고 줄을 바꿔 쌓는다 */}
-            <div data-tour="mixer.faders" className={cn(BOARD, "min-w-0 flex-1 overflow-y-auto p-3", !channelMode && "opacity-30")}>
-              <div className="flex flex-wrap content-start gap-1.5">
+            <div data-tour="mixer.faders" className={cn(BOARD, "min-w-0 flex-1 snap-x snap-mandatory overflow-x-auto p-1.5 max-md:no-scrollbar max-md:scroll-px-1.5 md:snap-none md:overflow-x-visible md:overflow-y-auto md:p-3", !channelMode && "opacity-30")}>
+              <div className="flex content-start gap-1.5 md:flex-wrap">
                 {channels.map((ch) => (
                   <div key={ch.id} className={STRIP_BOX}>
                     <ChannelStrip
@@ -155,7 +159,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
                 {fxReturns.length > 0 && (
                   // 이펙트 리턴 — 에코·울림 전체 양. 채널마다 보내는 양은 위 처리 화면의 FX SEND
                   // 라벨과 FX 채널이 한 덩어리로 줄을 바꾼다
-                  <div className="flex gap-1.5">
+                  <div className="flex shrink-0 gap-1.5">
                     <div className="flex w-6 items-center justify-center self-stretch" aria-hidden>
                       <span className="font-orbitron text-[9px] tracking-[0.32em] text-[#B48CFF]/60 [writing-mode:vertical-rl]">
                         FX RETURN
@@ -179,7 +183,7 @@ export default function MixerPanel({ hallId, lead }: { hallId: string | null; le
             </div>
             {state?.master && (
               // 마스터는 따로 떼어 오른쪽에 고정 — 채널이 몇 줄이 되든 항상 같은 자리
-              <div data-tour="mixer.master" className={cn(BOARD, "flex shrink-0 items-start p-3", !channelMode && "opacity-30")}>
+              <div data-tour="mixer.master" className={cn(BOARD, "flex shrink-0 items-start p-1.5 md:p-3", !channelMode && "opacity-30")}>
                 <div className={STRIP_BOX}>
                   <ChannelStrip
                     master

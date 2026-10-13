@@ -40,7 +40,7 @@ export function OnSwitch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+        "relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 max-md:before:absolute max-md:before:-inset-x-1 max-md:before:-inset-y-2.5 max-md:before:content-['']",
         checked ? "bg-[#FF3B3B] shadow-[0_0_12px_rgba(255,59,59,0.45)]" : "bg-white/15",
       )}
     >
@@ -171,7 +171,7 @@ export function FeatureCard({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-fit font-pretendard text-[13px] text-white/45 hover:text-white/80"
+        className="w-fit font-pretendard text-[13px] text-white/45 hover:text-white/80 max-md:-my-2.5 max-md:h-11 max-md:text-[14px]"
       >
         {open ? "▴ 접기" : "▾ 자세히"}
       </button>
@@ -198,7 +198,7 @@ export function FeatureCard({
                           }))
                         }
                         className={cn(
-                          "rounded-md px-2 py-0.5 font-pretendard text-[11.5px] transition-colors disabled:cursor-not-allowed",
+                          "rounded-md px-2 py-0.5 font-pretendard text-[11.5px] transition-colors disabled:cursor-not-allowed max-md:h-11 max-md:px-3 max-md:text-[14px]",
                           on
                             ? "bg-white/85 text-black"
                             : "bg-white/[0.07] text-white/55 enabled:hover:bg-white/15",
@@ -248,7 +248,7 @@ export function FeatureCard({
                     .then(() => setOpen(false))
                     .catch(() => undefined)
                 }
-                className="h-8 rounded-lg border border-white/15 bg-white/10 px-3 font-mbc text-[13px] text-white hover:bg-white/15 disabled:opacity-40"
+                className="h-8 rounded-lg border border-white/15 bg-white/10 px-3 font-mbc text-[13px] text-white hover:bg-white/15 disabled:opacity-40 max-md:h-11 max-md:px-4"
               >
                 저장
               </button>
@@ -256,7 +256,7 @@ export function FeatureCard({
                 type="button"
                 disabled={!dirty}
                 onClick={() => setDraft(f.params)}
-                className="h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/60 disabled:opacity-40"
+                className="h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/60 disabled:opacity-40 max-md:h-11 max-md:px-4"
               >
                 되돌리기
               </button>
@@ -308,7 +308,7 @@ export function ChannelTable({
         return (
           <div
             key={c.id}
-            className="grid grid-cols-[104px_minmax(0,1fr)_minmax(0,170px)_96px] items-center gap-3 rounded-xl px-3 py-2 odd:bg-black/25"
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 rounded-xl px-3 py-2.5 odd:bg-black/25 md:grid-cols-[104px_minmax(0,1fr)_minmax(0,170px)_96px] md:gap-3 md:py-2"
           >
             <div className="flex min-w-0 flex-col">
               <span className="truncate font-mbc text-[15px] text-white">{c.name}</span>
@@ -317,7 +317,7 @@ export function ChannelTable({
               </span>
             </div>
             <div
-              className="relative h-2.5 overflow-hidden rounded-[5px] bg-[#050506] shadow-[inset_0_1px_3px_#000]"
+              className="relative order-3 col-span-2 h-2.5 overflow-hidden rounded-[5px] bg-[#050506] shadow-[inset_0_1px_3px_#000] md:order-none md:col-span-1"
               title={
                 c.meter ? `입력 ${c.meter.level} dBFS · 최고 ${c.meter.peak} dBFS` : "미터 없음"
               }
@@ -333,7 +333,7 @@ export function ChannelTable({
                 />
               )}
             </div>
-            <div className="flex flex-wrap gap-1">
+            <div className="order-4 col-span-2 flex flex-wrap gap-1 md:order-none md:col-span-1">
               {c.voice && (
                 <span className={cn("rounded-md px-1.5 py-px text-[11px]", TAG_STYLE.voice)}>
                   목소리
@@ -350,7 +350,7 @@ export function ChannelTable({
                   disabled={!canOperate}
                   onClick={() => onResume(c.id)}
                   className={cn(
-                    "rounded-md px-1.5 py-px text-[11px] enabled:hover:brightness-125",
+                    "rounded-md px-1.5 py-px text-[11px] enabled:hover:brightness-125 max-md:h-11 max-md:px-3 max-md:text-[13px]",
                     TAG_STYLE.hold,
                   )}
                 >
@@ -363,7 +363,7 @@ export function ChannelTable({
                 </span>
               )}
             </div>
-            <div className="text-right font-orbitron text-xs tabular-nums">
+            <div className="order-2 text-right font-orbitron text-xs tabular-nums md:order-none">
               {Math.abs(total) >= 0.1 ? (
                 <span className={total < 0 ? "text-[#3FC8FF]" : "text-[#8dffb5]"}>
                   {fmtDb(total)}
@@ -432,7 +432,7 @@ const SOURCES: { value: MeterSourceKind; label: string }[] = [
 ];
 
 const field =
-  "h-9 rounded-lg border border-white/10 bg-[#141414] px-2.5 font-pretendard text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:outline-none";
+  "h-9 rounded-lg border border-white/10 bg-[#141414] px-2.5 font-pretendard text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:outline-none max-md:h-11 max-md:text-base";
 
 /** 미터 출처·사람 우선 시간 (관리자) */
 export function AutoSettings({
@@ -484,7 +484,7 @@ export function AutoSettings({
             type="button"
             onClick={() => setSource(s.value)}
             className={cn(
-              "h-9 rounded-xl border px-3 font-mbc text-[13px]",
+              "h-9 rounded-xl border px-3 font-mbc text-[13px] max-md:h-11",
               source === s.value
                 ? "border-red-400/50 bg-red-400/15 text-white"
                 : "border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/5",
@@ -498,19 +498,19 @@ export function AutoSettings({
         <div className="flex flex-wrap items-center gap-2">
           <span className="w-28 text-white/50">노트북</span>
           <input
-            className={cn(field, "w-56")}
+            className={cn(field, "w-56 max-md:w-full")}
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="http://100.x.x.x:8765"
           />
           <input
-            className={cn(field, "w-32")}
+            className={cn(field, "w-32 max-md:w-full")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="녹음 장치 이름"
           />
           <input
-            className={cn(field, "w-64")}
+            className={cn(field, "w-64 max-md:w-full")}
             value={lanes}
             onChange={(e) => setLanes(e.target.value)}
             placeholder="예: 1=1, 2=5"
@@ -533,7 +533,7 @@ export function AutoSettings({
         type="button"
         disabled={saving}
         onClick={save}
-        className="h-9 w-fit rounded-lg border border-white/15 bg-white/10 px-4 font-mbc text-[13px] text-white hover:bg-white/15 disabled:opacity-40"
+        className="h-9 w-fit rounded-lg border border-white/15 bg-white/10 px-4 font-mbc text-[13px] text-white hover:bg-white/15 disabled:opacity-40 max-md:h-11"
       >
         저장
       </button>

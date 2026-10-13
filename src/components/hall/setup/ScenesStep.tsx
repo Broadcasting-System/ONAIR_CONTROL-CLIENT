@@ -65,8 +65,8 @@ export default function ScenesStep({
       }
     >
       <div className="overflow-x-auto">
-        <div className="flex min-w-[640px] flex-col gap-1.5">
-          <div className={cn("grid items-center gap-2 px-2 pb-1", COLS)}>
+        <div className="flex flex-col gap-2 md:min-w-[640px] md:gap-1.5">
+          <div className={cn("hidden items-center gap-2 px-2 pb-1 md:grid", COLS)}>
             <Th>순서</Th>
             <Th>씬 번호</Th>
             <Th>이름</Th>
@@ -85,18 +85,18 @@ export default function ScenesStep({
               <div
                 key={s.key}
                 className={cn(
-                  "grid items-center gap-2 rounded-xl border px-2 py-2",
+                  "flex flex-wrap items-center gap-2 rounded-xl border px-2 py-2 md:grid",
                   COLS,
                   now ? "border-red-400/35 bg-red-400/[0.07]" : "border-white/[0.07] bg-white/[0.025]",
                 )}
               >
-                <div className="flex">
+                <div className="order-1 flex md:order-none">
                   <button
                     type="button"
                     aria-label="위로"
                     disabled={i === 0}
                     onClick={() => setScenes((l) => move(l, i, -1))}
-                    className="flex h-9 w-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/10 hover:text-white disabled:opacity-20"
+                    className="flex h-9 w-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/10 hover:text-white disabled:opacity-20 max-md:h-11 max-md:w-11"
                   >
                     <ChevronUp size={15} />
                   </button>
@@ -105,12 +105,12 @@ export default function ScenesStep({
                     aria-label="아래로"
                     disabled={i === draft.scenes.length - 1}
                     onClick={() => setScenes((l) => move(l, i, 1))}
-                    className="flex h-9 w-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/10 hover:text-white disabled:opacity-20"
+                    className="flex h-9 w-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/10 hover:text-white disabled:opacity-20 max-md:h-11 max-md:w-11"
                   >
                     <ChevronDown size={15} />
                   </button>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="order-3 flex items-center gap-1.5 md:order-none">
                   <input
                     type="number"
                     min={1}
@@ -128,9 +128,9 @@ export default function ScenesStep({
                   placeholder="예: 졸업식"
                   aria-label={`씬 ${s.pc} 이름`}
                   onChange={(e) => patch(i, { name: e.target.value })}
-                  className={cn(inputCls, s.name.trim() ? okBorder : badBorder)}
+                  className={cn(inputCls, "order-2 basis-[calc(100%-156px)] max-md:grow md:order-none", s.name.trim() ? okBorder : badBorder)}
                 />
-                <label className="flex cursor-pointer items-center gap-2 font-pretendard text-sm text-white/60">
+                <label className="order-4 flex cursor-pointer items-center gap-2 font-pretendard text-sm text-white/60 max-md:h-11 max-md:px-1 md:order-none">
                   <input
                     type="checkbox"
                     checked={s.confirm}
@@ -144,7 +144,7 @@ export default function ScenesStep({
                   busy={trying === s.pc}
                   disabled={!canTry || trying !== null}
                   onClick={() => tryScene(s.pc)}
-                  className="h-9 px-3"
+                  className="order-5 h-9 px-3 md:order-none"
                 >
                   불러오기
                 </ActionButton>
@@ -152,7 +152,7 @@ export default function ScenesStep({
                   type="button"
                   aria-label={`씬 ${s.name || s.pc} 삭제`}
                   onClick={() => setScenes((l) => l.filter((_, j) => j !== i))}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-white/45 hover:bg-white/10 hover:text-red-400"
+                  className="order-2 flex h-9 w-9 items-center justify-center rounded-lg text-white/45 hover:bg-white/10 hover:text-red-400 max-md:h-11 max-md:w-11 md:order-none"
                 >
                   <Trash2 size={14} />
                 </button>

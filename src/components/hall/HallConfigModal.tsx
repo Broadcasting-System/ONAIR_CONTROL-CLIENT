@@ -28,7 +28,7 @@ export function ConfigButton({
       data-tour={tour}
       type="button"
       onClick={onClick}
-      className="flex h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 font-mbc text-sm text-white/65 transition-colors hover:bg-white/10 hover:text-white"
+      className="flex h-11 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-white/[0.04] px-3.5 font-mbc text-sm text-white/65 transition-colors hover:bg-white/10 hover:text-white md:h-9"
     >
       <Settings2 size={15} />
       {label}

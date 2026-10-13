@@ -76,9 +76,9 @@ export default function LightingPage() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-6">
-      <header className="flex flex-wrap items-center gap-5">
-        <SectionHeader className="mb-0">조명</SectionHeader>
+    <div className="flex h-full flex-col gap-4 md:gap-6">
+      <header className="flex flex-wrap items-center gap-3 md:gap-5">
+        <SectionHeader className="mb-0 max-md:order-[-2] max-md:text-[26px]">조명</SectionHeader>
         <HallSwitcher tour="lighting.hall-select" halls={halls} value={current?.id} onChange={setHallId} />
         <PageTabs
           tour="lighting.tab"
@@ -88,15 +88,19 @@ export default function LightingPage() {
           ]}
           value={tab}
           onChange={setTab}
+          className="max-md:[&>button]:h-10 max-md:[&>button]:text-[15px]"
         />
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="ml-auto flex items-center gap-2.5 max-md:contents">
           <StatusChip
             tour="lighting.status"
             tone={connected ? "good" : "off"}
             label={`${state?.driver === "mock" ? "모의 장비" : "DMX"} ${connected ? "online" : "offline"}`}
           />
           {isAdmin && <ConfigButton tour="lighting.setup" label="현장 세팅" onClick={() => router.push("/lighting/setup")} />}
-          <LockToggle tour="lighting.lock" checked={locked} onChange={setLocked} />
+          <div className="ml-auto max-md:order-[-1] md:ml-0 md:contents">
+            <LockToggle tour="lighting.lock" checked={locked} onChange={setLocked} />
+          </div>
+          <span className="hidden max-md:order-[-1] max-md:block max-md:basis-full" aria-hidden />
         </div>
       </header>
 
@@ -110,7 +114,7 @@ export default function LightingPage() {
 
       {/* 음악 조명 탭에서는 조작 화면을 숨긴다 (페이더 상태는 그대로 유지) */}
       <Panel tour="lighting.scenes" title="장면" className={cn(tab !== "control" && "hidden")}>
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5 md:flex md:flex-wrap md:items-center">
           {(state?.scenes ?? []).map((scene) => {
             const active = state?.current === scene.id;
             return (
@@ -120,7 +124,7 @@ export default function LightingPage() {
                   disabled={!operable || isRecalling}
                   onClick={() => recallScene(scene.id)}
                   className={cn(
-                    "flex h-[54px] min-w-[112px] items-center justify-center gap-2.5 rounded-[14px] border px-[18px] font-mbc text-[17px] transition-all disabled:cursor-not-allowed",
+                    "flex h-[54px] min-w-[112px] items-center justify-center gap-2.5 rounded-[14px] border px-[18px] font-mbc text-[17px] transition-all disabled:cursor-not-allowed max-md:h-[60px] max-md:w-full max-md:min-w-0 max-md:gap-2 max-md:px-3",
                     "shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_4px_10px_rgba(0,0,0,0.4)]",
                     active
                       ? "border-[#FF3B3B]/55 bg-[linear-gradient(180deg,rgba(255,59,59,0.22),rgba(255,59,59,0.08))] text-white"
@@ -154,7 +158,7 @@ export default function LightingPage() {
             (saving ? (
               <form
                 data-tour="lighting.scene-save-form"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 max-md:col-span-2 max-md:flex-wrap"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const name = sceneName.trim();
@@ -170,7 +174,7 @@ export default function LightingPage() {
                   onChange={(e) => setSceneName(e.target.value)}
                   maxLength={20}
                   placeholder="예: 조회"
-                  className="h-11 w-44 rounded-xl border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white placeholder:text-white/35 focus:border-white/30 focus:outline-none"
+                  className="h-11 w-44 rounded-xl border border-white/10 bg-[#141414] px-3 font-pretendard text-sm text-white placeholder:text-white/35 focus:border-white/30 focus:outline-none max-md:w-full max-md:text-base"
                 />
                 <label className="flex items-center gap-1.5 font-pretendard text-sm text-white/55">
                   바뀌는 시간
@@ -181,7 +185,7 @@ export default function LightingPage() {
                     step={0.5}
                     value={sceneFade}
                     onChange={(e) => setSceneFade(Math.max(0, Math.min(60, Number(e.target.value) || 0)))}
-                    className="h-11 w-16 rounded-xl border border-white/10 bg-[#141414] px-2 text-center font-orbitron text-sm text-white focus:border-white/30 focus:outline-none"
+                    className="h-11 w-16 rounded-xl border border-white/10 bg-[#141414] px-2 text-center font-orbitron text-sm text-white focus:border-white/30 focus:outline-none max-md:text-base"
                   />
                   초
                 </label>
@@ -206,7 +210,7 @@ export default function LightingPage() {
                 type="button"
                 disabled={!connected}
                 onClick={() => setSaving(true)}
-                className="flex h-[54px] items-center rounded-[14px] border border-dashed border-white/20 px-[18px] font-mbc text-[15px] text-white/45 hover:text-white/75 disabled:opacity-40"
+                className="flex h-[54px] items-center rounded-[14px] border border-dashed border-white/20 px-[18px] font-mbc text-[15px] text-white/45 hover:text-white/75 disabled:opacity-40 max-md:h-[60px] max-md:justify-center max-md:px-3"
               >
                 + 지금 상태 저장
               </button>
@@ -221,7 +225,7 @@ export default function LightingPage() {
       <Panel
         tour="lighting.fixtures"
         title="조명"
-        className={cn("flex min-h-[520px] flex-1 flex-col", tab !== "control" && "hidden")}
+        className={cn("flex flex-1 flex-col p-3 md:min-h-[520px] md:p-7", tab !== "control" && "hidden")}
       >
         {fixtures.length === 0 ? (
           <Notice tone="info">
@@ -236,10 +240,10 @@ export default function LightingPage() {
             )}
           </Notice>
         ) : (
-          <div className="flex min-h-0 flex-1 gap-3">
+          <div className="flex min-h-0 flex-1 flex-col gap-2 md:flex-row md:gap-3">
             {/* 조명이 많으면 줄을 바꿔 쌓는다 */}
-            <div data-tour="lighting.faders" className={cn(BOARD, "min-w-0 flex-1 overflow-y-auto p-3")}>
-              <div className="flex flex-wrap content-start gap-1.5">
+            <div data-tour="lighting.faders" className={cn(BOARD, "min-w-0 flex-1 snap-x snap-mandatory overflow-x-auto p-1.5 max-md:no-scrollbar max-md:scroll-px-1.5 md:snap-none md:overflow-x-visible md:overflow-y-auto md:p-3")}>
+              <div className="flex content-start gap-1.5 md:flex-wrap">
                 {fixtures.map((f) => (
                   <LightStrip
                     key={f.id}
@@ -254,7 +258,7 @@ export default function LightingPage() {
               </div>
             </div>
             {/* '전체' 줄은 오른쪽에 고정 — 조명이 몇 줄이 되든 같은 자리 */}
-            <div data-tour="lighting.master" className={cn(BOARD, "flex shrink-0 items-start p-3")}>
+            <div data-tour="lighting.master" className={cn(BOARD, "flex shrink-0 items-start p-1.5 max-md:order-first md:p-3")}>
               <LightMasterStrip
                 master={state?.master ?? 100}
                 blackout={!!state?.blackout}

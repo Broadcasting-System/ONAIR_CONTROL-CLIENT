@@ -74,12 +74,12 @@ export default function SourcePicker({
   onAudio: (hall: string | null) => void;
 }) {
   return (
-    <section data-tour="recording.sources" className="grid gap-[18px] rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md">
-      <div className="grid gap-[18px] lg:grid-cols-[220px_minmax(0,1fr)]">
+    <section data-tour="recording.sources" className="grid gap-[18px] max-md:gap-3.5 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-7 md:shadow-2xl">
+      <div className="grid gap-[18px] max-md:gap-2.5 lg:grid-cols-[220px_minmax(0,1fr)]">
         <div className="pt-1 font-pretendard text-sm font-bold text-white/60">
           화면
         </div>
-        <div data-tour="recording.screen" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        <div data-tour="recording.screen" className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:gap-3 xl:grid-cols-6">
           <button
             type="button"
             disabled={locked}
@@ -133,11 +133,11 @@ export default function SourcePicker({
         </div>
       </div>
 
-      <div className="grid gap-[18px] border-t border-white/[0.07] pt-[18px] lg:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="grid gap-[18px] border-t border-white/[0.07] pt-[18px] max-md:gap-2.5 max-md:pt-3.5 lg:grid-cols-[220px_minmax(0,1fr)]">
         <div className="pt-1 font-pretendard text-sm font-bold text-white/60">
           소리
         </div>
-        <div data-tour="recording.audio" className="flex flex-wrap gap-2.5">
+        <div data-tour="recording.audio" className="flex flex-wrap gap-2.5 max-md:grid max-md:grid-cols-1">
           {halls.map((h) => {
             const on = audio === h.id;
             const sub = !h.configured ? "설정 안 됨" : on && laneNames.length ? `${laneNames.join("·")} ${laneNames.length}통로` : "2통로";

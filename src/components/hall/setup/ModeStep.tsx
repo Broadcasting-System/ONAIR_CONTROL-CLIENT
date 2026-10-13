@@ -44,7 +44,7 @@ export default function ModeStep({
       </Card>
 
       <Card tour="mixer-setup.safety" title="걸린 안전장치">
-        <ul className="grid grid-cols-2 gap-3">
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <Item
             icon={<Gauge size={16} />}
             title="최대 레벨 제한"

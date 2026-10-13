@@ -215,7 +215,7 @@ export default function LightingFixturesStep({
                 onClick={() => pickRun(run)}
                 title={`콘솔 값 ${run.last.join(" · ")}`}
                 className={cn(
-                  "flex items-center gap-2 rounded-xl border px-3 py-2 font-orbitron text-xs transition-all",
+                  "flex items-center gap-2 rounded-xl border px-3 py-2 font-orbitron text-xs transition-all max-md:min-h-11",
                   on
                     ? "border-[#FFD49A] bg-[#FFD49A]/10 text-[#FFD49A] shadow-[0_0_12px_rgba(255,212,154,0.3)]"
                     : done
@@ -242,7 +242,7 @@ export default function LightingFixturesStep({
             onClick={() => setTester((v) => !v)}
             aria-expanded={tester}
             className={cn(
-              "rounded-xl border border-dashed px-3 py-2 font-mbc text-[13px] transition-colors",
+              "rounded-xl border border-dashed px-3 py-2 font-mbc text-[13px] transition-colors max-md:min-h-11",
               tester ? "border-white/35 text-white" : "border-white/20 text-white/55 hover:text-white/80",
             )}
           >
@@ -293,7 +293,7 @@ export default function LightingFixturesStep({
               {testLit ? "끄기" : "켜 보기"}
             </ActionButton>
             <ActionButton onClick={() => openPending(testAddr, 1)}>이 주소로 새 줄</ActionButton>
-            <p className="min-w-[220px] flex-1 font-pretendard text-xs leading-relaxed text-white/45">
+            <p className="min-w-[220px] flex-1 font-pretendard text-xs leading-relaxed text-white/45 max-md:min-w-0 max-md:basis-full">
               {testOwner
                 ? `사용 중 · ${testOwner.name || "이름 없음"}`
                 : testRun
@@ -306,8 +306,8 @@ export default function LightingFixturesStep({
         )}
 
         <div data-tour="lighting-setup.fixture-list" className="overflow-x-auto">
-          <div className="flex min-w-[720px] flex-col gap-1.5">
-            <div className={cn("grid items-center gap-2 px-2 pb-1", COLS)}>
+          <div className="flex flex-col gap-2 md:min-w-[720px] md:gap-1.5">
+            <div className={cn("hidden items-center gap-2 px-2 pb-1 md:grid", COLS)}>
               <Th>이름</Th>
               <Th>종류</Th>
               <Th>시작 주소</Th>
@@ -326,14 +326,14 @@ export default function LightingFixturesStep({
               const rowLit = !!span && !!lit && lit.from === span.from && lit.to === span.to;
               return (
                 <div key={r.key} className="flex flex-col gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-2 py-2">
-                  <div className={cn("grid items-center gap-2", COLS)}>
+                  <div className={cn("flex flex-wrap items-center gap-2 md:grid", COLS)}>
                     <input
                       value={r.name}
                       maxLength={24}
                       placeholder="예: 무대 앞 1"
                       aria-label={`${i + 1}번째 조명 이름`}
                       onChange={(e) => patchRow(i, { name: e.target.value })}
-                      className={cn(inputCls, r.name.trim() ? okBorder : badBorder)}
+                      className={cn(inputCls, "basis-full", r.name.trim() ? okBorder : badBorder)}
                     />
                     <Select
                       value={r.type}
@@ -341,19 +341,19 @@ export default function LightingFixturesStep({
                       onChange={(type) => patchRow(i, { type, channels: channelsFor(type, r.type, r.channels, types) })}
                       placeholder="종류 고르기"
                       options={typeOptions}
-                      className={cn(inputCls, types[r.type] ? okBorder : badBorder, "px-2")}
+                      className={cn(inputCls, types[r.type] ? okBorder : badBorder, "basis-[calc(100%-88px)] px-2 max-md:grow")}
                     />
                     <input
                       value={r.address}
                       inputMode="numeric"
                       aria-label={`${r.name || i + 1} 시작 주소`}
                       onChange={(e) => patchRow(i, { address: e.target.value.replace(/\D/g, "").slice(0, 3) })}
-                      className={cn(inputCls, "px-2 text-center font-orbitron", span ? okBorder : badBorder)}
+                      className={cn(inputCls, "px-2 text-center font-orbitron max-md:w-20", span ? okBorder : badBorder)}
                     />
                     <span className="whitespace-nowrap font-orbitron text-xs text-white/55">
                       {span ? rangeText(span.from, span.to) : ""}
                     </span>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end max-md:ml-auto">
                       <IconBtn
                         label={rowLit ? "끄기" : "켜 보기"}
                         disabled={!canTest || !span}
@@ -391,7 +391,7 @@ export default function LightingFixturesStep({
 
             {pending && pendingRow && (
               <div className="flex flex-col gap-1.5 rounded-xl border border-[#FFD49A]/35 bg-[#FFD49A]/[0.07] px-2 py-2">
-                <div className={cn("grid items-center gap-2", COLS)}>
+                <div className={cn("flex flex-wrap items-center gap-2 md:grid", COLS)}>
                   <input
                     key={pendingSeq}
                     autoFocus
@@ -403,7 +403,7 @@ export default function LightingFixturesStep({
                     onKeyDown={(e) => {
                       if (e.key === "Enter") addPending();
                     }}
-                    className={cn(inputCls, okBorder)}
+                    className={cn(inputCls, "basis-full", okBorder)}
                   />
                   <Select
                     value={pending.type}
@@ -416,19 +416,19 @@ export default function LightingFixturesStep({
                       })
                     }
                     options={typeOptions}
-                    className={cn(inputCls, okBorder, "px-2")}
+                    className={cn(inputCls, okBorder, "basis-[calc(100%-88px)] px-2 max-md:grow")}
                   />
                   <input
                     value={pending.address}
                     inputMode="numeric"
                     aria-label="새 조명 시작 주소"
                     onChange={(e) => setPending({ ...pending, address: e.target.value.replace(/\D/g, "").slice(0, 3) })}
-                    className={cn(inputCls, "px-2 text-center font-orbitron", pendingSpan ? okBorder : badBorder)}
+                    className={cn(inputCls, "px-2 text-center font-orbitron max-md:w-20", pendingSpan ? okBorder : badBorder)}
                   />
                   <span className="whitespace-nowrap font-orbitron text-xs text-[#FFD49A]/80">
                     {pendingSpan ? rangeText(pendingSpan.from, pendingSpan.to) : ""}
                   </span>
-                  <div className="flex justify-end gap-1">
+                  <div className="flex justify-end gap-1 max-md:ml-auto">
                     <ActionButton tone="primary" onClick={addPending} disabled={!pendingSpan} className="h-9 px-3">
                       추가
                     </ActionButton>
@@ -447,7 +447,7 @@ export default function LightingFixturesStep({
                 )}
                 {pending.runLen > 1 && (
                   <p className="px-1 font-pretendard text-xs text-white/45">
-                    <button type="button" onClick={addPendingSplit} className="font-mbc text-[#FFD49A] hover:underline">
+                    <button type="button" onClick={addPendingSplit} className="font-mbc text-[#FFD49A] hover:underline max-md:min-h-11">
                       밝기만 {pending.runLen}개로 나눠 추가
                     </button>
                   </p>
@@ -500,7 +500,7 @@ function ChannelEditor({
                 ...Object.entries(roles).map(([k, name]) => ({ value: k, label: name })),
                 { value: "#fixed", label: "고정 값" },
               ]}
-              className="h-7 gap-1 border-transparent bg-transparent px-1.5 text-xs focus:border-white/20"
+              className="h-7 gap-1 border-transparent bg-transparent px-1.5 text-xs focus:border-white/20 max-md:h-11 max-md:text-[14px]"
             />
             {fixed && (
               <input
@@ -510,7 +510,7 @@ function ChannelEditor({
                 value={c}
                 aria-label={`${i + 1}번째 채널 고정 값`}
                 onChange={(e) => set(i, Math.max(0, Math.min(255, Math.round(Number(e.target.value)) || 0)))}
-                className="h-7 w-14 rounded-md border border-white/10 bg-black/40 px-1 text-center font-orbitron text-xs text-white focus:outline-none"
+                className="h-7 w-14 rounded-md border border-white/10 bg-black/40 px-1 text-center font-orbitron text-xs text-white focus:outline-none max-md:h-11 max-md:text-base"
               />
             )}
           </div>
@@ -547,7 +547,7 @@ function IconBtn({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex h-9 w-8 shrink-0 items-center justify-center rounded-lg text-white/45 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent",
+        "flex h-9 w-8 shrink-0 items-center justify-center rounded-lg text-white/45 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent max-md:h-11 max-md:w-11",
         className,
       )}
     >

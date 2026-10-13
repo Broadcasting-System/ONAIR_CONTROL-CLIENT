@@ -24,7 +24,7 @@ export function HallSwitcher({
           type="button"
           onClick={() => onChange(h.id)}
           className={cn(
-            "flex h-9 items-center rounded-xl border px-4 font-mbc text-sm transition-all",
+            "flex h-11 items-center rounded-xl border px-4 font-mbc text-[15px] transition-all md:h-9 md:text-sm",
             value === h.id
               ? "border-red-400/50 bg-red-400/15 text-white"
               : "border-white/10 bg-white/[0.03] text-white/45 hover:bg-white/5",
@@ -81,7 +81,7 @@ export function LockToggle({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex items-center gap-2 font-mbc text-sm text-white/55 hover:text-white/80"
+      className="flex h-11 items-center gap-2 whitespace-nowrap rounded-xl border border-white/10 bg-white/[0.06] px-3 font-mbc text-[15px] text-white/80 md:h-auto md:rounded-none md:border-0 md:bg-transparent md:px-0 md:text-sm md:text-white/55 md:hover:text-white/80"
     >
       <span
         className={cn(
@@ -120,12 +120,12 @@ export function Panel({
     <section
       data-tour={tour}
       className={cn(
-        "rounded-[24px] border border-sidebar-border bg-sidebar p-7 shadow-2xl backdrop-blur-md",
+        "rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-7 md:shadow-2xl",
         className,
       )}
     >
-      <div className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h3 className="whitespace-nowrap font-mbc text-2xl text-white">{title}</h3>
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 md:mb-4">
+        <h3 className="whitespace-nowrap font-mbc text-[20px] text-white md:text-2xl">{title}</h3>
         {hint && <span className="font-pretendard text-[13px] text-white/40">{hint}</span>}
       </div>
       {children}

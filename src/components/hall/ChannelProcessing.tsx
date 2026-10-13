@@ -275,7 +275,7 @@ function FindButton({ active, linked, onClick }: { active: boolean; linked: bool
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-1 rounded border px-1.5 py-0.5 font-orbitron text-[8.5px] tracking-[0.14em] transition-colors",
+        "flex items-center gap-1 rounded border px-1.5 py-0.5 font-orbitron text-[8.5px] tracking-[0.14em] transition-colors max-md:h-9 max-md:px-2.5 max-md:text-[10px]",
         active
           ? "animate-pulse border-[#FF3B3B]/60 bg-[#FF3B3B]/20 text-[#ff8a8a]"
           : linked
@@ -394,7 +394,7 @@ export default function ChannelProcessing({
               learn.cancel();
             }}
             className={cn(
-              "ml-auto flex items-center gap-1.5 rounded-lg border px-3 py-1.5 font-pretendard text-xs transition-colors",
+              "ml-auto flex h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 font-pretendard text-[13px] transition-colors md:h-auto md:text-xs",
               linkMode
                 ? "border-[#FFB23F]/50 bg-[#FFB23F]/15 text-[#FFB23F]"
                 : "border-white/10 text-white/50 hover:text-white/80",
@@ -414,7 +414,7 @@ export default function ChannelProcessing({
               ? `${learn.target.label} ${ROLE_NAME[learn.target.role]} 켜기 대기`
               : `${learn.target.label} ${ROLE_NAME[learn.target.role]} 돌리기 대기`}
           </p>
-          <button type="button" onClick={learn.cancel} className="font-pretendard text-xs text-white/55 hover:text-white">
+          <button type="button" onClick={learn.cancel} className="font-pretendard text-xs text-white/55 hover:text-white max-md:h-11 max-md:px-2 max-md:text-[13px]">
             취소
           </button>
         </div>
@@ -423,7 +423,7 @@ export default function ChannelProcessing({
       {/* 실제 콘솔 화면처럼 한 줄 — 좁으면 EQ 가 먼저 줄을 바꾼다 */}
       <div data-tour="mixer.processing-modules" className="flex flex-wrap items-stretch gap-3">
         {/* INPUT */}
-        <Module label="INPUT" color={C_INPUT} className="w-[150px]">
+        <Module label="INPUT" color={C_INPUT} className="w-full md:w-[150px]">
           <div className="flex flex-1 items-center justify-center px-2">
             <Knob
               label="GAIN"
@@ -445,7 +445,7 @@ export default function ChannelProcessing({
           color={C_EQ}
           locked={!canAdmin}
           action={switchKey("eq_on", "EQ", C_EQ, canAdmin)}
-          className="min-w-[340px] flex-1"
+          className="w-full min-w-0 md:w-auto md:min-w-[340px] md:flex-1"
         >
           <div className="overflow-hidden rounded-md border border-black bg-black/50">
             <EqCurve gains={EQ_BANDS.map((b) => num(p[b.role], 50))} on={eqOn} />
@@ -475,7 +475,7 @@ export default function ChannelProcessing({
           color={C_DYN}
           locked={!canAdmin}
           action={switchKey("comp_on", "COMP", C_DYN, canAdmin)}
-          className="w-[280px]"
+          className="w-full md:w-[280px]"
         >
           <div className="flex justify-center">
             <CompCurve
@@ -508,8 +508,8 @@ export default function ChannelProcessing({
         </Module>
 
         {/* FX SENDS */}
-        <Module label="FX SEND" color={C_FX} className="w-[190px]">
-          <div className="grid grid-cols-2 justify-items-center gap-x-2 gap-y-2">
+        <Module label="FX SEND" color={C_FX} className="w-full md:w-[190px]">
+          <div className="grid grid-cols-4 justify-items-center gap-x-2 gap-y-2 md:grid-cols-2">
             {FX_SENDS.map((role, i) => {
               const ret = fx.find((f) => f.id === role);
               const onRole = `${role}_on` as ProcessingRole;
