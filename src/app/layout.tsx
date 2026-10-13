@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Orbitron } from "next/font/google";
 import localFont from "next/font/local";
 import Providers from "@/components/providers/Providers";
@@ -29,6 +29,15 @@ const woojuFont = localFont({
   src: "../../public/fonts/HakgyoansimWoojuR.otf",
   variable: "--font-wooju",
 });
+
+// 폰: 화면 끝(노치·홈 막대)까지 쓰고 safe-area 로 비켜 앉는다. 입력 칸을 눌러도 확대되지 않게
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: "#000000",
+};
 
 export const metadata: Metadata = {
   title: "ONAIR Control",

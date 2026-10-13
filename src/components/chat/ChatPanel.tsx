@@ -14,6 +14,7 @@ import { useMe } from "@/hooks/useMe";
 import { chatApi } from "@/lib/chatApi";
 import { cn } from "@/lib/utils";
 import { useChatPanel } from "@/stores/chatStore";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import type { ChatStatus } from "@/types/chat";
 
 type View = "chat" | "history" | "settings";
@@ -195,12 +196,26 @@ export default function ChatPanel() {
 }
 
 function ChatPanelBody() {
-  const open = useChatPanel((s) => s.open);
-  const setOpen = useChatPanel((s) => s.setOpen);
-  const toggle = useChatPanel((s) => s.toggle);
-  const hydrate = useChatPanel((s) => s.hydrate);
+  const storeOpen = useChatPanel((s) => s.open);
+  const setStoreOpen = useChatPanel((s) => s.setOpen);
   const pathname = usePathname();
   const router = useRouter();
+  const isMobile = useIsMobile();
+  // 폰에서는 하단 CUE 탭(/cue)에 있을 때만 열리고, 닫기는 홈으로
+  const open = isMobile ? pathname === "/cue" : storeOpen;
+  const setOpen = useCallback(
+    (v: boolean) => {
+      if (isMobile) {
+        if (!v && pathname === "/cue") router.push("/home");
+        else if (v && pathname !== "/cue") router.push("/cue");
+        return;
+      }
+      setStoreOpen(v);
+    },
+    [isMobile, pathname, router, setStoreOpen],
+  );
+  const toggle = useChatPanel((s) => s.toggle);
+  const hydrate = useChatPanel((s) => s.hydrate);
   const qc = useQueryClient();
   const { role, canOperate } = useMe();
 
@@ -314,7 +329,7 @@ function ChatPanelBody() {
       className={cn(
         open ? "flex" : "hidden",
         // 좁은 화면(<768): 전체 화면 · 보통: 오른쪽에 겹쳐 붙음 · 아주 넓은 화면(≥1800): 본문을 밀어냄
-        "fixed inset-0 z-40 flex-col bg-[#0d0d10] md:left-auto md:w-[420px] md:border-l md:border-white/10 md:shadow-[-24px_0_60px_-20px_rgba(0,0,0,0.9)]",
+        "fixed inset-0 bottom-[calc(62px+env(safe-area-inset-bottom))] z-40 flex-col bg-[#0d0d10] pt-[env(safe-area-inset-top)] md:bottom-0 md:left-auto md:pt-0 md:w-[420px] md:border-l md:border-white/10 md:shadow-[-24px_0_60px_-20px_rgba(0,0,0,0.9)]",
         "min-[1800px]:relative min-[1800px]:inset-auto min-[1800px]:z-20 min-[1800px]:h-full min-[1800px]:shrink-0 min-[1800px]:bg-[#0d0d10]/90 min-[1800px]:shadow-none min-[1800px]:backdrop-blur-md",
       )}
     >

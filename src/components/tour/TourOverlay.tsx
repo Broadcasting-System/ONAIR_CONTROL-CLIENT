@@ -12,7 +12,8 @@ import { cn } from "@/lib/utils";
  */
 
 const PAD = 8; // 강조 구멍 여백
-const CARD_W = 340;
+// 카드 너비 — 폰에서는 화면 양옆 16px 을 남긴다
+const cardW = () => Math.min(340, window.innerWidth - 32);
 const GAP = 18; // 구멍과 카드 사이
 const FIND_MS = 3000; // 화면을 옮긴 뒤 요소를 기다리는 시간
 
@@ -44,23 +45,23 @@ function placeCard(hole: Rect | null, cardH: number) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const clampY = (y: number) => Math.min(Math.max(16, y), vh - cardH - 16);
-  const clampX = (x: number) => Math.min(Math.max(16, x), vw - CARD_W - 16);
-  if (!hole) return { left: (vw - CARD_W) / 2, top: (vh - cardH) / 2, side: "none" as const, arrow: 0 };
+  const clampX = (x: number) => Math.min(Math.max(16, x), vw - cardW() - 16);
+  if (!hole) return { left: (vw - cardW()) / 2, top: (vh - cardH) / 2, side: "none" as const, arrow: 0 };
   const midY = hole.y + hole.h / 2;
   const midX = hole.x + hole.w / 2;
-  if (hole.x - GAP - CARD_W >= 16) {
+  if (hole.x - GAP - cardW() >= 16) {
     const top = clampY(midY - cardH / 2);
-    return { left: hole.x - GAP - CARD_W, top, side: "left" as const, arrow: midY - top };
+    return { left: hole.x - GAP - cardW(), top, side: "left" as const, arrow: midY - top };
   }
-  if (hole.x + hole.w + GAP + CARD_W <= vw - 16) {
+  if (hole.x + hole.w + GAP + cardW() <= vw - 16) {
     const top = clampY(midY - cardH / 2);
     return { left: hole.x + hole.w + GAP, top, side: "right" as const, arrow: midY - top };
   }
   if (hole.y + hole.h + GAP + cardH <= vh - 16) {
-    const left = clampX(midX - CARD_W / 2);
+    const left = clampX(midX - cardW() / 2);
     return { left, top: hole.y + hole.h + GAP, side: "below" as const, arrow: midX - left };
   }
-  const left = clampX(midX - CARD_W / 2);
+  const left = clampX(midX - cardW() / 2);
   return { left, top: Math.max(16, hole.y - GAP - cardH), side: "above" as const, arrow: midX - left };
 }
 
@@ -189,7 +190,7 @@ export default function TourOverlay() {
       <div
         ref={card}
         className="pointer-events-auto absolute rounded-2xl border border-white/12 bg-[#141418] px-[18px] pb-4 pt-[18px] shadow-[0_20px_50px_rgba(0,0,0,.6)] transition-[left,top] duration-300 ease-out motion-reduce:transition-none"
-        style={{ left: pos.left, top: pos.top, width: CARD_W }}
+        style={{ left: pos.left, top: pos.top, width: cardW() }}
       >
         {pos.side === "left" && (
           <span

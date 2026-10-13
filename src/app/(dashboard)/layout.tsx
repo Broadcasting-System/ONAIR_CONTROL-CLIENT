@@ -10,6 +10,7 @@ import { ROLE_DOT } from "@/components/devices/roleStyle";
 import { useMe } from "@/hooks/useMe";
 import ChatPanel, { useChatShortcutLabel } from "@/components/chat/ChatPanel";
 import { useChatPanel } from "@/stores/chatStore";
+import MobileTabBar from "@/components/mobile/MobileTabBar";
 
 /** 사이드바 아래 — CUE 열고 닫기 (Cmd/Ctrl + K) */
 function ChatToggle() {
@@ -52,6 +53,18 @@ export default function DashboardLayout({
     if (needsWelcome) router.replace("/welcome");
   }, [needsWelcome, router]);
 
+  // 폰으로 처음 열면(주소 없이 들어오면 /main) 폰 홈으로 — 한 번만, 그 뒤 방송 화면은 더보기에서
+  useEffect(() => {
+    if (pathname !== "/main" || !window.matchMedia("(max-width: 767px)").matches) return;
+    try {
+      if (window.sessionStorage.getItem("onair.m.home")) return;
+      window.sessionStorage.setItem("onair.m.home", "1");
+    } catch {
+      return;
+    }
+    router.replace("/home");
+  }, [pathname, router]);
+
   return (
     <div className="relative flex h-screen w-full bg-background text-foreground overflow-hidden font-sans">
       <div className="absolute inset-0 z-0 pointer-events-none">
@@ -60,7 +73,7 @@ export default function DashboardLayout({
         <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
       </div>
 
-      <aside className="relative z-20 flex min-h-0 w-[245px] flex-col bg-transparent pl-[10px] pt-10">
+      <aside className="relative z-20 hidden min-h-0 w-[245px] md:flex flex-col bg-transparent pl-[10px] pt-10">
         <nav className="no-scrollbar flex min-h-0 flex-col gap-5 overflow-y-auto pr-1">
           {NAVIGATION_GROUPS.filter((group) => !group.adminOnly || isAdmin).map((group) => (
             <div key={group.title} className="flex flex-col gap-1.5">
@@ -124,12 +137,14 @@ export default function DashboardLayout({
       </aside>
 
       <main className="relative flex-1 overflow-auto bg-transparent">
-        <div className="relative z-10 p-10 min-h-full">
+        <div className="relative z-10 min-h-full px-4 pb-[calc(84px+env(safe-area-inset-bottom))] pt-[calc(12px+env(safe-area-inset-top))] md:p-10">
           {children}
         </div>
       </main>
 
       <ChatPanel />
+
+      <MobileTabBar />
 
       <ToastHost />
     </div>
