@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, MoreHorizontal, UserPlus } from "lucide-react";
+import { ChevronRight, Download, Mail, MessageCircle, MoreHorizontal, UserPlus } from "lucide-react";
+import Portal from "@/components/common/Portal";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import InputModal from "@/components/common/InputModal";
 import PageTabs from "@/components/common/PageTabs";
@@ -40,6 +41,159 @@ const VIEWS: { key: View; label: string }[] = [
 const ROSTER_ROLES: AssignableRole[] = ["member", "alumni"];
 
 /** 명단만 — 기기 없이 이름만 올라 있는 사람 */
+/** 폰 목록 — 기수 큰 순서로 묶기 (기수 없으면 맨 뒤) */
+function byCohort(list: Member[]): [number | string, Member[]][] {
+  const map = new Map<number | string, Member[]>();
+  for (const m of list) {
+    const k = m.cohort ?? "기타";
+    map.set(k, [...(map.get(k) ?? []), m]);
+  }
+  return [...map.entries()].sort((a, b) =>
+    typeof a[0] === "number" && typeof b[0] === "number" ? b[0] - a[0] : typeof a[0] === "number" ? -1 : 1,
+  );
+}
+
+const CHIP: Record<string, string> = {
+  lead: "bg-[#FF3B3B]/[0.18] text-[#ff8a8a]",
+  member: "bg-white/10 text-white/80",
+  teacher: "bg-sky-400/[0.16] text-sky-200",
+  alumni: "bg-violet-400/[0.18] text-violet-200",
+};
+
+function RoleChip({ m }: { m: Member }) {
+  const cls = "shrink-0 rounded-md px-1.5 py-0.5 font-pretendard text-[11.5px] font-bold";
+  if (m.status === "revoked") return <span className={cn(cls, "bg-white/5 text-white/40")}>내보냄</span>;
+  if (m.superadmin) return <span className={cn(cls, "bg-white text-black")}>최고 관리자</span>;
+  if (m.rosterOnly) return <span className={cn(cls, "border border-white/20 text-white/55")}>명단만</span>;
+  const label = ASSIGNABLE.find((r) => r.value === m.role)?.label ?? m.roleLabel ?? m.role;
+  return <span className={cn(cls, CHIP[m.role] ?? CHIP.member)}>{label}</span>;
+}
+
+function StatusIcon({ on, warn, label, children }: { on: boolean; warn?: boolean; label: string; children: React.ReactNode }) {
+  return (
+    <span
+      aria-label={`${label} ${on ? "연결" : warn ? "확인 대기" : "없음"}`}
+      className={cn(
+        "grid h-[22px] w-[22px] place-items-center rounded-[7px]",
+        on ? "bg-[#3ddc84]/15 text-[#3ddc84]" : warn ? "bg-[#FF3B3B]/15 text-[#ff8a8a]" : "bg-white/[0.06] text-white/30",
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** 폰 — 부원 한 명 자세히 (아래에서 올라오는 시트): 역할 바꾸기·메일·디스코드·기기 키 + 할 일 */
+function MemberSheet({
+  m,
+  domain,
+  busy,
+  isSuperadmin,
+  items,
+  onRole,
+  onClose,
+}: {
+  m: Member;
+  domain?: string;
+  busy: boolean;
+  isSuperadmin: boolean;
+  items: { t: string; f: () => void; danger?: boolean }[];
+  onRole: (role: AssignableRole) => void;
+  onClose: () => void;
+}) {
+  const gone = m.status === "revoked";
+  const roster = m.rosterOnly && !gone;
+  const roles = ASSIGNABLE.filter((r) => !roster || ROSTER_ROLES.includes(r.value));
+  const canRole = !gone && !m.superadmin;
+  const rows: [string, React.ReactNode][] = [
+    ["ONAIR 메일", m.mailAddress ? `${m.mailAddress}@${domain ?? ""}`.replace(/@$/, "") : "없음"],
+    ["메일 상태", <MailState key="s" status={m.mailStatus} label={m.mailStatusLabel} error={gone ? "" : m.mailError} />],
+    ["디스코드", m.discordLinked ? "연결" : "없음"],
+  ];
+  if (!gone && m.tokenExpiresAt) rows.push(["기기 키", `${m.tokenExpiresAt.slice(0, 10)}까지`]);
+  return (
+    <Portal>
+      <div className="fixed inset-0 z-[70] md:hidden" role="dialog" aria-modal="true" aria-label={m.name}>
+        <div className="absolute inset-0 bg-black/55" onClick={onClose} />
+        <div className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[26px] border-t border-white/[0.12] bg-[#141418] px-[18px] pb-[calc(20px+env(safe-area-inset-bottom))] pt-2.5 shadow-[0_-20px_50px_rgba(0,0,0,.6)]">
+          <button type="button" aria-label="닫기" onClick={onClose} className="mx-auto mb-3 block h-5 w-16">
+            <span className="mx-auto block h-[5px] w-10 rounded-full bg-white/25" />
+          </button>
+          <div className="flex items-center gap-3">
+            <Cohort n={m.cohort} />
+            <div className="min-w-0">
+              <p className="truncate font-pretendard text-[20px] font-bold text-white">{m.name}</p>
+              <p className="truncate font-pretendard text-[12.5px] text-white/45">
+                {m.title || (m.cohort ? `${m.cohort}기` : "")}
+              </p>
+            </div>
+            <span className="ml-auto">
+              <RoleChip m={m} />
+            </span>
+          </div>
+
+          {canRole && (
+            <>
+              <p className="mb-2 mt-4 font-pretendard text-[13px] font-semibold text-white/50">역할</p>
+              <div className={cn("grid gap-1 rounded-xl bg-white/[0.06] p-1", roles.length === 2 ? "grid-cols-2" : "grid-cols-4")}>
+                {roles.map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onRole(r.value)}
+                    className={cn(
+                      "h-10 rounded-[9px] font-pretendard text-[14px] font-semibold transition-colors disabled:opacity-50",
+                      m.role === r.value ? "bg-white text-black" : "text-white/60 active:bg-white/10",
+                    )}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          <div className="mt-3">
+            {rows.map(([k, v]) => (
+              <div key={k} className="flex items-center justify-between gap-3 border-t border-white/[0.07] py-3 font-pretendard text-[14.5px]">
+                <span className="shrink-0 text-white/50">{k}</span>
+                <span className="min-w-0 truncate text-right text-white">{v}</span>
+              </div>
+            ))}
+            {m.mailRoles.length > 0 && (
+              <div className="border-t border-white/[0.07] py-3">
+                <RoleTags roles={m.mailRoles} dim={gone} />
+              </div>
+            )}
+          </div>
+
+          {(items.length > 0 || isSuperadmin) && (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {items.map((x) => (
+                <button
+                  key={x.t}
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    x.f();
+                  }}
+                  className={cn(
+                    "min-h-[48px] rounded-[14px] bg-white/[0.07] px-3 font-pretendard text-[14.5px] font-bold active:bg-white/[0.12]",
+                    x.danger ? "text-[#ff6b6b]" : "text-white",
+                  )}
+                >
+                  {x.t}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </Portal>
+  );
+}
+
 function RosterTag() {
   return (
     <span
@@ -252,6 +406,7 @@ export default function MembersPanel() {
   const [filter, setFilter] = useState<Filter>("all");
   const [created, setCreated] = useState<InviteCreated | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
+  const [sheetId, setSheetId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [mailFor, setMailFor] = useState<Member | null>(null);
   const [allInvites, setAllInvites] = useState(false);
@@ -316,6 +471,7 @@ export default function MembersPanel() {
   const pending = members.filter((m) => m.status === "pending");
   const live = members.filter((m) => m.status === "approved");
   const count = (r: Role) => live.filter((m) => m.role === r).length;
+  const sheet = sheetId ? members.find((m) => m.id === sheetId) ?? null : null;
   const shown = members.filter((m) =>
     filter === "all"
       ? m.status === "approved"
@@ -510,8 +666,63 @@ export default function MembersPanel() {
           className="no-scrollbar -mx-4 flex flex-nowrap overflow-x-auto px-4 pb-1 pt-0.5 md:mx-0 md:pt-0 md:inline-flex md:flex-wrap md:overflow-visible md:px-0 md:pb-0"
         />
 
-        {/* 폰 — 표 대신 카드 */}
-        <div className="mt-3 flex flex-col gap-2.5 md:hidden">
+        {/* 폰 — 기수별 묶음, 누르면 아래에서 올라오는 시트 */}
+        <div className="mt-3 flex flex-col md:hidden">
+          {shown.length === 0 ? (
+            <p className="px-3 py-8 text-center font-pretendard text-sm text-white/45">
+              {list.isLoading ? "불러오는 중…" : filter === "all" ? "부원이 없어요" : "해당하는 사람이 없어요"}
+            </p>
+          ) : (
+            byCohort(shown).map(([cohort, people]) => (
+              <section key={cohort}>
+                <div className="mb-2 mt-3 flex justify-between px-1 font-orbitron text-[11px] tracking-[0.2em] text-white/40 first:mt-0">
+                  <span>{String(cohort).padStart(2, "0")}기</span>
+                  <span>{people.length}명</span>
+                </div>
+                <div className="overflow-hidden rounded-[20px] border border-white/[0.09] bg-white/[0.045] backdrop-blur-md">
+                  {people.map((m, k) => {
+                    const gone = m.status === "revoked";
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        data-tour={k === 0 ? "members.row-menu" : undefined}
+                        onClick={() => setSheetId(m.id)}
+                        className={cn(
+                          "flex min-h-[52px] w-full items-center gap-2 border-t border-white/[0.06] px-4 py-2.5 text-left first:border-t-0 active:bg-white/[0.06]",
+                          gone && "opacity-50",
+                        )}
+                      >
+                        <span className="min-w-0 truncate font-pretendard text-[15.5px] font-bold text-white">{m.name}</span>
+                        <RoleChip m={m} />
+                        <span className="ml-auto flex items-center gap-1.5">
+                          <StatusIcon on={m.mailStatus === "active"} warn={m.mailStatus === "pending"} label="메일">
+                            <Mail size={12} strokeWidth={2.4} />
+                          </StatusIcon>
+                          <StatusIcon on={m.discordLinked} label="디스코드">
+                            <MessageCircle size={12} strokeWidth={2.4} />
+                          </StatusIcon>
+                          <ChevronRight size={16} className="text-white/35" />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            ))
+          )}
+        </div>
+        {sheet && (
+          <MemberSheet
+            m={sheet}
+            domain={domain}
+            busy={act.isPending}
+            isSuperadmin={isSuperadmin}
+            onClose={() => setSheetId(null)}
+            onRole={(role) => setRole(sheet, role)}
+            items={menuItems(sheet).filter((x) => x.t !== "부장 임명" && x.t !== "부장 해제")}
+          />
+        )}<div className="mt-3 flex flex-col gap-2.5 md:hidden">
           {shown.length === 0 ? (
             <p className="px-3 py-8 text-center font-pretendard text-sm text-white/45">
               {list.isLoading ? "불러오는 중…" : filter === "all" ? "부원이 없어요" : "해당하는 사람이 없어요"}
