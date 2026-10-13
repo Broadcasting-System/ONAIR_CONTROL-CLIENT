@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { SpeakerFloorMap } from "@/components/speaker/SpeakerFloorMap";
 import { FLOOR_KEYS } from "@/lib/speakerCoverage";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import type { SpeakerZone } from "@/types/speaker";
 import Portal from "@/components/common/Portal";
 import { Chip } from "@/components/mobile/ui";
@@ -49,6 +50,7 @@ export default function TargetPicker({
 }) {
   const [sheet, setSheet] = useState(false);
   const [view, setView] = useState<"map" | "list">("map");
+  const isMobile = useIsMobile();
   const [floor, setFloor] = useState(FLOOR_KEYS[0]);
   const grades = useMemo(() => gradesOf(names), [names]);
   const sel = useMemo(() => new Set(selected), [selected]);
@@ -139,15 +141,16 @@ export default function TargetPicker({
               </div>
               {view === "map" ? (
                 <div className="no-scrollbar min-h-0 flex-1 overflow-auto px-5 pb-2 pt-1 md:px-6">
-                  {/* 폰에서는 지도를 넓게 그려 옆으로 밀어 본다 (좁으면 방 이름이 안 보인다) */}
-                  <div className="min-w-[720px] md:min-w-0">
+                  {/* 폰에서는 지도를 세로로 돌려 한 화면에 */}
+                  <div>
                     <SpeakerFloorMap
                       zones={zones}
                       onToggle={toggleOne}
                       floor={floor}
                       onFloorChange={setFloor}
-                      mapHeight="clamp(360px, calc(88dvh - 210px), 640px)"
+                      mapHeight={isMobile ? "max(380px, calc(88dvh - 230px))" : "clamp(360px, calc(88dvh - 210px), 640px)"}
                       countLabel="선택"
+                      portrait={isMobile}
                     />
                   </div>
                 </div>

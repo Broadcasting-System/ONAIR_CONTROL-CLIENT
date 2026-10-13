@@ -23,8 +23,9 @@ export function SpeakerFloorMap({
   onFloorChange,
   highlight,
   onHover,
-  mapHeight = "clamp(480px, calc(100vh - 250px), 900px)",
+  mapHeight: mapHeightProp,
   countLabel = "켜짐",
+  portrait = false,
 }: {
   zones: SpeakerZone[];
   onToggle: (id: string) => void;
@@ -36,8 +37,18 @@ export function SpeakerFloorMap({
   mapHeight?: string;
   /** 층 탭 숫자 뒤 글자 (스피커 화면은 '켜짐', 대상 고르기는 '선택') */
   countLabel?: string;
+  /** 폰 세로 화면용 — 층 지도를 시계 방향으로 90° 돌리고(글자는 똑바로) 화면 높이만큼 세로로 늘린다.
+   *  가로로 길게 늘어선 교실 줄이 세로가 되어 좁은 폰에서도 이름이 보인다 */
+  portrait?: boolean;
 }) {
-  const elements = useMemo(() => FLOORS[floor]?.elements ?? [], [floor]);
+  const mapHeightSet = mapHeightProp !== undefined;
+  const mapHeight = mapHeightProp ?? "clamp(480px, calc(100vh - 250px), 900px)";
+  const elements = useMemo(() => {
+    const base = FLOORS[floor]?.elements ?? [];
+    if (!portrait) return base;
+    const maxY = Math.max(...base.map((e) => e.y + e.height));
+    return base.map((e) => ({ ...e, x: maxY - (e.y + e.height), y: e.x, width: e.height, height: e.width }));
+  }, [floor, portrait]);
   const zoneByName = useMemo(
     () => new Map(zones.map((z) => [z.name, z])),
     [zones],
@@ -95,13 +106,14 @@ export function SpeakerFloorMap({
   return (
     <div className="flex h-full min-w-0 flex-col gap-3">
       {/* 층 탭 */}
-      <div className="flex shrink-0 gap-2" data-tour="speakers.floor-tabs">
+      <div className={cn("shrink-0 gap-2", portrait ? "grid grid-cols-4" : "flex")} data-tour="speakers.floor-tabs">
         {FLOOR_KEYS.map((k) => (
           <button
             key={k}
             onClick={() => onFloorChange(k)}
             className={cn(
               "flex items-center gap-2 rounded-lg px-4 py-1 font-mbc text-sm transition-colors",
+              portrait && "min-h-[44px] flex-col justify-center gap-0.5 px-1 py-1.5",
               floor === k
                 ? "bg-white/20 text-white"
                 : "bg-white/5 text-white/50 hover:bg-white/10",
@@ -124,7 +136,7 @@ export function SpeakerFloorMap({
       <div
         className="min-h-0"
         data-tour="speakers.map"
-        style={{ height: mapHeight }}
+        style={{ height: portrait && !mapHeightSet ? "max(440px, calc(100dvh - 300px))" : mapHeight }}
       >
         <div
           className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30"

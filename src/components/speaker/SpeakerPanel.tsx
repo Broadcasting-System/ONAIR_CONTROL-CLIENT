@@ -41,6 +41,16 @@ export function SpeakerPanel({
 
   return (
     <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-[minmax(0,1fr)_340px]">
+      {/* 폰 — 지도를 세로로 돌려 한눈에 */}
+      <div className="md:hidden">
+        <SpeakerFloorMap
+          zones={zones}
+          onToggle={canOperate ? onToggle : () => {}}
+          floor={floor}
+          onFloorChange={setFloor}
+          portrait
+        />
+      </div>
       {/* 지도 칸이 이보다 좁으면 방 이름이 사라지고 글자가 7px 로 줄어든다 (창 너비 약 1260px) */}
       <MinSizeGuard minWidth={520} className="hidden md:block" fallbackClassName="h-[clamp(480px,calc(100vh_-_206px),944px)]">
         <SpeakerFloorMap
