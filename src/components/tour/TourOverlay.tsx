@@ -231,7 +231,7 @@ export default function TourOverlay() {
         </div>
         <p className="mt-2.5 font-pretendard text-[18px] font-bold text-white">{step.title}</p>
         <p className="mt-1.5 whitespace-pre-line font-pretendard text-[15px] leading-relaxed text-white/75">
-          {searching ? "화면을 여는 중…" : step.text}
+          {step.text}
         </p>
         <div className="mt-4 flex items-center justify-between">
           <div className="flex gap-[5px]">
