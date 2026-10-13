@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { House, SlidersVertical, Users, Ellipsis } from "lucide-react";
-import CueRing from "@/components/common/CueRing";
+import OnairMark from "@/components/common/OnairMark";
 import { useMe } from "@/hooks/useMe";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +19,7 @@ export default function MobileTabBar() {
     { href: "/home", label: "홈", icon: <House size={23} strokeWidth={1.8} />, active: on(["/home"]) },
     { href: "/hall", label: "홀", icon: <SlidersVertical size={23} strokeWidth={1.8} />, active: on(HALL) },
     ...(canOperate
-      ? [{ href: "/cue", label: "CUE", icon: <CueRing size={24} spin={false} />, active: on(["/cue"]) }]
+      ? [{ href: "/cue", label: "CUE", icon: <OnairMark size={26} />, active: on(["/cue"]) }]
       : []),
     { href: "/devices", label: isAdmin ? "관리" : "방송부", icon: <Users size={23} strokeWidth={1.8} />, active: on(ADMIN) },
     {
