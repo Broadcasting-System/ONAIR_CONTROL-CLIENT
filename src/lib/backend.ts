@@ -19,9 +19,20 @@ function desktopProxy(): boolean {
   return typeof window !== "undefined" && window.__ONAIR_SAME_ORIGIN__ === true;
 }
 
-/** 같은 주소 모드: 데스크탑 앱 프록시 이거나 NEXT_PUBLIC_API_SAME_ORIGIN=1 (Cloudflare 한 호스트 배포). */
+/** Cloudflare 로 들어오는 주소 — 거기서는 터널이 /api 를 서버로 나눠 주므로 같은 주소로 부른다.
+ *  학교 안에서 IP·localhost 로 열면 예전처럼 :8000 으로. (쉼표로 여러 개, 기본 onair.bssmcast.com) */
+function viaPublicHost(): boolean {
+  if (typeof window === "undefined") return false;
+  const hosts = (process.env.NEXT_PUBLIC_SAME_ORIGIN_HOSTS ?? "onair.bssmcast.com")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean);
+  return hosts.includes(window.location.hostname.toLowerCase());
+}
+
+/** 같은 주소 모드: 데스크탑 앱 프록시, Cloudflare 주소로 접속, 또는 NEXT_PUBLIC_API_SAME_ORIGIN=1. */
 export function isSameOrigin(): boolean {
-  return desktopProxy() || process.env.NEXT_PUBLIC_API_SAME_ORIGIN === "1";
+  return desktopProxy() || viaPublicHost() || process.env.NEXT_PUBLIC_API_SAME_ORIGIN === "1";
 }
 
 /** localhost / IPv6 루프백은 127.0.0.1(IPv4)로 강제.
@@ -32,7 +43,7 @@ function resolveHost(host: string): string {
 }
 
 export function backendBase(): string {
-  if (desktopProxy()) return window.location.origin;
+  if (desktopProxy() || viaPublicHost()) return window.location.origin;
   const override = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (override && override.trim()) return override.replace(/\/$/, "");
   if (typeof window !== "undefined") {
@@ -45,7 +56,7 @@ export function backendBase(): string {
 export function backendWs(path: string, channel?: number, role?: string): string {
   const override = process.env.NEXT_PUBLIC_WS_URL;
   const base =
-    !desktopProxy() && override && override.trim() && path === "/api/display/ws"
+    !desktopProxy() && !viaPublicHost() && override && override.trim() && path === "/api/display/ws"
       ? override
       : backendBase().replace(/^http/, "ws") + path;
   const params: string[] = [];
