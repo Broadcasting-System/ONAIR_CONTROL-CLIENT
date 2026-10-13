@@ -319,6 +319,13 @@ impl ProxyState {
     pub fn boot_url(&self) -> String {
         format!("{}/__onair/boot?k={}", self.local_origin(), self.session_key)
     }
+    /// 부트 뒤에 `to` 경로로 (모바일 설정 화면의 '닫기' → 보던 컨트롤 화면으로)
+    pub fn boot_url_to(&self, to: Option<&str>) -> String {
+        match to.and_then(safe_return_path) {
+            Some(p) => format!("{}&to={}", self.boot_url(), url::form_urlencoded::byte_serialize(p.as_bytes()).collect::<String>()),
+            None => self.boot_url(),
+        }
+    }
     pub fn set_config(&self, cfg: Option<ProxyConfig>) {
         *self.config.write().unwrap() = cfg;
     }
@@ -422,22 +429,33 @@ fn host_ok(headers: &HeaderMap, port: u16) -> bool {
     h == format!("127.0.0.1:{port}") || h == format!("localhost:{port}")
 }
 
+/// 부트 뒤에 갈 경로: 같은 주소 안의 경로만 (`/` 로 시작, `//`·`\\`·따옴표·꺾쇠 없음)
+pub fn safe_return_path(p: &str) -> Option<String> {
+    let ok = p.starts_with('/')
+        && !p.starts_with("//")
+        && !p.starts_with("/__onair")
+        && p.len() <= 512
+        && p.chars().all(|c| c.is_ascii_alphanumeric() || "/-._~?=&%+,:@".contains(c));
+    ok.then(|| p.to_string())
+}
+
 pub async fn handle(st: Arc<ProxyState>, req: Request<Incoming>) -> Response<ProxyBody> {
     if !host_ok(req.headers(), st.port) {
         return plain(StatusCode::FORBIDDEN, "bad host");
     }
     let path = req.uri().path().to_string();
 
-    // 웹뷰 처음 진입: 세션 키 확인 → 쿠키 심고 / 로
+    // 웹뷰 처음 진입: 세션 키 확인 → 쿠키 심고 / (또는 to 경로) 로
     if path == "/__onair/boot" {
-        let ok = req
-            .uri()
-            .query()
-            .map(|q| q.split('&').any(|kv| kv == format!("k={}", st.session_key)))
-            .unwrap_or(false);
+        let query = req.uri().query().unwrap_or("");
+        let ok = query.split('&').any(|kv| kv == format!("k={}", st.session_key));
         if !ok {
             return plain(StatusCode::FORBIDDEN, "bad key");
         }
+        let to = url::form_urlencoded::parse(query.as_bytes())
+            .find(|(k, _)| k == "to")
+            .and_then(|(_, v)| safe_return_path(&v))
+            .unwrap_or_else(|| "/".into());
         // 302 로 넘기면 앱 화면(tauri://)에서 시작한 이동이라 '다른 사이트'로 취급돼, WebView 가
         // 방금 심은 SameSite 쿠키를 다음 요청에 안 붙인다 → "앱 안에서만…" 403. 쿠키를 심는 페이지를
         // 한 번 그리고, 그 페이지(같은 주소)에서 / 로 넘어가게 한다.
@@ -449,9 +467,9 @@ pub async fn handle(st: Arc<ProxyState>, req: Request<Incoming>) -> Response<Pro
                 format!("{GATE_COOKIE}={}; Path=/; HttpOnly; SameSite=Lax", st.session_key),
             )
             .header(header::CACHE_CONTROL, "no-store")
-            .body(full(
-                "<!doctype html><meta charset=utf-8><style>html{background:#040507}</style><script>location.replace('/')</script>",
-            ))
+            .body(full(format!(
+                "<!doctype html><meta charset=utf-8><style>html{{background:#040507}}</style><script>location.replace('{to}')</script>"
+            )))
             .unwrap();
     }
 
@@ -952,6 +970,14 @@ pub(crate) mod tests {
         let sc = res.headers()["set-cookie"].to_str().unwrap().to_string();
         assert!(sc.starts_with(&r.cookie) && sc.contains("HttpOnly") && sc.contains("SameSite=Lax"));
         assert!(res.text().await.unwrap().contains("location.replace('/')"));
+        // to: 보던 경로로 돌아가기 (안전한 경로만)
+        let res = r.client.get(r.st.boot_url_to(Some("/more?x=1"))).send().await.unwrap();
+        assert!(res.text().await.unwrap().contains("location.replace('/more?x=1')"));
+        let res = r.client.get(format!("{}&to=%2F%2Fevil.example", r.st.boot_url())).send().await.unwrap();
+        assert!(res.text().await.unwrap().contains("location.replace('/')"));
+        assert_eq!(safe_return_path("/a');alert(1)//"), None);
+        assert_eq!(safe_return_path("/__onair/action/setup"), None);
+        assert_eq!(safe_return_path("https://x"), None);
     }
 
     #[tokio::test]

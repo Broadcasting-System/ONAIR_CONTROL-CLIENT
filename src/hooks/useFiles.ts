@@ -18,7 +18,8 @@ export const useFiles = () => {
     setError(null);
     try {
       const BASE = getApiBase();
-      const res = await fetch(`${BASE}/files`);
+      // 서버 경로가 /files/ — 슬래시 없이 부르면 307 로 서버 안쪽 주소(:8000)로 돌려보내져 앱·프록시 뒤에서 실패
+      const res = await fetch(`${BASE}/files/`);
       if (!res.ok) throw new Error("파일 목록을 불러오는데 실패했습니다.");
 
       const data: UploadedFile[] = await res.json();
@@ -61,7 +62,7 @@ export const useFiles = () => {
   const renameFile = async (fileId: string, type: FileType, newName: string) => {
     try {
       const BASE = getApiBase();
-      const res = await fetch(`${BASE}/files`, {
+      const res = await fetch(`${BASE}/files/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: fileId, type, newName }),

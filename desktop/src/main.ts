@@ -97,24 +97,24 @@ async function renderSetup() {
           <label class="f" for="code">초대 코드</label>
           <input class="in code-in" id="code" spellcheck="false" autocomplete="one-time-code" autocapitalize="characters" maxlength="9" placeholder="XXXX-XXXX">
           <label class="f" for="cserver">서버 주소</label>
-          <input class="in" id="cserver" spellcheck="false" autocapitalize="off" placeholder="https://onair.bssmcast.com" value="${esc(state.server ?? "https://onair.bssmcast.com")}">
+          <input class="in" id="cserver" type="url" inputmode="url" spellcheck="false" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="https://onair.bssmcast.com" value="${esc(state.server ?? "https://onair.bssmcast.com")}">
           <details><summary>고급</summary>
             <label class="f" for="capi">API 주소</label>
-            <input class="in" id="capi" spellcheck="false" autocapitalize="off" placeholder="http://100.95.97.82:8000">
+            <input class="in" id="capi" type="url" inputmode="url" spellcheck="false" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="http://100.95.97.82:8000">
           </details>
           <div id="codeparsed"></div>
         </div>
 
         <div data-pane="manual" class="hidden">
           <label class="f" for="server">서버 주소</label>
-          <input class="in" id="server" spellcheck="false" placeholder="https://onair.bssmcast.com" value="${esc(state.server ?? "")}">
+          <input class="in" id="server" type="url" inputmode="url" spellcheck="false" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="https://onair.bssmcast.com" value="${esc(state.server ?? "")}">
           <label class="f" for="cid">접속 키 ID</label>
           <input class="in" id="cid" spellcheck="false" autocomplete="off" placeholder="xxxx.access">
           <label class="f" for="csec">비밀 키</label>
           <input class="in" id="csec" type="password" autocomplete="off" placeholder="••••••••">
           <details><summary>고급</summary>
             <label class="f" for="api">API 주소</label>
-            <input class="in" id="api" spellcheck="false" placeholder="http://100.95.97.82:8000">
+            <input class="in" id="api" type="url" inputmode="url" spellcheck="false" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="http://100.95.97.82:8000">
           </details>
         </div>
       </div>

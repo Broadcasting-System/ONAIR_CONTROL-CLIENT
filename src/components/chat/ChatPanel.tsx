@@ -249,9 +249,11 @@ function ChatPanelBody() {
     return () => window.removeEventListener("keydown", onKey);
   }, [canOperate, toggle]);
 
-  // 열리면 입력 칸으로
+  // 열리면 입력 칸으로 — 터치 기기(폰·태블릿)는 키보드가 바로 올라와 화면을 가리니 누를 때만
   useEffect(() => {
-    if (open && view === "chat") window.setTimeout(() => composer.current?.focus(), 30);
+    if (!open || view !== "chat") return;
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+    window.setTimeout(() => composer.current?.focus(), 30);
   }, [open, view]);
 
   // 아래에 붙어 있으면 새 글이 올 때 따라 내려간다

@@ -35,9 +35,15 @@ function findTarget(id: string): HTMLElement | null {
   return null;
 }
 
+/** 강조 구멍 — 화면 밖으로는 안 나가게 (폰에서 가로로 꽉 찬 요소면 테두리가 화면 끝에 잘림) */
+const EDGE = 6;
 function rectOf(el: HTMLElement): Rect {
   const r = el.getBoundingClientRect();
-  return { x: r.left - PAD, y: r.top - PAD, w: r.width + PAD * 2, h: r.height + PAD * 2 };
+  const x1 = Math.max(EDGE, r.left - PAD);
+  const y1 = Math.max(EDGE, r.top - PAD);
+  const x2 = Math.min(window.innerWidth - EDGE, r.right + PAD);
+  const y2 = Math.min(window.innerHeight - EDGE, r.bottom + PAD);
+  return { x: x1, y: y1, w: Math.max(0, x2 - x1), h: Math.max(0, y2 - y1) };
 }
 
 /** 카드 자리 — 왼쪽(시안 A) → 오른쪽 → 아래 → 위 순으로 들어가는 곳 */
@@ -71,7 +77,16 @@ export default function TourOverlay() {
   const next = useTour((s) => s.next);
   const prev = useTour((s) => s.prev);
   const stop = useTour((s) => s.stop);
+  const returnTo = useTour((s) => s.returnTo);
+  const clearReturn = useTour((s) => s.clearReturn);
   const router = useRouter();
+
+  // 폰 CUE 탭에서 시작한 튜토리얼이 끝나면 CUE 탭으로
+  useEffect(() => {
+    if (!returnTo) return;
+    clearReturn();
+    router.push(returnTo);
+  }, [returnTo, clearReturn, router]);
   const step = tour?.steps[index];
 
   const [el, setEl] = useState<HTMLElement | null>(null);
@@ -95,6 +110,16 @@ export default function TourOverlay() {
     let timer = 0;
     const look = () => {
       const found = findTarget(step.target!);
+      // 대상이 전체 화면 시트(data-tour-layer, 예: 폰 시보 편집) 밖에 있으면 그 시트에 가려 있다 → 시트를 닫고 다시 찾기
+      const cover = found
+        ? Array.from(document.querySelectorAll<HTMLElement>("[data-tour-layer]")).find((l) => !l.contains(found))
+        : undefined;
+      const close = cover?.querySelector<HTMLElement>("[data-tour-close]");
+      if (found && close) {
+        close.click();
+        timer = window.setTimeout(look, 120);
+        return;
+      }
       if (found) {
         found.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
         setEl(found);

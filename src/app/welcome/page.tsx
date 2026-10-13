@@ -207,10 +207,11 @@ export default function WelcomePage() {
     return () => clearInterval(id);
   }, [pending, refetch]);
 
-  // 승인되면 메인으로
+  // 승인되면 메인으로 (폰은 폰 홈으로 — 등록 중에 /main 을 거쳐 와서 '처음 열면 홈' 이 이미 쓰였을 수 있다)
   useEffect(() => {
     if (status !== "approved") return;
-    const id = setTimeout(() => router.replace("/main"), 1500);
+    const phone = window.matchMedia("(max-width: 767px)").matches;
+    const id = setTimeout(() => router.replace(phone ? "/home" : "/main"), 1500);
     return () => clearTimeout(id);
   }, [status, router]);
 

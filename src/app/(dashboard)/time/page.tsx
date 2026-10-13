@@ -237,10 +237,11 @@ export default function TimePage() {
       {isMobile &&
         editor &&
         createPortal(
-          <div className="fixed inset-0 z-[70] flex flex-col bg-[#0b0b0d] md:hidden">
+          <div data-tour-layer className="fixed inset-0 z-[70] flex flex-col bg-[#0b0b0d] md:hidden">
             <div className="flex shrink-0 items-center gap-1 border-b border-white/[0.08] px-2 pb-2 pt-[calc(8px+env(safe-area-inset-top))]">
               <button
                 type="button"
+                data-tour-close
                 aria-label="닫기"
                 onClick={() => setEditingBellId(null)}
                 className="flex h-11 w-11 items-center justify-center rounded-xl text-white/80 active:bg-white/10"

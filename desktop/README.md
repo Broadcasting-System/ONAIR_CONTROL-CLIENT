@@ -205,6 +205,7 @@ adb shell am start -a android.intent.action.VIEW -d "'onair://register?d=…'"  
 - **로컬 포트 보호**: 다른 프로그램·웹사이트가 이 포트로 키를 빌려 쓰지 못하게
   - 127.0.0.1 에만 열고, `Host` 가 `127.0.0.1:<포트>` 가 아니면 거부 (DNS 리바인딩 방지),
   - 앱이 실행마다 만드는 세션 키로 `/__onair/boot?k=…` → `HttpOnly; SameSite=Strict` 쿠키를 심고, 그 쿠키가 없는 요청은 403. (쿠키는 서버로 안 넘김.)
+  - `&to=<경로>` 를 붙이면 쿠키를 심은 뒤 그 경로로 (같은 주소 안의 안전한 경로만, `/__onair…` 은 안 됨). 모바일 설정 화면의 '닫기' 가 보던 컨트롤 화면으로 돌아갈 때 씀.
 - **포트**: 처음엔 빈 포트를 아무거나 잡고, 다음부턴 같은 포트를 먼저 시도해요 (웹뷰 localStorage 가 주소(포트)마다 따로라 설정이 날아가지 않게). `app_config_dir/desktop.json` 에 저장.
 - **대체 화면**: 서버 연결 실패(502) → "서버에 연결할 수 없어요 / 다시 시도", Cloudflare 가 막음 → "접속 키가 거부됐어요 / 다시 등록하기". 버튼은 `POST /__onair/action/{settings|setup}` 로 앱에 알려요.
 - **보안 경계**: 서버에서 온 화면(127.0.0.1)에는 Tauri IPC 권한이 없어요 (`capabilities/default.json` 은 앱 자체 화면만). 비밀 키는 Rust 안에서만 쓰여요.

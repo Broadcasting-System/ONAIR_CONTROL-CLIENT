@@ -60,6 +60,8 @@ pub struct AppState {
     pub pending_link: Mutex<Option<String>>,
     /// 8자리 코드로 받은 접속 정보 (비밀 키를 화면에 넘기지 않고 '연결' 때 꺼내 씀)
     pub redeemed: Mutex<Option<Credentials>>,
+    /// 모바일: 설정을 열 때 보던 컨트롤 화면 경로 (설정의 '닫기' → 그 화면으로)
+    pub return_to: Mutex<Option<String>>,
 }
 
 /// 비밀이 아닌 앱 설정 (지난번 프록시 포트 → 웹뷰 저장소가 포트마다 따로라 유지)
@@ -117,7 +119,8 @@ fn show(w: &WebviewWindow) {
 /// 메인 창을 컨트롤 화면(프록시)으로
 fn go_control(app: &AppHandle) {
     let st = app.state::<AppState>();
-    if let (Some(w), Ok(u)) = (main_window(app), Url::parse(&st.proxy.boot_url())) {
+    let to = st.return_to.lock().unwrap().take();
+    if let (Some(w), Ok(u)) = (main_window(app), Url::parse(&st.proxy.boot_url_to(to.as_deref()))) {
         let _ = w.navigate(u);
         show(&w);
     }
@@ -139,6 +142,17 @@ fn go_setup(app: &AppHandle, reason: &str) {
 #[cfg(mobile)]
 fn open_settings_window(app: &AppHandle) {
     if let Some(w) = main_window(app) {
+        // 보던 컨트롤 화면을 기억 → 설정의 '닫기' 로 돌아감
+        let port = app.state::<AppState>().proxy.port;
+        if let Ok(u) = w.url() {
+            if is_proxy_url(&u, port) {
+                let path = match u.query() {
+                    Some(q) => format!("{}?{q}", u.path()),
+                    None => u.path().to_string(),
+                };
+                *app.state::<AppState>().return_to.lock().unwrap() = Some(path);
+            }
+        }
         let _ = w.navigate(local_page(app, &format!("?t={}#settings", registration::now_secs())));
     }
 }
@@ -536,7 +550,12 @@ pub fn run() {
                     ProxyAction::ShowSetup => go_setup(&h, "denied"),
                 });
             }));
-            app.manage(AppState { proxy: proxy.clone(), pending_link: Mutex::new(None), redeemed: Mutex::new(None) });
+            app.manage(AppState {
+                proxy: proxy.clone(),
+                pending_link: Mutex::new(None),
+                redeemed: Mutex::new(None),
+                return_to: Mutex::new(None),
+            });
 
             // 2) 저장된 접속 정보
             let creds = match store::load() {
