@@ -7,13 +7,14 @@ fn esc(s: &str) -> String {
 
 fn page(title: &str, detail: &str, primary: (&str, &str)) -> String {
     format!(
-        r#"<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+        r#"<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ONAIR</title>
 <style>
 :root{{--red:#FF3B3B;--line:rgba(255,255,255,.1)}}
-*{{box-sizing:border-box}}html,body{{margin:0;height:100%}}
+*{{box-sizing:border-box}}html,body{{margin:0;min-height:100%}}html{{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;overflow-x:hidden}}
 body{{background:radial-gradient(ellipse 70% 55% at 55% 35%,rgba(120,10,10,.32),transparent 70%),#101010;color:#fff;
-font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;display:grid;place-items:center;padding:24px}}
+font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;min-height:100dvh;
+padding:calc(24px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}}
 .card{{width:min(520px,100%);border-radius:24px;border:1px solid var(--line);background:rgba(32,32,32,.6);padding:30px 32px;
 box-shadow:0 25px 50px -12px rgba(0,0,0,.6)}}
 .logo{{font-weight:800;letter-spacing:.18em;font-size:18px;margin-bottom:22px}}.logo em{{font-style:normal;color:var(--red);text-shadow:0 0 14px rgba(255,59,59,.6)}}
@@ -24,6 +25,7 @@ font:12px/1.5 ui-monospace,Menlo,monospace;word-break:break-all}}
 button{{font:inherit;height:44px;padding:0 20px;border-radius:14px;cursor:pointer;border:1px solid rgba(255,255,255,.08);
 background:linear-gradient(180deg,#1d1d21,#131316);color:rgba(255,255,255,.85);font-size:15px}}
 button.primary{{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 22px rgba(255,59,59,.4)}}
+@media (max-width:520px){{.card{{padding:24px 20px;border-radius:20px}}h1{{font-size:21px}}.row button{{flex:1}}}}
 </style></head><body><div class="card">
 <div class="logo">ON<em>AIR</em></div>
 <h1>{title}</h1>{detail}

@@ -1,15 +1,19 @@
-// ONAIR 데스크탑 — 앱에 들어 있는 등록(#setup)·설정(#settings) 화면
+// ONAIR 앱 — 앱에 들어 있는 등록(#setup)·설정(#settings) 화면 (데스크탑·모바일 같이)
 import "@fontsource/orbitron/500.css";
 import "@fontsource/orbitron/700.css";
 import "./styles.css";
 import { call } from "./api";
 import type { AppStateView, ParsedLink, SaveResult } from "./api";
 import { decodeQrFromBlob } from "./qr";
+import { openCameraSettings, scanQr } from "./scan";
 
 const app = document.getElementById("app")!;
 const esc = (s: unknown) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) => app.querySelector(sel) as T | null;
+
+const isMobile = (platform: string) => platform === "ios" || platform === "android";
+const OS_NAME: Record<string, string> = { windows: "Windows", macos: "macOS", ios: "iOS", android: "Android" };
 
 function fmtDate(sec?: number | null) {
   if (!sec) return "";
@@ -19,26 +23,31 @@ function fmtDate(sec?: number | null) {
 
 /* ---------------- 등록 화면 ---------------- */
 
-type Tab = "link" | "qr" | "manual";
+type Tab = "link" | "qr" | "code" | "manual";
 
 async function renderSetup() {
   const params = new URLSearchParams(location.search);
   const reason = params.get("r");
   const state = await call<AppStateView>("get_state");
   const pending = await call<string | null>("pending_link");
-  let tab: Tab = "link";
+  const mobile = isMobile(state.platform);
+  document.documentElement.classList.toggle("mobile", mobile);
+  // 모바일은 카메라로 QR 찍기가 먼저
+  let tab: Tab = mobile && !pending ? "qr" : "link";
   let parsed: ParsedLink | null = null;
+  // 8자리 코드는 한 번만 쓸 수 있어서, 받은 접속 정보는 앱(Rust)에 두고 같은 코드로 다시 부르지 않는다
+  let redeemedFor: string | null = null;
   let forceable = false;
 
   const notices: Record<string, [string, string]> = {
     link: ["", "등록 링크를 받았어요."],
-    cleared: ["red", "이 컴퓨터의 접속 키를 지웠어요."],
+    cleared: ["red", mobile ? "이 기기의 접속 키를 지웠어요." : "이 컴퓨터의 접속 키를 지웠어요."],
     denied: ["red", "접속 키가 거부됐어요."],
   };
   const notice = pending ? notices.link : reason ? notices[reason] : undefined;
   const reenter = state.configured;
 
-  const os = state.platform === "windows" ? "Windows" : state.platform === "macos" ? "macOS" : state.platform;
+  const os = OS_NAME[state.platform] ?? state.platform;
   const ticks = Array.from({ length: 41 }, (_, i) => `<i style="left:${i * 2.5}%;height:${i % 5 ? 8 : 14}px"></i>`).join("");
 
   // 시안 A · 라디오 튜너 — 이 화면은 '키 연결' 단계. #st2(키 연결)·#st3(프로필) 표시가 바뀌면 바늘이 따라간다
@@ -51,7 +60,7 @@ async function renderSetup() {
     <section class="reg-panel">
       <div class="tuner">
         <div class="tuner-status">
-          <span class="k">이 컴퓨터 · ${esc(os)}</span>
+          <span class="k">${mobile ? "이 기기" : "이 컴퓨터"} · ${esc(os)}</span>
           <span class="v"><span class="v-idle">${reenter ? "키 재등록" : "등록 대기"}</span><span class="v-busy">키 확인 중…</span></span>
         </div>
         <div class="scale" aria-hidden="true">${ticks}<b class="needle"></b></div>
@@ -63,8 +72,9 @@ async function renderSetup() {
 
       <div>
         <div class="tabs" role="tablist">
-          <button data-tab="link" class="on">링크 붙여넣기</button>
-          <button data-tab="qr">QR 사진</button>
+          ${mobile
+            ? `<button data-tab="qr">QR</button><button data-tab="code">코드</button><button data-tab="link">링크</button>`
+            : `<button data-tab="link">링크 붙여넣기</button><button data-tab="qr">QR 사진</button><button data-tab="code">코드</button>`}
           <button data-tab="manual">직접 입력</button>
         </div>
 
@@ -75,11 +85,24 @@ async function renderSetup() {
         </div>
 
         <div data-pane="qr" class="hidden">
+          ${mobile ? `<button class="btn primary scan-btn" id="scan" type="button">QR 찍기</button>` : ""}
           <label class="drop" id="drop" tabindex="0">
-            <div><b>QR 사진</b><u>파일 고르기</u></div>
+            <div><b>QR 사진</b><u>${mobile ? "사진 고르기" : "파일 고르기"}</u></div>
             <input type="file" id="file" accept="image/*" class="hidden">
           </label>
           <div id="qrmsg" class="muted" style="margin-top:6px"></div>
+        </div>
+
+        <div data-pane="code" class="hidden">
+          <label class="f" for="code">초대 코드</label>
+          <input class="in code-in" id="code" spellcheck="false" autocomplete="one-time-code" autocapitalize="characters" maxlength="9" placeholder="XXXX-XXXX">
+          <label class="f" for="cserver">서버 주소</label>
+          <input class="in" id="cserver" spellcheck="false" autocapitalize="off" placeholder="https://onair.bssmcast.com" value="${esc(state.server ?? "https://onair.bssmcast.com")}">
+          <details><summary>고급</summary>
+            <label class="f" for="capi">API 주소</label>
+            <input class="in" id="capi" spellcheck="false" autocapitalize="off" placeholder="http://100.95.97.82:8000">
+          </details>
+          <div id="codeparsed"></div>
         </div>
 
         <div data-pane="manual" class="hidden">
@@ -121,6 +144,15 @@ async function renderSetup() {
     setStatus("");
   }
   app.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((b) => (b.onclick = () => setTab(b.dataset.tab as Tab)));
+  setTab(tab);
+
+  const parsedBox = (p: ParsedLink) => `<dl class="parsed">
+        <dt>서버</dt><dd>${esc(p.server)}</dd>
+        ${p.api ? `<dt>API</dt><dd>${esc(p.api)}</dd>` : ""}
+        <dt>접속 키 ID</dt><dd>${esc(p.clientIdHint)}</dd>
+        <dt>비밀 키</dt><dd>●●●●●●●●</dd>
+        ${p.exp ? `<dt>유효 기간</dt><dd class="ok">${fmtDate(p.exp)}까지</dd>` : ""}
+      </dl>`;
 
   async function showParsed() {
     const box = $("#parsed")!;
@@ -129,24 +161,16 @@ async function renderSetup() {
     if (!v) return void (box.innerHTML = "");
     try {
       parsed = await call<ParsedLink>("parse_link", { link: v });
-      box.innerHTML = `<dl class="parsed">
-        <dt>서버</dt><dd>${esc(parsed.server)}</dd>
-        ${parsed.api ? `<dt>API</dt><dd>${esc(parsed.api)}</dd>` : ""}
-        <dt>접속 키 ID</dt><dd>${esc(parsed.clientIdHint)}</dd>
-        <dt>비밀 키</dt><dd>●●●●●●●●</dd>
-        ${parsed.exp ? `<dt>유효 기간</dt><dd class="ok">${fmtDate(parsed.exp)}까지</dd>` : ""}
-      </dl>`;
+      box.innerHTML = parsedBox(parsed);
     } catch (e) {
       box.innerHTML = `<div class="notice red">${esc(e)}</div>`;
     }
   }
   linkEl.addEventListener("input", showParsed);
 
-  // QR 이미지 → 링크
-  async function fromImage(blob: Blob) {
+  // QR 글자 → 링크 칸
+  async function fromQrText(text: string | null) {
     const msg = $("#qrmsg")!;
-    msg.innerHTML = "QR 읽는 중…";
-    const text = await decodeQrFromBlob(blob);
     if (!text) return void (msg.innerHTML = `<span class="err">QR 을 찾지 못했어요.</span>`);
     if (!text.startsWith("onair:")) return void (msg.innerHTML = `<span class="err">ONAIR 등록 QR 이 아니에요.</span>`);
     msg.innerHTML = "";
@@ -154,6 +178,29 @@ async function renderSetup() {
     setTab("link");
     await showParsed();
   }
+  // QR 이미지 → 링크
+  async function fromImage(blob: Blob) {
+    $("#qrmsg")!.innerHTML = "QR 읽는 중…";
+    await fromQrText(await decodeQrFromBlob(blob));
+  }
+  // 모바일: 카메라로 찍기 → 바로 연결 확인
+  $("#scan")?.addEventListener("click", async () => {
+    const msg = $("#qrmsg")!;
+    msg.innerHTML = "";
+    const r = await scanQr();
+    if ("cancelled" in r) return;
+    if ("error" in r) {
+      if (r.error === "denied") {
+        msg.innerHTML = `<span class="err">카메라 권한이 꺼져 있어요.</span> <button class="btn small" id="camset" type="button">설정 열기</button>`;
+        $("#camset")!.onclick = () => openCameraSettings();
+      } else {
+        msg.innerHTML = `<span class="err">카메라를 열 수 없어요.</span>`;
+      }
+      return;
+    }
+    await fromQrText(r.text);
+    if (parsed) await submit(false);
+  });
   const drop = $("#drop")!;
   const file = $<HTMLInputElement>("#file")!;
   file.onchange = () => file.files?.[0] && fromImage(file.files[0]);
@@ -183,7 +230,42 @@ async function renderSetup() {
     }
   };
 
+  const codeEl = $<HTMLInputElement>("#code")!;
+  const codeKey = () =>
+    [codeEl.value, $<HTMLInputElement>("#cserver")!.value, $<HTMLInputElement>("#capi")!.value].map((v) => v.trim()).join("|");
+  // 코드 칸: 대문자로, 4자리 뒤 '-'
+  codeEl.addEventListener("input", () => {
+    const raw = codeEl.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+    codeEl.value = raw.length > 4 ? `${raw.slice(0, 4)}-${raw.slice(4)}` : raw;
+  });
+
+  /** 코드 탭: 코드 → 접속 정보 (한 번만). 실패하면 화면에 서버 문구를 그대로 */
+  async function redeem(): Promise<boolean> {
+    if (redeemedFor === codeKey()) return true;
+    const box = $("#codeparsed")!;
+    box.innerHTML = "";
+    if (codeEl.value.replace(/[^A-Za-z0-9]/g, "").length !== 8) {
+      setStatus(`<span class="err">코드는 8자리예요.</span>`);
+      return false;
+    }
+    setStatus("코드 확인 중…");
+    try {
+      const p = await call<ParsedLink>("redeem_code", {
+        server: $<HTMLInputElement>("#cserver")!.value,
+        api: $<HTMLInputElement>("#capi")!.value || null,
+        code: codeEl.value,
+      });
+      redeemedFor = codeKey();
+      box.innerHTML = parsedBox(p);
+      return true;
+    } catch (e) {
+      setStatus(`<span class="err">${esc(e)}</span>`);
+      return false;
+    }
+  }
+
   function input(force: boolean) {
+    if (tab === "code") return { redeemed: true, force };
     if (tab === "manual") {
       return {
         server: $<HTMLInputElement>("#server")!.value,
@@ -197,9 +279,15 @@ async function renderSetup() {
   }
 
   async function submit(force: boolean) {
-    if (tab !== "manual" && !linkEl.value.trim()) {
+    if ((tab === "link" || tab === "qr") && !linkEl.value.trim()) {
       setStatus(`<span class="err">등록 링크가 비어 있어요.</span>`);
       return;
+    }
+    if (tab === "code") {
+      goBtn.disabled = true;
+      const ok = await redeem();
+      goBtn.disabled = false;
+      if (!ok) return;
     }
     goBtn.disabled = forceBtn.disabled = true;
     $("#st2")!.className = "done";
@@ -239,11 +327,14 @@ async function renderSetup() {
 
 async function renderSettings() {
   const s = await call<AppStateView>("get_state");
+  const mobile = isMobile(s.platform);
+  document.documentElement.classList.toggle("mobile", mobile);
   app.innerHTML = `
   <div class="settings">
     <div class="top">
       <h2>설정</h2>
       ${s.configured ? `<span class="chip"><span class="dot"></span>REGISTERED</span>` : `<span class="chip"><span class="dot red"></span>NOT REGISTERED</span>`}
+      ${mobile ? `<button class="btn small" id="close">닫기</button>` : ""}
     </div>
     <div class="panel">
       <div class="setrow"><div class="k">서버 주소<small>SERVER</small></div>
@@ -253,15 +344,15 @@ async function renderSettings() {
       <div class="setrow"><div class="k">접속 키<small>ACCESS TOKEN</small></div>
         <div class="v">${s.configured ? `${esc(s.clientIdHint)}${s.savedAt ? ` · ${fmtDate(s.savedAt)} 등록` : ""}` : `<span class="muted">없음</span>`}</div>
         <button class="btn small" id="reenter">${s.configured ? "다시 입력" : "등록하기"}</button></div>
-      <div class="setrow"><div class="k">기록<small>LOGS</small></div>
+      ${mobile ? "" : `<div class="setrow"><div class="k">기록<small>LOGS</small></div>
         <div class="v selectable">${esc(s.logDir ?? "")}</div>
-        <button class="btn small" id="logs">폴더 열기</button></div>
+        <button class="btn small" id="logs">폴더 열기</button></div>`}
       <div class="setrow"><div class="k">토큰 지우기<small>RESET</small></div>
         <div class="v plain"></div>
         <button class="btn small danger" id="clear" ${s.configured ? "" : "disabled"}>토큰 지우기</button></div>
     </div>
     ${s.storeError ? `<div class="notice red">${esc(s.storeError)}</div>` : ""}
-    <div class="meta">ONAIR 데스크탑 ${esc(s.version)} · 프록시 127.0.0.1:${s.proxyPort}</div>
+    <div class="meta">ONAIR ${mobile ? esc(OS_NAME[s.platform]) : "데스크탑"} ${esc(s.version)} · 프록시 127.0.0.1:${s.proxyPort}</div>
   </div>`;
 
   $("#copy")!.onclick = async () => {
@@ -270,7 +361,9 @@ async function renderSettings() {
     setTimeout(() => ($("#copy")!.textContent = "복사"), 1200);
   };
   $("#reenter")!.onclick = () => call("show_setup");
-  $("#logs")!.onclick = () => call("open_logs").catch((e) => alert(e));
+  if ($("#logs")) $("#logs")!.onclick = () => call("open_logs").catch((e) => alert(e));
+  // 모바일은 설정도 메인 창에서 열려서 '닫기' → 컨트롤 화면 (등록 전이면 등록 화면)
+  $("#close")?.addEventListener("click", () => call(s.configured ? "open_control" : "show_setup"));
   $("#clear")!.onclick = () => {
     const m = document.createElement("div");
     m.className = "modal";

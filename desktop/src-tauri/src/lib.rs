@@ -1,4 +1,4 @@
-//! ONAIR 데스크탑 앱.
+//! ONAIR 앱 (macOS·Windows·iOS·Android).
 //! 서버의 컨트롤 UI 를 로컬 프록시(127.0.0.1)로 띄우는 얇은 껍데기.
 //! 처음 실행(접속 키 없음) → 앱에 들어 있는 등록 화면, 등록 후 → 프록시로 컨트롤 화면.
 
@@ -20,12 +20,46 @@ const MAIN: &str = "main";
 const SETTINGS: &str = "settings";
 
 /// 웹뷰가 페이지를 읽기 전에 넣는 스크립트 (프록시 경유 컨트롤 UI → /api 를 같은 주소로)
-const INIT_SCRIPT: &str = "window.__ONAIR_SAME_ORIGIN__ = true; window.__ONAIR_DESKTOP__ = true;";
+/// `__ONAIR_APP_PLATFORM__`: 앱 안에서 열렸는지와 OS (macos·windows·linux·ios·android)
+/// 메인 창이 지금 앱 프록시(http://127.0.0.1:<포트>) 화면을 보고 있는지 (마이크 허용 판단용)
+static ON_PROXY_PAGE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+fn is_proxy_url(u: &Url, port: u16) -> bool {
+    u.scheme() == "http" && u.host_str() == Some("127.0.0.1") && u.port() == Some(port)
+}
+
+/// 웹뷰 권한 요청: 마이크는 앱 프록시를 거친 컨트롤 화면(마이크 방송)에만, 카메라·화면 공유는 막음.
+/// (모바일 등록 화면의 QR 찍기는 웹 getUserMedia 가 아니라 네이티브 플러그인이라 여기와 상관없음)
+/// Android 는 Allow 여도 OS 마이크 권한(RECORD_AUDIO)을 먼저 물어봄.
+fn on_webview_permission(kind: tauri::webview::PermissionKind) -> tauri::webview::PermissionResponse {
+    use tauri::webview::{PermissionKind, PermissionResponse};
+    match kind {
+        PermissionKind::Microphone => {
+            if ON_PROXY_PAGE.load(std::sync::atomic::Ordering::SeqCst) {
+                PermissionResponse::Allow
+            } else {
+                log::warn!("앱 프록시 화면이 아닌 곳의 마이크 요청 거부");
+                PermissionResponse::Deny
+            }
+        }
+        PermissionKind::Camera | PermissionKind::DisplayCapture => PermissionResponse::Deny,
+        _ => PermissionResponse::Default,
+    }
+}
+
+fn init_script() -> String {
+    format!(
+        "window.__ONAIR_SAME_ORIGIN__ = true; window.__ONAIR_DESKTOP__ = true; window.__ONAIR_APP_PLATFORM__ = {:?};",
+        std::env::consts::OS
+    )
+}
 
 pub struct AppState {
     pub proxy: Arc<ProxyState>,
     /// 딥링크로 받은 등록 링크 (등록 화면이 읽어 감)
     pub pending_link: Mutex<Option<String>>,
+    /// 8자리 코드로 받은 접속 정보 (비밀 키를 화면에 넘기지 않고 '연결' 때 꺼내 씀)
+    pub redeemed: Mutex<Option<Credentials>>,
 }
 
 /// 비밀이 아닌 앱 설정 (지난번 프록시 포트 → 웹뷰 저장소가 포트마다 따로라 유지)
@@ -74,6 +108,7 @@ fn main_window(app: &AppHandle) -> Option<WebviewWindow> {
 }
 
 fn show(w: &WebviewWindow) {
+    #[cfg(desktop)]
     let _ = w.unminimize();
     let _ = w.show();
     let _ = w.set_focus();
@@ -100,6 +135,15 @@ fn go_setup(app: &AppHandle, reason: &str) {
     }
 }
 
+/// 모바일은 창이 하나라서 설정 화면도 메인 창에서 연다 (설정 화면의 '닫기' → 컨트롤 화면)
+#[cfg(mobile)]
+fn open_settings_window(app: &AppHandle) {
+    if let Some(w) = main_window(app) {
+        let _ = w.navigate(local_page(app, &format!("?t={}#settings", registration::now_secs())));
+    }
+}
+
+#[cfg(desktop)]
 fn open_settings_window(app: &AppHandle) {
     if let Some(w) = app.get_webview_window(SETTINGS) {
         show(&w);
@@ -131,6 +175,26 @@ fn handle_deep_link(app: &AppHandle, url: &str) {
     log::info!("등록 링크 받음 (딥링크)");
     *app.state::<AppState>().pending_link.lock().unwrap() = Some(url.to_string());
     go_setup(app, "link");
+
+    // 모바일 첫 실행(링크로 앱이 켜짐): 링크 이벤트가 웹뷰의 첫 페이지(컨트롤 화면) 로드보다 먼저 와서
+    // 위 이동이 덮일 수 있다 → 잠깐 뒤에도 등록 화면이 아니면 한 번 더
+    #[cfg(mobile)]
+    {
+        let h = app.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+            let h2 = h.clone();
+            let _ = h.run_on_main_thread(move || {
+                let waiting = h2.state::<AppState>().pending_link.lock().unwrap().is_some();
+                let on_proxy = main_window(&h2)
+                    .and_then(|w| w.url().ok())
+                    .is_some_and(|u| u.host_str() == Some("127.0.0.1"));
+                if waiting && on_proxy {
+                    go_setup(&h2, "link");
+                }
+            });
+        });
+    }
 }
 
 fn apply_credentials(app: &AppHandle, c: Option<&Credentials>) -> Result<(), String> {
@@ -199,6 +263,9 @@ struct SaveInput {
     client_id: Option<String>,
     client_secret: Option<String>,
     api: Option<String>,
+    /// 방금 redeem_code 로 받은 접속 정보로 연결
+    #[serde(default)]
+    redeemed: bool,
     #[serde(default)]
     force: bool,
 }
@@ -213,7 +280,14 @@ struct SaveResult {
 
 #[tauri::command]
 async fn verify_and_save(app: AppHandle, input: SaveInput) -> Result<SaveResult, String> {
-    let mut creds = if let Some(link) = input.link.as_deref().filter(|l| !l.trim().is_empty()) {
+    let mut creds = if input.redeemed {
+        app.state::<AppState>()
+            .redeemed
+            .lock()
+            .unwrap()
+            .clone()
+            .ok_or("코드를 다시 넣어 주세요.")?
+    } else if let Some(link) = input.link.as_deref().filter(|l| !l.trim().is_empty()) {
         registration::parse_link(link, registration::now_secs())?.into_credentials()
     } else {
         let id = input.client_id.unwrap_or_default().trim().to_string();
@@ -241,9 +315,31 @@ async fn verify_and_save(app: AppHandle, input: SaveInput) -> Result<SaveResult,
         store::save(&creds)?;
         apply_credentials(&app, Some(&creds))?;
         *app.state::<AppState>().pending_link.lock().unwrap() = None;
+        *app.state::<AppState>().redeemed.lock().unwrap() = None;
         log::info!("접속 정보 저장: {}", creds.server);
     }
     Ok(SaveResult { saved: save, verify })
+}
+
+/// 8자리 초대 코드 → 접속 정보 (앱에 잠깐 들고 있고, 화면엔 비밀 키 빼고 보여줌)
+#[tauri::command]
+async fn redeem_code(app: AppHandle, server: String, api: Option<String>, code: String) -> Result<ParsedLink, String> {
+    let client = app.state::<AppState>().proxy.http().clone();
+    let server = if server.trim().is_empty() { registration::DEFAULT_SERVER.to_string() } else { server };
+    let (c, exp) =
+        registration::redeem_code(&client, &server, api.as_deref(), &code, registration::now_secs()).await?;
+    log::info!("초대 코드 확인됨: {}", c.server);
+    let view = ParsedLink {
+        server: c.server.clone(),
+        client_id: c.client_id.clone(),
+        client_id_hint: registration::hint(&c.client_id),
+        api: c.api.clone(),
+        invite: c.invite.clone(),
+        exp,
+        client_secret: String::new(),
+    };
+    *app.state::<AppState>().redeemed.lock().unwrap() = Some(c);
+    Ok(view)
 }
 
 #[tauri::command]
@@ -385,6 +481,11 @@ pub fn run() {
             }
         }));
     }
+    #[cfg(mobile)]
+    {
+        // 등록 화면의 'QR 찍기' (카메라)
+        builder = builder.plugin(tauri_plugin_barcode_scanner::init());
+    }
 
     builder
         .plugin(tauri_plugin_deep_link::init())
@@ -407,6 +508,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_state,
             parse_link,
+            redeem_code,
             verify_and_save,
             open_control,
             show_setup,
@@ -434,7 +536,7 @@ pub fn run() {
                     ProxyAction::ShowSetup => go_setup(&h, "denied"),
                 });
             }));
-            app.manage(AppState { proxy: proxy.clone(), pending_link: Mutex::new(None) });
+            app.manage(AppState { proxy: proxy.clone(), pending_link: Mutex::new(None), redeemed: Mutex::new(None) });
 
             // 2) 저장된 접속 정보
             let creds = match store::load() {
@@ -478,9 +580,15 @@ pub fn run() {
                 WebviewUrl::App("index.html#setup".into())
             };
             // 주의: macOS 는 on_navigation 이 iframe 에도 걸려서 외부 주소 가로채기는 안 한다
+            let proxy_port = proxy.port;
+            #[allow(unused_mut)]
             let mut b = WebviewWindowBuilder::new(app, MAIN, start_url)
                 .title("ONAIR")
-                .initialization_script(INIT_SCRIPT);
+                .initialization_script(init_script())
+                .on_page_load(move |_w, p| {
+                    ON_PROXY_PAGE.store(is_proxy_url(p.url(), proxy_port), std::sync::atomic::Ordering::SeqCst);
+                })
+                .on_permission_request(|_w, kind| on_webview_permission(kind));
             #[cfg(desktop)]
             {
                 b = b

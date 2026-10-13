@@ -1,0 +1,89 @@
+# ONAIR 앱 설치 파일 빌드 (Windows NSIS .exe·.msi + macOS .dmg)
+# - Actions 탭에서 직접 실행(workflow_dispatch) → Artifacts 에 설치 파일
+# - desktop-v* 태그 → 위와 같이 빌드 + 초안(draft) 릴리스에 첨부
+# macOS 는 서명 없이 만든다 (저장소 Secrets 에 APPLE_* 를 넣으면 tauri-action 이 서명·공증).
+name: desktop-build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["desktop-v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            runner: windows-latest
+            targets: ""
+            args: "--bundles nsis,msi"
+          - name: macos
+            runner: macos-latest
+            targets: aarch64-apple-darwin,x86_64-apple-darwin
+            args: "--target universal-apple-darwin --bundles app,dmg"
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.targets }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+          key: ${{ matrix.name }}
+
+      - run: npm ci
+
+      - name: 테스트 (프록시·등록)
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 서명 없이 빌드할 때 dmg 꾸미기(AppleScript)를 건너뜀
+          CI: "true"
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          projectPath: desktop
+          tauriScript: npm run tauri
+          args: ${{ matrix.args }}
+          # 태그로 돌 때만 초안 릴리스에 올림
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: "ONAIR 앱 ${{ github.ref_name }}"
+          releaseBody: "Windows: -setup.exe(NSIS) 또는 .msi / macOS: .dmg (서명 안 됨)"
+          releaseDraft: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: onair-${{ matrix.name }}
+          path: |
+            desktop/src-tauri/target/release/bundle/nsis/*.exe
+            desktop/src-tauri/target/release/bundle/msi/*.msi
+            desktop/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          if-no-files-found: error

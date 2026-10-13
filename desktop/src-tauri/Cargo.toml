@@ -40,6 +40,19 @@ thiserror = "2"
 keyring = { version = "3.6", features = ["apple-native", "windows-native", "sync-secret-service"] }
 tauri-plugin-single-instance = { version = "2.5", features = ["deep-link"] }
 
+[target.'cfg(target_os = "ios")'.dependencies]
+# iOS: 같은 keyring 크레이트의 apple-native 가 iOS 키체인도 쓴다
+keyring = { version = "3.6", features = ["apple-native"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+# Android: Keystore 키로 암호화해서 앱 전용 SharedPreferences 에 저장 (keyring-core 저장소)
+android-native-keyring-store = "1"
+keyring-core = "1"
+
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+# 모바일 전용: 카메라로 등록 QR 찍기
+tauri-plugin-barcode-scanner = "2.5"
+
 [profile.release]
 codegen-units = 1
 lto = true

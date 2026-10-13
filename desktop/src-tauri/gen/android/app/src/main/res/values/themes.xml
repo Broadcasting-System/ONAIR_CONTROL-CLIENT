@@ -1,0 +1,6 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- 앱 화면이 어두워서 시작할 때 흰 화면이 번쩍이지 않게 어두운 테마 -->
+    <style name="Theme.onair_desktop" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowBackground">@color/onair_bg</item>
+    </style>
+</resources>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 웹뷰가 앱 안의 로컬 프록시(http://127.0.0.1:<포트>)를 열 수 있게. 바깥 http 는 그대로 막힘 -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<!-- 컨트롤 화면의 마이크 방송 (getUserMedia) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>마이크로 교실 스피커에 방송하려고 써요.</string>
+	<!-- 등록 화면의 'QR 찍기' -->
+	<key>NSCameraUsageDescription</key>
+	<string>부원 초대 QR을 찍으려고 카메라를 써요.</string>
+	<key>CFBundleDisplayName</key>
+	<string>ONAIR</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>ko</string>
+</dict>
+</plist>

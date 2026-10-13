@@ -66,6 +66,9 @@ impl ParsedLink {
     }
 }
 
+/// 코드 입력 칸이 비었을 때 쓰는 서버 주소
+pub const DEFAULT_SERVER: &str = "https://onair.bssmcast.com";
+
 pub fn now_secs() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -265,6 +268,103 @@ pub async fn verify(client: &reqwest::Client, c: &Credentials) -> VerifyResult {
     }
 }
 
+/// 8자리 초대 코드 정리: 공백·'-' 빼고 대문자 (서버와 같은 규칙)
+pub fn normalize_code(code: &str) -> String {
+    code.chars().filter(|c| !c.is_whitespace() && *c != '-').collect::<String>().to_uppercase()
+}
+
+/// 서버 응답 {v, server, clientId, clientSecret, invite, exp}
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RedeemResponse {
+    #[serde(default)]
+    server: Option<String>,
+    client_id: String,
+    client_secret: String,
+    #[serde(default)]
+    invite: Option<String>,
+    #[serde(default)]
+    exp: Option<f64>,
+}
+
+/// QR 을 못 찍을 때: 8자리 코드 → 접속 키.
+/// `POST <API>/api/members/invite-code/redeem {code}` (서버에서 누구나 부를 수 있게 열어 둔 경로, 접속 키 없이 부름).
+/// 저장할 서버 주소는 방금 코드를 받아 준 주소(사용자가 넣은 주소)를 그대로 쓴다.
+/// (응답의 server 는 서버 설정/요청 주소로 만든 값이라 터널·프록시 뒤에서는 안쪽 주소일 수 있음)
+pub async fn redeem_code(
+    client: &reqwest::Client,
+    server: &str,
+    api: Option<&str>,
+    code: &str,
+    now: u64,
+) -> Result<(Credentials, Option<u64>), String> {
+    let code = normalize_code(code);
+    if code.len() != 8 || !code.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err("코드는 8자리예요.".into());
+    }
+    let server = normalize_server(server)?;
+    let api = match api.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(a) => Some(normalize_server(a)?),
+        None => None,
+    };
+    let base = Url::parse(&server).map_err(|e| e.to_string())?;
+    let upstream = api_upstream(&base, api.as_deref());
+    let target = proxy::join_upstream(&upstream, "/api/members/invite-code/redeem");
+    let res = client
+        .post(target.clone())
+        .header(reqwest::header::ACCEPT, "application/json")
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .body(serde_json::json!({ "code": code }).to_string())
+        .timeout(std::time::Duration::from_secs(12))
+        .send()
+        .await
+        .map_err(|e| {
+            log::warn!("코드 확인 실패 {target}: {e}");
+            format!("서버에 연결할 수 없어요 ({})", short_err(&e))
+        })?;
+    let status = res.status();
+    if proxy::is_cf_access_block(status, res.headers()) {
+        return Err("서버가 코드 확인을 막았어요.".into());
+    }
+    let body = res.bytes().await.unwrap_or_default();
+    if !status.is_success() {
+        // 400 틀린 코드·만료, 429 너무 많이 틀림 → 서버 문구 그대로
+        let detail = serde_json::from_slice::<serde_json::Value>(&body)
+            .ok()
+            .and_then(|v| v.get("detail").and_then(|d| d.as_str()).map(str::to_string));
+        return Err(match (status.as_u16(), detail) {
+            (_, Some(d)) if !d.is_empty() => d,
+            (404, _) => "서버에 코드 기능이 없어요.".into(),
+            (429, _) => "코드를 너무 많이 틀렸어요. 잠시 뒤에 다시 해 주세요.".into(),
+            (400, _) => "코드가 맞지 않거나 시간이 지났어요.".into(),
+            (s, _) => format!("코드를 확인하지 못했어요 (HTTP {s})."),
+        });
+    }
+    let r: RedeemResponse =
+        serde_json::from_slice(&body).map_err(|_| "서버 응답 형식이 맞지 않아요.".to_string())?;
+    if r.client_id.trim().is_empty() || r.client_secret.trim().is_empty() {
+        return Err("서버 응답에 접속 키가 없어요.".into());
+    }
+    let exp = r.exp.map(|e| if e > 1e12 { (e / 1000.0) as u64 } else { e as u64 });
+    if exp.is_some_and(|e| e < now) {
+        return Err("초대 유효 기간이 지났어요.".into());
+    }
+    if let Some(s) = r.server.as_deref().and_then(|s| normalize_server(s).ok()) {
+        if s != server {
+            log::info!("코드 응답의 서버 주소({s})와 입력한 주소({server})가 달라서 입력한 주소로 저장");
+        }
+    }
+    let creds = Credentials {
+        server,
+        client_id: r.client_id.trim().into(),
+        client_secret: r.client_secret.trim().into(),
+        api,
+        invite: r.invite.filter(|s| !s.is_empty()),
+        saved_at: None,
+    };
+    Ok((creds, exp))
+}
+
 fn short_err(e: &reqwest::Error) -> String {
     if e.is_timeout() {
         "시간 초과".into()
@@ -342,6 +442,71 @@ mod tests {
         Credentials { server, client_id: "cid".into(), client_secret: "sec".into(), api, invite: None, saved_at: None }
     }
 
+    #[test]
+    fn normalizes_invite_code() {
+        assert_eq!(normalize_code(" abcd-ef 23 "), "ABCDEF23");
+    }
+
+    /// 가짜 redeem 서버: 코드 ABCD2345 만 받고, 그 밖엔 400, ZZZZZZZZ 는 429
+    async fn mock_redeem() -> u16 {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let l = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = l.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            loop {
+                let Ok((mut s, _)) = l.accept().await else { break };
+                tokio::spawn(async move {
+                    let mut buf = vec![0u8; 8192];
+                    let mut n = 0;
+                    // 헤더 + 본문(작음)을 다 받을 때까지
+                    loop {
+                        let m = s.read(&mut buf[n..]).await.unwrap_or(0);
+                        if m == 0 { break; }
+                        n += m;
+                        let t = String::from_utf8_lossy(&buf[..n]);
+                        if t.contains("\r\n\r\n") && t.trim_end().ends_with('}') { break; }
+                    }
+                    let req = String::from_utf8_lossy(&buf[..n]).to_string();
+                    let (status, body) = if !req.starts_with("POST /api/members/invite-code/redeem ") {
+                        ("404 Not Found", r#"{"detail":"Not Found"}"#.to_string())
+                    } else if req.contains(r#""code":"ABCD2345""#) {
+                        ("200 OK", r#"{"v":1,"server":"http://10.0.0.1:8000","clientId":"cid.access","clientSecret":"sec","invite":"inv_1","exp":4102444800}"#.to_string())
+                    } else if req.contains(r#""code":"ZZZZZZZZ""#) {
+                        ("429 Too Many Requests", r#"{"detail":"코드를 너무 많이 틀렸습니다. (10분 잠김)"}"#.to_string())
+                    } else {
+                        ("400 Bad Request", r#"{"detail":"코드가 맞지 않거나 시간이 지났습니다."}"#.to_string())
+                    };
+                    let resp = format!(
+                        "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                        body.len()
+                    );
+                    let _ = s.write_all(resp.as_bytes()).await;
+                });
+            }
+        });
+        port
+    }
+
+    #[tokio::test]
+    async fn redeem_code_maps_server_answers() {
+        let port = mock_redeem().await;
+        let client = crate::proxy::http_client();
+        let server = format!("http://127.0.0.1:{port}");
+        let (c, exp) = redeem_code(&client, &server, Some(&server), "abcd-2345", 0).await.unwrap();
+        assert_eq!(exp, Some(4102444800));
+        assert_eq!(c.server, server); // 응답의 server 가 아니라 입력한 주소
+        assert_eq!(c.client_id, "cid.access");
+        assert_eq!(c.client_secret, "sec");
+        assert_eq!(c.invite.as_deref(), Some("inv_1"));
+        assert_eq!(
+            redeem_code(&client, &server, Some(&server), "WRONG234", 0).await.unwrap_err(),
+            "코드가 맞지 않거나 시간이 지났습니다."
+        );
+        assert!(redeem_code(&client, &server, Some(&server), "ZZZZ-ZZZZ", 0).await.unwrap_err().contains("너무 많이"));
+        assert_eq!(redeem_code(&client, &server, None, "123", 0).await.unwrap_err(), "코드는 8자리예요.");
+        assert!(redeem_code(&client, "http://127.0.0.1:1", Some("http://127.0.0.1:1"), "ABCD2345", 0).await.unwrap_err().contains("연결할 수 없어요"));
+    }
+
     #[tokio::test]
     async fn verify_calls_members_me_with_cf_headers() {
         let port = crate::proxy::tests::mock_http().await;
@@ -354,7 +519,8 @@ mod tests {
         assert_eq!(m["headers"]["cf-access-client-id"], "cid");
         assert_eq!(m["headers"]["cf-access-client-secret"], "sec");
         // 서버가 꺼져 있으면 실패지만 '그래도 저장' 은 가능
-        let r = verify(&client, &creds("http://127.0.0.1:1".into(), None)).await;
+        // (api 를 비우면 :8000 으로 가는데, 이 맥처럼 :8000 에 ONAIR API 가 떠 있으면 성공해 버려서 직접 지정)
+        let r = verify(&client, &creds("http://127.0.0.1:1".into(), Some("http://127.0.0.1:1".into()))).await;
         assert!(!r.ok && r.can_force);
     }
 }

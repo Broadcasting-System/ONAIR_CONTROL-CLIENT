@@ -23,7 +23,7 @@
     "publisher": "BSSM 방송부",
     "category": "Utility",
     "shortDescription": "ONAIR 학교 방송 원격 제어",
-    "longDescription": "ONAIR 서버의 컨트롤 화면을 여는 데스크탑 앱. 접속 키는 OS 키체인에만 저장됩니다.",
+    "longDescription": "ONAIR 서버의 컨트롤 화면을 여는 앱. 접속 키는 OS 키체인(Android 는 Keystore)에만 저장됩니다.",
     "copyright": "© BSSM 방송부",
     "icon": [
       "icons/32x32.png",
@@ -33,7 +33,8 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "10.15",
+      "entitlements": "./Entitlements.plist"
     },
     "windows": {
       "webviewInstallMode": { "type": "downloadBootstrapper" },
@@ -45,13 +46,20 @@
       "wix": {
         "language": ["ko-KR"]
       }
+    },
+    "iOS": {
+      "minimumSystemVersion": "15.0"
+    },
+    "android": {
+      "minSdkVersion": 24
     }
   },
   "plugins": {
     "deep-link": {
       "desktop": {
         "schemes": ["onair"]
-      }
+      },
+      "mobile": [{ "scheme": ["onair"], "appLink": false }]
     }
   }
 }

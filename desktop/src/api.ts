@@ -54,7 +54,7 @@ function mock(cmd: string, args?: Record<string, unknown>): unknown {
         proxyPort: 53817,
         version: "0.1.0",
         logDir: "~/Library/Logs/kr.bssm.onair",
-        platform: "macos",
+        platform: new URLSearchParams(location.search).get("platform") ?? "macos",
         storeError: null,
       } satisfies AppStateView;
     case "pending_link":
@@ -63,6 +63,12 @@ function mock(cmd: string, args?: Record<string, unknown>): unknown {
       const link = String(args?.link ?? "");
       if (!link.startsWith("onair:")) throw "링크에 등록 정보가 없어요.";
       return { server: "https://onair.bssmcast.com", clientId: "x", clientIdHint: "8f2c….access", api: null, invite: "K3-7Q9", exp: Date.now() / 1000 + 7 * 86400 };
+    }
+    case "redeem_code": {
+      const code = String(args?.code ?? "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+      if (code === "ZZZZZZZZ") throw "코드를 너무 많이 틀렸습니다. (10분 잠김)";
+      if (code !== "ABCD2345") throw "코드가 맞지 않거나 시간이 지났습니다.";
+      return { server: String(args?.server || "https://onair.bssmcast.com"), clientId: "x", clientIdHint: "8f2c….access", api: null, invite: "inv_1", exp: Date.now() / 1000 + 86400 };
     }
     case "verify_and_save":
       return { saved: true, ok: true, canForce: true, httpStatus: 404, message: "서버에 연결됐어요.", member: null };

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 웹뷰는 앱 안의 로컬 프록시(http://127.0.0.1:<포트>)만 평문 http 로 연다. 서버로 가는 요청은 Rust 프록시가 보낸다. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

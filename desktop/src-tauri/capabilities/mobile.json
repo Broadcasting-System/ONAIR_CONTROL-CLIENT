@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "mobile",
+  "description": "모바일 앱의 등록 화면(앱에 들어 있는 화면)만 카메라 QR 읽기를 쓸 수 있다. 서버에서 오는 컨트롤 화면은 IPC 없음.",
+  "platforms": ["iOS", "android"],
+  "windows": ["main"],
+  "permissions": ["barcode-scanner:allow-scan", "barcode-scanner:allow-cancel", "barcode-scanner:allow-check-permissions", "barcode-scanner:allow-request-permissions", "barcode-scanner:allow-open-app-settings"]
+}

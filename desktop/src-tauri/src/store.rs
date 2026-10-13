@@ -1,7 +1,9 @@
 //! 접속 정보 저장소.
 //! - 데스크탑: OS 키체인 (macOS 키체인 / Windows 자격 증명 관리자 / Linux Secret Service)
+//! - iOS: 키체인 (keyring 의 apple-native. 일반 암호 항목, 기본 보호 등급 = 기기 잠금 풀린 동안만 읽힘, iCloud 동기화 안 함)
+//! - Android: Android Keystore 의 AES 키로 암호화해서 앱 전용 SharedPreferences 에 저장
+//!   (android-native-keyring-store. 키는 Keystore 밖으로 안 나오고, 파일은 앱 샌드박스 안)
 //! - 개발용: 디버그 빌드에서 ONAIR_DEV_CRED_FILE=<경로> 를 주면 키체인 대신 파일 (키체인 팝업 없이 시험)
-//! - 모바일: 아직 없음 (나중에 Keystore/Keychain 플러그인으로)
 
 use crate::registration::Credentials;
 
@@ -46,7 +48,7 @@ pub fn clear() -> Result<(), String> {
     imp::delete()
 }
 
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "ios"))]
 mod imp {
     use super::{ACCOUNT, SERVICE};
 
@@ -71,16 +73,42 @@ mod imp {
     }
 }
 
-#[cfg(mobile)]
+#[cfg(target_os = "android")]
 mod imp {
-    pub fn get() -> Result<Option<String>, String> {
-        Ok(None)
+    use super::{ACCOUNT, SERVICE};
+    use keyring_core::{Entry, Error};
+    use std::sync::OnceLock;
+
+    /// 저장소는 앱에서 한 번만 만든다 (ndk-context 는 Tauri(tao) 가 시작할 때 채워 둠)
+    fn init() -> Result<(), String> {
+        static INIT: OnceLock<Result<(), String>> = OnceLock::new();
+        INIT.get_or_init(|| {
+            let store = android_native_keyring_store::Store::new()
+                .map_err(|e| format!("키 저장소를 열 수 없어요: {e}"))?;
+            keyring_core::set_default_store(store);
+            Ok(())
+        })
+        .clone()
     }
-    pub fn set(_: &str) -> Result<(), String> {
-        Err("모바일 저장소는 아직 준비 중이에요.".into())
+    fn entry() -> Result<Entry, String> {
+        init()?;
+        Entry::new(SERVICE, ACCOUNT).map_err(|e| format!("키 저장소를 열 수 없어요: {e}"))
+    }
+    pub fn get() -> Result<Option<String>, String> {
+        match entry()?.get_password() {
+            Ok(s) => Ok(Some(s)),
+            Err(Error::NoEntry) => Ok(None),
+            Err(e) => Err(format!("키 저장소 읽기 실패: {e}")),
+        }
+    }
+    pub fn set(v: &str) -> Result<(), String> {
+        entry()?.set_password(v).map_err(|e| format!("키 저장소 저장 실패: {e}"))
     }
     pub fn delete() -> Result<(), String> {
-        Ok(())
+        match entry()?.delete_credential() {
+            Ok(()) | Err(Error::NoEntry) => Ok(()),
+            Err(e) => Err(format!("키 저장소 삭제 실패: {e}")),
+        }
     }
 }
 

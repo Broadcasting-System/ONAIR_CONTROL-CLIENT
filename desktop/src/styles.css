@@ -17,13 +17,16 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+/* 노치·홈 막대 (모바일, viewport-fit=cover). 데스크탑은 env() 가 0 */
+:root { --sa-t: env(safe-area-inset-top, 0px); --sa-r: env(safe-area-inset-right, 0px); --sa-b: env(safe-area-inset-bottom, 0px); --sa-l: env(safe-area-inset-left, 0px); }
 body {
   background: radial-gradient(ellipse 70% 55% at 55% 30%, rgba(120, 10, 10, 0.32), transparent 70%), var(--bg);
   color: #fff; font-family: var(--pre); -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none;
 }
 button, input, textarea { font: inherit; color: inherit; }
 input, textarea, .selectable { user-select: text; -webkit-user-select: text; }
-#app { min-height: 100%; }
+#app { min-height: 100%; overflow-x: hidden; }
 
 /* 공통 */
 .panel { border-radius: 24px; border: 1px solid var(--line); background: var(--panel); padding: 8px 26px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); backdrop-filter: blur(12px); }
@@ -72,7 +75,8 @@ details summary { cursor: pointer; font-size: 13px; color: rgba(255, 255, 255, 0
 .hidden { display: none !important; }
 
 /* 등록 화면 — 시안 A · 라디오 튜너 (흰색·회색 + ONAIR 빨강 하나) */
-.reg-stage { position: relative; min-height: 100vh; display: grid; place-items: center; padding: 40px 20px; overflow: hidden; isolation: isolate; }
+.reg-stage { position: relative; min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; overflow: hidden; isolation: isolate;
+  padding: calc(40px + var(--sa-t)) calc(20px + var(--sa-r)) calc(40px + var(--sa-b)) calc(20px + var(--sa-l)); }
 .reg-stage::before, .reg-stage::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; }
 .reg-stage::before { background: linear-gradient(135deg, #1a0505, #000); opacity: 0.8; }
 .reg-stage::after { background: url("/onair_background.jpg") center / cover; opacity: 0.45; mix-blend-mode: screen; }
@@ -121,7 +125,7 @@ details summary { cursor: pointer; font-size: 13px; color: rgba(255, 255, 255, 0
 .mono { font-family: var(--mono); }
 
 /* 설정 화면 */
-.settings { padding: 26px 28px 22px; min-height: 100vh; display: flex; flex-direction: column; }
+.settings { padding: calc(26px + var(--sa-t)) calc(28px + var(--sa-r)) calc(22px + var(--sa-b)) calc(28px + var(--sa-l)); min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 .settings .top { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 .settings .top h2 { margin-right: auto; }
 .setrow { display: grid; grid-template-columns: 130px 1fr auto; gap: 14px; align-items: center; padding: 16px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
@@ -137,13 +141,52 @@ details summary { cursor: pointer; font-size: 13px; color: rgba(255, 255, 255, 0
 .modal .box { width: min(400px, calc(100% - 32px)); border-radius: 24px; border: 1px solid var(--line); background: #1a1a1a; padding: 24px 26px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); }
 .modal h3 { font-family: var(--mbc); font-weight: 400; font-size: 21px; margin: 0 0 8px; }
 
+/* 8자리 초대 코드 */
+.code-in { font-family: var(--mono); font-size: 22px; letter-spacing: 0.18em; text-transform: uppercase; }
+.code-in::placeholder { letter-spacing: 0.18em; }
+
+/* 모바일: 카메라로 QR 찍기 */
+.scan-btn { width: 100%; margin-bottom: 12px; }
+html.mobile .drop { height: 96px; }
+html.scanning, html.scanning body { background: transparent !important; color-scheme: light; }
+html.scanning #app { visibility: hidden; }
+.scan-ui { position: fixed; inset: 0; z-index: 30; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: center;
+  padding: calc(18px + var(--sa-t)) calc(16px + var(--sa-r)) calc(22px + var(--sa-b)) calc(16px + var(--sa-l)); }
+.scan-top, .scan-ui .btn { position: relative; z-index: 1; }
+.scan-top { font-family: var(--orb); font-weight: 700; font-size: 13px; letter-spacing: 0.22em; color: #fff; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8); }
+.scan-box { position: relative; width: min(70vw, 70vh, 300px); aspect-ratio: 1; border-radius: 18px; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.55); }
+.scan-box i { position: absolute; width: 34px; height: 34px; border: 3px solid var(--red); filter: drop-shadow(0 0 6px rgba(255, 59, 59, 0.7)); }
+.scan-box i:nth-child(1) { top: -2px; left: -2px; border-right: 0; border-bottom: 0; border-top-left-radius: 18px; }
+.scan-box i:nth-child(2) { top: -2px; right: -2px; border-left: 0; border-bottom: 0; border-top-right-radius: 18px; }
+.scan-box i:nth-child(3) { bottom: -2px; left: -2px; border-right: 0; border-top: 0; border-bottom-left-radius: 18px; }
+.scan-box i:nth-child(4) { bottom: -2px; right: -2px; border-left: 0; border-top: 0; border-bottom-right-radius: 18px; }
+.scan-ui .btn { min-width: 160px; height: 50px; border-radius: 12px; font-family: var(--pre); font-weight: 600; color: #fff;
+  background: rgba(20, 20, 22, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); }
+
 @media (max-width: 640px) {
-  .reg-panel { padding: 20px; }
+  .reg-stage { place-items: start center;
+    padding: calc(16px + var(--sa-t)) calc(16px + var(--sa-r)) calc(20px + var(--sa-b)) calc(16px + var(--sa-l)); }
+  .reg { gap: 16px; }
+  .reg-logo { font-size: 28px; }
+  .tally { min-width: 0; height: 32px; padding: 0 12px; font-size: 11px; }
+  .reg-panel { padding: 18px 16px; gap: 18px; border-radius: 20px; }
+  .tuner { padding: 14px 14px 12px; }
   .tuner-status { flex-wrap: wrap; }
   .tuner-status .v { font-size: 17px; }
   .tuner .marks li { font-size: 13px; }
+  .tabs button { flex: 1; padding: 0 8px; }
+  /* iOS 는 16px 보다 작은 입력 칸을 누르면 화면을 키운다 */
+  .in, textarea.in { font-size: 16px; }
+  .code-in { font-size: 20px; }
+  .parsed { grid-template-columns: 76px 1fr; padding: 12px; }
+  .reg .foot-l { flex-basis: 100%; min-width: 0; }
+  .reg .foot .btn { flex: 1; }
+  .settings { padding: calc(16px + var(--sa-t)) calc(16px + var(--sa-r)) calc(16px + var(--sa-b)) calc(16px + var(--sa-l)); }
+  .settings .panel { padding: 4px 16px; border-radius: 20px; }
+  .settings .top { flex-wrap: wrap; }
 }
 @media (max-width: 520px) {
-  .setrow { grid-template-columns: 1fr; gap: 8px; }
+  .setrow { grid-template-columns: 1fr auto; gap: 8px 12px; }
+  .setrow .v { grid-column: 1 / -1; grid-row: 2; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

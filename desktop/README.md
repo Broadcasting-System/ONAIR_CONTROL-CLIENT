@@ -1,10 +1,10 @@
-# ONAIR 데스크탑 앱
+# ONAIR 앱 (데스크탑·모바일)
 
-macOS·Windows 에서 ONAIR 컨트롤 화면을 여는 앱. (Tauri 2)
+macOS·Windows·iOS·Android 에서 ONAIR 컨트롤 화면을 여는 앱. (Tauri 2)
 
 - 앱은 **얇은 껍데기**예요. 컨트롤 화면(Next 앱)은 앱에 넣지 않고 **서버에서 그대로** 불러와요. 서버를 업데이트하면 앱도 바로 바뀐 화면을 봐요.
 - 서버는 Cloudflare Access 로 막혀 있어서 모든 요청(페이지·파일·`/api`·WebSocket)에 `CF-Access-Client-Id` / `CF-Access-Client-Secret` 헤더가 있어야 해요. 웹뷰는 WebSocket 에 헤더를 못 붙이니, **앱 안의 로컬 프록시(Rust)** 가 대신 붙여요. 접속 키는 JS 로 절대 넘어가지 않아요.
-- 같은 프로젝트로 나중에 Android/iOS 도 빌드할 수 있게 구조를 맞춰 뒀어요 (`lib.rs` 의 `mobile_entry_point`, 키체인·메뉴·중복 실행 방지는 데스크탑에서만). 모바일 빌드는 아직 안 해요.
+- 같은 프로젝트로 iOS·Android 도 빌드해요 (`lib.rs` 의 `mobile_entry_point`). 메뉴·중복 실행 방지·설정 창 따로 띄우기는 데스크탑에서만, 카메라 QR 찍기는 모바일에서만.
 
 ```
 desktop/
@@ -13,12 +13,15 @@ desktop/
 ├── assets/icon.svg         아이콘 원본 → `npx tauri icon assets/icon.svg -o src-tauri/icons`
 └── src-tauri/
     ├── tauri.conf.json     앱 이름 ONAIR, 식별자 kr.bssm.onair, onair:// 딥링크, 번들 설정
-    ├── capabilities/       앱 화면만 명령 사용 (서버 화면은 IPC 없음)
+    ├── capabilities/       앱 화면만 명령 사용 (서버 화면은 IPC 없음). mobile.json = 카메라 QR (iOS·Android)
+    ├── Info.ios.plist      iOS Info.plist 에 합쳐지는 값 (로컬 프록시 http 허용, 카메라 문구)
+    ├── gen/apple           iOS Xcode 프로젝트 (tauri ios init 으로 만듦, 커밋함)
+    ├── gen/android         Android Gradle 프로젝트 (tauri android init 으로 만듦, 커밋함)
     └── src/
         ├── lib.rs          창·메뉴·명령·딥링크
         ├── proxy.rs        로컬 프록시 (+ 테스트)
         ├── registration.rs 등록 링크 풀기, 서버 주소 규칙, 연결 확인
-        ├── store.rs        키체인 저장
+        ├── store.rs        접속 정보 저장 (키체인 / Android Keystore)
         └── pages.rs        프록시가 보여주는 대체 화면 (연결 실패·키 거부)
 ```
 
@@ -64,8 +67,19 @@ APPLE_SIGNING_IDENTITY="Developer ID Application: …" npm run tauri build
 
 Mac 에서는 Windows 빌드를 만들 수 없어요. 둘 중 하나로:
 
-1. **GitHub Actions** — `.github/workflows/desktop.yml`. `desktop-v0.1.0` 같은 태그를 올리거나 Actions 탭에서 `desktop` 을 직접 실행하면 macOS(유니버설)·Windows 를 같이 빌드해서 초안 릴리스(태그일 때)와 Artifacts 에 올려요.
-2. **Windows PC 에서 직접** — Node, Rust(`rustup` MSVC), VS Build Tools(“C++ 데스크톱 개발”) 설치 후
+1. **GitHub Actions** — `.github/workflows/desktop-build.yml`. `desktop-v0.1.0` 같은 태그를 올리거나 Actions 탭에서 `desktop-build` 를 직접 실행하면 Windows(NSIS .exe + .msi)·macOS(유니버설 .dmg, 서명 없음)를 같이 빌드해서 Artifacts 와 초안 릴리스(태그일 때)에 올려요.
+2. **Mac 에서 교차 빌드 (NSIS .exe 만)** — `.msi`(WiX)는 Windows 에서만 돼요.
+   ```bash
+   brew install makensis llvm
+   cargo install --locked cargo-xwin
+   rustup target add x86_64-pc-windows-msvc
+   cd desktop
+   PATH="/opt/homebrew/opt/llvm/bin:$PATH" LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
+     npm run tauri build -- --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis
+   # 결과: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/ONAIR_0.1.0_x64-setup.exe
+   ```
+   `LANG`/`LC_ALL` 을 안 주면 makensis 가 `std::bad_alloc` 으로 죽어요 (로캘 없는 셸). 처음엔 cargo-xwin 이 MSVC CRT·Windows SDK 를 내려받아요 (라이선스 동의 포함).
+3. **Windows PC 에서 직접** — Node, Rust(`rustup` MSVC), VS Build Tools(“C++ 데스크톱 개발”) 설치 후
    ```powershell
    cd desktop
    npm ci
@@ -73,6 +87,50 @@ Mac 에서는 Windows 빌드를 만들 수 없어요. 둘 중 하나로:
    # 결과: src-tauri\target\release\bundle\nsis\ONAIR_0.1.0_x64-setup.exe, bundle\msi\ONAIR_0.1.0_x64_ko-KR.msi
    ```
    NSIS 설치 파일은 사용자 계정에만 설치(관리자 권한 필요 없음)하고, WebView2 가 없으면 설치 중에 받아요.
+
+### iOS (시뮬레이터 / 기기)
+
+필요한 것: Xcode, `brew install xcodegen cocoapods`, `rustup target add aarch64-apple-ios aarch64-apple-ios-sim`.
+
+```bash
+cd desktop
+npm run tauri ios build -- --debug --target aarch64-sim     # 시뮬레이터용 .app
+xcrun simctl install booted src-tauri/gen/apple/build/arm64-sim/ONAIR.app
+xcrun simctl launch booted kr.bssm.onair
+xcrun simctl openurl booted "onair://register?d=…"          # 딥링크 시험
+```
+
+- 기기에 올리거나 .ipa 를 만들려면 Apple 개발자 팀이 필요해요: `APPLE_DEVELOPMENT_TEAM=<팀 ID> npm run tauri ios build` (또는 `tauri.conf.json` 의 `bundle.iOS.developmentTeam`). 시뮬레이터 빌드는 팀 없이 돼요.
+- `tauri ios run "iPhone 17"` 은 시뮬레이터 이름을 줘도 기기용(aarch64)으로 빌드하려다 서명에서 멈춰서, 위처럼 `--target aarch64-sim` 으로 빌드해 `simctl` 로 올려요.
+- Info.plist: `NSAllowsLocalNetworking`(웹뷰가 `http://127.0.0.1:<포트>` 프록시를 엶, 바깥 http 는 그대로 막힘), `NSCameraUsageDescription`, `NSMicrophoneUsageDescription`, `onair` URL 스킴(딥링크 플러그인이 `CFBundleURLTypes` 를 넣어 줌).
+- 웹뷰 디버깅: 디버그 빌드는 Safari 개발자 메뉴로 보거나 `brew install ios-webkit-debug-proxy` 후 `ios_webkit_debug_proxy -s unix:<webinspectord_sim.socket>` (소켓 위치는 `lsof -U | grep webinspectord_sim`).
+- 앱이 꺼져 있을 때 `onair://` 링크를 누르면 앱만 열리고 링크는 안 들어와요 (tao 0.37 iOS 가 실행 때 URL 을 안 넘겨 줌). 켜져 있을 땐 들어와요.
+
+### Android (에뮬레이터 / 기기)
+
+필요한 것: Android Studio(SDK·NDK), `rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android`.
+
+```bash
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export ANDROID_HOME=~/Library/Android/sdk NDK_HOME=~/Library/Android/sdk/ndk/27.1.12297006
+cd desktop
+npm run tauri android build -- --debug --apk --target aarch64
+# 결과: src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+adb shell am start -n kr.bssm.onair/.MainActivity
+adb shell am start -a android.intent.action.VIEW -d "'onair://register?d=…'"   # 딥링크 시험
+```
+
+- 에뮬레이터에서 이 Mac 의 서버는 `http://10.0.2.2:<포트>` 예요.
+- 릴리스(스토어) 빌드: `npm run tauri android build -- --aab` + 서명 키 설정 (`gen/android/keystore.properties`, 커밋 안 함).
+- 화면은 시스템 막대·노치·키보드 안쪽에만 그려요 (`MainActivity.kt` 가 여백을 줌). Android WebView 가 `env(safe-area-inset-bottom)` 을 0 으로 알려 줘서, 웹 쪽 safe-area 대신 앱이 피해 줘요. 그래서 Android 에서는 `env(safe-area-inset-*)` 가 모두 0.
+- 웹뷰 디버깅: `adb forward tcp:9333 localabstract:webview_devtools_remote_$(adb shell pidof kr.bssm.onair)` 후 `chrome://inspect` 또는 `http://127.0.0.1:9333/json`.
+- 평문 http 는 `127.0.0.1` 만 (`res/xml/network_security_config.xml`). 디버그 빌드만 `src/debug/res/xml/…` 로 전부 허용 (`tauri android dev` 가 Mac 의 개발 서버를 열 수 있게). 서버로 가는 요청은 Rust 프록시가 보내서 이 규칙과 상관없어요.
+- `onair://` 인텐트 필터는 딥링크 플러그인이 빌드할 때 `AndroidManifest.xml` 에 넣어요. `allowBackup="false"` (Keystore 키는 백업이 안 돼서 복원해도 못 풀어요).
+
+### 모바일 개발 모드
+
+`npm run tauri ios dev` / `npm run tauri android dev` — 기기가 Mac 의 Vite 서버에 붙도록 CLI 가 `TAURI_DEV_HOST` 를 주고 `vite.config.ts` 가 그 주소로 열어요.
 
 ## 설치
 
@@ -102,7 +160,26 @@ Mac 에서는 Windows 빌드를 만들 수 없어요. 둘 중 하나로:
    - 서버 꺼짐·5xx → 실패 표시 + **그래도 저장** 버튼.
 4. 저장되면 바로 컨트롤 화면(프록시 경유)이 열려요. 회원 등록·승인 대기 화면은 컨트롤 UI 쪽이 보여줘요.
 
-저장 위치: macOS 키체인 / Windows 자격 증명 관리자 / (Linux Secret Service), 서비스 이름 `kr.bssm.onair`, 계정 `credentials` 에 JSON 한 덩어리 (서버 주소, client id, secret, api, invite, 저장 시각).
+저장 위치 (서비스 이름 `kr.bssm.onair`, 계정 `credentials` 에 JSON 한 덩어리: 서버 주소, client id, secret, api, invite, 저장 시각):
+- macOS 키체인 / Windows 자격 증명 관리자 / (Linux Secret Service)
+- iOS 키체인 (`keyring` 크레이트 `apple-native`. 일반 암호 항목, 기기 잠금이 풀린 동안만 읽힘, iCloud 동기화 안 함)
+- Android: `android-native-keyring-store` — Android Keystore 의 AES 키(밖으로 안 나옴)로 암호화해서 앱 전용 SharedPreferences(`shared_prefs/keyring-default.xml`)에 저장
+
+모바일 등록: **QR** 탭(기본)의 **QR 찍기** → 카메라로 부장 화면의 초대 QR 을 찍으면 바로 연결 확인까지 해요. 사진 고르기·링크·직접 입력도 그대로 있어요. 모바일은 창이 하나라서 설정 화면도 같은 창에서 열리고 **닫기** 로 컨트롤 화면에 돌아와요.
+
+**코드** 탭 (데스크탑·모바일): QR 을 못 찍을 때 부장 화면의 8자리 코드(30분, 한 번만)를 넣어요.
+- 앱(Rust)이 `POST <API>/api/members/invite-code/redeem {"code":"ABCD2345"}` 를 접속 키 없이 불러요 (`<API>` 는 서버 주소에서 위 규칙대로, 비우면 `https://onair.bssmcast.com`). Cloudflare Access 에서 이 경로는 예외로 열려 있어야 해요.
+- 응답 `{v, server, clientId, clientSecret, invite, exp}` 의 접속 키는 화면에 안 넘기고 앱이 들고 있다가 **연결** 때 기존 연결 확인·저장으로 이어져요. 저장하는 서버 주소는 코드를 받아 준 주소(입력한 주소)예요. 응답의 `server` 는 서버의 `PUBLIC_BASE_URL` 이라 시험 서버·터널 뒤에서는 다를 수 있어서요.
+- 틀린 코드·만료(400), 너무 많이 틀림(429)은 서버 문구를 그대로 보여 줘요. 코드는 한 번 쓰면 끝이라 '그래도 저장' 은 다시 부르지 않고 받은 키로 해요.
+
+## 마이크 (컨트롤 화면의 마이크 방송)
+
+컨트롤 화면이 `navigator.mediaDevices.getUserMedia({audio: …})` 를 부르면:
+- 앱이 **앱 프록시 화면(`http://127.0.0.1:<포트>`)일 때만** 마이크를 허용하고, 앱에 들어 있는 화면(등록·설정)이나 다른 주소에서는 거부해요. 카메라·화면 공유는 웹에 안 줘요 (`lib.rs` `on_webview_permission`).
+- iOS: 처음 한 번 OS 가 묻고 (`NSMicrophoneUsageDescription` "마이크로 교실 스피커에 방송하려고 써요."), 웹 쪽 확인 창은 안 떠요.
+- Android: 처음 한 번 OS 가 `RECORD_AUDIO` 를 물어요.
+- macOS: `src-tauri/Info.plist` 의 같은 문구 + 서명(하드닝된 런타임) 빌드용 `Entitlements.plist` 의 `com.apple.security.device.audio-input`.
+- Windows: WebView2 확인 창 없이 허용.
 
 ## 설정 메뉴
 
@@ -136,5 +213,6 @@ Mac 에서는 Windows 빌드를 만들 수 없어요. 둘 중 하나로:
 
 - 현수막 미리보기 iframe(`displayAppBase()`, 디스플레이 앱 :3000)은 프록시를 안 거쳐요. Cloudflare 뒤에서는 디스플레이 앱도 같은 호스트 경로로 묶거나, `window.__ONAIR_DISPLAY_BASE__` 로 주소를 따로 줘야 해요.
 - 컨트롤 화면에서 바깥 사이트로 이동하면 앱 안에서 열려요 (macOS 는 iframe 이동까지 같은 훅으로 와서 가로채지 않음). `보기 → 컨트롤 화면 처음으로` 로 돌아와요.
-- 카메라로 QR 찍기는 없어요 (캡처 붙여넣기·파일만). 모바일 빌드 때 추가.
+- 데스크탑은 카메라로 QR 찍기가 없어요 (캡처 붙여넣기·파일만). 모바일만 카메라.
+- 모바일에는 메뉴가 없어서, 컨트롤 UI 가 앱 설정을 열려면 `fetch("/__onair/action/settings", { method: "POST" })` 를 불러요 (같은 주소라 앱 세션 쿠키가 저절로 붙음, 다른 머리글 필요 없음, 성공하면 204). 앱 안인지는 `window.__ONAIR_APP_PLATFORM__` (`ios`·`android`·`macos`·`windows`·`linux`) 로 봐요. 브라우저로 서버를 직접 열었을 땐 이 값이 없고 경로도 서버로 가니 부르지 말 것.
 - `invite` 값은 저장만 하고 아직 안 써요 (회원 등록 API 가 정해지면 연결).

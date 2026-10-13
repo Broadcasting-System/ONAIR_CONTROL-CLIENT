@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 디버그 빌드 전용: `tauri android dev` 가 맥의 개발 서버(http://<맥 IP>:1420)를 열 수 있게 평문 허용.
+     릴리스는 main/res/xml/network_security_config.xml (127.0.0.1 만). -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
