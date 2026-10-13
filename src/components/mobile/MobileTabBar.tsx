@@ -19,7 +19,7 @@ export default function MobileTabBar() {
     { href: "/home", label: "홈", icon: <House size={23} strokeWidth={1.8} />, active: on(["/home"]) },
     { href: "/hall", label: "홀", icon: <SlidersVertical size={23} strokeWidth={1.8} />, active: on(HALL) },
     ...(canOperate
-      ? [{ href: "/cue", label: "CUE", icon: <OnairMark size={26} />, active: on(["/cue"]) }]
+      ? [{ href: "/cue", label: "CUE", icon: <OnairMark size={32} className="-my-1" />, active: on(["/cue"]) }]
       : []),
     { href: "/devices", label: isAdmin ? "관리" : "방송부", icon: <Users size={23} strokeWidth={1.8} />, active: on(ADMIN) },
     {
