@@ -508,6 +508,20 @@ export default function MembersPanel() {
     run(() => memberApi.update(m.id, { role }), `${m.name} 역할을 ${label}로 바꿨어요`);
   };
 
+  /** 부장 임명 — 앞 기수 부장이 있으면 넘겨받는다 (서버 _hand_over 와 같은 규칙) */
+  const appointLead = (m: Member) => {
+    const before = members.filter(
+      (o) => o.id !== m.id && o.status === "approved" && o.role === "lead" && !o.superadmin && o.cohort != null && m.cohort != null && o.cohort < m.cohort,
+    );
+    if (!before.length) return setRole(m, "lead");
+    setConfirm({
+      title: "부장 임명",
+      message: `${m.cohort}기 ${m.name} 님을 부장으로 임명할까요?\n${before.map((o) => `${o.cohort}기 ${o.name}`).join(", ")} 님은 부원이 되고 부장 표시는 남아요.`,
+      confirmText: "임명",
+      run: () => memberApi.update(m.id, { role: "lead" }),
+    });
+  };
+
   type MenuItem = { t: string; f: () => void; danger?: boolean };
   /** 부원 한 명의 더 보기 메뉴 (표·폰 카드 같이 쓴다) */
   const menuItems = (m: Member): MenuItem[] => {
@@ -534,7 +548,7 @@ export default function MembersPanel() {
         !roster &&
         (m.role === "lead"
           ? { t: "부장 해제", f: () => setRole(m, "member") }
-          : { t: "부장 임명", f: () => setRole(m, "lead") }),
+          : { t: "부장 임명", f: () => appointLead(m) }),
       !fixed &&
         m.role !== "alumni" && {
         t: "졸업 처리",
