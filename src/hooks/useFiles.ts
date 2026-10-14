@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { FileType, UploadedFile } from "@/types/file";
 import { getApiBase } from "@/lib/apiBase";
+import { withMediaUrls } from "@/lib/backend";
 import { toast } from "@/components/common/Toast";
 
 export const useFiles = () => {
@@ -22,7 +23,7 @@ export const useFiles = () => {
       const res = await fetch(`${BASE}/files/`);
       if (!res.ok) throw new Error("파일 목록을 불러오는데 실패했습니다.");
 
-      const data: UploadedFile[] = await res.json();
+      const data = ((await res.json()) as UploadedFile[]).map(withMediaUrls);
       const grouped: Record<FileType, UploadedFile[]> = {
         image: [],
         video: [],

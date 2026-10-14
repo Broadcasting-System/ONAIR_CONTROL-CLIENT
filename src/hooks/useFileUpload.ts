@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FileType, UploadedFile } from "@/types/file";
 import { getApiBase } from "@/lib/apiBase";
+import { resolveMediaUrl } from "@/lib/backend";
 
 // 서버 POST /files/upload 응답
 interface UploadResponse {
@@ -61,7 +62,7 @@ export const useFileUpload = () => {
                     id: data.id,
                     type: data.type,
                     fileName: data.fileName,
-                    fileUrl: data.fileUrl,
+                    fileUrl: resolveMediaUrl(data.fileUrl),
                     fileSize: data.fileSize ?? 0,
                     uploadedAt: "",
                   });

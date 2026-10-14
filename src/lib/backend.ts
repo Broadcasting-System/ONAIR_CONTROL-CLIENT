@@ -71,6 +71,18 @@ export function resolveMediaUrl(url?: string | null): string {
   }
 }
 
+/** 파일 목록·올리기 응답의 주소들을 resolveMediaUrl 로 — 서버는 자기가 받은 Host 로 절대 주소를 만들어서
+ *  데스크탑 앱(로컬 프록시) 안에서는 프록시를 건너뛰고 Cloudflare 로 바로 가 접속 키 없이 막힌다(사진이 깨짐). */
+export function withMediaUrls<T extends { fileUrl?: string; thumbnailUrl?: string | null; hlsUrl?: string | null; urls?: string[] }>(f: T): T {
+  return {
+    ...f,
+    ...(f.fileUrl ? { fileUrl: resolveMediaUrl(f.fileUrl) } : {}),
+    ...(f.thumbnailUrl ? { thumbnailUrl: resolveMediaUrl(f.thumbnailUrl) } : {}),
+    ...(f.hlsUrl ? { hlsUrl: resolveMediaUrl(f.hlsUrl) } : {}),
+    ...(f.urls ? { urls: f.urls.map((u) => resolveMediaUrl(u)) } : {}),
+  };
+}
+
 export function backendWs(path: string, channel?: number, role?: string): string {
   const override = process.env.NEXT_PUBLIC_WS_URL;
   const base =
