@@ -12,6 +12,7 @@ import ChatPanel, { useChatShortcutLabel } from "@/components/chat/ChatPanel";
 import { useChatPanel } from "@/stores/chatStore";
 import MobileTabBar from "@/components/mobile/MobileTabBar";
 import MyDevicesModal from "@/components/devices/MyDevicesModal";
+import { useRequestCounts } from "@/components/requests/RequestsPanel";
 
 /** 사이드바 아래 — CUE 열고 닫기 (Cmd/Ctrl + K) */
 function ChatToggle() {
@@ -48,6 +49,9 @@ export default function DashboardLayout({
   const router = useRouter();
   const { me, role, isAdmin, canOperate } = useMe();
   const [devicesOpen, setDevicesOpen] = useState(false);
+  // 요청함 — 새 요청과 승인 기다리는 선생님(부장 이상) 수
+  const reqCounts = useRequestCounts(canOperate);
+  const newRequests = (reqCounts.data?.new ?? 0) + (isAdmin ? (reqCounts.data?.pendingTeachers ?? 0) : 0);
   const hasDevices = me?.status === "approved" && (me.devices?.length ?? 0) > 0;
 
   // 초대받은 기기인데 아직 등록 전이거나 승인 대기면 첫 화면(등록·승인 대기)으로
@@ -91,6 +95,7 @@ export default function DashboardLayout({
               </span>
               {group.items
                 .filter((item) => (isAdmin ? !item.hideForAdmin : !item.adminOnly))
+                .filter((item) => !item.operatorOnly || canOperate)
                 .map((item) => {
                   const isActive = pathname.startsWith(item.path);
                   return (
@@ -112,6 +117,11 @@ export default function DashboardLayout({
                         )}
                       >
                         {item.label}
+                        {item.path === "/requests" && newRequests > 0 && (
+                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF3B3B] px-1.5 font-pretendard text-[12px] font-extrabold text-white">
+                            {newRequests}
+                          </span>
+                        )}
                       </span>
                       <span
                         className={cn(

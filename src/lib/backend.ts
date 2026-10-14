@@ -23,7 +23,7 @@ function desktopProxy(): boolean {
  *  학교 안에서 IP·localhost 로 열면 예전처럼 :8000 으로. (쉼표로 여러 개, 기본 onair.bssmcast.com) */
 function viaPublicHost(): boolean {
   if (typeof window === "undefined") return false;
-  const hosts = (process.env.NEXT_PUBLIC_SAME_ORIGIN_HOSTS ?? "onair.bssmcast.com,live.bssmcast.com,share.bssmcast.com")
+  const hosts = (process.env.NEXT_PUBLIC_SAME_ORIGIN_HOSTS ?? "onair.bssmcast.com,live.bssmcast.com,share.bssmcast.com,teacher.bssmcast.com")
     .split(",")
     .map((h) => h.trim().toLowerCase())
     .filter(Boolean);

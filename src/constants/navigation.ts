@@ -5,6 +5,8 @@ export type NavItem = {
   adminOnly?: boolean;
   /** 부장 이상에게는 숨긴다 (같은 화면을 관리 메뉴로 따로 본다) */
   hideForAdmin?: boolean;
+  /** 부원 이상에게만 */
+  operatorOnly?: boolean;
 };
 
 export type NavGroup = {
@@ -20,6 +22,8 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
       { label: "메인", subLabel: "MAIN", path: "/main" },
       // 송출 화면·현수막 탭 (옛 /banner → /media?tab=banner)
       { label: "송출", subLabel: "BROADCAST", path: "/media" },
+      // 선생님 요청 (teacher.bssmcast.com) — 부원 이상
+      { label: "요청함", subLabel: "REQUESTS", path: "/requests", operatorOnly: true },
       { label: "스피커 지도", subLabel: "SPEAKER MAP", path: "/speakers" },
     ],
   },
