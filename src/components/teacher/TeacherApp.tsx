@@ -7,6 +7,7 @@ import { ArrowRight, Calendar, Check, ChevronLeft, Clock, Film, Lock, Mail, Minu
 import OnairMark from "@/components/common/OnairMark";
 import { ToastHost, toast } from "@/components/common/Toast";
 import { backendBase } from "@/lib/backend";
+import { parseYouTubeId } from "@/lib/youtube";
 import { cn } from "@/lib/utils";
 import {
   BELL_MODE_LABEL,
@@ -28,6 +29,7 @@ import {
   Seg,
   StatusPill,
   TierChip,
+  YouTubeLink,
   ghostBtn,
   inputCls,
   redBtn,
@@ -594,41 +596,83 @@ function AnnounceForm({ me, places, back, done }: { me: Me; places?: Places; bac
   );
 }
 
+type Uploaded = { id: string; name: string; size: number };
+
+/** 조각 하나 PUT — 진행 막대를 위해 XHR */
+function putChunk(id: string, offset: number, blob: Blob, onLoaded: (n: number) => void): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", `${backendBase()}/api/teacher/uploads/${encodeURIComponent(id)}?offset=${offset}`);
+    Object.entries(devHeaders()).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+    xhr.setRequestHeader("content-type", "application/octet-stream");
+    xhr.upload.onprogress = (e) => onLoaded(e.loaded);
+    xhr.onload = () => {
+      try {
+        const body = JSON.parse(xhr.responseText);
+        if (xhr.status >= 400) reject(Object.assign(new Error(body.detail ?? `HTTP ${xhr.status}`), { status: xhr.status }));
+        else resolve(body.received as number);
+      } catch {
+        reject(new Error(`HTTP ${xhr.status}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error("연결이 끊겼어요"));
+    xhr.send(blob);
+  });
+}
+
+/** 큰 파일 — Cloudflare 는 요청 하나에 100MB 까지라 서버가 정한 크기로 나눠 보낸다. 조각마다 세 번까지 다시 */
+async function uploadInPieces(f: File, onProgress: (ratio: number) => void): Promise<Uploaded> {
+  const start = await tapi<{ id: string; chunkSize: number }>("/uploads", {
+    method: "POST",
+    body: JSON.stringify({ name: f.name, size: f.size }),
+  });
+  let offset = 0;
+  while (offset < f.size) {
+    const end = Math.min(offset + start.chunkSize, f.size);
+    for (let tries = 1; ; tries++) {
+      try {
+        const at = offset;
+        offset = await putChunk(start.id, at, f.slice(at, end), (n) => onProgress((at + n) / f.size));
+        break;
+      } catch (e) {
+        const status = (e as { status?: number }).status ?? 0;
+        if (tries >= 3 || (status >= 400 && status < 500)) throw e;
+        await new Promise((r) => setTimeout(r, 1500 * tries));
+      }
+    }
+  }
+  return tapi<Uploaded>(`/uploads/${encodeURIComponent(start.id)}/finish`, { method: "POST" });
+}
+
 function MediaForm({ places, back, done }: { places?: Places; back: () => void; done: (id: string) => void }) {
-  const [file, setFile] = useState<{ id: string; name: string; size: number } | null>(null);
+  const [source, setSource] = useState<"file" | "youtube">("file");
+  const [file, setFile] = useState<Uploaded | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
+  const [local, setLocal] = useState<{ url: string; video: boolean } | null>(null);
+  const [link, setLink] = useState("");
   const [date, setDate] = useState(tomorrow());
   const [time, setTime] = useState("13:00");
   const [channel, setChannel] = useState(1);
   const [memo, setMemo] = useState("");
   const send = useSend(done);
+  const videoId = parseYouTubeId(link);
+
+  useEffect(() => () => {
+    if (local) URL.revokeObjectURL(local.url);
+  }, [local]);
 
   const upload = (f: File) => {
-    const fd = new FormData();
-    fd.append("file", f);
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${backendBase()}/api/teacher/uploads`);
-    Object.entries(devHeaders()).forEach(([k, v]) => xhr.setRequestHeader(k, v));
-    xhr.upload.onprogress = (e) => e.lengthComputable && setProgress(e.loaded / e.total);
-    xhr.onload = () => {
-      setProgress(null);
-      try {
-        const body = JSON.parse(xhr.responseText);
-        if (xhr.status >= 400) throw new Error(body.detail ?? `HTTP ${xhr.status}`);
-        setFile(body);
-      } catch (e) {
-        toast.error((e as Error).message);
-      }
-    };
-    xhr.onerror = () => {
-      setProgress(null);
-      toast.error("파일을 올리지 못했어요");
-    };
+    setFile(null);
+    setLocal(f.type.startsWith("video/") || f.type.startsWith("image/") ? { url: URL.createObjectURL(f), video: f.type.startsWith("video/") } : null);
     setProgress(0);
-    xhr.send(fd);
+    uploadInPieces(f, setProgress)
+      .then(setFile)
+      .catch((e) => toast.error((e as Error).message || "파일을 올리지 못했어요"))
+      .finally(() => setProgress(null));
   };
 
   const ch = places?.channels.find((c) => c.channel === channel);
+  const ready = source === "file" ? !!file && progress === null : !!videoId;
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 py-8 md:px-12">
       <PageHead title="영상·자료 송출" onBack={back} />
@@ -636,33 +680,57 @@ function MediaForm({ places, back, done }: { places?: Places; back: () => void; 
         form={
           <>
             <div>
-              <FieldLabel>파일</FieldLabel>
-              <label className="flex cursor-pointer items-center gap-4 rounded-2xl border border-white/[0.09] bg-white/[0.045] p-4 hover:bg-white/[0.07]">
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[14px] bg-white/[0.08] text-white/70">
-                  <Film size={28} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <b className="block truncate font-pretendard text-[16.5px] text-white">{file ? file.name : progress !== null ? "올리는 중…" : "파일 고르기"}</b>
-                  <span className="font-pretendard text-[13.5px] text-white/45">
-                    {file ? `${(file.size / 1048576).toFixed(1)}MB` : "영상 · 이미지 · PPT · PDF"}
-                  </span>
-                  {progress !== null && (
-                    <span className="mt-2 block h-1.5 overflow-hidden rounded bg-white/10">
-                      <span className="block h-full bg-white" style={{ width: `${Math.round(progress * 100)}%` }} />
-                    </span>
-                  )}
-                </span>
-                <span className="rounded-[10px] border border-white/15 px-3 py-1.5 font-pretendard text-[13.5px] font-bold text-white">{file ? "바꾸기" : "고르기"}</span>
-                <input type="file" className="hidden" accept="video/*,image/*,.pdf,.ppt,.pptx" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-              </label>
+              <FieldLabel>무엇을</FieldLabel>
+              <Seg value={source} onChange={setSource} options={[{ value: "file", label: "파일 올리기" }, { value: "youtube", label: "유튜브 링크" }]} />
             </div>
+            {source === "file" ? (
+              <div>
+                <FieldLabel>파일</FieldLabel>
+                <label className={cn("flex items-center gap-4 rounded-2xl border border-white/[0.09] bg-white/[0.045] p-4", progress === null ? "cursor-pointer hover:bg-white/[0.07]" : "cursor-wait")}>
+                  <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[14px] bg-white/[0.08] text-white/70">
+                    <Film size={28} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <b className="block truncate font-pretendard text-[16.5px] text-white">
+                      {progress !== null ? `올리는 중 ${Math.round(progress * 100)}%` : file ? file.name : "파일 고르기"}
+                    </b>
+                    <span className="font-pretendard text-[13.5px] text-white/45">
+                      {file ? `${(file.size / 1048576).toFixed(1)}MB` : "영상 · 이미지 · PPT · PDF · 500MB 까지"}
+                    </span>
+                    {progress !== null && (
+                      <span className="mt-2 block h-1.5 overflow-hidden rounded bg-white/10">
+                        <span className="block h-full bg-white transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
+                      </span>
+                    )}
+                  </span>
+                  <span className="rounded-[10px] border border-white/15 px-3 py-1.5 font-pretendard text-[13.5px] font-bold text-white">{file ? "바꾸기" : "고르기"}</span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    disabled={progress !== null}
+                    accept="video/*,image/*,.pdf,.ppt,.pptx"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      if (f) upload(f);
+                    }}
+                  />
+                </label>
+              </div>
+            ) : (
+              <div>
+                <FieldLabel right={link && !videoId ? <span className="text-[13px] font-medium text-white/50">유튜브 주소가 아니에요</span> : null}>유튜브 링크</FieldLabel>
+                <input value={link} onChange={(e) => setLink(e.target.value.slice(0, 300))} placeholder="https://youtu.be/…" inputMode="url" className={inputCls} />
+              </div>
+            )}
             <DateTimePick date={date} time={time} onDate={setDate} onTime={setTime} presets={false} />
             <div>
               <FieldLabel>어디서</FieldLabel>
               <div className="flex flex-wrap gap-2">
                 {(places?.channels ?? []).map((c) => (
                   <ChoiceChip key={c.channel} on={channel === c.channel} onClick={() => setChannel(c.channel)}>
-                    {c.hallName ?? c.label} <small className="font-medium opacity-70">CH{c.channel}</small>
+                    {c.hallName ?? c.label}
+                    {c.hallName && <small className="font-medium opacity-70">CH{c.channel}</small>}
                   </ChoiceChip>
                 ))}
               </div>
@@ -677,15 +745,41 @@ function MediaForm({ places, back, done }: { places?: Places; back: () => void; 
           <>
             <Glass className="flex flex-col gap-4 p-6">
               <p className="font-orbitron text-[11px] tracking-[0.28em] text-white/40">PREVIEW</p>
-              <div className="flex aspect-video items-center justify-center rounded-[14px] bg-white/[0.06] text-white/40">
-                <Play size={36} />
-              </div>
-              <Meta rows={[["파일", file?.name ?? "-"], ["언제", `${dayLabel(date)} ${time}`], ["어디서", ch ? `${ch.hallName ?? ch.label} · CH${ch.channel}` : `CH${channel}`]]} />
+              {source === "youtube" && videoId ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`} alt="" className="aspect-video w-full rounded-[14px] bg-white/[0.06] object-cover" />
+              ) : source === "file" && local ? (
+                local.video ? (
+                  <video src={local.url} muted playsInline controls className="aspect-video w-full rounded-[14px] bg-black object-contain" />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={local.url} alt="" className="aspect-video w-full rounded-[14px] bg-black object-contain" />
+                )
+              ) : (
+                <div className="flex aspect-video items-center justify-center rounded-[14px] bg-white/[0.06] text-white/40">
+                  <Play size={36} />
+                </div>
+              )}
+              <Meta
+                rows={[
+                  source === "youtube" ? ["유튜브", videoId ? `youtu.be/${videoId}` : "-"] : ["파일", file?.name ?? "-"],
+                  ["언제", `${dayLabel(date)} ${time}`],
+                  ["어디서", ch?.hallName ? `${ch.hallName} · CH${ch.channel}` : `CH${channel}`],
+                ]}
+              />
             </Glass>
             <SendButton
-              disabled={!file}
+              disabled={!ready}
               busy={send.isPending}
-              onClick={() => send.mutate({ kind: "media", payload: { uploadId: file!.id, date, time, channel, memo } })}
+              onClick={() =>
+                send.mutate({
+                  kind: "media",
+                  payload:
+                    source === "youtube"
+                      ? { source, youtube: videoId!, date, time, channel, memo }
+                      : { source, uploadId: file!.id, date, time, channel, memo },
+                })
+              }
             />
           </>
         }
@@ -882,7 +976,7 @@ function Detail({ id, back }: { id: string; back: () => void }) {
     r.kind === "announce"
       ? [["언제", `${dayLabel(p.date)} ${p.time}`], ["누구에게", targetLabel(p.target)], ["어떻게", p.method === "tts" ? "글 읽어 주기" : "방송부가 읽기"]]
       : r.kind === "media"
-        ? [["파일", r.upload?.name ?? "-"], ["언제", `${dayLabel(p.date)} ${p.time}`], ["어디서", `CH${p.channel}`], ...(p.memo ? ([["메모", p.memo]] as [string, ReactNode][]) : [])]
+        ? [p.source === "youtube" ? ["유튜브", <YouTubeLink key="y" id={p.videoId} />] : ["파일", r.upload?.name ?? "-"], ["언제", `${dayLabel(p.date)} ${p.time}`], ["어디서", `CH${p.channel}`], ...(p.memo ? ([["메모", p.memo]] as [string, ReactNode][]) : [])]
         : r.kind === "event"
           ? [["행사", p.title], ["언제", `${dayLabel(p.date)} ${p.period ?? ""}`], ["장소", p.place ? HALL_LABEL[p.place] : "-"],
              ["필요한 것", [p.needs?.mics ? `무선 마이크 ${p.needs.mics}` : "", p.needs?.screen ? "스크린" : "", p.needs?.lights ? "조명" : "", p.needs?.record ? "녹화" : "", p.needs?.music ? "입장 음악" : ""].filter(Boolean).join(" · ") || "-"]]

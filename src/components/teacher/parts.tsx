@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Bell, Check, Clock, Megaphone, Mic, MonitorPlay, X } from "lucide-react";
+import { Bell, Check, Clock, ExternalLink, Megaphone, Mic, MonitorPlay, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { statusText, type Kind, type TeacherRequest, type Tier } from "@/lib/teacherRequests";
 
@@ -41,6 +41,17 @@ export function NewDot({ label = "새 요청" }: { label?: string }) {
       <span className="h-2 w-2 rounded-full bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]" />
       {label}
     </span>
+  );
+}
+
+/** 유튜브 송출 요청 — 새 창으로 열어 볼 수 있게 */
+export function YouTubeLink({ id }: { id?: string }) {
+  if (!id) return <>-</>;
+  return (
+    <a href={`https://youtu.be/${id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 underline underline-offset-4">
+      youtu.be/{id}
+      <ExternalLink size={14} />
+    </a>
   );
 }
 

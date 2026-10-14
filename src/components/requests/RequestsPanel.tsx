@@ -22,7 +22,7 @@ import {
   type TeacherRequest,
   type Tier,
 } from "@/lib/teacherRequests";
-import { ChoiceChip, Glass, KindIcon, NewDot, Seg, StatusPill, TierChip, ghostBtn, inputCls, redBtn } from "@/components/teacher/parts";
+import { ChoiceChip, Glass, KindIcon, NewDot, Seg, StatusPill, TierChip, YouTubeLink, ghostBtn, inputCls, redBtn } from "@/components/teacher/parts";
 
 /** 요청함 — 선생님(teacher.bssmcast.com) 요청을 수락·거절·완료, 선생님 승인·등급 (부장 이상) */
 
@@ -43,7 +43,7 @@ function ago(at: string): string {
 function preview(r: TeacherRequest): string {
   const p = r.payload;
   if (r.kind === "announce") return p.text ? `"${p.text}"` : "";
-  if (r.kind === "media") return [r.upload?.name, p.memo].filter(Boolean).join(" · ");
+  if (r.kind === "media") return [p.source === "youtube" ? `유튜브 youtu.be/${p.videoId}` : r.upload?.name, p.memo].filter(Boolean).join(" · ");
   if (r.kind === "event") {
     const n = p.needs;
     return [p.title, p.place ? HALL_LABEL[p.place] : "", n?.mics ? `무선 마이크 ${n.mics}` : "", n?.screen ? "스크린" : "", n?.record ? "녹화" : ""].filter(Boolean).join(" · ");
@@ -135,7 +135,7 @@ function Detail({ r, onBack }: { r: TeacherRequest; onBack?: () => void }) {
     r.kind === "announce"
       ? [["언제", `${dayLabel(p.date)} ${p.time}`], ["누구에게", `${targetLabel(p.target)} 스피커`], ["어떻게", p.method === "tts" ? "글 읽어 주기" : "방송부가 읽기"]]
       : r.kind === "media"
-        ? [["파일", r.upload ? <a key="f" href={requestsApi.fileUrl(r.id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 underline underline-offset-4"><FileText size={15} />{r.upload.name}</a> : "-"], ["언제", `${dayLabel(p.date)} ${p.time}`], ["어디서", `CH${p.channel}`], ...(p.memo ? ([["메모", p.memo]] as [string, ReactNode][]) : [])]
+        ? [p.source === "youtube" ? ["유튜브", <YouTubeLink key="y" id={p.videoId} />] : ["파일", r.upload ? <a key="f" href={requestsApi.fileUrl(r.id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 underline underline-offset-4"><FileText size={15} />{r.upload.name}</a> : "-"], ["언제", `${dayLabel(p.date)} ${p.time}`], ["어디서", `CH${p.channel}`], ...(p.memo ? ([["메모", p.memo]] as [string, ReactNode][]) : [])]
         : r.kind === "event"
           ? [["행사", p.title], ["언제", `${dayLabel(p.date)} ${p.period ?? ""}`], ["장소", p.place ? HALL_LABEL[p.place] : "-"], ["필요한 것", preview(r).split(" · ").slice(2).join(" · ") || "-"]]
           : [["날짜", (p.dates ?? []).map(dayLabel).join(", ")], ["바꾸기", p.mode ? BELL_MODE_LABEL[p.mode] : "-"]];
@@ -143,7 +143,9 @@ function Detail({ r, onBack }: { r: TeacherRequest; onBack?: () => void }) {
     r.kind === "announce" && p.method === "tts"
       ? `수락하면 ${dayLabel(p.date)} ${p.time} ${targetLabel(p.target)}에 TTS 예약 방송이 걸려요`
       : r.kind === "media"
-        ? `수락하면 파일을 파일 보관함에 넣고 ${dayLabel(p.date)} ${p.time} CH${p.channel} 예약 송출이 걸려요`
+        ? p.source === "youtube"
+          ? `수락하면 ${dayLabel(p.date)} ${p.time} CH${p.channel} 유튜브 예약 송출이 걸려요`
+          : `수락하면 파일을 파일 보관함에 넣고 ${dayLabel(p.date)} ${p.time} CH${p.channel} 예약 송출이 걸려요`
         : "";
   const open = r.status === "new" || r.status === "accepted";
   return (

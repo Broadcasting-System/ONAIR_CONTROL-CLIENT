@@ -43,6 +43,8 @@ export interface TeacherRequest {
     method?: "tts" | "crew";
     text?: string;
     channel?: number;
+    source?: "file" | "youtube";
+    videoId?: string;
     memo?: string;
     title?: string;
     period?: string;
@@ -54,7 +56,7 @@ export interface TeacherRequest {
   updatedAt: string;
   comments: Comment[];
   history: { status: Status; at: string; by: string }[];
-  auto?: { type: "tts" | "media"; job?: string; fileId?: string } | null;
+  auto?: { type: "tts" | "media"; job?: string; fileId?: string; videoId?: string } | null;
   autoError?: string;
   handledBy?: string;
   teacher: { id: string; name: string; dept: string; tier: Tier; tierLabel: string } | null;
