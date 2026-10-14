@@ -9,6 +9,7 @@ import { useDisplay } from "@/hooks/useDisplay";
 import { useDisplaySync, ImageOverlay } from "@/hooks/useDisplaySync";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useScreenShare } from "@/hooks/useScreenShare";
+import ExternalSharePanel, { useExternalShare } from "@/components/media/ExternalSharePanel";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 import { useChannelStore, MAX_CHANNELS } from "@/stores/channelStore";
 import { useMe } from "@/hooks/useMe";
@@ -69,6 +70,10 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
   const [tab, setTab] = useState<FileType>("video");
   const [timerMode, setTimerMode] = useState(false);
   const [ytMode, setYtMode] = useState(false);
+  // 외부 화면 받기 (share.bssmcast.com 발표자) — 기다리는 요청 수를 탭에 빨간 숫자로
+  const [extMode, setExtMode] = useState(false);
+  const ext = useExternalShare(extMode, canOperate);
+  const extWaiting = (ext.data?.requests ?? []).filter((r) => r.status === "waiting").length;
   const [, setTick] = useState(0);
   const [dragPos, setDragPos] = useState<number | null>(null);
   const { health } = useHealth();
@@ -131,10 +136,11 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                   setTab(t.key);
                   setTimerMode(false);
                   setYtMode(false);
+                  setExtMode(false);
                 }}
                 className={cn(
                   "h-11 rounded-xl border px-4 py-2 font-mbc text-sm transition-all md:h-auto",
-                  tab === t.key && !timerMode && !ytMode
+                  tab === t.key && !timerMode && !ytMode && !extMode
                     ? "border-white/20 bg-white/10 text-white"
                     : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
                 )}
@@ -148,6 +154,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
               onClick={() => {
                 setYtMode((v) => !v);
                 setTimerMode(false);
+                setExtMode(false);
               }}
               disabled={!canOperate}
               className={cn(
@@ -165,6 +172,7 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
               onClick={() => {
                 setTimerMode((v) => !v);
                 setYtMode(false);
+                setExtMode(false);
               }}
               disabled={!canOperate}
               className={cn(
@@ -197,9 +205,34 @@ export default function MediaPanel({ lead }: { lead: ReactNode }) {
                   : `CH${sharingChannel} 공유 중지`
                 : "화면 공유"}
             </button>
+            {/* 외부 화면 — 발표자가 코드로 보낸 화면 받기 */}
+            <button
+              data-tour="media.share-tab"
+              onClick={() => {
+                setExtMode((v) => !v);
+                setYtMode(false);
+                setTimerMode(false);
+              }}
+              disabled={!canOperate}
+              className={cn(
+                "relative h-11 rounded-xl border px-4 py-2 font-mbc text-sm transition-all disabled:opacity-40 md:h-auto",
+                extMode
+                  ? "border-white/20 bg-white/10 text-white"
+                  : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5",
+              )}
+            >
+              외부 화면
+              {extWaiting > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF3B3B] px-1 font-pretendard text-[11px] font-bold text-white">
+                  {extWaiting}
+                </span>
+              )}
+            </button>
           </div>
 
-          {timerMode ? (
+          {extMode ? (
+            <ExternalSharePanel channel={channel} disabled={!canOperate} />
+          ) : timerMode ? (
             <TimerComposer
               channel={channel}
               disabled={!canOperate}
