@@ -521,6 +521,15 @@ export default function MembersPanel() {
         f: () => invite.mutate(m.id),
       },
       canProfile && { t: "소개 고치기", f: () => setProfileFor(profileOf(m, me?.memberId)) },
+      !gone &&
+        m.role !== "lead" && {
+        t: m.wasLead ? `${m.cohort}기 부장 표시 빼기` : `${m.cohort}기 부장으로 표시`,
+        f: () =>
+          run(
+            () => memberApi.update(m.id, { wasLead: !m.wasLead }),
+            m.wasLead ? `${m.name} 님 부장 표시를 뺐어요` : `${m.name} 님을 ${m.cohort}기 부장으로 표시했어요`,
+          ),
+      },
       !fixed &&
         !roster &&
         (m.role === "lead"

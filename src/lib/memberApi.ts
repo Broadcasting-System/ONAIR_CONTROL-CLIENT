@@ -41,7 +41,7 @@ export const memberApi = {
   approve: (id: string, role: AssignableRole) => post<{ member: Member }>(`/members/${seg(id)}/approve`, { role }),
   update: (
     id: string,
-    patch: Partial<Pick<Member, "name" | "cohort" | "intro" | "mailId">> & { role?: AssignableRole; personalEmail?: string },
+    patch: Partial<Pick<Member, "name" | "cohort" | "intro" | "mailId" | "wasLead">> & { role?: AssignableRole; personalEmail?: string },
   ) => put<{ member: Member }>(`/members/${seg(id)}`, patch),
   graduate: (id: string) => post<{ member: Member }>(`/members/${seg(id)}/graduate`),
   revoke: (id: string) => post<{ member: Member }>(`/members/${seg(id)}/revoke`),
