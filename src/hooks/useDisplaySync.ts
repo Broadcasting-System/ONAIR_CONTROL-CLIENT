@@ -41,7 +41,8 @@ export interface DisplayContent {
   [key: string]: unknown
 }
 
-export function useDisplaySync(channel: number = 1) {
+/** role — control(컨트롤 미리보기) · live(학생용 live 화면, 서버가 보는 사람 수로 센다) */
+export function useDisplaySync(channel: number = 1, role: 'control' | 'live' = 'control') {
   const [content, setContent] = useState<DisplayContent | null>(null)
 
   useEffect(() => {
@@ -119,7 +120,7 @@ export function useDisplaySync(channel: number = 1) {
 
     const connect = () => {
       if (cancelled) return
-      const wsUrl = backendWs('/api/display/ws', channel, 'control')
+      const wsUrl = backendWs('/api/display/ws', channel, role)
       ws = new WebSocket(wsUrl)
 
       ws.onmessage = (event) => {
@@ -172,7 +173,7 @@ export function useDisplaySync(channel: number = 1) {
       if (ws) ws.close()
       clearTimeout(reconnectTimer)
     }
-  }, [channel])
+  }, [channel, role])
 
   return { content }
 }

@@ -111,13 +111,15 @@ function ytPos(pb?: Playback | null): number {
 }
 
 /** 미리보기용 유튜브 — 실제 송출과 동일한 IFrame API + 서버 시각 동기화(같은 시점 표시).
- *  프리뷰라 항상 음소거. hover 유튜브 UI는 투명 오버레이로 차단. */
-function MirrorYouTube({ videoId, playback }: { videoId: string; playback?: Playback | null }) {
+ *  sound 가 아니면 음소거 (컨트롤 미리보기는 늘, live 는 학생이 소리를 켜기 전까지). hover 유튜브 UI는 투명 오버레이로 차단. */
+function MirrorYouTube({ videoId, playback, sound = false }: { videoId: string; playback?: Playback | null; sound?: boolean }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const readyRef = useRef(false);
   const pbRef = useRef(playback);
   pbRef.current = playback;
+  const soundRef = useRef(sound);
+  soundRef.current = sound;
 
   const apply = (initial: boolean) => {
     const p = playerRef.current;
@@ -133,7 +135,10 @@ function MirrorYouTube({ videoId, playback }: { videoId: string; playback?: Play
       if (initial ? want > 1 : Math.abs(cur - want) > 1.5) p.seekTo(want, true);
       if (pb.playing) p.playVideo?.();
       else p.pauseVideo?.();
-      p.mute?.(); // 미리보기는 항상 음소거
+      if (soundRef.current && !pb.muted) {
+        p.unMute?.();
+        p.setVolume?.(Math.round((typeof pb.volume === "number" ? pb.volume : 1) * 100));
+      } else p.mute?.();
     } catch {
       /* not ready */
     }
@@ -215,12 +220,38 @@ function MirrorYouTube({ videoId, playback }: { videoId: string; playback?: Play
 
   useEffect(() => {
     if (readyRef.current) apply(false);
-  }, [playback]);
+  }, [playback, sound]);
 
   return (
     <div className="relative h-full w-full bg-black">
       <div ref={hostRef} className="h-full w-full" />
       <div className="absolute inset-0 z-10" />
+    </div>
+  );
+}
+
+/** 음원 송출 — 화면에는 표시만, sound 를 켜면 송출 시작 시각에 맞춰 같이 튼다 */
+function MirrorAudio({ url, startedAt, sound }: { url: string; startedAt?: number; sound: boolean }) {
+  const ref = useRef<HTMLAudioElement>(null);
+  useEffect(() => {
+    const a = ref.current;
+    if (!a) return;
+    if (!sound) {
+      a.pause();
+      return;
+    }
+    const at = startedAt ? Math.max(0, (Date.now() - startedAt) / 1000) : 0;
+    const go = () => {
+      if (Number.isFinite(a.duration) && at < a.duration) a.currentTime = at;
+      a.play().catch(() => {});
+    };
+    if (a.readyState >= 1) go();
+    else a.addEventListener("loadedmetadata", go, { once: true });
+  }, [sound, startedAt, url]);
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-black text-white/70">
+      <span className="font-mbc text-lg">음원 송출 중</span>
+      <audio ref={ref} src={url} preload="metadata" className="hidden" />
     </div>
   );
 }
@@ -268,9 +299,22 @@ function MirrorCountdown({
   );
 }
 
-/** badge=false 면 'LIVE MONITOR' 표시 없이 (녹음·녹화의 채널 썸네일처럼 작게 쓸 때) */
-export const DisplayMirror = ({ channel = 1, badge = true }: { channel?: number; badge?: boolean }) => {
-  const { content } = useDisplaySync(channel);
+/** badge=false 면 'LIVE MONITOR' 표시 없이 (녹음·녹화의 채널 썸네일처럼 작게 쓸 때).
+ *  role=live 는 학생용 live 화면 — sound 를 켜면 송출 소리(송출 화면의 볼륨·음소거를 따른다)도 낸다 */
+export const DisplayMirror = ({
+  channel = 1,
+  badge = true,
+  role = "control",
+  sound = false,
+}: {
+  channel?: number;
+  badge?: boolean;
+  role?: "control" | "live";
+  sound?: boolean;
+}) => {
+  const { content } = useDisplaySync(channel, role);
+  const soundRef = useRef(sound);
+  soundRef.current = sound;
   const [currentSlideIndex, setCurrentSlideIndex] = useState(() =>
     calculateSlideIndex(content),
   );
@@ -329,7 +373,7 @@ export const DisplayMirror = ({ channel = 1, badge = true }: { channel?: number;
           video.currentTime = target;
         } catch {}
       }
-      video.muted = true; // 모니터는 항상 음소거
+      video.muted = !soundRef.current || !!pb?.muted; // 모니터는 소리를 켜기 전까지 음소거
       if (!pb || pb.playing) video.play().catch(() => {});
     };
     video.addEventListener("loadedmetadata", apply);
@@ -380,11 +424,13 @@ export const DisplayMirror = ({ channel = 1, badge = true }: { channel?: number;
     };
   }, [content?.url, content?.type, content?.serverTimestamp]);
 
-  // 재생제어 반영 (play/pause/seek) — 소리는 모니터라 항상 muted
+  // 재생제어 반영 (play/pause/seek·소리) — 소리는 sound 를 켰을 때만
   useEffect(() => {
     const v = videoRef.current;
     if (content?.type !== "video" || !v || !content.playback) return;
     const pb = content.playback;
+    v.muted = !sound || !!pb.muted;
+    v.volume = typeof pb.volume === "number" ? Math.min(1, Math.max(0, pb.volume)) : 1;
     const target = posFromPlayback(pb, v.duration);
     if (
       target != null &&
@@ -400,7 +446,7 @@ export const DisplayMirror = ({ channel = 1, badge = true }: { channel?: number;
     } else if (!v.paused) {
       v.pause();
     }
-  }, [content?.type, content?.playback]);
+  }, [content?.type, content?.playback, sound]);
 
   if (content?.type === "screen") {
     // 다른 컨트롤(노트북)이 이 채널로 화면을 공유 중 — 영상은 P2P라 여기선 볼 수 없다
@@ -448,7 +494,7 @@ export const DisplayMirror = ({ channel = 1, badge = true }: { channel?: number;
       {content.type === "video" && content.url ? (
         <video
           ref={videoRef}
-          muted
+          muted={!sound}
           playsInline
           className="h-full w-full"
           style={{ objectFit: content.playback?.fit ?? "contain" }}
@@ -470,6 +516,10 @@ export const DisplayMirror = ({ channel = 1, badge = true }: { channel?: number;
         />
       ) : null}
 
+      {content.type === "audio" && content.url ? (
+        <MirrorAudio url={content.url} startedAt={content.serverTimestamp} sound={sound} />
+      ) : null}
+
       {content.type === "timer" ? (
         <MirrorCountdown
           serverTimestamp={content.serverTimestamp}
@@ -480,7 +530,7 @@ export const DisplayMirror = ({ channel = 1, badge = true }: { channel?: number;
       ) : null}
 
       {content.type === "youtube" && content.videoId ? (
-        <MirrorYouTube videoId={content.videoId} playback={content.playback} />
+        <MirrorYouTube videoId={content.videoId} playback={content.playback} sound={sound} />
       ) : null}
 
       {badge && (
