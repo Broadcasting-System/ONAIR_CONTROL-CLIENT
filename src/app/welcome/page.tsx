@@ -11,6 +11,7 @@ import { mailApi, memberApi } from "@/lib/memberApi";
 import { cohortPrefix, mailIdProblem, personalEmailProblem, suggestMailId } from "@/lib/romanize";
 import { cn } from "@/lib/utils";
 import type { CardBg } from "@/types/member";
+import { thisDeviceName } from "@/lib/deviceName";
 
 /** 튜너 눈금에 찍힌 네 단계 — 키 연결은 앱에서 끝내고 이 화면으로 온다 */
 const STEPS = ["키 연결", "프로필", "승인", "ON AIR"] as const;
@@ -261,9 +262,20 @@ export default function WelcomePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // [다른 기기 추가]로 들어온 새 기기 — 양식 없이 [추가] 한 번
+  const addTo = status === "unregistered" ? (me?.addTo ?? null) : null;
+  const attach = useMutation({
+    mutationFn: () => memberApi.attachDevice(thisDeviceName()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      toast.success("기기를 추가했어요");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const cohortNum = Number(cohort);
   const cohortOk = Number.isInteger(cohortNum) && cohortNum >= 1 && cohortNum <= 99;
-  const showForm = (status === "unregistered" && me?.canRegister) || (pending && editing);
+  const showForm = (status === "unregistered" && me?.canRegister && !addTo) || (pending && editing);
 
   // 메일 — 예전 서버(메일 기능 없음)면 칸을 숨긴다
   const mailOn = me?.mailDomain !== undefined;
@@ -301,6 +313,9 @@ export default function WelcomePage() {
   } else if (pending && !editing) {
     at = 2;
     title = "승인 대기";
+  } else if (addTo) {
+    at = 1;
+    title = "기기 추가";
   } else if (showForm) {
     at = 1;
     title = pending ? "프로필 수정" : "프로필 입력";
@@ -513,6 +528,22 @@ export default function WelcomePage() {
             </>
           )}
 
+          {addTo && (
+            <>
+              <div className="flex items-center gap-[18px]">
+                <span className="h-4 w-4 shrink-0 rounded-full bg-white/25" />
+                <p className="min-w-0 font-pretendard text-[22px] font-extrabold leading-snug text-white">
+                  {[addTo.cohort ? `${addTo.cohort}기` : "", addTo.name].filter(Boolean).join(" ")} 님의 기기로 추가할까요?
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <button type="button" className={goCls} disabled={attach.isPending} onClick={() => attach.mutate()}>
+                  {attach.isPending ? "추가하는 중…" : "추가"}
+                </button>
+              </div>
+            </>
+          )}
+
           {status === "approved" && (
             <>
               <div className="flex items-center gap-[18px]">
@@ -532,7 +563,7 @@ export default function WelcomePage() {
             </>
           )}
 
-          {me && !showForm && !pending && status !== "approved" && (
+          {me && !showForm && !addTo && !pending && status !== "approved" && (
             <Link
               href="/main"
               className="w-fit font-pretendard text-sm text-white/50 underline-offset-4 hover:text-white/80 hover:underline"

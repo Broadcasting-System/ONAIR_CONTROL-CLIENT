@@ -4,13 +4,14 @@ import { NAVIGATION_GROUPS } from "@/constants/navigation";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ToastHost } from "@/components/common/Toast";
 import { ROLE_DOT } from "@/components/devices/roleStyle";
 import { useMe } from "@/hooks/useMe";
 import ChatPanel, { useChatShortcutLabel } from "@/components/chat/ChatPanel";
 import { useChatPanel } from "@/stores/chatStore";
 import MobileTabBar from "@/components/mobile/MobileTabBar";
+import MyDevicesModal from "@/components/devices/MyDevicesModal";
 
 /** 사이드바 아래 — CUE 열고 닫기 (Cmd/Ctrl + K) */
 function ChatToggle() {
@@ -46,6 +47,8 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { me, role, isAdmin, canOperate } = useMe();
+  const [devicesOpen, setDevicesOpen] = useState(false);
+  const hasDevices = me?.status === "approved" && (me.devices?.length ?? 0) > 0;
 
   // 초대받은 기기인데 아직 등록 전이거나 승인 대기면 첫 화면(등록·승인 대기)으로
   const needsWelcome = !!me && (me.status === "pending" || (me.status === "unregistered" && me.canRegister));
@@ -125,10 +128,16 @@ export default function DashboardLayout({
           ))}
         </nav>
 
-        {/* 현재 기기 역할 배지 */}
+        {/* 현재 기기 역할 배지 — 등록된 기기면 누르면 내 기기 */}
         <div className="mt-auto mb-6 shrink-0 pr-[10px] pt-4">
           {canOperate && <ChatToggle />}
-          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3">
+          <button
+            type="button"
+            data-tour="nav.me"
+            disabled={!hasDevices}
+            onClick={() => setDevicesOpen(true)}
+            className="flex w-full items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition-colors enabled:hover:border-white/20 enabled:hover:bg-white/[0.06] disabled:cursor-default"
+          >
             <span className={cn("h-2 w-2 shrink-0 rounded-full", ROLE_DOT[role])} />
             <div className="min-w-0">
               <p className="truncate font-mbc text-[13px] text-white/70">
@@ -138,9 +147,10 @@ export default function DashboardLayout({
                 {me?.roleLabel ?? "…"}
               </p>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
+      {devicesOpen && <MyDevicesModal onClose={() => setDevicesOpen(false)} />}
 
       <main className="relative flex-1 overflow-auto bg-transparent">
         <div className="relative z-10 min-h-full px-4 pb-[calc(84px+env(safe-area-inset-bottom))] pt-[calc(12px+env(safe-area-inset-top))] md:p-10">

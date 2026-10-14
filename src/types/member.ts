@@ -27,6 +27,16 @@ export interface Permissions {
 }
 
 /** GET /members/me */
+/** 한 사람이 쓰는 기기 하나 — 처음 기기 id 는 "main" */
+export interface MemberDevice {
+  id: string;
+  name: string;
+  primary: boolean;
+  addedAt: string | null;
+  lastSeenAt: string | null;
+  clientIdTail: string;
+}
+
 export interface MeInfo {
   status: MemberStatus;
   role: Role;
@@ -55,6 +65,11 @@ export interface MeInfo {
   /** 프로필 카드 배경·사진 (예전 서버면 없다) */
   cardBg?: CardBg;
   photoUrl?: string;
+  /** 내 기기 — 지금 이 기기 id 와 목록 (예전 서버면 없다) */
+  deviceId?: string;
+  devices?: MemberDevice[];
+  /** [다른 기기 추가] 초대로 들어온 새 기기면 붙을 사람 */
+  addTo?: { id: string; name: string; cohort: number | null } | null;
 }
 
 export interface Member extends Partial<CardBgInfo> {
@@ -68,6 +83,8 @@ export interface Member extends Partial<CardBgInfo> {
   superadmin: boolean;
   device: string;
   hasToken: boolean;
+  /** 이 사람이 쓰는 기기 (예전 서버면 없다) */
+  devices?: MemberDevice[];
   tokenExpiresAt: string | null;
   email: string;
   /** 메일 ID (주소 = 기수 2자리 + mailId) */
@@ -176,6 +193,15 @@ export interface MailSettings {
   roleRules: { address: RoleAddress; routed: boolean }[];
   counts: Partial<Record<MailStatus, number>>;
   failed: number;
+}
+
+/** POST /members/me/devices/invite — 내 다른 기기 추가 QR·코드 (30분, 이때 한 번만) */
+export interface DeviceInviteCreated {
+  code: string;
+  qr: string;
+  server: string;
+  expiresAt: string;
+  cloudflare: boolean;
 }
 
 /** POST /members/invites — QR·코드는 이때 한 번만 온다 */

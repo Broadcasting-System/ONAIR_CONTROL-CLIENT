@@ -11,6 +11,7 @@ import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import CrewView, { ProfileModal, type ProfileTarget } from "@/components/devices/CrewView";
 import InviteModal from "@/components/devices/InviteModal";
+import { MemberDevicesModal } from "@/components/devices/MyDevicesModal";
 import { ASSIGNABLE } from "@/components/devices/roleStyle";
 import { Notice, Panel } from "@/components/hall/HallControls";
 import { ActionButton } from "@/components/hall/setup/ui";
@@ -91,6 +92,7 @@ function MemberSheet({
   isSuperadmin,
   items,
   onRole,
+  onDevices,
   onClose,
 }: {
   m: Member;
@@ -99,6 +101,7 @@ function MemberSheet({
   isSuperadmin: boolean;
   items: { t: string; f: () => void; danger?: boolean }[];
   onRole: (role: AssignableRole) => void;
+  onDevices: () => void;
   onClose: () => void;
 }) {
   const gone = m.status === "revoked";
@@ -110,6 +113,13 @@ function MemberSheet({
     ["메일 상태", <MailState key="s" status={m.mailStatus} label={m.mailStatusLabel} error={gone ? "" : m.mailError} />],
     ["디스코드", m.discordLinked ? "연결" : "없음"],
   ];
+  if (!gone && m.devices?.length)
+    rows.push([
+      "기기",
+      <button key="d" type="button" onClick={onDevices} className="font-pretendard text-white underline underline-offset-4">
+        {m.devices.map((d) => d.name).join(" · ")}
+      </button>,
+    ]);
   if (!gone && m.tokenExpiresAt) rows.push(["기기 키", `${m.tokenExpiresAt.slice(0, 10)}까지`]);
   return (
     <Portal>
@@ -407,6 +417,12 @@ export default function MembersPanel() {
   const [created, setCreated] = useState<InviteCreated | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
+  // 기기 목록 창 — 끊으면 목록이 새로 와서 같은 사람의 새 기기 목록을 보인다
+  const [devicesId, setDevicesId] = useState<string | null>(null);
+  const setDevicesFor = (m: Member) => {
+    setSheetId(null);
+    setDevicesId(m.id);
+  };
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [mailFor, setMailFor] = useState<Member | null>(null);
   const [allInvites, setAllInvites] = useState(false);
@@ -472,6 +488,7 @@ export default function MembersPanel() {
   const live = members.filter((m) => m.status === "approved");
   const count = (r: Role) => live.filter((m) => m.role === r).length;
   const sheet = sheetId ? members.find((m) => m.id === sheetId) ?? null : null;
+  const devicesOf = devicesId ? members.find((m) => m.id === devicesId) ?? null : null;
   const shown = members.filter((m) =>
     filter === "all"
       ? m.status === "approved"
@@ -712,6 +729,14 @@ export default function MembersPanel() {
             ))
           )}
         </div>
+        {devicesOf && (
+          <MemberDevicesModal
+            name={devicesOf.name}
+            memberId={devicesOf.id}
+            devices={devicesOf.devices ?? []}
+            onClose={() => setDevicesId(null)}
+          />
+        )}
         {sheet && (
           <MemberSheet
             m={sheet}
@@ -720,6 +745,7 @@ export default function MembersPanel() {
             isSuperadmin={isSuperadmin}
             onClose={() => setSheetId(null)}
             onRole={(role) => setRole(sheet, role)}
+            onDevices={() => setDevicesFor(sheet)}
             items={menuItems(sheet).filter((x) => x.t !== "부장 임명" && x.t !== "부장 해제")}
           />
         )}<div className="mt-3 flex flex-col gap-2.5 md:hidden">
@@ -851,6 +877,7 @@ export default function MembersPanel() {
                 <th className="px-3 py-2 text-[13px] font-bold">받는 역할 주소</th>
                 <th className="px-3 py-2 text-[13px] font-bold">메일 상태</th>
                 <th className="px-3 py-2 text-[13px] font-bold">디스코드</th>
+                <th className="px-3 py-2 text-[13px] font-bold">기기</th>
                 <th className="px-3 py-2 text-[13px] font-bold">기기 키 만료</th>
                 <th className="w-[52px] px-3 py-2" />
               </tr>
@@ -858,7 +885,7 @@ export default function MembersPanel() {
             <tbody>
               {shown.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-3 py-8 text-center text-white/45">
+                  <td colSpan={11} className="px-3 py-8 text-center text-white/45">
                     {list.isLoading
                       ? "불러오는 중…"
                       : filter === "all"
@@ -930,6 +957,20 @@ export default function MembersPanel() {
                       <td className="px-3 py-3">
                         {m.discordLinked ? (
                           <span className={gone ? "text-white/35" : "text-white"}>연결</span>
+                        ) : (
+                          <span className="text-white/45">없음</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        {!gone && (m.devices?.length ?? 0) > 0 ? (
+                          <button
+                            type="button"
+                            data-tour="members.devices"
+                            onClick={() => setDevicesFor(m)}
+                            className="rounded-md px-1.5 py-0.5 font-pretendard text-white underline-offset-4 hover:bg-white/[0.06] hover:underline"
+                          >
+                            {m.devices!.length}대
+                          </button>
                         ) : (
                           <span className="text-white/45">없음</span>
                         )}

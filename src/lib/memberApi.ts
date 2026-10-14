@@ -4,6 +4,7 @@ import type {
   AssignableRole,
   CardBg,
   CrewResponse,
+  DeviceInviteCreated,
   Invite,
   InviteCreated,
   MailCheck,
@@ -15,6 +16,12 @@ import type {
 
 export const memberApi = {
   me: () => request<MeInfo>("/members/me"),
+  // 내 기기 — 다른 기기 추가(QR·코드) · 새 기기 붙이기 · 하나 끊기
+  deviceInvite: () => post<DeviceInviteCreated>("/members/me/devices/invite"),
+  attachDevice: (name: string) => post<{ member: Member }>("/members/me/devices/attach", { name }),
+  removeMyDevice: (deviceId: string) => del<{ member: Member }>(`/members/me/devices/${seg(deviceId)}`),
+  removeDevice: (memberId: string, deviceId: string) =>
+    del<{ member: Member }>(`/members/${seg(memberId)}/devices/${seg(deviceId)}`),
   register: (body: {
     name: string;
     cohort: number;

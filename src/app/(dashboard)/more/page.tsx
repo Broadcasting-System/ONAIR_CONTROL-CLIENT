@@ -1,10 +1,11 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { ChevronRight } from "lucide-react";
 import { useMe } from "@/hooks/useMe";
 import { GlassCard, MobileHeader } from "@/components/mobile/ui";
 import { useMobileOnly } from "@/components/mobile/useMobileOnly";
+import MyDevicesModal from "@/components/devices/MyDevicesModal";
 
 /** 폰 더보기 — 탭에 없는 메뉴 */
 const ITEMS: { href: string; label: string; sub: string; admin?: boolean }[] = [
@@ -30,8 +31,10 @@ function useAppPlatform(): string | null {
 
 export default function MobileMorePage() {
   useMobileOnly("/main");
-  const { isAdmin } = useMe();
+  const { isAdmin, me } = useMe();
   const app = useAppPlatform();
+  const [devicesOpen, setDevicesOpen] = useState(false);
+  const devices = me?.status === "approved" ? (me.devices ?? []) : [];
   return (
     <div className="flex flex-col">
       <MobileHeader title="더보기" />
@@ -45,6 +48,22 @@ export default function MobileMorePage() {
             <ChevronRight size={18} className="text-white/35" />
           </GlassCard>
         ))}
+        {devices.length > 0 && (
+          <button
+            type="button"
+            data-tour="more.devices"
+            onClick={() => setDevicesOpen(true)}
+            className="flex items-center justify-between rounded-[20px] border border-white/[0.09] bg-white/[0.045] px-4 py-4 text-left backdrop-blur-md active:bg-white/[0.08]"
+          >
+            <div>
+              <p className="font-pretendard text-[16px] font-semibold">내 기기</p>
+              <p className="mt-0.5 font-pretendard text-[12.5px] text-white/45">
+                {devices.map((d) => d.name).join(" · ")}
+              </p>
+            </div>
+            <ChevronRight size={18} className="text-white/35" />
+          </button>
+        )}
         {app && (
           <button
             type="button"
@@ -59,6 +78,7 @@ export default function MobileMorePage() {
           </button>
         )}
       </div>
+      {devicesOpen && <MyDevicesModal onClose={() => setDevicesOpen(false)} />}
     </div>
   );
 }
