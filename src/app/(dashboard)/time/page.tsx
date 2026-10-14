@@ -22,6 +22,7 @@ import EnergyPanel from "@/components/time/EnergyPanel";
 import { useMe } from "@/hooks/useMe";
 import { useTabParam } from "@/hooks/useTabParam";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { TOUR_CLOSE_EVENT } from "@/stores/tourStore";
 
 const TIME_TAB_KEYS = ["table", "schedule", "energy"] as const;
 const TIME_TABS = [
@@ -109,6 +110,13 @@ export default function TimePage() {
   useEffect(() => {
     setEditingBellId(null);
   }, [activeGroup.id, activeDay]);
+
+  // CUE 튜토리얼이 '편집 창이 닫혀 있을 때' 보이는 것을 찾거나, 자기가 연 창을 끝에 정리할 때
+  useEffect(() => {
+    const close = () => setEditingBellId(null);
+    window.addEventListener(TOUR_CLOSE_EVENT, close);
+    return () => window.removeEventListener(TOUR_CLOSE_EVENT, close);
+  }, []);
 
   const editor =
     editingBellId !== null ? (

@@ -77,6 +77,8 @@ export interface DisplayMessage {
 export interface TourStep {
   href: string;
   target?: string;
+  /** target 이 안 보이면 순서대로 눌러 여는 이름표("id>" 는 그 안 첫 요소) */
+  open?: string[];
   title: string;
   text: string;
 }

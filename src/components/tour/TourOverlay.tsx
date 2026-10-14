@@ -3,12 +3,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
-import { useTour } from "@/stores/tourStore";
+import { TOUR_CLOSE_EVENT, useTour } from "@/stores/tourStore";
 import { cn } from "@/lib/utils";
 
 /**
  * CUE 화면 튜토리얼 (시안 A) — 그 화면으로 옮기고, data-tour 이름표 요소만 뚫어 보여 주고, 옆에 설명 카드.
- * [다음]을 누르거나 강조된 요소를 직접 눌러도 다음 단계. 이름표가 없거나 안 보이면 설명만 가운데.
+ * [다음]을 누르거나 강조된 요소를 직접 눌러도 다음 단계.
+ * 이름표가 안 보이면 단계의 open 버튼(편집 창·탭·패널)을 대신 눌러 열고, 그래도 안 보이면(권한·내용이 없음) 그 단계는 건너뛴다.
  */
 
 const PAD = 8; // 강조 구멍 여백
@@ -16,6 +17,7 @@ const PAD = 8; // 강조 구멍 여백
 const cardW = () => Math.min(340, window.innerWidth - 32);
 const GAP = 18; // 구멍과 카드 사이
 const FIND_MS = 3000; // 화면을 옮긴 뒤 요소를 기다리는 시간
+const SETTLE_MS = 500; // 이만큼 기다려도 안 보이면 열기 버튼을 누른다(화면이 그리는 중일 수 있어서)
 
 type Rect = { x: number; y: number; w: number; h: number };
 
@@ -23,7 +25,10 @@ type Rect = { x: number; y: number; w: number; h: number };
 function samePage(href: string): boolean {
   const u = new URL(href, window.location.origin);
   const here = new URL(window.location.href);
-  return u.pathname === here.pathname && (u.searchParams.get("tab") ?? "") === (here.searchParams.get("tab") ?? "");
+  return (
+    u.pathname === here.pathname &&
+    (u.searchParams.get("tab") ?? "") === (here.searchParams.get("tab") ?? "")
+  );
 }
 
 function findTarget(id: string): HTMLElement | null {
@@ -33,6 +38,39 @@ function findTarget(id: string): HTMLElement | null {
     if (r.width > 0 && r.height > 0) return el;
   }
   return null;
+}
+
+/** 여는 버튼 찾기 — "id>" 는 그 이름표 안 첫 요소(예: 시보 카드 목록의 첫 카드) */
+function findOpener(spec: string): HTMLElement | null {
+  const first = spec.endsWith(">");
+  const el = findTarget(first ? spec.slice(0, -1) : spec);
+  if (!el || !first) return el;
+  return (el.firstElementChild as HTMLElement | null) ?? null;
+}
+
+/** 사람이 누른 것처럼 클릭 — 메뉴가 누른 자리에 뜨는 화면(파일 메뉴)이 있어 좌표를 함께 준다 */
+function press(el: HTMLElement) {
+  const t = el.matches("button,a,input,[role=tab],[role=button]")
+    ? el
+    : (el.querySelector<HTMLElement>("button,a,[role=tab],[role=button]") ?? el);
+  const r = t.getBoundingClientRect();
+  t.dispatchEvent(
+    new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: r.left + r.width / 2,
+      clientY: r.top + r.height / 2,
+    }),
+  );
+}
+
+/** 화면 안에 다 보이는지 — 이미 보이면 굴리지 않는다(굴리면 닫히는 메뉴가 있다) */
+function inView(el: HTMLElement): boolean {
+  const r = el.getBoundingClientRect();
+  return (
+    r.top >= 0 && r.left >= 0 && r.bottom <= window.innerHeight && r.right <= window.innerWidth
+  );
 }
 
 /** 강조 구멍 — 화면 밖으로는 안 나가게 (폰에서 가로로 꽉 찬 요소면 테두리가 화면 끝에 잘림) */
@@ -52,7 +90,8 @@ function placeCard(hole: Rect | null, cardH: number) {
   const vh = window.innerHeight;
   const clampY = (y: number) => Math.min(Math.max(16, y), vh - cardH - 16);
   const clampX = (x: number) => Math.min(Math.max(16, x), vw - cardW() - 16);
-  if (!hole) return { left: (vw - cardW()) / 2, top: (vh - cardH) / 2, side: "none" as const, arrow: 0 };
+  if (!hole)
+    return { left: (vw - cardW()) / 2, top: (vh - cardH) / 2, side: "none" as const, arrow: 0 };
   const midY = hole.y + hole.h / 2;
   const midX = hole.x + hole.w / 2;
   if (hole.x - GAP - cardW() >= 16) {
@@ -68,7 +107,12 @@ function placeCard(hole: Rect | null, cardH: number) {
     return { left, top: hole.y + hole.h + GAP, side: "below" as const, arrow: midX - left };
   }
   const left = clampX(midX - cardW() / 2);
-  return { left, top: Math.max(16, hole.y - GAP - cardH), side: "above" as const, arrow: midX - left };
+  return {
+    left,
+    top: Math.max(16, hole.y - GAP - cardH),
+    side: "above" as const,
+    arrow: midX - left,
+  };
 }
 
 export default function TourOverlay() {
@@ -91,28 +135,54 @@ export default function TourOverlay() {
 
   const [el, setEl] = useState<HTMLElement | null>(null);
   const [hole, setHole] = useState<Rect | null>(null);
-  const [searching, setSearching] = useState(false);
+  // 이름표를 찾은 단계 — 찾기 전엔 카드를 안 띄운다(못 띄우는 단계는 설명 없이 넘어가게)
+  const [readyFor, setReadyFor] = useState<unknown>(null);
   const card = useRef<HTMLDivElement>(null);
   const [cardH, setCardH] = useState(180);
 
-  // 1) 그 화면으로 옮기고 2) 이름표 요소를 기다린다
+  // 단계를 앞으로 넘겼는지 뒤로 갔는지 — 못 띄우는 단계를 건너뛸 방향
+  const lastIndex = useRef(0);
+  const forward = index >= lastIndex.current;
+  useEffect(() => {
+    lastIndex.current = index;
+  }, [index]);
+
+  // 튜토리얼이 창을 열었으면 끝날 때 닫아 둔다
+  const opened = useRef(false);
+  useEffect(() => {
+    if (tour || !opened.current) return;
+    opened.current = false;
+    window.dispatchEvent(new Event(TOUR_CLOSE_EVENT));
+  }, [tour]);
+
+  // 1) 그 화면으로 옮기고 2) 이름표 요소를 기다리고 3) 안 보이면 열어 보고 4) 그래도 없으면 건너뛴다
   useEffect(() => {
     if (!step) return;
     setEl(null);
     setHole(null);
     if (!samePage(step.href)) router.push(step.href);
+    const skip = () => {
+      if (forward) next();
+      else if (index > 0) prev();
+      else next();
+    };
     if (!step.target) {
-      setSearching(false);
+      skip();
       return;
     }
-    setSearching(true);
-    const until = Date.now() + FIND_MS;
+    setReadyFor(null);
+    const begin = Date.now();
+    const until = begin + FIND_MS;
+    const openers = [...(step.open ?? [])];
+    let closedOnce = false;
     let timer = 0;
     const look = () => {
       const found = findTarget(step.target!);
       // 대상이 전체 화면 시트(data-tour-layer, 예: 폰 시보 편집) 밖에 있으면 그 시트에 가려 있다 → 시트를 닫고 다시 찾기
       const cover = found
-        ? Array.from(document.querySelectorAll<HTMLElement>("[data-tour-layer]")).find((l) => !l.contains(found))
+        ? Array.from(document.querySelectorAll<HTMLElement>("[data-tour-layer]")).find(
+            (l) => !l.contains(found),
+          )
         : undefined;
       const close = cover?.querySelector<HTMLElement>("[data-tour-close]");
       if (found && close) {
@@ -121,17 +191,43 @@ export default function TourOverlay() {
         return;
       }
       if (found) {
-        found.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+        if (!inView(found))
+          found.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
         setEl(found);
-        setSearching(false);
-      } else if (Date.now() < until) {
+        setReadyFor(step);
+        return;
+      }
+      if (Date.now() - begin >= SETTLE_MS) {
+        // 여는 버튼을 차례로 누른다 — 이미 열려 있는 것(다음 버튼)부터
+        const at = openers.findIndex(
+          (o, k) => k === openers.length - 1 || !findOpener(openers[k + 1]),
+        );
+        const btn = at >= 0 ? findOpener(openers[at]) : null;
+        if (btn) {
+          openers.splice(0, at + 1);
+          opened.current = true;
+          press(btn);
+          timer = window.setTimeout(look, 250);
+          return;
+        }
+        // 여는 버튼이 없으면 열린 편집 창에 가려 안 보이는 것일 수 있다 — 한 번 닫아 본다
+        if (!openers.length && !closedOnce) {
+          closedOnce = true;
+          window.dispatchEvent(new Event(TOUR_CLOSE_EVENT));
+          timer = window.setTimeout(look, 200);
+          return;
+        }
+      }
+      if (Date.now() < until) {
         timer = window.setTimeout(look, 120);
       } else {
-        setSearching(false); // 못 찾음 — 설명만 가운데
+        skip(); // 화면에 못 띄우는 단계(권한·내용이 없음)는 설명하지 않고 넘긴다
       }
     };
     timer = window.setTimeout(look, samePage(step.href) ? 0 : 250);
     return () => window.clearTimeout(timer);
+    // index·forward 는 step 이 바뀔 때 함께 바뀐다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, router]);
 
   // 요소가 움직이거나(스크롤·창 크기·애니메이션) 사라지면 따라간다
@@ -181,6 +277,7 @@ export default function TourOverlay() {
 
   const total = tour.steps.length;
   const last = index === total - 1;
+  const searching = readyFor !== step;
   const shown = hole && !searching ? hole : null;
   const pos = placeCard(shown, cardH);
   const vw = typeof window !== "undefined" ? window.innerWidth : 0;
@@ -191,10 +288,17 @@ export default function TourOverlay() {
     : undefined;
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[1000]" role="dialog" aria-modal="true" aria-label={tour.title}>
+    <div
+      className="pointer-events-none fixed inset-0 z-[1000]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={tour.title}
+    >
       {/* 어두운 막 + 구멍 */}
+      {/* key 가 달라야 막→구멍이 새로 그려진다(같은 div 를 재사용하면 구멍이 왼쪽 위에서 미끄러져 온다) */}
       {shown ? (
         <div
+          key="hole"
           className="pointer-events-none absolute rounded-[14px] transition-all duration-300 ease-out motion-reduce:transition-none"
           style={{
             left: shown.x,
@@ -207,88 +311,97 @@ export default function TourOverlay() {
           <div className="absolute -inset-1 rounded-[17px] border-2 border-white/85 shadow-[0_0_22px_rgba(255,255,255,.35)]" />
         </div>
       ) : (
-        <div className="pointer-events-none absolute inset-0 bg-[rgba(4,4,8,.74)]" />
+        <div key="dim" className="pointer-events-none absolute inset-0 bg-[rgba(4,4,8,.74)]" />
       )}
-      <div className="pointer-events-auto absolute inset-0" style={{ clipPath: blocker }} onClick={(e) => e.stopPropagation()} />
+      <div
+        className="pointer-events-auto absolute inset-0"
+        style={{ clipPath: blocker }}
+        onClick={(e) => e.stopPropagation()}
+      />
 
       {/* 설명 카드 */}
-      <div
-        ref={card}
-        className="pointer-events-auto absolute rounded-2xl border border-white/12 bg-[#141418] px-[18px] pb-4 pt-[18px] shadow-[0_20px_50px_rgba(0,0,0,.6)] transition-[left,top] duration-300 ease-out motion-reduce:transition-none"
-        style={{ left: pos.left, top: pos.top, width: cardW() }}
-      >
-        {pos.side === "left" && (
-          <span
-            className="absolute -right-[19px] h-0 w-0 border-[10px] border-transparent border-l-[#141418]"
-            style={{ top: pos.arrow - 10 }}
-          />
-        )}
-        {pos.side === "right" && (
-          <span
-            className="absolute -left-[19px] h-0 w-0 border-[10px] border-transparent border-r-[#141418]"
-            style={{ top: pos.arrow - 10 }}
-          />
-        )}
-        {pos.side === "below" && (
-          <span
-            className="absolute -top-[19px] h-0 w-0 border-[10px] border-transparent border-b-[#141418]"
-            style={{ left: pos.arrow - 10 }}
-          />
-        )}
-        {pos.side === "above" && (
-          <span
-            className="absolute -bottom-[19px] h-0 w-0 border-[10px] border-transparent border-t-[#141418]"
-            style={{ left: pos.arrow - 10 }}
-          />
-        )}
+      {!searching && (
+        <div
+          ref={card}
+          className="pointer-events-auto absolute rounded-2xl border border-white/12 bg-[#141418] px-[18px] pb-4 pt-[18px] shadow-[0_20px_50px_rgba(0,0,0,.6)] transition-[left,top] duration-300 ease-out motion-reduce:transition-none"
+          style={{ left: pos.left, top: pos.top, width: cardW() }}
+        >
+          {pos.side === "left" && (
+            <span
+              className="absolute -right-[19px] h-0 w-0 border-[10px] border-transparent border-l-[#141418]"
+              style={{ top: pos.arrow - 10 }}
+            />
+          )}
+          {pos.side === "right" && (
+            <span
+              className="absolute -left-[19px] h-0 w-0 border-[10px] border-transparent border-r-[#141418]"
+              style={{ top: pos.arrow - 10 }}
+            />
+          )}
+          {pos.side === "below" && (
+            <span
+              className="absolute -top-[19px] h-0 w-0 border-[10px] border-transparent border-b-[#141418]"
+              style={{ left: pos.arrow - 10 }}
+            />
+          )}
+          {pos.side === "above" && (
+            <span
+              className="absolute -bottom-[19px] h-0 w-0 border-[10px] border-transparent border-t-[#141418]"
+              style={{ left: pos.arrow - 10 }}
+            />
+          )}
 
-        <div className="flex items-center justify-between">
-          <span className="font-orbitron text-[12px] tracking-[0.12em] text-white/45">
-            STEP {index + 1} / {total}
-          </span>
-          <button
-            type="button"
-            onClick={stop}
-            aria-label="튜토리얼 닫기"
-            className="-mr-1 rounded-md p-1 text-white/40 transition-colors hover:text-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-white/40"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        <p className="mt-2.5 font-pretendard text-[18px] font-bold text-white">{step.title}</p>
-        <p className="mt-1.5 whitespace-pre-line font-pretendard text-[15px] leading-relaxed text-white/75">
-          {step.text}
-        </p>
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex gap-[5px]">
-            {tour.steps.map((_, k) => (
-              <span
-                key={k}
-                className={cn("h-1.5 rounded-full transition-all", k === index ? "w-[18px] bg-white" : "w-1.5 bg-white/20")}
-              />
-            ))}
-          </div>
-          <div className="flex gap-2">
-            {index > 0 && (
-              <button
-                type="button"
-                onClick={prev}
-                className="rounded-[10px] border border-white/15 px-3.5 py-2 font-pretendard text-[14px] text-white/75 transition-colors hover:bg-white/[0.06] hover:text-white"
-              >
-                이전
-              </button>
-            )}
+          <div className="flex items-center justify-between">
+            <span className="font-orbitron text-[12px] tracking-[0.12em] text-white/45">
+              STEP {index + 1} / {total}
+            </span>
             <button
               type="button"
-              onClick={next}
-              autoFocus
-              className="rounded-[10px] bg-white px-[18px] py-2 font-pretendard text-[14px] font-bold text-[#0a0a0c] transition-opacity hover:opacity-90"
+              onClick={stop}
+              aria-label="튜토리얼 닫기"
+              className="-mr-1 rounded-md p-1 text-white/40 transition-colors hover:text-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-white/40"
             >
-              {last ? "끝" : "다음"}
+              <X size={18} />
             </button>
           </div>
+          <p className="mt-2.5 font-pretendard text-[18px] font-bold text-white">{step.title}</p>
+          <p className="mt-1.5 whitespace-pre-line font-pretendard text-[15px] leading-relaxed text-white/75">
+            {step.text}
+          </p>
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex gap-[5px]">
+              {tour.steps.map((_, k) => (
+                <span
+                  key={k}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all",
+                    k === index ? "w-[18px] bg-white" : "w-1.5 bg-white/20",
+                  )}
+                />
+              ))}
+            </div>
+            <div className="flex gap-2">
+              {index > 0 && (
+                <button
+                  type="button"
+                  onClick={prev}
+                  className="rounded-[10px] border border-white/15 px-3.5 py-2 font-pretendard text-[14px] text-white/75 transition-colors hover:bg-white/[0.06] hover:text-white"
+                >
+                  이전
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={next}
+                autoFocus
+                className="rounded-[10px] bg-white px-[18px] py-2 font-pretendard text-[14px] font-bold text-[#0a0a0c] transition-opacity hover:opacity-90"
+              >
+                {last ? "끝" : "다음"}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

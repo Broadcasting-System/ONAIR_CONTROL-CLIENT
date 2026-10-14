@@ -14,6 +14,7 @@ export default function FileCard({
 }: FileCardProps) {
   return (
     <div
+      data-tour="files.item"
       className="group relative flex flex-col gap-2 rounded-xl border border-white/10 bg-[#1C1C1C] overflow-hidden hover:border-white/30 transition-colors cursor-context-menu aspect-video"
       onContextMenu={(e) => {
         e.preventDefault();
