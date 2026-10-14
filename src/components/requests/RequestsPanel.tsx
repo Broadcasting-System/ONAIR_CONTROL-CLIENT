@@ -22,6 +22,7 @@ import {
   type TeacherRequest,
   type Tier,
 } from "@/lib/teacherRequests";
+import Select from "@/components/common/Select";
 import { ChoiceChip, Glass, KindIcon, NewDot, Seg, StatusPill, TierChip, YouTubeLink, ghostBtn, inputCls, redBtn } from "@/components/teacher/parts";
 
 /** 요청함 — 선생님(teacher.bssmcast.com) 요청을 수락·거절·완료, 선생님 승인·등급 (부장 이상) */
@@ -357,18 +358,13 @@ function TeachersView() {
                     </td>
                     <td className="px-3 py-3.5 text-white/80">{t.dept || t.duty}</td>
                     <td className="px-3 py-3.5">
-                      <select
+                      <Select
                         value={t.tier}
-                        onChange={(e) => act.mutate(() => requestsApi.setTier(t.id, e.target.value as Tier))}
-                        className="h-9 rounded-lg border border-white/15 bg-[#0c0d0f] px-2 font-pretendard text-[13.5px] font-bold text-white"
+                        onChange={(v) => act.mutate(() => requestsApi.setTier(t.id, v))}
+                        className="h-9 rounded-lg border-white/15 bg-[#0c0d0f] text-[13.5px] font-bold"
                         aria-label={`${t.name} 등급`}
-                      >
-                        {(["general", "lead", "admin"] as Tier[]).map((v) => (
-                          <option key={v} value={v}>
-                            {TIER_LABEL[v]}
-                          </option>
-                        ))}
-                      </select>
+                        options={(["general", "lead", "admin"] as Tier[]).map((v) => ({ value: v, label: TIER_LABEL[v] }))}
+                      />
                     </td>
                     <td className="px-3 py-3.5 text-[14px] text-white/45">{can(t.tier)}</td>
                     <td className="px-3 py-3.5 tabular-nums text-white/80">{t.requests}</td>

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import TextInput from "@/components/common/TextInput";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
+import { TimePicker } from "@/components/common/DateTimePicker";
 import { getApiBase } from "@/lib/apiBase";
 
 const VOLUME_MIN = 10;
@@ -214,12 +215,11 @@ export default function BellEditor({
       <div className="mt-auto flex flex-col gap-4 md:flex-row md:gap-6 md:px-2">
         <div className="flex-1 flex flex-col gap-2">
           <label className="text-white text-[15px] font-bold">시보 시간</label>
-          <input
-            type="time"
-            data-tour="time.editor.time"
+          <TimePicker
+            tour="time.editor.time"
             value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="h-[48px] w-full rounded-xl border border-white/5 bg-[#1C1C1C] px-4 text-md font-pretendard max-md:text-base text-white focus:border-white/20 focus:outline-none transition-all [color-scheme:dark]"
+            onChange={setTime}
+            className="h-[48px] border-white/5 bg-[#1C1C1C] text-base"
           />
         </div>
         <div className="flex-1 flex flex-col gap-2">

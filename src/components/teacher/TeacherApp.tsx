@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Calendar, Check, ChevronLeft, Clock, Film, Lock, Mail, Minus, Pencil, Play, Plus, Send } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, Film, Lock, Mail, Minus, Pencil, Play, Plus, Send } from "lucide-react";
 import OnairMark from "@/components/common/OnairMark";
 import { ToastHost, toast } from "@/components/common/Toast";
+import { DatePicker, DatesPicker, TimePicker } from "@/components/common/DateTimePicker";
+import Select from "@/components/common/Select";
 import { backendBase } from "@/lib/backend";
 import { parseYouTubeId } from "@/lib/youtube";
 import { cn } from "@/lib/utils";
@@ -86,11 +88,6 @@ const KINDS: { kind: Kind; title: string; sub: string; lock: string }[] = [
   { kind: "bell", title: "시보 변경", sub: "단축 수업·시험 날 종 시간", lock: "교무·관리자" },
 ];
 const DUTIES = ["담임", "학년부", "교과", "교무·관리", "기타"];
-const TIMES = [
-  { label: "조회", time: "08:20" },
-  { label: "점심", time: "12:40" },
-  { label: "종례", time: "16:30" },
-];
 
 const iso = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -187,55 +184,19 @@ function Meta({ rows }: { rows: [string, ReactNode][] }) {
   );
 }
 
-function DateTimePick({
-  date,
-  time,
-  onDate,
-  onTime,
-  presets = true,
-}: {
-  date: string;
-  time: string;
-  onDate: (v: string) => void;
-  onTime: (v: string) => void;
-  presets?: boolean;
-}) {
-  const custom = !TIMES.some((t) => t.time === time);
+/** 선생님 칸 모양 — inputCls 와 같은 높이·바탕 */
+const pickCls = "h-[50px] rounded-xl border-white/[0.12] bg-[#0c0d0f] text-[16px] shadow-[inset_0_2px_6px_rgba(0,0,0,0.7)]";
+
+function DateTimePick({ date, time, onDate, onTime }: { date: string; time: string; onDate: (v: string) => void; onTime: (v: string) => void }) {
   return (
     <div className="grid gap-5 md:grid-cols-2">
       <div>
-        <FieldLabel>언제</FieldLabel>
-        <div className="flex flex-wrap gap-2">
-          <ChoiceChip on={date === today()} onClick={() => onDate(today())}>
-            오늘 <small className="font-medium opacity-70">{dayLabel(today())}</small>
-          </ChoiceChip>
-          <ChoiceChip on={date === tomorrow()} onClick={() => onDate(tomorrow())}>
-            내일 <small className="font-medium opacity-70">{dayLabel(tomorrow())}</small>
-          </ChoiceChip>
-          <label className={cn("relative inline-flex min-h-[42px] cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 font-pretendard text-[14.5px] font-bold",
-            date !== today() && date !== tomorrow() ? "border-white bg-white text-[#0a0a0c]" : "border-white/10 bg-white/[0.06] text-white")}>
-            <Calendar size={16} />
-            {date !== today() && date !== tomorrow() ? dayLabel(date) : "날짜"}
-            <input type="date" value={date} min={today()} onChange={(e) => e.target.value && onDate(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label="날짜 고르기" />
-          </label>
-        </div>
+        <FieldLabel>날짜</FieldLabel>
+        <DatePicker value={date} min={today()} onChange={onDate} className={pickCls} />
       </div>
       <div>
-        <FieldLabel>몇 시</FieldLabel>
-        <div className="flex flex-wrap gap-2">
-          {presets &&
-            TIMES.map((t) => (
-              <ChoiceChip key={t.time} on={time === t.time} onClick={() => onTime(t.time)}>
-                {t.label} <small className="font-medium opacity-70">{t.time}</small>
-              </ChoiceChip>
-            ))}
-          <label className={cn("relative inline-flex min-h-[42px] cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 font-pretendard text-[14.5px] font-bold",
-            custom ? "border-white bg-white text-[#0a0a0c]" : "border-white/10 bg-white/[0.06] text-white")}>
-            <Clock size={16} />
-            {custom ? time : "직접"}
-            <input type="time" value={time} onChange={(e) => e.target.value && onTime(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label="시각 고르기" />
-          </label>
-        </div>
+        <FieldLabel>시간</FieldLabel>
+        <TimePicker value={time} onChange={onTime} className={pickCls} />
       </div>
     </div>
   );
@@ -515,25 +476,25 @@ function AnnounceForm({ me, places, back, done }: { me: Me; places?: Places; bac
                   반
                 </ChoiceChip>
                 {scope === "class" && (
-                  <select value={cls} onChange={(e) => setCls(e.target.value)} className={selectCls} aria-label="반 고르기">
-                    {places?.classes.map((c) => (
-                      <option key={c} value={c}>
-                        {targetLabel({ scope: "class", value: c })}
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    value={cls}
+                    onChange={setCls}
+                    className={selectCls}
+                    aria-label="반 고르기"
+                    options={(places?.classes ?? []).map((c) => ({ value: c, label: targetLabel({ scope: "class", value: c }) }))}
+                  />
                 )}
                 <ChoiceChip on={scope === "grade"} disabled={!can.includes("grade")} onClick={() => setScope("grade")}>
                   학년 전체
                 </ChoiceChip>
                 {scope === "grade" && (
-                  <select value={grade} onChange={(e) => setGrade(e.target.value)} className={selectCls} aria-label="학년 고르기">
-                    {places?.grades.map((g) => (
-                      <option key={g} value={g}>
-                        {g}학년
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    value={grade}
+                    onChange={setGrade}
+                    className={selectCls}
+                    aria-label="학년 고르기"
+                    options={(places?.grades ?? []).map((g) => ({ value: String(g), label: `${g}학년` }))}
+                  />
                 )}
                 <ChoiceChip on={scope === "school"} disabled={!can.includes("school")} onClick={() => setScope("school")}>
                   {!can.includes("school") && <Lock size={14} />}학교 전체
@@ -723,7 +684,7 @@ function MediaForm({ places, back, done }: { places?: Places; back: () => void; 
                 <input value={link} onChange={(e) => setLink(e.target.value.slice(0, 300))} placeholder="https://youtu.be/…" inputMode="url" className={inputCls} />
               </div>
             )}
-            <DateTimePick date={date} time={time} onDate={setDate} onTime={setTime} presets={false} />
+            <DateTimePick date={date} time={time} onDate={setDate} onTime={setTime} />
             <div>
               <FieldLabel>어디서</FieldLabel>
               <div className="flex flex-wrap gap-2">
@@ -811,7 +772,7 @@ function EventForm({ back, done }: { back: () => void; done: (id: string) => voi
             <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <FieldLabel>날짜</FieldLabel>
-                <input type="date" value={date} min={today()} onChange={(e) => setDate(e.target.value)} className={inputCls} />
+                <DatePicker value={date} min={today()} onChange={setDate} className={pickCls} />
               </div>
               <div>
                 <FieldLabel>시간</FieldLabel>
@@ -891,11 +852,12 @@ function BellForm({ back, done }: { back: () => void; done: (id: string) => void
                   {dayLabel(d)}
                 </ChoiceChip>
               ))}
-              <label className="relative inline-flex min-h-[42px] cursor-pointer items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] px-3.5 font-pretendard text-[14.5px] font-bold text-white">
-                <Plus size={15} />
-                날짜 더하기
-                <input type="date" min={today()} onChange={(e) => e.target.value && setDates((x) => Array.from(new Set([...x, e.target.value])).sort())} className="absolute inset-0 cursor-pointer opacity-0" aria-label="날짜 더하기" />
-              </label>
+              <DatesPicker values={dates} min={today()} onChange={setDates}>
+                <button type="button" className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] px-3.5 font-pretendard text-[14.5px] font-bold text-white hover:bg-white/[0.1]">
+                  <Plus size={15} />
+                  날짜 고르기
+                </button>
+              </DatesPicker>
             </div>
           </div>
           <div>

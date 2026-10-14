@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { TimePicker } from "@/components/common/DateTimePicker";
 import { useEnergy, type EnergyConfig, type EnergyDay, type EnergyRun } from "@/hooks/useEnergy";
 import { cn } from "@/lib/utils";
 
@@ -106,18 +107,16 @@ export default function EnergyPanel() {
         </div>
 
         <div className={cn("flex flex-col gap-5 transition-opacity", !form.enabled && "opacity-40")}>
-          <label data-tour="energy.time" className="flex items-center gap-4">
+          <div data-tour="energy.time" className="flex items-center gap-4">
             <span className="w-20 shrink-0 font-mbc text-sm text-white/50">끄는 시각</span>
-            <input
-              type="time"
+            <TimePicker
               value={form.time}
-              onChange={(e) => setForm({ ...form, time: e.target.value })}
-              className={cn(
-                "h-11 min-w-0 flex-1 rounded-xl border bg-[#141414] px-4 font-orbitron text-white [color-scheme:dark] focus:outline-none max-md:text-base md:flex-none",
-                validTime ? "border-white/10 focus:border-white/30" : "border-red-500/60",
-              )}
+              onChange={(time) => setForm({ ...form, time })}
+              invalid={!validTime}
+              aria-label="끄는 시각"
+              className="flex-1 md:w-[180px] md:flex-none"
             />
-          </label>
+          </div>
 
           <div data-tour="energy.days" className="flex flex-wrap items-center gap-x-4 gap-y-2 md:gap-4">
             <span className="w-20 shrink-0 font-mbc text-sm text-white/50">요일</span>
