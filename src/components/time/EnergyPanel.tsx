@@ -94,7 +94,7 @@ export default function EnergyPanel() {
             onClick={() => setForm({ ...form, enabled: !form.enabled })}
             className={cn(
               "relative h-8 w-14 shrink-0 rounded-full transition-colors max-md:before:absolute max-md:before:-inset-2 max-md:before:content-['']",
-              form.enabled ? "bg-emerald-500/70" : "bg-white/15",
+              form.enabled ? "bg-[#FF3B3B]" : "bg-white/15",
             )}
           >
             <span
@@ -132,7 +132,7 @@ export default function EnergyPanel() {
                     className={cn(
                       "h-11 w-full rounded-xl border font-mbc text-sm transition-colors md:h-10 md:w-10",
                       on
-                        ? "border-emerald-400/50 bg-emerald-400/15 text-white"
+                        ? "border-white bg-white text-[#0b0b0d]"
                         : "border-white/10 bg-white/[0.03] text-white/40 hover:bg-white/5",
                       (d.key === "sat" || d.key === "sun") && !on && "text-red-300/50",
                     )}
@@ -168,7 +168,7 @@ export default function EnergyPanel() {
               type="checkbox"
               checked={form.displays}
               onChange={(e) => setForm({ ...form, displays: e.target.checked })}
-              className="h-4 w-4 accent-emerald-400"
+              className="h-4 w-4 accent-white"
             />
             <span className="font-pretendard text-sm text-white/70">송출 화면도 대기 화면으로</span>
           </label>
@@ -208,7 +208,7 @@ export default function EnergyPanel() {
           data-tour="energy.run-now"
           onClick={() => setConfirm(true)}
           disabled={isRunning}
-          className="h-11 shrink-0 rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 font-mbc text-sm text-amber-100 transition-colors hover:bg-amber-500/20 disabled:opacity-40"
+          className="h-11 shrink-0 rounded-xl border border-[#FF3B3B]/45 bg-[#FF3B3B]/10 px-5 font-mbc text-sm text-[#ff8a8a] transition-colors hover:bg-[#FF3B3B]/20 disabled:opacity-40"
         >
           {isRunning ? "끄는 중…" : "지금 모두 끄기"}
         </button>

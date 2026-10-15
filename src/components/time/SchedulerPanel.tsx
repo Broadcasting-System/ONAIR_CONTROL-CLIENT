@@ -17,6 +17,8 @@ interface SchedulerJob {
 
 interface SchedulerStatus {
   activeGroupId: string | null;
+  /** 붙인 그룹 이름 (없거나 서버가 아직 안 주면 GROUP n) */
+  activeGroupName?: string | null;
   jobs: SchedulerJob[];
 }
 
@@ -66,9 +68,14 @@ export default function SchedulerPanel() {
       <div className="flex items-center justify-center gap-6 md:justify-end">
         <div data-tour="schedule.live-group" className="flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2">
           <span className="font-mbc text-xs text-white/40">현재 송출 그룹</span>
-          <span className="font-orbitron text-sm text-emerald-300">
-            {status?.activeGroupId ? `GROUP ${status.activeGroupId}` : "없음"}
-          </span>
+          {status?.activeGroupId ? (
+            <span className="flex items-center gap-2 font-mbc text-sm text-white">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#FF3B3B] shadow-[0_0_6px_#FF3B3B]" />
+              {status.activeGroupName?.trim() || `GROUP ${status.activeGroupId}`}
+            </span>
+          ) : (
+            <span className="font-mbc text-sm text-white/40">없음</span>
+          )}
         </div>
       </div>
 
@@ -86,7 +93,7 @@ export default function SchedulerPanel() {
                     <span
                       className={cn(
                         "shrink-0 rounded-md px-2 py-0.5 font-mbc text-xs",
-                        j.dayType === "P" ? "bg-violet-500/20 text-violet-200" : "bg-white/5 text-white/60",
+                        j.dayType === "P" ? "border border-[#FF3B3B]/40 bg-[#FF3B3B]/10 text-[#ff8a8a]" : "bg-white/5 text-white/60",
                       )}
                     >
                       {j.dayLabel || j.dayType}
@@ -129,7 +136,7 @@ export default function SchedulerPanel() {
                     <span
                       className={cn(
                         "rounded-md px-2 py-1 font-mbc text-xs",
-                        j.dayType === "P" ? "bg-violet-500/20 text-violet-200" : "bg-white/5 text-white/60",
+                        j.dayType === "P" ? "border border-[#FF3B3B]/40 bg-[#FF3B3B]/10 text-[#ff8a8a]" : "bg-white/5 text-white/60",
                       )}
                     >
                       {j.dayLabel || j.dayType}
