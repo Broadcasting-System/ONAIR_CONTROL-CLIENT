@@ -22,7 +22,7 @@ export function useExternalShare(open: boolean, enabled: boolean) {
 function left(until: string, now: number): string {
   const s = Math.max(0, Math.floor((new Date(until).getTime() - now) / 1000));
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${Math.floor(s / 3600)}:${p(Math.floor((s % 3600) / 60))}:${p(s % 60)}`;
+  return s >= 3600 ? `${Math.floor(s / 3600)}:${p(Math.floor((s % 3600) / 60))}:${p(s % 60)}` : `${Math.floor(s / 60)}:${p(s % 60)}`;
 }
 
 function minutes(iso: string, now: number): number {
@@ -112,7 +112,19 @@ export default function ExternalSharePanel({
             </button>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="flex items-center gap-3 rounded-xl bg-[#151519] px-4 py-3">
+          <p className="font-pretendard text-[13.5px] text-white/50">코드가 끝났어요</p>
+          <button
+            type="button"
+            disabled={disabled || run.isPending}
+            onClick={() => run.mutate(() => shareApi.openRoom(channel))}
+            className="ml-auto h-10 rounded-lg border border-[#FF3B3B]/60 bg-[#FF3B3B]/20 px-3.5 font-mbc text-sm text-white hover:bg-[#FF3B3B]/30 disabled:opacity-40"
+          >
+            코드 만들기
+          </button>
+        </div>
+      )}
 
       {requests.length === 0 ? (
         <p className="px-2 py-6 text-center font-pretendard text-[14px] text-white/40">
