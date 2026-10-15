@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import SectionHeader from "@/components/common/SectionHeader";
 import Select from "@/components/common/Select";
 import { getApiBase } from "@/lib/apiBase";
 import { toast } from "@/components/common/Toast";
 import { useMe } from "@/hooks/useMe";
 import PageTabs from "@/components/common/PageTabs";
-import AccessLogPanel from "@/components/devices/AccessLogPanel";
 import CrewView from "@/components/devices/CrewView";
 import MembersPanel from "@/components/devices/MembersPanel";
 import SpeakerMappingPanel from "@/components/devices/SpeakerMappingPanel";
@@ -32,14 +32,13 @@ const ROLES: { value: DeviceRole; label: string }[] = [
   { value: "viewer", label: "보기 전용" },
 ];
 
-const DEVICE_TAB_KEYS = ["members", "cloudflare", "devices", "speakers", "bridges", "logs"] as const;
+const DEVICE_TAB_KEYS = ["members", "cloudflare", "devices", "speakers", "bridges"] as const;
 const DEVICE_TABS = [
   { key: "members" as const, label: "부원" },
   { key: "cloudflare" as const, label: "Cloudflare" },
   { key: "devices" as const, label: "기기" },
   { key: "speakers" as const, label: "스피커 매핑" },
   { key: "bridges" as const, label: "강당 장비" },
-  { key: "logs" as const, label: "접근 로그" },
 ];
 
 export default function DevicesPage() {
@@ -50,6 +49,12 @@ export default function DevicesPage() {
   const [newRole, setNewRole] = useState<DeviceRole>("operator");
   const [tab, setTab] = useTabParam(DEVICE_TAB_KEYS, "members");
   const tabsRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // 접근 로그 탭은 로그 메뉴로 옮겼다 — 예전 주소(?tab=logs)는 그쪽으로
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "logs") router.replace("/logs");
+  }, [router]);
 
   // 폰에서 탭 줄이 옆으로 넘치면 고른 탭이 보이게 밀어 둔다
   useEffect(() => {
@@ -145,8 +150,6 @@ export default function DevicesPage() {
         <MembersPanel />
       ) : tab === "cloudflare" ? (
         <CloudflarePanel />
-      ) : tab === "logs" ? (
-        <AccessLogPanel />
       ) : tab === "speakers" ? (
         <SpeakerMappingPanel />
       ) : tab === "bridges" ? (
