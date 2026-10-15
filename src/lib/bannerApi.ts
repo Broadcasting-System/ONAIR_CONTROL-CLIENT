@@ -91,17 +91,32 @@ export interface BannerStateResponse {
   scene: BannerScene;
   payload: Record<string, unknown>;
   serverTimestamp?: number | null;
+  /** 지금 떠 있는 저장한 현수막 (저장 안 한 것이면 null) */
+  savedId?: string | null;
+  /** 지금 현수막을 띄운 시각(ms) */
+  since?: number | null;
 }
 
-/** scene + payload를 서버에 송출(broadcast). */
+/** 저장한 현수막 */
+export interface SavedBanner {
+  id: string;
+  name: string;
+  scene: BannerScene;
+  payload: Record<string, unknown>;
+  createdAt?: string | number | null;
+  updatedAt?: string | number | null;
+}
+
+/** scene + payload를 서버에 송출(broadcast). savedId 를 주면 어느 저장한 현수막인지도 남긴다. */
 export async function updateBanner(
   scene: BannerScene,
   payload: Record<string, unknown>,
+  savedId?: string | null,
 ): Promise<void> {
   const res = await fetch(`${getApiBase()}/banner/update`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ scene, payload }),
+    body: JSON.stringify(savedId === undefined ? { scene, payload } : { scene, payload, savedId }),
   });
   if (!res.ok) throw new Error(`banner update failed: ${res.status}`);
 }
@@ -138,4 +153,67 @@ export async function fetchBannerStatus(): Promise<BannerStatus | null> {
 export function getDisplayPreviewUrl(): string {
   // role=control → 미리보기는 LIVE 송출 카운트에 잡히지 않음
   return `${displayAppBase()}/banner?debug=1&role=control`;
+}
+
+// ---------------------------------------------------------------- 저장한 현수막
+
+function toSaved(x: unknown): SavedBanner | null {
+  if (!x || typeof x !== "object") return null;
+  const o = x as Record<string, unknown>;
+  if (o.id === undefined || o.id === null) return null;
+  return {
+    id: String(o.id),
+    name: typeof o.name === "string" ? o.name : "",
+    scene: (o.scene as BannerScene) ?? "default",
+    payload: (o.payload as Record<string, unknown>) ?? {},
+    createdAt: (o.createdAt as string | number | null) ?? null,
+    updatedAt: (o.updatedAt as string | number | null) ?? (o.createdAt as string | number | null) ?? null,
+  };
+}
+
+/** 저장한 현수막 목록. 서버에 기능이 없으면 null (화면에서 숨긴다). */
+export async function fetchSavedBanners(): Promise<SavedBanner[] | null> {
+  try {
+    const res = await fetch(`${getApiBase()}/banner/saved`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as unknown;
+    const list = Array.isArray(data) ? data : (data as { items?: unknown[] })?.items;
+    if (!Array.isArray(list)) return null;
+    return list.map(toSaved).filter((x): x is SavedBanner => !!x);
+  } catch {
+    return null;
+  }
+}
+
+async function savedResult(res: Response, what: string): Promise<SavedBanner> {
+  if (!res.ok) throw new Error(`${what} failed: ${res.status}`);
+  const item = toSaved(await res.json().catch(() => null));
+  if (!item) throw new Error(`${what}: bad response`);
+  return item;
+}
+
+export async function createSavedBanner(body: { name: string; scene: BannerScene; payload: Record<string, unknown> }): Promise<SavedBanner> {
+  const res = await fetch(`${getApiBase()}/banner/saved`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return savedResult(res, "saved create");
+}
+
+export async function updateSavedBanner(
+  id: string,
+  patch: Partial<{ name: string; scene: BannerScene; payload: Record<string, unknown> }>,
+): Promise<SavedBanner> {
+  const res = await fetch(`${getApiBase()}/banner/saved/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  return savedResult(res, "saved update");
+}
+
+export async function deleteSavedBanner(id: string): Promise<void> {
+  const res = await fetch(`${getApiBase()}/banner/saved/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`saved delete failed: ${res.status}`);
 }
