@@ -163,12 +163,11 @@ export default function AvDeck({
     { value: "none", label: "소리만" },
     ...channels.map((c) => ({
       value: String(c.channel),
-      disabled: !c.live,
       textValue: `CH${c.channel} ${c.name}`,
       label: (
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate">{`CH${c.channel}${c.name ? ` ${c.name}` : c.hallName ? ` ${c.hallName}` : ""}`}</span>
-          {!c.live ? <small className={sub}>꺼짐</small> : c.name && c.hallName ? <small className={sub}>{c.hallName}</small> : null}
+          {(c.type || "standby") === "standby" ? <small className={sub}>대기</small> : c.name && c.hallName ? <small className={sub}>{c.hallName}</small> : null}
         </span>
       ),
     })),

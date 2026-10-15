@@ -31,7 +31,7 @@ export interface AvChannel {
   /** 연결된 홀 — 이 채널을 고르면 그 홀 콘솔이 소리로 자동 선택 */
   hall: string | null;
   hallName: string | null;
-  /** 이 채널에 살아 있는 송출 화면이 있는지 */
+  /** 이 채널에 TV(송출 화면)가 붙어 있는지. 녹화와는 상관없다 (서버 PC 가 화면을 직접 띄워 찍음) */
   live: boolean;
   displays: number;
   /** 지금 송출 중인 것 (standby·image·video·screen …) */

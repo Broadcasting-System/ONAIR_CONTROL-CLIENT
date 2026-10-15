@@ -67,12 +67,14 @@ export default function SourcePicker({
       </button>
       {channels.map((c) => {
         const picked = screen === c.channel;
-        const dead = !c.live;
+        // 녹화는 서버 PC 가 채널 화면을 직접 띄워 찍으니 TV(송출 화면)가 붙어 있는지와 상관없다.
+        // 아무것도 안 나가는(대기) 채널만 흐리게, 그래도 고를 수는 있다
+        const dead = (c.type || "standby") === "standby";
         return (
           <button
             key={c.channel}
             type="button"
-            disabled={locked || dead}
+            disabled={locked}
             aria-pressed={picked}
             onClick={() => onScreen(c.channel)}
             title={c.name || undefined}
@@ -80,7 +82,7 @@ export default function SourcePicker({
           >
             <div className="relative aspect-video overflow-hidden rounded-[7px] bg-[#0b0b0d]">
               {dead ? (
-                <span className="absolute inset-0 grid place-items-center font-pretendard text-[11px] text-white/30">꺼짐</span>
+                <span className="absolute inset-0 grid place-items-center font-pretendard text-[11px] text-white/30">대기</span>
               ) : (
                 <>
                   <ChannelThumb channel={c.channel} />

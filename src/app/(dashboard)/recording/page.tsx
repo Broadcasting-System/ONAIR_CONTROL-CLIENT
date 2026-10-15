@@ -62,7 +62,6 @@ export default function RecordingPage() {
   const external = !session && !!hallState?.recording;
   const recording = !!session || external;
 
-  const channel = channels.find((c) => c.channel === screen) ?? null;
   const hall = halls.find((h) => h.id === audio) ?? null;
 
   const onScreen = (n: number | null) => {
@@ -85,7 +84,6 @@ export default function RecordingPage() {
   if (!canOperate) reason = "보기 전용";
   else if (screen === null && !audio) reason = "화면이나 소리를 골라 주세요";
   else if (screen !== null && recorder && !recorder.ready) reason = "서버 PC 녹화기 준비 안 됨";
-  else if (channel && !channel.live) reason = `CH${channel.channel} 송출 화면 없음`;
   else if (hall && !hall.configured) reason = `${hall.name} 콘솔 녹음 꺼짐`;
   else if (hall && hallState && hallState.configured && !hallState.connected) reason = `${hall.name} 녹음 장치 연결 안 됨`;
 
