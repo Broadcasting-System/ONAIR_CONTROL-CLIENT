@@ -12,15 +12,19 @@ function TriCheck({ state, small }: { state: Tri; small?: boolean }) {
       className={cn(
         "relative flex shrink-0 items-center justify-center border-[1.5px]",
         small ? "h-[15px] w-[15px] rounded-[4px]" : "h-[18px] w-[18px] rounded-[5px]",
-        state === "on" ? "border-white bg-white" : state === "part" ? "border-white" : "border-white/30",
+        state === "on"
+          ? "border-[#c4b5fd] bg-[#a78bfa]/80 shadow-[0_0_10px_-2px_#a78bfa]"
+          : state === "part"
+            ? "border-[#c4b5fd] shadow-[0_0_8px_-3px_#a78bfa]"
+            : "border-[#7c6db0]/50",
       )}
     >
       {state === "on" && (
-        <svg viewBox="0 0 12 12" className={small ? "h-[10px] w-[10px]" : "h-3 w-3"} fill="none" stroke="#0b0b0d" strokeWidth={2.4}>
+        <svg viewBox="0 0 12 12" className={small ? "h-[10px] w-[10px]" : "h-3 w-3"} fill="none" stroke="#fff" strokeWidth={2.4}>
           <path d="M2.5 6.3 5 8.6l4.6-5.2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
-      {state === "part" && <span className={cn("h-[2px] rounded-sm bg-white", small ? "w-[7px]" : "w-[9px]")} />}
+      {state === "part" && <span className={cn("h-[2px] rounded-sm bg-[#c4b5fd]", small ? "w-[7px]" : "w-[9px]")} />}
     </span>
   );
 }
@@ -60,11 +64,11 @@ export default function SpeakerPicker({ sections, selected, onChange, className 
       aria-pressed={set.has(id)}
       onClick={() => toggle(id)}
       className={cn(
-        "flex h-9 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 font-pretendard text-[13px] font-medium transition-colors md:h-7 md:text-[12.5px]",
+        "flex h-9 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 font-pretendard text-[13px] font-medium transition-all md:h-7 md:text-[12.5px]",
         grow && "min-w-0 flex-1 px-0",
         set.has(id)
-          ? "border-white bg-white font-semibold text-[#0b0b0d]"
-          : "border-white/10 text-white/50 hover:border-white/25 hover:text-white/80",
+          ? "border-[#c4b5fd] bg-[#a78bfa]/15 font-semibold text-white shadow-[0_0_14px_-3px_#a78bfa]"
+          : "border-[#7c6db0]/35 bg-white/[0.02] text-white/60 hover:border-[#7c6db0]/70 hover:text-white",
       )}
     >
       {id}
@@ -74,7 +78,7 @@ export default function SpeakerPicker({ sections, selected, onChange, className 
   return (
     <div
       data-tour="time.editor.speakers"
-      className={cn("flex min-h-0 flex-col gap-2 rounded-2xl border border-white/[0.08] bg-black/25 px-3 py-3 md:px-3.5", className)}
+      className={cn("flex min-h-0 flex-col gap-2 rounded-2xl border border-[#7c6db0]/25 bg-black/25 px-3 py-3 shadow-[inset_0_0_24px_-12px_rgba(167,139,250,0.35)] md:px-3.5", className)}
     >
       <div className="flex items-center gap-2">
         <span className="font-mbc text-[15px] text-white">장소</span>
@@ -86,7 +90,9 @@ export default function SpeakerPicker({ sections, selected, onChange, className 
             onClick={() => onChange(allOn ? selected : [...selected, ...all.filter((id) => !set.has(id))])}
             className={cn(
               "flex h-9 items-center rounded-[9px] border px-3 font-mbc text-[13.5px] transition-colors md:h-[30px]",
-              allOn ? "border-white bg-white text-[#0b0b0d]" : "border-white/[0.12] text-white/60 hover:text-white",
+              allOn
+                ? "border-[#c4b5fd] bg-[#a78bfa]/20 text-white shadow-[0_0_14px_-3px_#a78bfa]"
+                : "border-[#7c6db0]/35 text-white/60 hover:border-[#7c6db0]/70 hover:text-white",
             )}
           >
             학교 전체
@@ -95,7 +101,7 @@ export default function SpeakerPicker({ sections, selected, onChange, className 
             type="button"
             disabled={selected.length === 0}
             onClick={() => onChange([])}
-            className="flex h-9 items-center rounded-[9px] border border-white/[0.12] px-3 font-mbc text-[13.5px] text-white/60 transition-colors hover:text-white disabled:opacity-35 md:h-[30px]"
+            className="flex h-9 items-center rounded-[9px] border border-[#7c6db0]/35 px-3 font-mbc text-[13.5px] text-white/60 transition-colors hover:border-[#7c6db0]/70 hover:text-white disabled:opacity-35 md:h-[30px]"
           >
             모두 끄기
           </button>
@@ -126,7 +132,7 @@ export default function SpeakerPicker({ sections, selected, onChange, className 
           return (
             <div
               key={sec.name}
-              className="grid gap-2 border-b border-white/5 pb-2 last:border-0 last:pb-0 sm:grid-cols-[128px_minmax(0,1fr)] sm:items-start"
+              className="grid gap-2 border-b border-[#7c6db0]/15 pb-2 last:border-0 last:pb-0 sm:grid-cols-[128px_minmax(0,1fr)] sm:items-start"
             >
               <button
                 type="button"
