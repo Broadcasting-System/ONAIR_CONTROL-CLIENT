@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { DEAD_SPEAKERS } from "@/constants/speakerMap";
 import type { SpeakerSection } from "./bellUtils";
 
 type Tri = "on" | "part" | "off";
@@ -48,7 +49,8 @@ export default function SpeakerPicker({ sections, selected, onChange, className 
   const known = new Set(all);
   const count = selected.filter((id) => known.has(id)).length;
   // 스피커 매핑이 바뀌어 지금 목록에 없는 대상 — 보이지 않으면 뺄 수도 없어 소리 없는 시보가 된다
-  const stale = selected.filter((id) => !known.has(id));
+  // 실제 스피커가 없어 숨긴 이름(DEAD_SPEAKERS)은 예전 '학교 전체' 시보에 남아 있어도 문제가 아니라 빼고 센다
+  const stale = selected.filter((id) => !known.has(id) && !DEAD_SPEAKERS.includes(id));
   const allOn = all.length > 0 && all.every((id) => set.has(id));
 
   const toggle = (id: string) => onChange(set.has(id) ? selected.filter((s) => s !== id) : [...selected, id]);
