@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Crosshair, Link2, Lock, Pencil, SlidersHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crosshair, Link2, Lock, Pencil } from "lucide-react";
 import InputModal from "@/components/common/InputModal";
 import { toast } from "@/components/common/Toast";
 import Knob, { LedKey } from "@/components/hall/Knob";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { hallApi } from "@/lib/hallApi";
 import { cn } from "@/lib/utils";
 import { SWITCH_ROLES, type MixerChannel, type MixerState, type ProcessingRole } from "@/types/hall";
@@ -57,13 +58,13 @@ const num = (v: unknown, fallback: number) => (typeof v === "number" ? v : fallb
 // ---------------- 그림 (대략적인 모양) ----------------
 
 const EQ_W = 360;
-const EQ_H = 112;
 const LOG_LO = Math.log10(20);
 const LOG_HI = Math.log10(20000);
 const EQ_RANGE = 18;
 
 /** 대역별 손잡이(50% = 0)로 그린 주파수 곡선. 콘솔 단위를 몰라 ±15dB 쯤으로 펼쳐 그린 모양이다 */
-function EqCurve({ gains, on }: { gains: number[]; on: boolean }) {
+function EqCurve({ gains, on, height }: { gains: number[]; on: boolean; height: number }) {
+  const EQ_H = height;
   const db = (f: number) => {
     const g = gains.map((v) => ((v - 50) / 50) * 15);
     const oct = (fc: number) => Math.log2(f / fc);
@@ -86,7 +87,7 @@ function EqCurve({ gains, on }: { gains: number[]; on: boolean }) {
   const fx = (f: number) => ((Math.log10(f) - LOG_LO) / (LOG_HI - LOG_LO)) * EQ_W;
 
   return (
-    <svg viewBox={`0 0 ${EQ_W} ${EQ_H}`} className="h-[112px] w-full" preserveAspectRatio="none" aria-hidden>
+    <svg viewBox={`0 0 ${EQ_W} ${EQ_H}`} className="w-full" style={{ height: EQ_H }} preserveAspectRatio="none" aria-hidden>
       <defs>
         <linearGradient id="eq-fill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={C_EQ} stopOpacity="0.35" />
@@ -127,7 +128,8 @@ function EqCurve({ gains, on }: { gains: number[]; on: boolean }) {
 
 const CP = 104;
 
-/** 입력→출력 전달 곡선. 기준(threshold)을 넘는 부분이 비율(ratio)만큼 눌린다 — 역시 대략적인 모양 */
+/** 입력→출력 전달 곡선. 기준(threshold)을 넘는 부분이 비율(ratio)만큼 눌린다 — 역시 대략적인 모양.
+    폰은 정사각형, PC 는 모듈 폭을 꽉 채우게 옆으로 늘린다 */
 function CompCurve({ threshold, ratio, makeup, on }: { threshold: number; ratio: number; makeup: number; on: boolean }) {
   const t = -48 + (threshold / 100) * 48;
   const r = 1 + (ratio / 100) * 19;
@@ -140,15 +142,22 @@ function CompCurve({ threshold, ratio, makeup, on }: { threshold: number; ratio:
     return `${sx(i).toFixed(1)},${sy(out(i)).toFixed(1)}`;
   });
   return (
-    <svg viewBox={`0 0 ${CP} ${CP}`} className="h-[104px] w-[104px] shrink-0 rounded-md bg-black/50" aria-hidden>
+    <svg
+      viewBox={`0 0 ${CP} ${CP}`}
+      preserveAspectRatio="none"
+      className="h-[104px] w-[104px] shrink-0 rounded-md bg-black/50 md:h-[76px] md:w-full md:border md:border-black"
+      aria-hidden
+    >
       {[12, 24, 36].map((d) => (
         <g key={d}>
-          <line x1={sx(-d)} y1={0} x2={sx(-d)} y2={CP} stroke="rgba(255,178,63,0.07)" />
-          <line x1={0} y1={sy(-d)} x2={CP} y2={sy(-d)} stroke="rgba(255,178,63,0.07)" />
+          <line x1={sx(-d)} y1={0} x2={sx(-d)} y2={CP} stroke="rgba(255,178,63,0.07)" vectorEffect="non-scaling-stroke" />
+          <line x1={0} y1={sy(-d)} x2={CP} y2={sy(-d)} stroke="rgba(255,178,63,0.07)" vectorEffect="non-scaling-stroke" />
         </g>
       ))}
-      <line x1={0} y1={CP} x2={CP} y2={0} stroke="rgba(255,255,255,0.14)" strokeDasharray="2 3" />
-      {on && <line x1={sx(t)} y1={0} x2={sx(t)} y2={CP} stroke="rgba(255,178,63,0.35)" strokeDasharray="3 3" />}
+      <line x1={0} y1={CP} x2={CP} y2={0} stroke="rgba(255,255,255,0.14)" strokeDasharray="2 3" vectorEffect="non-scaling-stroke" />
+      {on && (
+        <line x1={sx(t)} y1={0} x2={sx(t)} y2={CP} stroke="rgba(255,178,63,0.35)" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+      )}
       <path
         d={`M${pts.join(" L")}`}
         fill="none"
@@ -156,6 +165,7 @@ function CompCurve({ threshold, ratio, makeup, on }: { threshold: number; ratio:
         strokeWidth={2}
         opacity={on ? 1 : 0.3}
         style={{ filter: on ? `drop-shadow(0 0 4px ${C_DYN})` : undefined }}
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );
@@ -181,18 +191,19 @@ function Module({
   return (
     <section
       className={cn(
-        "relative flex flex-col gap-3 rounded-xl border border-black/80 bg-[linear-gradient(180deg,#141418,#0d0d10)] p-3.5",
+        "relative flex flex-col gap-3 rounded-xl border border-black/80 bg-[linear-gradient(180deg,#141418,#0d0d10)] p-3.5 md:gap-2 md:p-3",
         "shadow-[inset_0_1px_0_rgba(255,255,255,0.05),inset_0_0_0_1px_rgba(255,255,255,0.025)]",
         className,
       )}
     >
       <span className="absolute inset-x-3 top-0 h-px" style={{ background: `linear-gradient(90deg,${color},transparent)` }} />
-      <header className="flex items-center gap-2">
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-        <span className="font-orbitron text-[10.5px] tracking-[0.24em] text-white/70">{label}</span>
+      <header className="flex min-h-7 items-center gap-2 md:gap-1.5">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+        <span className="min-w-0 truncate font-orbitron text-[10.5px] tracking-[0.24em] text-white/70 md:tracking-[0.1em]">{label}</span>
         {locked && (
-          <span className="flex items-center gap-1 font-pretendard text-[10.5px] text-white/35">
-            <Lock size={10} /> 보기만
+          <span className="flex shrink-0 items-center gap-1 whitespace-nowrap font-pretendard text-[10.5px] text-white/35" title="보기만">
+            <Lock size={10} />
+            <span className="md:sr-only">보기만</span>
           </span>
         )}
         <div className="ml-auto">{action}</div>
@@ -295,6 +306,8 @@ export default function ChannelProcessing({
   hallId,
   state,
   channel,
+  channels,
+  onSelect,
   canOperate,
   canAdmin,
   isAdmin,
@@ -303,8 +316,11 @@ export default function ChannelProcessing({
 }: {
   hallId: string;
   state: MixerState;
-  /** SEL 로 고른 입력 채널 */
-  channel: MixerChannel | null;
+  /** SEL 로 고른 입력 채널 — 늘 하나는 골라져 있다 */
+  channel: MixerChannel;
+  /** 콘솔에 보이는 입력 채널 (이전·다음 넘기기와 번호 칩) */
+  channels: MixerChannel[];
+  onSelect: (id: string) => void;
   /** 게인·이펙트 보내기 (운영 + 잠금 해제) */
   canOperate: boolean;
   /** EQ·컴프레서 (부원 이상 + 잠금 해제) */
@@ -319,15 +335,18 @@ export default function ChannelProcessing({
   const learn = useAddressLearn(hallId, onRefresh);
   const fx = state.fx ?? [];
   const realDevice = state.driver !== "mock";
+  // 폰은 손가락으로 돌리게 크게, PC 는 콘솔 아래 한 줄에 들어가게 작게
+  const mobile = useIsMobile();
+  const knob = mobile ? { gain: 84, band: 64, fx: 56, eq: 112 } : { gain: 76, band: 52, fx: 44, eq: 76 };
 
-  if (!channel) {
-    return (
-      <div className="flex h-[150px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 bg-black/30">
-        <SlidersHorizontal size={22} className="text-white/25" />
-        <p className="font-orbitron text-[11px] tracking-[0.2em] text-white/40">SELECT A CHANNEL</p>
-      </div>
-    );
-  }
+  // 이전·다음 — 끝에서 처음으로 돌아간다
+  const at = Math.max(0, channels.findIndex((c) => c.id === channel.id));
+  const step = (d: number) => {
+    if (channels.length > 1) onSelect(channels[(at + d + channels.length) % channels.length].id);
+  };
+  // 번호 칩은 고른 채널 둘레 다섯 개
+  const chipFrom = Math.max(0, Math.min(at - 2, channels.length - 5));
+  const chips = channels.slice(chipFrom, chipFrom + 5);
 
   const roles = new Set(channel.roles ?? []);
   const p = channel.params ?? {};
@@ -373,37 +392,79 @@ export default function ChannelProcessing({
   const compOn = on("comp_on") === true;
 
   return (
-    <div className="relative flex flex-col gap-3">
-      {/* 머리줄 — 고른 채널 */}
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-md border border-[#7CF5D4]/40 bg-[#7CF5D4]/10 px-2 py-1 font-orbitron text-[11px] tracking-[0.2em] text-[#7CF5D4] shadow-[0_0_14px_-4px_#7CF5D4]">
+    <div className="relative flex flex-col gap-3 md:gap-2">
+      {/* 머리줄 — 고른 채널 · 이전/다음 */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h3 className="whitespace-nowrap font-mbc text-[20px] text-white md:text-[17px]">채널 처리</h3>
+        <span className="whitespace-nowrap rounded-md border border-[#7CF5D4]/40 bg-[#7CF5D4]/10 px-2 py-0.5 font-orbitron text-[11px] tracking-[0.16em] text-[#7CF5D4] shadow-[0_0_14px_-4px_#7CF5D4]">
           SEL · CH {channel.id.padStart(2, "0")}
         </span>
-        <span className="font-mbc text-xl text-white">{channel.name}</span>
+        <span className="min-w-0 truncate font-mbc text-lg text-white md:text-[17px]">{channel.name}</span>
         {realDevice && roles.size === 0 && !linkMode && (
           <span className="font-pretendard text-xs text-[#FFB23F]/80">
             주소 연결 안 됨
           </span>
         )}
-        {isAdmin && realDevice && (
-          <button
-            data-tour="mixer.address-link"
-            type="button"
-            onClick={() => {
-              setLinkMode((v) => !v);
-              learn.cancel();
-            }}
-            className={cn(
-              "ml-auto flex h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 font-pretendard text-[13px] transition-colors md:h-auto md:text-xs",
-              linkMode
-                ? "border-[#FFB23F]/50 bg-[#FFB23F]/15 text-[#FFB23F]"
-                : "border-white/10 text-white/50 hover:text-white/80",
-            )}
-          >
-            <Link2 size={13} />
-            주소 연결 {linkMode ? "켜짐" : ""}
-          </button>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          {isAdmin && realDevice && (
+            <button
+              data-tour="mixer.address-link"
+              type="button"
+              onClick={() => {
+                setLinkMode((v) => !v);
+                learn.cancel();
+              }}
+              className={cn(
+                "flex h-11 items-center gap-1.5 rounded-lg border px-3 font-pretendard text-[13px] transition-colors md:h-8 md:text-xs",
+                linkMode
+                  ? "border-[#FFB23F]/50 bg-[#FFB23F]/15 text-[#FFB23F]"
+                  : "border-white/10 text-white/50 hover:text-white/80",
+              )}
+            >
+              <Link2 size={13} />
+              주소 연결 {linkMode ? "켜짐" : ""}
+            </button>
+          )}
+          {channels.length > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => step(-1)}
+                aria-label="이전 채널"
+                className="grid h-11 w-11 place-items-center rounded-lg border border-white/[0.08] text-white/55 transition-colors hover:bg-white/[0.06] hover:text-white md:h-8 md:w-8"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <div className="hidden items-center gap-1 md:flex">
+                {chips.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => onSelect(c.id)}
+                    aria-label={`${c.name} 채널 처리`}
+                    aria-pressed={c.id === channel.id}
+                    className={cn(
+                      "h-8 min-w-[38px] rounded-lg border px-2 font-orbitron text-[11px] tabular-nums transition-colors",
+                      c.id === channel.id
+                        ? "border-[#5AC8FA]/60 bg-[#5AC8FA]/[0.12] text-white"
+                        : "border-white/[0.08] text-white/45 hover:bg-white/[0.06] hover:text-white/80",
+                    )}
+                  >
+                    {c.id.padStart(2, "0")}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => step(1)}
+                aria-label="다음 채널"
+                className="grid h-11 w-11 place-items-center rounded-lg border border-white/[0.08] text-white/55 transition-colors hover:bg-white/[0.06] hover:text-white md:h-8 md:w-8"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {learn.target && (
@@ -420,16 +481,16 @@ export default function ChannelProcessing({
         </div>
       )}
 
-      {/* 실제 콘솔 화면처럼 한 줄 — 좁으면 EQ 가 먼저 줄을 바꾼다 */}
-      <div data-tour="mixer.processing-modules" className="flex flex-wrap items-stretch gap-3">
+      {/* 실제 콘솔 화면처럼 한 줄 — INPUT·FX SEND 는 고정폭, EQ·COMPRESSOR 가 남는 폭을 나눠 가진다. 좁으면 줄을 바꾼다 */}
+      <div data-tour="mixer.processing-modules" className="flex flex-wrap items-stretch gap-3 md:gap-2.5">
         {/* INPUT */}
-        <Module label="INPUT" color={C_INPUT} className="w-full md:w-[150px]">
+        <Module label="INPUT" color={C_INPUT} className="w-full md:w-[112px] md:shrink-0">
           <div className="flex flex-1 items-center justify-center px-2">
             <Knob
               label="GAIN"
               value={value("gain")}
               color={C_INPUT}
-              size={84}
+              size={knob.gain}
               defaultValue={50}
               disabled={!canOperate}
               unlinked={unlinked("gain")}
@@ -445,12 +506,12 @@ export default function ChannelProcessing({
           color={C_EQ}
           locked={!canAdmin}
           action={switchKey("eq_on", "EQ", C_EQ, canAdmin)}
-          className="w-full min-w-0 md:w-auto md:min-w-[340px] md:flex-1"
+          className="w-full min-w-0 md:w-auto md:min-w-[250px] md:flex-[5_1_0%]"
         >
           <div className="overflow-hidden rounded-md border border-black bg-black/50">
-            <EqCurve gains={EQ_BANDS.map((b) => num(p[b.role], 50))} on={eqOn} />
+            <EqCurve gains={EQ_BANDS.map((b) => num(p[b.role], 50))} on={eqOn} height={knob.eq} />
           </div>
-          <div className="flex flex-wrap justify-around gap-2">
+          <div className="flex flex-wrap justify-around gap-2 md:flex-nowrap md:gap-1">
             {EQ_BANDS.map((b) => (
               <Knob
                 key={b.role}
@@ -458,6 +519,7 @@ export default function ChannelProcessing({
                 value={value(b.role)}
                 color={C_EQ}
                 bipolar
+                size={knob.band}
                 defaultValue={50}
                 format={signed}
                 disabled={!canAdmin}
@@ -475,7 +537,7 @@ export default function ChannelProcessing({
           color={C_DYN}
           locked={!canAdmin}
           action={switchKey("comp_on", "COMP", C_DYN, canAdmin)}
-          className="w-full md:w-[280px]"
+          className="w-full min-w-0 md:w-auto md:min-w-[232px] md:flex-[4_1_0%]"
         >
           <div className="flex justify-center">
             <CompCurve
@@ -485,7 +547,7 @@ export default function ChannelProcessing({
               on={compOn}
             />
           </div>
-          <div className="flex flex-wrap justify-around gap-2">
+          <div className="flex flex-wrap justify-around gap-2 md:flex-nowrap md:gap-1">
             {(
               [
                 ["comp_threshold", "THRESH"],
@@ -498,6 +560,7 @@ export default function ChannelProcessing({
                 label={text}
                 value={value(role)}
                 color={C_DYN}
+                size={knob.band}
                 disabled={!canAdmin}
                 unlinked={unlinked(role)}
                 onChange={(v) => onParam(role, v)}
@@ -508,8 +571,8 @@ export default function ChannelProcessing({
         </Module>
 
         {/* FX SENDS */}
-        <Module label="FX SEND" color={C_FX} className="w-full md:w-[190px]">
-          <div className="grid grid-cols-4 justify-items-center gap-x-2 gap-y-2 md:grid-cols-2">
+        <Module label="FX SEND" color={C_FX} className="w-full md:w-auto md:shrink-0">
+          <div className="grid flex-1 grid-cols-4 content-center justify-items-center gap-x-2 gap-y-2 md:gap-x-1.5">
             {FX_SENDS.map((role, i) => {
               const ret = fx.find((f) => f.id === role);
               const onRole = `${role}_on` as ProcessingRole;
@@ -520,7 +583,7 @@ export default function ChannelProcessing({
                     label={(ret?.name ?? `FX ${i + 1}`).toUpperCase()}
                     value={value(role)}
                     color={C_FX}
-                    size={56}
+                    size={knob.fx}
                     defaultValue={0}
                     disabled={!canOperate}
                     unlinked={unlinked(role)}

@@ -45,7 +45,7 @@ interface ChannelStripProps {
   master?: boolean;
   /** 이펙트 리턴 */
   fx?: boolean;
-  /** SEL 키 — 누르면 위 처리 화면에 이 채널이 열린다 (입력 채널만) */
+  /** SEL 키 — 누르면 아래 처리 판이 이 채널로 바뀐다 (입력 채널만) */
   selected?: boolean;
   onSelect?: () => void;
   onLevel: (level: number) => void;
@@ -172,7 +172,7 @@ function GainDial({
         send(Math.max(0, Math.min(100, v + delta)), true);
       }}
     >
-      <svg viewBox="0 0 46 46" className="h-[46px] w-[46px]" aria-hidden>
+      <svg viewBox="0 0 46 46" className="h-[46px] w-[46px] md:h-[38px] md:w-[38px]" aria-hidden>
         {dots.map((d, i) => (
           <circle
             key={i}
@@ -237,7 +237,7 @@ function Key({
       aria-label={ariaLabel}
       onClick={onClick}
       className={cn(
-        "flex h-11 w-full flex-none items-center justify-center gap-1 rounded-[7px] border border-black font-orbitron text-[10px] tracking-[0.14em] transition-all md:h-6 md:w-auto md:flex-1 md:rounded-[5px] md:text-[8.5px]",
+        "flex h-11 w-full flex-none items-center justify-center gap-1 rounded-[7px] border border-black font-orbitron text-[10px] tracking-[0.14em] transition-all md:h-[22px] md:w-auto md:min-w-0 md:flex-1 md:gap-[3px] md:rounded-[5px] md:text-[8px] md:tracking-[0.08em]",
         "bg-[linear-gradient(180deg,#303035,#1e1e22)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_3px_6px_rgba(0,0,0,0.55)]",
         "active:translate-y-px disabled:cursor-not-allowed",
         on ? "text-white" : "text-white/42 enabled:hover:text-white/75",
@@ -299,9 +299,9 @@ export default function ChannelStrip({
   return (
     <div
       className={cn(
-        "relative flex shrink-0 flex-col items-center gap-2.5 rounded-xl border border-black/80 px-1.5 pb-2.5 pt-3 md:px-[9px]",
+        "relative flex shrink-0 flex-col items-center gap-2.5 rounded-xl border border-black/80 px-1.5 pb-2.5 pt-3 md:gap-1.5 md:pb-2 md:pt-2",
         "bg-[linear-gradient(180deg,#141418,#0d0d10)] transition-shadow",
-        master ? "w-[96px] md:w-[124px]" : "w-[88px] md:w-[110px]",
+        master ? "w-[96px] md:w-[100px]" : "w-[88px] md:w-[84px]",
       )}
       style={{
         boxShadow: selected
@@ -319,7 +319,7 @@ export default function ChannelStrip({
       {/* 머리줄 — 채널 번호와 상태 */}
       <div className="flex h-3.5 w-full items-center gap-[5px]">
         <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-        <span className="whitespace-nowrap font-orbitron text-[9px] tracking-[0.16em] text-white/60">{subLabel}</span>
+        <span className="whitespace-nowrap font-orbitron text-[9px] tracking-[0.16em] text-white/60 md:tracking-[0.1em]">{subLabel}</span>
         {(selected || muted) && (
           <span
             className="ml-auto shrink-0 rounded-[3px] border px-[3px] font-orbitron text-[7px] leading-[11px]"
@@ -334,17 +334,17 @@ export default function ChannelStrip({
       {inputChannel ? (
         <GainDial value={gain} color={color} name={channel.name} onChange={onGain} onTap={onSelect} />
       ) : (
-        <div className="grid h-[46px] place-items-center font-orbitron text-[8px] tracking-[0.2em] text-white/28">
+        <div className="grid h-[46px] place-items-center md:h-[38px] font-orbitron text-[8px] tracking-[0.2em] text-white/28">
           {fx ? "RETURN" : channel.label ?? "STEREO"}
         </div>
       )}
 
       {/* 점 미터 · 눈금 · 페이더 (실제 콘솔의 검정 손잡이) */}
-      <div className="flex h-[220px] w-full shrink-0 justify-center gap-[5px]">
+      <div className="flex h-[220px] w-full shrink-0 justify-center gap-[5px] md:h-[150px] md:gap-1">
         <DotMeter value={meter} peak={peak} color={color} />
 
         {/* 눈금도 손잡이가 움직이는 범위(위아래 손잡이 반 높이만큼 안쪽)에 맞춘다 */}
-        <div className="relative my-[19px] w-3.5" aria-hidden>
+        <div className="relative my-[19px] w-3.5 md:my-[15px]" aria-hidden>
           {SCALE.map((s) => (
             <span
               key={s.at}
@@ -368,7 +368,7 @@ export default function ChannelStrip({
           aria-valuenow={level}
           aria-disabled={disabled}
           className={cn(
-            "relative w-9 touch-none rounded-md outline-none focus-visible:ring-2 focus-visible:ring-white/30",
+            "relative w-9 touch-none rounded-md md:w-8 outline-none focus-visible:ring-2 focus-visible:ring-white/30",
             disabled ? "cursor-not-allowed" : "cursor-ns-resize",
           )}
           onPointerDown={(e) => {
@@ -399,11 +399,11 @@ export default function ChannelStrip({
           }}
         >
           {/* 페이더 홈 */}
-          <div className="absolute inset-y-[17px] left-1/2 w-1 -translate-x-1/2 rounded-sm bg-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]" />
+          <div className="absolute inset-y-[17px] left-1/2 md:inset-y-[13px] w-1 -translate-x-1/2 rounded-sm bg-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]" />
 
-          {/* 손잡이가 움직이는 범위 — 손잡이(38px) 반만큼 위아래로 들어가 있어서
+          {/* 손잡이가 움직이는 범위 — 손잡이(폰 38px · PC 30px) 반만큼 위아래로 들어가 있어서
               0 이나 100 에서도 손잡이가 값 창·게인 링을 덮지 않는다 */}
-          <div ref={trackRef} className="absolute inset-x-0 inset-y-[19px]">
+          <div ref={trackRef} className="absolute inset-x-0 inset-y-[19px] md:inset-y-[15px]">
             {/* 최대 레벨 — 흰 점선 위로는 못 올린다 */}
             {limit < 100 && (
               <div
@@ -420,7 +420,7 @@ export default function ChannelStrip({
             {/* 손잡이 — 검정 몸통 + 흰 줄 */}
             <div
               className={cn(
-                "absolute left-1/2 h-[38px] w-[34px] -translate-x-1/2 translate-y-1/2 rounded border border-black transition-transform",
+                "absolute left-1/2 h-[38px] w-[34px] -translate-x-1/2 md:h-[30px] md:w-[30px] translate-y-1/2 rounded border border-black transition-transform",
                 "bg-[linear-gradient(180deg,#3a3a3e_0%,#1f1f22_45%,#141416_55%,#2a2a2e_100%)]",
                 "shadow-[0_8px_12px_-4px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.2)]",
                 dragLevel !== null && "scale-[1.04]",
@@ -440,14 +440,14 @@ export default function ChannelStrip({
 
       {/* 값 창 */}
       <div
-        className="min-w-[58px] rounded-[3px] border border-black bg-[#07090b] px-1.5 py-[3px] text-center font-orbitron text-xs leading-none tabular-nums shadow-[inset_0_1px_4px_#000]"
+        className="min-w-[58px] rounded-[3px] border border-black bg-[#07090b] px-1.5 py-[3px] text-center font-orbitron text-xs leading-none md:min-w-[48px] md:text-[11px] tabular-nums shadow-[inset_0_1px_4px_#000]"
         style={{ color: known || muted ? color : `${color}40`, textShadow: known || muted ? `0 0 6px ${color}b3` : "none" }}
       >
         {muted ? "MUTE" : known ? String(level).padStart(2, "0") : "--"}
       </div>
 
       {/* SEL · MUTE */}
-      <div className="flex w-full flex-col gap-[5px] md:flex-row">
+      <div className="flex w-full flex-col gap-[5px] md:flex-row md:gap-1">
         {inputChannel && onSelect && (
           <Key
             label="SEL"
@@ -468,7 +468,7 @@ export default function ChannelStrip({
       </div>
 
       <span
-        className={cn("max-w-full truncate font-mbc text-[15px] leading-tight", muted ? "text-white/55" : "text-white")}
+        className={cn("max-w-full truncate font-mbc text-[15px] leading-tight md:text-[13px]", muted ? "text-white/55" : "text-white")}
         title={channel.name}
       >
         {channel.name}
