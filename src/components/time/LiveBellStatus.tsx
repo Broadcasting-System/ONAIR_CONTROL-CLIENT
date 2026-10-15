@@ -22,12 +22,14 @@ interface LiveBellStatusProps {
   className?: string;
 }
 
-const pad = (n: number) => String(n).padStart(2, "0");
-function left(ms: number): string {
+/** 남은 시간을 [숫자, 단위] 조각으로. 14:43 처럼 쓰면 시계 시각으로 읽혀서 단위를 붙인다 */
+function left(ms: number): [number, string][] {
   const s = Math.max(0, Math.ceil(ms / 1000));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
-  return h ? `${h}:${pad(m)}:${pad(s % 60)}` : `${pad(m)}:${pad(s % 60)}`;
+  if (h) return [[h, "시간"], [m, "분"]];
+  if (m) return [[m, "분"], [s % 60, "초"]];
+  return [[s, "초"]];
 }
 
 /** 시보 화면 오른쪽 위: 다음 시보까지 남은 시간 + 다음 시보 + 남은 시간 막대 */
@@ -42,7 +44,7 @@ export default function LiveBellStatus({ liveName, next, after, prevAt, special,
   if (!liveName || !next) {
     return (
       <div data-tour="time.live-badge" className={cn("font-mbc text-[14px] text-white/35", className)}>
-        울리는 시보 없음
+        {liveName ? `${liveName} · 오늘 남은 시보 없음` : "울리는 시보 없음"}
       </div>
     );
   }
@@ -56,7 +58,14 @@ export default function LiveBellStatus({ liveName, next, after, prevAt, special,
     <div data-tour="time.live-badge" title={title} className={cn("flex min-w-0 items-center gap-3.5", className)}>
       <div className="flex shrink-0 items-baseline gap-1.5">
         <span className="font-orbitron text-[24px] font-bold tabular-nums tracking-[0.02em] text-white md:text-[26px]">
-          {now == null ? "--:--" : left(next.at - t)}
+          {now == null
+            ? "--"
+            : left(next.at - t).map(([n, u]) => (
+                <span key={u} className="mr-1 last:mr-0">
+                  {n}
+                  <small className="ml-0.5 font-mbc text-[13px] font-normal text-white/50">{u}</small>
+                </span>
+              ))}
         </span>
         <small className="font-mbc text-[13px] text-white/50">뒤</small>
       </div>

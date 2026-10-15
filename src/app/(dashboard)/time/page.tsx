@@ -316,7 +316,7 @@ export default function TimePage() {
                 editor
               ) : (
                 <div className="flex flex-1 flex-col items-center justify-center gap-1.5 text-center font-pretendard">
-                  <p className="text-[15px] text-white/45">{bells.length ? "시보를 고르면 여기서 고쳐요" : "시보 추가를 누르면 여기서 정해요"}</p>
+                  <p className="text-[15px] text-white/45">{bells.length ? "고른 시보가 없어요" : "이 요일은 시보가 없어요"}</p>
                 </div>
               )}
             </div>
