@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Plus, Volume2, VolumeX, X } from "lucide-react";
+import { Check, Plus, Send, Volume2, VolumeX, X } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import SectionHeader from "@/components/common/SectionHeader";
 import MediaSelectModal from "@/components/common/MediaSelectModal";
 import InputModal from "@/components/common/InputModal";
@@ -375,14 +376,9 @@ export default function SwitcherPanel({ lead }: { lead: ReactNode }) {
                 ON AIR · CH{channel}
               </span>
             ) : (
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={() => push(view)}
-                className="h-10 rounded-[10px] border border-[#FF3B3B]/60 bg-[#FF3B3B]/20 px-4 font-mbc text-sm text-white hover:bg-[#FF3B3B]/30 disabled:opacity-40"
-              >
+              <NeonButton disabled={disabled} onClick={() => push(view)} icon={<Send />}>
                 이대로 송출
-              </button>
+              </NeonButton>
             )}
           </div>
 

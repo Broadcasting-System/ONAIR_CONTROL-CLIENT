@@ -2,7 +2,8 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { Popover as P } from "radix-ui";
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import { cn } from "@/lib/utils";
 
 /**
@@ -193,9 +194,9 @@ export function DatesPicker({ values, onChange, min, max, children }: {
               onChange(values.includes(iso) ? (values.length > 1 ? values.filter((v) => v !== iso) : values) : [...values, iso].sort())
             }
           />
-          <button type="button" onClick={() => setOpen(false)} className={cn(okBtn, "mt-3")}>
+          <NeonButton onClick={() => setOpen(false)} icon={<Check />} className="mt-3 w-full">
             확인
-          </button>
+          </NeonButton>
         </P.Content>
       </P.Portal>
     </P.Root>
@@ -205,8 +206,6 @@ export function DatesPicker({ values, onChange, min, max, children }: {
 // ---------------------------------------------------------------- 시간 휠
 
 const ROW = 44;
-const okBtn =
-  "flex h-11 w-full items-center justify-center rounded-xl border border-black bg-[linear-gradient(180deg,#ff5a52,#d9201e)] font-pretendard text-[15px] font-extrabold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_3px_0_#5c0b0b] active:translate-y-0.5";
 
 function Wheel({ count, value, onChange, label }: { count: number; value: number; onChange: (v: number) => void; label: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -342,16 +341,16 @@ export function TimePicker({ value, onChange, placeholder = "시간", className,
             <span className="relative z-10 font-orbitron text-[22px] text-white/70">:</span>
             <Wheel count={60} value={temp.m} onChange={(m) => setTemp((t) => ({ ...t, m }))} label="분" />
           </div>
-          <button
-            type="button"
-            className={cn(okBtn, "mt-3")}
+          <NeonButton
+            icon={<Check />}
+            className="mt-3 w-full"
             onClick={() => {
               onChange(`${pad(temp.h)}:${pad(temp.m)}`);
               setOpen(false);
             }}
           >
             확인
-          </button>
+          </NeonButton>
         </P.Content>
       </P.Portal>
     </P.Root>

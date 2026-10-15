@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, Check, ChevronLeft, Ellipsis, FileText, Play, X } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import PageTabs from "@/components/common/PageTabs";
 import SectionHeader from "@/components/common/SectionHeader";
 import ConfirmModal from "@/components/common/ConfirmModal";
@@ -216,20 +217,18 @@ function Detail({ r, onBack }: { r: TeacherRequest; onBack?: () => void }) {
                   <X size={18} />
                   거절
                 </button>
-                <button type="button" className={redBtn} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.accept(r.id, text))}>
-                  <Check size={19} />
+                <NeonButton size="lg" icon={<Check />} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.accept(r.id, text))}>
                   수락
-                </button>
+                </NeonButton>
               </>
             ) : (
               <>
                 <button type="button" className={ghostBtn} disabled={act.isPending || !text.trim()} onClick={() => act.mutate(() => requestsApi.comment(r.id, text))}>
                   보내기
                 </button>
-                <button type="button" className={redBtn} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.done(r.id, text))}>
-                  <Check size={19} />
+                <NeonButton size="lg" icon={<Check />} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.done(r.id, text))}>
                   완료
-                </button>
+                </NeonButton>
               </>
             )}
           </div>

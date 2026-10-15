@@ -10,6 +10,7 @@ import { toast } from "@/components/common/Toast";
 import { photoSrc } from "@/components/devices/CardBackground";
 import CrewView, { ProfileModal, type ProfileTarget } from "@/components/devices/CrewView";
 import InviteModal from "@/components/devices/InviteModal";
+import NeonButton from "@/components/common/NeonButton";
 import { DeviceIcon } from "@/components/devices/MyDevicesModal";
 import { ASSIGNABLE } from "@/components/devices/roleStyle";
 import { Notice } from "@/components/hall/HallControls";
@@ -1032,7 +1033,7 @@ export default function MembersPanel() {
           )}
         </label>
         <span className="md:ml-auto">{toggle}</span>
-        <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-auto">
+        <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-2 md:flex md:w-auto">
           <button
             type="button"
             data-tour="members.export"
@@ -1042,16 +1043,9 @@ export default function MembersPanel() {
             <Download size={15} />
             명단 내보내기
           </button>
-          <button
-            type="button"
-            data-tour="members.invite"
-            disabled={invite.isPending}
-            onClick={() => invite.mutate("")}
-            className={cn(redBtn, "md:h-10")}
-          >
-            <UserPlus size={15} />
+          <NeonButton data-tour="members.invite" disabled={invite.isPending} onClick={() => invite.mutate("")} icon={<UserPlus />}>
             새 부원 초대
-          </button>
+          </NeonButton>
         </div>
       </div>
 

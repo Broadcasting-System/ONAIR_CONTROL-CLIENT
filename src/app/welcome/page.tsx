@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowRight, Plus, Send } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import { ToastHost, toast } from "@/components/common/Toast";
 import { BgTile, PhotoLayer, WaveCanvas, photoProblem, tileBtn } from "@/components/devices/CardBackground";
 import { useMe } from "@/hooks/useMe";
@@ -81,8 +83,6 @@ function Tuner({ at, device, status }: { at: Step; device: string; status: strin
 const lblCls = "mb-2 block font-pretendard text-sm font-bold text-white/80";
 const inpCls =
   "w-full rounded-[10px] border border-white/[0.12] bg-[#0c0d0f] px-3.5 font-pretendard text-base text-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.7)] outline-none placeholder:text-white/35 focus:border-red-400/70";
-const goCls =
-  "inline-flex h-[54px] items-center justify-center rounded-[10px] border border-black bg-[linear-gradient(180deg,#ff5a52,#d9201e)] px-[26px] font-pretendard text-[17px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_3px_0_#5c0b0b,0_0_22px_rgba(255,59,59,0.3)] active:translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40";
 const ghostCls =
   "inline-flex h-11 items-center justify-center rounded-[10px] border border-white/15 bg-transparent px-[18px] font-pretendard text-[15px] font-bold text-white/80 hover:text-white disabled:opacity-40";
 const noteCls = "font-pretendard text-sm leading-relaxed text-white/60";
@@ -468,9 +468,9 @@ export default function WelcomePage() {
                     취소
                   </button>
                 )}
-                <button type="submit" disabled={!valid || submit.isPending} className={cn(goCls, "max-md:flex-1")}>
+                <NeonButton type="submit" size="lg" icon={<Send />} disabled={!valid || submit.isPending} className="max-md:flex-1">
                   {submit.isPending ? "보내는 중…" : editing ? "다시 보내기" : "승인 요청"}
-                </button>
+                </NeonButton>
               </div>
             </form>
           )}
@@ -537,9 +537,9 @@ export default function WelcomePage() {
                 </p>
               </div>
               <div className="flex justify-end">
-                <button type="button" className={goCls} disabled={attach.isPending} onClick={() => attach.mutate()}>
+                <NeonButton size="lg" icon={<Plus />} disabled={attach.isPending} onClick={() => attach.mutate()}>
                   {attach.isPending ? "추가하는 중…" : "추가"}
-                </button>
+                </NeonButton>
               </div>
             </>
           )}
@@ -556,9 +556,9 @@ export default function WelcomePage() {
                 </div>
               </div>
               <div className="flex justify-end">
-                <Link href="/main" replace className={goCls}>
+                <NeonButton size="lg" icon={<ArrowRight />} onClick={() => router.replace("/main")}>
                   ONAIR 열기
-                </Link>
+                </NeonButton>
               </div>
             </>
           )}

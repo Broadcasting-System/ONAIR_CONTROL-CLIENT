@@ -2,8 +2,8 @@
 
 import { useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings2, X } from "lucide-react";
-import Button from "@/components/common/Button";
+import { Check, Settings2, X } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import { toast } from "@/components/common/Toast";
 import { hallApi } from "@/lib/hallApi";
 import { cn } from "@/lib/utils";
@@ -81,16 +81,14 @@ function Shell({
         <div className="min-h-0 flex-1 overflow-y-auto p-6">{children}</div>
         <div className="flex gap-4 border-t border-white/10 px-6 py-4">
           <div className="flex-1">
-            <Button label="취소" onClick={onClose} color="white" className="h-[52px] !aspect-auto" />
+            <NeonButton tone="white" onClick={onClose} className="w-full">
+              취소
+            </NeonButton>
           </div>
           <div className="flex-1">
-            <Button
-              label={saving ? "저장 중..." : "저장"}
-              onClick={onSave}
-              color="blue"
-              disabled={!canSave || saving}
-              className="h-[52px] !aspect-auto"
-            />
+            <NeonButton icon={<Check />} onClick={onSave} disabled={!canSave || saving} className="w-full">
+              {saving ? "저장 중..." : "저장"}
+            </NeonButton>
           </div>
         </div>
       </div>

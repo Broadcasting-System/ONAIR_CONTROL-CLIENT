@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import { Pencil, Power, RotateCcw, Save, Send } from "lucide-react";
 import Portal from "@/components/common/Portal";
 import { toast } from "@/components/common/Toast";
-import { TimeConfirm, ghostBtn, redBtn } from "@/components/time/TimeToolbar";
+import { TimeConfirm, ghostBtn } from "@/components/time/TimeToolbar";
+import NeonButton from "@/components/common/NeonButton";
 import { cn } from "@/lib/utils";
 import { useFiles } from "@/hooks/useFiles";
 import {
@@ -460,10 +461,9 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
           {!compact && "지금 것으로 되돌리기"}
         </button>
       )}
-      <button type="button" data-tour="banner.send" disabled={!loaded || !canSend(draft)} onClick={onSend} className={cn(redBtn, compact && "px-3.5")}>
-        <Send size={15} />
+      <NeonButton data-tour="banner.send" disabled={!loaded || !canSend(draft)} onClick={onSend} icon={<Send />}>
         {compact ? "띄우기" : "현수막에 띄우기"}
-      </button>
+      </NeonButton>
     </>
   );
 

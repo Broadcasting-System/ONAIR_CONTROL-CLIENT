@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import Button from "@/components/common/Button";
+import NeonButton from "@/components/common/NeonButton";
 import MinSizeGuard from "@/components/common/MinSizeGuard";
 import { SpeakerFloorMap } from "@/components/speaker/SpeakerFloorMap";
 import { SpeakerTable } from "@/components/speaker/SpeakerTable";
@@ -73,21 +73,12 @@ export function SpeakerPanel({
           onReveal={reveal}
         />
         <div className="flex shrink-0 flex-col gap-2">
-          <Button
-            label="전체"
-            onClick={() => onToggle("all")}
-            disabled={!canOperate}
-            className="h-[52px]"
-            tour="speakers.all"
-          />
-          <Button
-            label="학년 전체"
-            color="#1e3a8a"
-            onClick={() => onToggle("grade")}
-            disabled={!canOperate}
-            className="h-[52px]"
-            tour="speakers.grade"
-          />
+          <NeonButton tone="white" onClick={() => onToggle("all")} disabled={!canOperate} className="w-full" data-tour="speakers.all">
+            전체
+          </NeonButton>
+          <NeonButton tone="white" onClick={() => onToggle("grade")} disabled={!canOperate} className="w-full" data-tour="speakers.grade">
+            학년 전체
+          </NeonButton>
         </div>
       </div>
     </div>

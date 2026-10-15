@@ -1,5 +1,6 @@
 import { useRef } from "react";
-import Button from "@/components/common/Button";
+import { Upload } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import SectionHeader from "@/components/common/SectionHeader";
 import FileCard from "./FileCard";
 import AudioChip from "./AudioChip";
@@ -86,13 +87,16 @@ export default function FileUploadSection({
               className="hidden"
             />
             <div className="w-full md:w-[340px]">
-              <Button
-                tour={tour ? `${tour}.upload` : undefined}
-                label={isUploading ? "업로드 중..." : `${title} 파일 추가`}
+              <NeonButton
+                data-tour={tour ? `${tour}.upload` : undefined}
+                size="lg"
+                icon={<Upload />}
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="h-[60px]"
-              />
+                className="w-full"
+              >
+                {isUploading ? "업로드 중..." : `${title} 파일 추가`}
+              </NeonButton>
             </div>
           </div>
         )}

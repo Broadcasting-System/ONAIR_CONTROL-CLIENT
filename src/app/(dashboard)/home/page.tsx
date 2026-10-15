@@ -8,6 +8,7 @@ import { useMe } from "@/hooks/useMe";
 import { useHalls, useHallsStatus } from "@/hooks/useHalls";
 import { useAvState } from "@/hooks/useAv";
 import { useSpeakers } from "@/hooks/useSpeakers";
+import { showLabel, useShowing } from "@/hooks/useShowing";
 import { GlassCard, KV, Dot, MobileHeader, SectionLabel, fmtElapsed } from "@/components/mobile/ui";
 import { useMobileOnly } from "@/components/mobile/useMobileOnly";
 import ConfirmModal from "@/components/common/ConfirmModal";
@@ -39,31 +40,6 @@ function useBellSummary() {
         .filter((b) => b.time > hhmm)
         .sort((a, b) => a.time.localeCompare(b.time));
       return { live, special, next: bells[0] ?? null };
-    },
-  });
-}
-
-const SHOW: Record<string, string> = {
-  video: "영상", image: "이미지", presentation: "PPT", audio: "오디오", youtube: "유튜브",
-  timer: "타이머", screen: "화면 공유", screenshare: "화면 공유", text: "글자",
-};
-
-/** 송출 채널 1~5 중 뭔가 띄우고 있는 채널 */
-function useShowing() {
-  return useQuery({
-    queryKey: ["mobile", "showing"],
-    refetchInterval: 10_000,
-    queryFn: async () => {
-      const base = getApiBase();
-      const res = await Promise.all(
-        [1, 2, 3, 4, 5].map((ch) =>
-          fetch(`${base}/display/status${ch > 1 ? `?channel=${ch}` : ""}`)
-            .then((r) => (r.ok ? r.json() : { type: "standby" }))
-            .catch(() => ({ type: "standby" }))
-            .then((s) => ({ ch, type: (s?.type as string) ?? "standby" })),
-        ),
-      );
-      return res.filter((s) => s.type && s.type !== "standby" && s.type !== "blank");
     },
   });
 }
@@ -126,7 +102,7 @@ export default function MobileHomePage() {
           k="송출"
           v={
             showing.data?.length
-              ? showing.data.map((s) => `CH${s.ch} ${SHOW[s.type] ?? s.type}`).join(" · ")
+              ? showing.data.map((s) => `CH${s.ch} ${showLabel(s.type)}`).join(" · ")
               : "모든 채널 대기"
           }
         />

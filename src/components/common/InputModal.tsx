@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect } from "react";
 import Portal from "./Portal";
 import { X } from "lucide-react";
-import Button from "./Button";
+import NeonButton from "./NeonButton";
 import TextInput from "./TextInput";
 
 interface InputModalProps {
@@ -82,22 +82,14 @@ export default function InputModal({
 
           <div className="flex gap-4 mt-10 w-full">
             <div className="flex-1">
-              <Button
-                label={cancelText}
-                onClick={onClose}
-                disabled={isSubmitting}
-                color="white"
-                className="h-[60px] !aspect-auto"
-              />
+              <NeonButton tone="white" size="lg" onClick={onClose} disabled={isSubmitting} className="w-full">
+                {cancelText}
+              </NeonButton>
             </div>
             <div className="flex-1">
-              <Button
-                label={isSubmitting ? "처리 중..." : confirmText}
-                onClick={handleSubmit}
-                disabled={isSubmitting || !value.trim() || value === initialValue}
-                color="red"
-                className="h-[60px] !aspect-auto"
-              />
+              <NeonButton size="lg" onClick={handleSubmit} disabled={isSubmitting || !value.trim() || value === initialValue} className="w-full">
+                {isSubmitting ? "처리 중..." : confirmText}
+              </NeonButton>
             </div>
           </div>
         </div>

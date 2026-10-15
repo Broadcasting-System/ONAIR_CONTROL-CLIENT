@@ -15,10 +15,12 @@ import {
   Play,
   Presentation,
   Search,
+  Send,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import SectionHeader from "@/components/common/SectionHeader";
 import Select from "@/components/common/Select";
 import InputModal from "@/components/common/InputModal";
@@ -492,14 +494,9 @@ function Detail({
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            disabled={isSending}
-            onClick={send}
-            className="flex h-11 items-center justify-center gap-2 rounded-xl border border-black bg-[linear-gradient(180deg,#ff5a52,#d9201e)] font-mbc text-[15px] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_2px_0_#5c0b0b] disabled:opacity-50"
-          >
+          <NeonButton disabled={isSending} onClick={send} icon={<Send />} className="w-full">
             CH{ch}에 송출
-          </button>
+          </NeonButton>
         </div>
       )}
       <div className="grid grid-cols-2 gap-2">
@@ -650,16 +647,15 @@ export default function FileLibrary() {
               { value: "name", label: "이름 순" },
             ]}
           />
-          <button
-            type="button"
+          <NeonButton
             disabled={!canOperate || isUploading}
             onClick={() => inputRef.current?.click()}
             data-tour="files.upload"
-            className="flex h-10 shrink-0 items-center gap-1.5 rounded-[11px] border border-black bg-[linear-gradient(180deg,#ff5a52,#d9201e)] px-4 font-mbc text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_2px_0_#5c0b0b] disabled:opacity-50 md:h-9"
+            icon={<Upload />}
+            className="shrink-0"
           >
-            <Upload size={15} />
             {isUploading ? `올리는 중 ${Math.round(progress)}%` : "올리기"}
-          </button>
+          </NeonButton>
           <input
             ref={inputRef}
             type="file"

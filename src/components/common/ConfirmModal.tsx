@@ -1,6 +1,6 @@
 import { X, AlertTriangle } from "lucide-react";
 import Portal from "./Portal";
-import Button from "./Button";
+import NeonButton from "./NeonButton";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -59,15 +59,14 @@ export default function ConfirmModal({
 
           <div className="flex gap-4 mt-10 w-full">
             <div className="flex-1">
-              <Button label={cancelText} onClick={onClose} color="white" className="h-[60px] !aspect-auto" />
+              <NeonButton tone="white" size="lg" onClick={onClose} className="w-full">
+                {cancelText}
+              </NeonButton>
             </div>
             <div className="flex-1">
-              <Button
-                label={confirmText}
-                onClick={handleConfirm}
-                color={isDestructive ? "red" : "blue"}
-                className="h-[60px] !aspect-auto"
-              />
+              <NeonButton size="lg" onClick={handleConfirm} className="w-full">
+                {confirmText}
+              </NeonButton>
             </div>
           </div>
         </div>

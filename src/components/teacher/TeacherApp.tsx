@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Check, ChevronLeft, Film, Lock, Mail, Minus, Pencil, Play, Plus, Send } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import OnairMark from "@/components/common/OnairMark";
 import { ToastHost, toast } from "@/components/common/Toast";
 import { DatePicker, DatesPicker, TimePicker } from "@/components/common/DateTimePicker";
@@ -34,7 +35,6 @@ import {
   YouTubeLink,
   ghostBtn,
   inputCls,
-  redBtn,
 } from "@/components/teacher/parts";
 
 /** 선생님 요청(teacher.bssmcast.com) — 학교 계정으로 들어와 등록 → 방송부 승인 → 요청 보내기·확인.
@@ -249,9 +249,9 @@ function Register({ me }: { me: Me }) {
           </div>
         </div>
         <div className="flex justify-end">
-          <button type="button" className={redBtn} disabled={!name.trim() || send.isPending} onClick={() => send.mutate()}>
+          <NeonButton size="lg" icon={<Send />} disabled={!name.trim() || send.isPending} onClick={() => send.mutate()}>
             {me.status === "pending" ? "고친 내용 보내기" : "등록 신청"}
-          </button>
+          </NeonButton>
         </div>
       </Glass>
     </div>
@@ -414,10 +414,9 @@ function useSend(onDone: (id: string) => void) {
 
 function SendButton({ disabled, busy, onClick }: { disabled?: boolean; busy?: boolean; onClick: () => void }) {
   return (
-    <button type="button" className={cn(redBtn, "w-full")} disabled={disabled || busy} onClick={onClick}>
-      <Send size={19} />
+    <NeonButton size="lg" icon={<Send />} className="w-full" disabled={disabled || busy} onClick={onClick}>
       {busy ? "보내는 중…" : "요청 보내기"}
-    </button>
+    </NeonButton>
   );
 }
 

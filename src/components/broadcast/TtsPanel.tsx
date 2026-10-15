@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Play, Square } from "lucide-react";
-import Button from "@/components/common/Button";
+import { Play, Send, Square } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import Select from "@/components/common/Select";
 import CueRing from "@/components/common/CueRing";
 import { toast } from "@/components/common/Toast";
@@ -240,13 +240,16 @@ export default function TtsPanel({
         <TargetPicker names={names} selected={targets} onChange={setTargets} />
       </Block>
 
-      <Button
-        label={sendLabel}
+      <NeonButton
+        size="lg"
+        icon={<Send />}
         onClick={handleSend}
         disabled={!text.trim() || isSending || !canOperate || noTarget}
-        className="h-[64px]"
-        tour="main.tts-send"
-      />
+        className="w-full"
+        data-tour="main.tts-send"
+      >
+        {sendLabel}
+      </NeonButton>
     </>
   );
 }

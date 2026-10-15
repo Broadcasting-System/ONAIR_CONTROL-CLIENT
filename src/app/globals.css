@@ -218,3 +218,129 @@
     display: none;
   }
 }
+
+/* ---- 계단 컷 네온 버튼 (components/common/NeonButton.tsx) ----
+   평소엔 계단 없는 네온 버튼. 마우스 올림·키보드 초점·누름(터치는 data-split)이면 자른 선이 왼쪽에서
+   스르륵 미끄러져 들어오며 벌어져 계단 세 칸이 생긴다. 닫힐 땐 빠르게(.35s), 셋째 칸부터.
+   시안: Desktop/ONAIR-버튼-시안/anim.html. 배경 svg 는 '> svg' 로만 잡는다 (아이콘 svg 까지 잡히면 안 됨) */
+@layer components {
+  .neon-btn {
+    --nb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .neon-btn > svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: visible;
+    pointer-events: none;
+    /* 빛은 svg 자체에 — 웹킷은 svg 안 도형의 CSS filter 를 그리지 않는다 */
+    filter: drop-shadow(0 0 var(--nb-g0) var(--nb-glow));
+    transition: filter 0.25s;
+  }
+  .neon-btn .nb-t {
+    transform: translateX(0);
+    transition: transform 0.6s var(--nb-ease);
+  }
+  /* 닫힌 모습 + 닫힐 때 움직임 (transition 은 도착 상태 쪽 것을 쓴다) */
+  .neon-btn .nb-cut,
+  .neon-btn .nb-edge {
+    transform: translateX(calc(var(--nb-slide) * -1));
+    transform-box: view-box;
+  }
+  .neon-btn .nb-cut {
+    stroke: #000;
+    stroke-width: 0;
+    stroke-linecap: butt;
+    transition: transform 0.35s var(--nb-ease), stroke-width 0.35s var(--nb-ease);
+  }
+  .neon-btn .nb-edge {
+    stroke-width: 1.6;
+    opacity: 0;
+    transition: transform 0.35s var(--nb-ease), opacity 0.35s ease;
+  }
+  .neon-btn .nb-tint {
+    opacity: 0;
+    transition: opacity 0.55s ease;
+  }
+  .neon-btn .nb-k1 {
+    transition-delay: 140ms;
+  }
+  .neon-btn .nb-k2 {
+    transition-delay: 70ms;
+  }
+  .neon-btn .nb-k3 {
+    transition-delay: 0ms;
+  }
+  /* 갈라진 모습 + 열릴 때 움직임 (앞 칸부터 0 / 70 / 140ms 겹쳐서) */
+  .neon-btn:enabled:is(:focus-visible, :active, [data-split]) > svg {
+    filter: drop-shadow(0 0 var(--nb-g1) var(--nb-glow));
+  }
+  .neon-btn:enabled:is(:focus-visible, :active, [data-split]) .nb-t {
+    transform: translateX(var(--nb-shift));
+  }
+  .neon-btn:enabled:is(:focus-visible, :active, [data-split]) .nb-cut {
+    stroke-width: var(--nb-gap);
+    transform: none;
+    transition: transform 0.55s var(--nb-ease), stroke-width 0.5s var(--nb-ease);
+  }
+  .neon-btn:enabled:is(:focus-visible, :active, [data-split]) .nb-edge {
+    opacity: var(--o, 1);
+    transform: none;
+    transition: transform 0.55s var(--nb-ease), opacity 0.45s ease;
+  }
+  .neon-btn:enabled:is(:focus-visible, :active, [data-split]) .nb-tint {
+    opacity: 1;
+  }
+  .neon-btn:enabled:is(:focus-visible, :active, [data-split]) .nb-k1 {
+    transition-delay: 0ms;
+  }
+  .neon-btn:enabled:is(:focus-visible, :active, [data-split]) .nb-k2 {
+    transition-delay: 70ms;
+  }
+  .neon-btn:enabled:is(:focus-visible, :active, [data-split]) .nb-k3 {
+    transition-delay: 140ms;
+  }
+  /* 마우스가 있는 기기에서만 올림으로 갈라진다 (터치는 탭 뒤 hover 가 남아서) */
+  @media (hover: hover) {
+    .neon-btn:enabled:hover > svg {
+      filter: drop-shadow(0 0 var(--nb-g1) var(--nb-glow));
+    }
+    .neon-btn:enabled:hover .nb-t {
+      transform: translateX(var(--nb-shift));
+    }
+    .neon-btn:enabled:hover .nb-cut {
+      stroke-width: var(--nb-gap);
+      transform: none;
+      transition: transform 0.55s var(--nb-ease), stroke-width 0.5s var(--nb-ease);
+    }
+    .neon-btn:enabled:hover .nb-edge {
+      opacity: var(--o, 1);
+      transform: none;
+      transition: transform 0.55s var(--nb-ease), opacity 0.45s ease;
+    }
+    .neon-btn:enabled:hover .nb-tint {
+      opacity: 1;
+    }
+    .neon-btn:enabled:hover .nb-k1 {
+      transition-delay: 0ms;
+    }
+    .neon-btn:enabled:hover .nb-k2 {
+      transition-delay: 70ms;
+    }
+    .neon-btn:enabled:hover .nb-k3 {
+      transition-delay: 140ms;
+    }
+  }
+  .neon-btn:enabled:active > svg {
+    filter: drop-shadow(0 0 calc(var(--nb-g1) * 1.4) var(--nb-glow));
+  }
+  .neon-btn:enabled:active .nb-t {
+    transform: translateX(var(--nb-shift)) scale(0.98);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .neon-btn,
+    .neon-btn * {
+      transition: none !important;
+    }
+  }
+}

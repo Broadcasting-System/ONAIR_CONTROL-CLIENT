@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { Popover as P } from "radix-ui";
 import { ClipboardPaste, Copy, CopyPlus, Eraser, MoreHorizontal, Send } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import Portal from "@/components/common/Portal";
 import { DAYS, DAY_LABEL } from "@/constants/days";
 import { DayType } from "@/types/time";
@@ -226,29 +227,20 @@ export function ApplyButtons({
   onApply: (activate: boolean) => void;
   className?: string;
 }) {
-  const badge = count > 0 && (
-    <span className="flex h-5 min-w-5 items-center justify-center rounded-[10px] bg-black/35 px-1.5 font-orbitron text-[11px] font-bold">
-      {count}
-    </span>
-  );
   if (isLive)
     return (
-      <button type="button" data-tour="time.send" disabled={busy} onClick={() => onApply(true)} className={cn(redBtn, className)}>
-        <Send size={15} />
+      <NeonButton data-tour="time.send" disabled={busy} onClick={() => onApply(true)} icon={<Send />} count={count} className={className}>
         적용하기
-        {badge}
-      </button>
+      </NeonButton>
     );
   return (
     <div className={cn("flex gap-2", className)}>
-      <button type="button" disabled={busy || count === 0} onClick={() => onApply(false)} className={cn(ghostBtn, "max-md:flex-1")}>
+      <button type="button" disabled={busy || count === 0} onClick={() => onApply(false)} className={ghostBtn}>
         저장만
       </button>
-      <button type="button" data-tour="time.send" disabled={busy} onClick={() => onApply(true)} className={cn(redBtn, "max-md:flex-[2]")}>
-        <Send size={15} />
+      <NeonButton data-tour="time.send" disabled={busy} onClick={() => onApply(true)} icon={<Send />} count={count} className="min-w-0 max-md:flex-1">
         이 시간표로 울리기
-        {badge}
-      </button>
+      </NeonButton>
     </div>
   );
 }

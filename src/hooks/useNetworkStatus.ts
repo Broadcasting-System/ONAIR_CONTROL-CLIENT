@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { getApiBase } from "@/lib/apiBase";
 
-interface NetworkStatusResponse {
+export interface NetworkStatusResponse {
   speaker_controller: "online" | "offline";
   internet: "online" | "offline";
   latency: number;
 }
 
+/** 방송실 서버가 재는 스피커 장비 연결·응답 시간 (5초마다) */
 export function useNetworkStatus() {
-  const { data, isLoading } = useQuery<NetworkStatusResponse>({
+  const { data, isLoading, isError } = useQuery<NetworkStatusResponse>({
     queryKey: ["networkStatus"],
     queryFn: async () => {
       const BASE = getApiBase();
@@ -19,20 +20,5 @@ export function useNetworkStatus() {
     refetchInterval: 5000,
   });
 
-  const statuses = [
-    {
-      label: "스피커",
-      status: data?.speaker_controller === "online" ? ("good" as const) : ("critical" as const),
-    },
-    {
-      label: "송출",
-      status: data?.internet === "online" ? ("good" as const) : ("critical" as const),
-    },
-    {
-      label: "지연속도",
-      status: data ? (data.latency < 100 ? ("good" as const) : data.latency < 300 ? ("caution" as const) : ("critical" as const)) : ("critical" as const),
-    },
-  ];
-
-  return { statuses, isLoading };
+  return { data, isLoading, isError };
 }
