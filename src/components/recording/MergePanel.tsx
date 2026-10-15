@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Upload } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { duration, gb, when } from "@/components/recording/format";
@@ -16,50 +18,58 @@ const STAGES: { key: MergeJob["stage"]; name: string }[] = [
 ];
 
 const btn =
-  "h-[34px] rounded-[10px] border border-white/12 bg-white/5 px-3 font-mbc text-[13px] text-white/75 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-35 max-md:h-11 max-md:px-3.5";
+  "inline-flex h-[34px] shrink-0 items-center rounded-[10px] border border-white/12 bg-white/5 px-3 font-mbc text-[13px] text-white/75 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-35 max-md:h-11 max-md:px-3.5";
 
-function Step({ n, done, title, children }: { n: number; done: boolean; title: string; children: React.ReactNode }) {
+type StepState = "done" | "cur" | "todo";
+
+/** 단계 — 끝난 단계는 흰 원, 지금 단계는 빨간 빛 원 */
+function Step({ n, state, title, last, children }: { n: number; state: StepState; title: string; last?: boolean; children?: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[28px_minmax(0,1fr)] gap-3">
+    <div className={cn("grid grid-cols-[28px_minmax(0,1fr)] gap-3 py-2.5", !last && "border-b border-white/[0.05]")}>
       <span
         className={cn(
-          "grid h-7 w-7 place-items-center rounded-full border font-orbitron text-xs",
-          done ? "border-white/40 bg-white/[0.14] text-white" : "border-white/12 bg-white/[0.06] text-white/60",
+          "grid h-[26px] w-[26px] place-items-center rounded-full border-[1.5px] font-orbitron text-[11px] font-bold",
+          state === "done" && "border-white bg-white text-[#0b0b0d]",
+          state === "cur" && "border-[#ff4a43] text-white shadow-[0_0_10px_-2px_#ff3b3b]",
+          state === "todo" && "border-white/25 text-white/60",
         )}
       >
         {n}
       </span>
       <div className="min-w-0">
-        <h4 className="mb-2 mt-[3px] font-mbc text-[17px] text-white">{title}</h4>
-        {children}
+        <b className="block pt-[3px] font-mbc text-[14.5px] font-normal text-white">{title}</b>
+        {children && <div className="mt-2">{children}</div>}
       </div>
     </div>
   );
 }
 
-function Seg<T extends string>({
+/** 하나 고르기 칩 — 고른 것은 흰 칩 */
+function Chips<T extends string>({
   value,
   options,
   onChange,
   disabled,
+  tour,
 }: {
   value: T;
   options: { value: T; label: string }[];
   onChange: (v: T) => void;
   disabled?: boolean;
+  tour?: string;
 }) {
   return (
-    <div className="inline-flex overflow-hidden rounded-xl border border-white/10">
-      {options.map((o, i) => (
+    <div data-tour={tour} className="flex flex-wrap gap-[5px]">
+      {options.map((o) => (
         <button
           key={o.value}
           type="button"
+          aria-pressed={value === o.value}
           disabled={disabled}
           onClick={() => onChange(o.value)}
           className={cn(
-            "h-9 px-3.5 font-mbc text-sm transition-colors disabled:cursor-not-allowed max-md:h-11",
-            i > 0 && "border-l border-white/[0.08]",
-            value === o.value ? "bg-red-400/[0.18] text-white" : "bg-white/[0.03] text-white/50 enabled:hover:text-white/80",
+            "h-[34px] rounded-[10px] border px-3 font-mbc text-[13px] transition-colors disabled:cursor-not-allowed disabled:opacity-40 max-md:h-11 max-md:px-3.5",
+            value === o.value ? "border-white bg-white text-[#0b0b0d]" : "border-white/12 bg-white/[0.04] text-white/70 enabled:hover:text-white",
           )}
         >
           {o.label}
@@ -69,7 +79,9 @@ function Seg<T extends string>({
   );
 }
 
-/** 영상 합치기 — 휴대폰 영상 올리기 → 녹음 고르기 → 소리 고르기 → 합치기·받기 */
+const optLabel = "w-[64px] shrink-0 font-pretendard text-[12.5px] text-white/45";
+
+/** 휴대폰 영상 합치기 — 1 영상 올리기 → 2 녹음 고르기 → 3 소리 고르기 → 4 합치기·받기. 네 단계가 늘 보인다 */
 export default function MergePanel({
   recordings,
   recordingId,
@@ -111,9 +123,7 @@ export default function MergePanel({
 
   const send = (file: File) => {
     if (!canOperate || upload) return;
-    const { done, abort } = recordingApi.uploadVideo(file, (ratio) =>
-      setUpload((u) => (u ? { ...u, ratio } : u)),
-    );
+    const { done, abort } = recordingApi.uploadVideo(file, (ratio) => setUpload((u) => (u ? { ...u, ratio } : u)));
     setUpload({ name: file.name, ratio: 0, abort });
     done
       .then((v) => {
@@ -140,30 +150,33 @@ export default function MergePanel({
   const done = job?.status === "done";
   const others = jobs.filter((j) => j.id !== jobId && j.status === "done").slice(0, 3);
 
+  // 지금 단계 — 끝난 단계는 흰 원, 처음으로 남은 단계에 빨간 빛
+  const finished = [!!video, !!recording, !!video && !!recording, done];
+  const cur = finished.indexOf(false);
+  const st = (i: number): StepState => (finished[i] ? "done" : i === cur ? "cur" : "todo");
+
   return (
-    <div className="flex flex-col gap-3.5">
-      <Step n={1} done={!!video} title="휴대폰 영상 올리기">
+    <div className="flex flex-col">
+      <Step n={1} state={st(0)} title="휴대폰 영상 올리기">
         {upload ? (
-          <div className="flex flex-col gap-2 rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2.5">
-            <div className="flex items-center gap-2 font-pretendard text-[13px] text-white/70">
-              <span className="truncate font-mbc text-[15px] text-white">{upload.name}</span>
-              <span className="ml-auto shrink-0">올리는 중 {Math.round(upload.ratio * 100)}%</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 font-pretendard text-[12.5px] text-white/60">
+              <span className="min-w-0 truncate text-[13px] font-semibold text-white">{upload.name}</span>
+              <span className="ml-auto shrink-0 font-orbitron text-[11px]">{Math.round(upload.ratio * 100)}%</span>
               <button type="button" className={btn} onClick={upload.abort}>
                 멈추기
               </button>
             </div>
-            <div className="h-2 overflow-hidden rounded bg-white/[0.07]">
-              <div className="h-full bg-[linear-gradient(90deg,#ff6b6b,#FF3B3B)]" style={{ width: `${upload.ratio * 100}%` }} />
+            <div className="h-1.5 overflow-hidden rounded bg-white/[0.07]">
+              <div className="h-full bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]" style={{ width: `${upload.ratio * 100}%` }} />
             </div>
           </div>
         ) : video ? (
-          <div className="flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2.5 font-pretendard text-[13px]">
-            <span className="truncate font-mbc text-[15px] text-white">{video.name}</span>
-            <span className="shrink-0 text-xs text-white/40">
-              {gb(video.size)} · {duration(video.duration)}
-              {!video.hasAudio && " · 소리 없음"}
-            </span>
-            <button type="button" className={cn(btn, "ml-auto")} onClick={() => setVideoId(null)} disabled={running}>
+          <div className="flex items-center gap-2.5">
+            <p className="min-w-0 flex-1 truncate font-pretendard text-[12.5px] font-medium text-white/45">
+              {[video.name, duration(video.duration), gb(video.size), !video.hasAudio ? "소리 없음" : ""].filter(Boolean).join(" · ")}
+            </p>
+            <button type="button" className={btn} onClick={() => setVideoId(null)} disabled={running}>
               바꾸기
             </button>
           </div>
@@ -186,11 +199,12 @@ export default function MergePanel({
                 if (f) send(f);
               }}
               className={cn(
-                "rounded-[14px] border border-dashed px-4 py-[18px] text-center font-pretendard text-[13px] text-white/50 disabled:cursor-not-allowed disabled:opacity-40",
-                dragOver ? "border-red-400/60 bg-red-400/[0.06]" : "border-white/20",
+                "flex h-16 items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed font-pretendard text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                dragOver ? "border-white/60 bg-white/[0.06] text-white" : "border-white/[0.18] text-white/55 enabled:hover:text-white/80",
               )}
             >
-              <b className="mb-1 block font-mbc text-base font-normal text-white/80">영상 고르기</b>
+              <Upload size={16} />
+              영상을 끌어다 놓거나 고르기
             </button>
             <input
               ref={fileInput}
@@ -207,37 +221,39 @@ export default function MergePanel({
               <Select
                 value=""
                 onChange={(id) => id && setVideoId(id)}
-                placeholder="전에 올린 영상"
+                placeholder="올린 영상에서 고르기"
+                aria-label="올린 영상"
                 options={videos.map((v) => ({
                   value: v.id,
                   label: `${v.name} · ${duration(v.duration)} · ${when(v.uploadedAt)}`,
                 }))}
-                className="rounded-xl"
+                className="h-[38px] w-full rounded-[11px] max-md:h-11"
               />
             )}
           </div>
         )}
       </Step>
 
-      <Step n={2} done={!!recording} title="녹음 고르기">
+      <Step n={2} state={st(1)} title="녹음 고르기">
         <Select
           tour="recording.merge-recording"
           value={recording?.id ?? ""}
           onChange={onRecording}
           disabled={running || !ready.length}
           placeholder={ready.length ? "녹음 고르기" : "녹음이 없어요"}
+          aria-label="녹음"
           options={ready.map((r) => ({
             value: r.id,
             label: `${r.label || "이름 없는 녹음"} · ${r.hallName} · ${when(r.startedAt)} · ${duration(r.duration)}`,
           }))}
-          className="w-full rounded-xl"
+          className="h-[38px] w-full rounded-[11px] max-md:h-11"
         />
       </Step>
 
-      <Step n={3} done={false} title="소리 고르기">
-        <div className="mb-2 flex flex-wrap items-center gap-3">
-          <span className="min-w-[76px] font-pretendard text-[13px] text-white/55">녹음에서</span>
-          <Seg
+      <Step n={3} state={st(2)} title="소리 고르기">
+        <div className="flex flex-col gap-2">
+          <Chips
+            tour="recording.merge-lanes"
             value={lanes}
             onChange={setLanes}
             disabled={running}
@@ -247,124 +263,118 @@ export default function MergePanel({
               ...((recording?.channels ?? 2) > 1 ? [{ value: "2" as LaneMode, label: `${laneNames[1] ?? "통로 2"}만` }] : []),
             ]}
           />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={optLabel}>현장음 섞기</span>
+            <Chips
+              value={ambient}
+              onChange={setAmbient}
+              disabled={running}
+              options={[
+                { value: "off", label: "끔" },
+                { value: "low", label: "약하게" },
+                { value: "mid", label: "보통" },
+              ]}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={optLabel}>미세 조정</span>
+            <input
+              type="number"
+              step={10}
+              min={-1000}
+              max={1000}
+              value={nudge}
+              disabled={running}
+              aria-label="미세 조정 ms"
+              onChange={(e) => setNudge(Math.max(-1000, Math.min(1000, Math.round(Number(e.target.value) || 0))))}
+              className="h-[34px] w-20 rounded-[10px] border border-white/12 bg-black/20 px-2 text-center font-orbitron text-[13px] text-white focus:border-white/35 focus:outline-none max-md:h-11 max-md:text-base"
+            />
+            <span className="font-orbitron text-[11px] text-white/40">ms</span>
+          </div>
         </div>
-        <div className="mb-2 flex flex-wrap items-center gap-3">
-          <span className="min-w-[76px] font-pretendard text-[13px] text-white/55">현장음 섞기</span>
-          <Seg
-            value={ambient}
-            onChange={setAmbient}
-            disabled={running}
-            options={[
-              { value: "off", label: "끔" },
-              { value: "low", label: "약하게" },
-              { value: "mid", label: "보통" },
-            ]}
-          />
-        </div>
-        <div className="mb-1 flex flex-wrap items-center gap-3">
-          <span className="min-w-[76px] font-pretendard text-[13px] text-white/55">미세 조정</span>
-          <input
-            type="number"
-            step={10}
-            min={-1000}
-            max={1000}
-            value={nudge}
-            disabled={running}
-            onChange={(e) => setNudge(Math.max(-1000, Math.min(1000, Math.round(Number(e.target.value) || 0))))}
-            className="h-9 w-20 rounded-xl border border-white/10 bg-[#141414] px-2 text-center font-orbitron text-sm text-white focus:outline-none max-md:h-11 max-md:text-base"
-          />
-          <span className="font-pretendard text-xs text-white/40">ms</span>
-        </div>
+      </Step>
 
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <button
-            data-tour="recording.merge-start"
-            type="button"
-            onClick={start}
-            disabled={!canOperate || !video || !recording || !video.hasAudio || running || isMerging || !!upload}
-            className="h-12 rounded-[10px] border border-[#FF3B3B]/55 max-md:w-full bg-[linear-gradient(180deg,rgba(255,59,59,0.28),rgba(255,59,59,0.12))] px-[22px] font-mbc text-base text-white disabled:cursor-not-allowed disabled:opacity-35"
-          >
-            영상 합치기
-          </button>
-          {done && job && (
-            <>
-              <a href={recordingApi.jobFileUrl(job.id, true)} className={cn(btn, "flex h-12 items-center px-4 text-[15px]")}>
-                MP4 받기 · {gb(job.size)}
-              </a>
-              <a
-                href={recordingApi.jobFileUrl(job.id)}
-                target="_blank"
-                rel="noreferrer"
-                className="font-pretendard text-sm text-white/50 underline-offset-4 hover:text-white/80 hover:underline"
-              >
-                새 창에서 보기
-              </a>
-            </>
-          )}
-        </div>
-
+      <Step n={4} state={done ? "done" : st(3)} title="합치기" last>
         {job && (
-          <div className="mt-3">
-            <div className="h-2.5 overflow-hidden rounded-[5px] bg-white/[0.07]">
+          <div>
+            <div className="h-1.5 overflow-hidden rounded bg-white/[0.07]">
               <div
                 className={cn(
                   "h-full transition-[width] duration-300",
-                  job.status === "error"
-                    ? "bg-white/30"
-                    : "bg-[linear-gradient(90deg,#ff6b6b,#FF3B3B)] shadow-[0_0_10px_rgba(255,59,59,0.6)]",
+                  job.status === "error" ? "bg-white/30" : "bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]",
                 )}
                 style={{ width: `${Math.round(job.progress * 100)}%` }}
               />
             </div>
-            <div className="mt-2 flex flex-wrap gap-3.5 font-pretendard text-xs">
-              {job.status === "queued" && <span className="text-white/60">대기 중</span>}
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-pretendard text-[12px]">
+              {job.status === "queued" && <span className="text-white/60">기다리는 중</span>}
               {STAGES.map((s, i) => {
                 const ok = done || (stageIndex >= 0 && i < stageIndex);
-                const on = !done && i === stageIndex;
+                const now = !done && i === stageIndex;
                 return (
-                  <span key={s.key} className={ok ? "text-white/75" : on ? "text-white" : "text-white/35"}>
+                  <span key={s.key} className={ok ? "text-white/70" : now ? "text-white" : "text-white/30"}>
                     {ok ? "✓ " : ""}
                     {s.name}
                   </span>
                 );
               })}
             </div>
-            {job.status === "error" && (
-              <div className="mt-3 rounded-xl border border-[#FF3B3B]/35 bg-[#FF3B3B]/[0.08] px-3.5 py-3 font-pretendard text-[13px] text-[#ffb3b3]">
-                {job.error}
-              </div>
-            )}
+            {job.status === "error" && <p className="mt-2 font-pretendard text-[12.5px] text-[#ff8a8a]">{job.error}</p>}
             {done && job.summary && (
-              <div className="mt-3 rounded-xl border border-white/12 bg-white/[0.04] px-3.5 py-3 font-pretendard text-[13px] leading-relaxed text-white/80">
+              <p className="mt-2 font-pretendard text-[12.5px] leading-relaxed text-white/70">
                 {job.summary.start}
                 <br />
                 {job.summary.drift}
                 {job.sync && !job.sync.precise && (
                   <>
                     <br />
-                    <span className="text-[#ff9a9a]">
-                      0.01초 단위로 맞춤
-                    </span>
+                    <span className="text-[#ff8a8a]">0.01초 단위로 맞춤</span>
                   </>
                 )}
-              </div>
+              </p>
             )}
           </div>
         )}
       </Step>
 
+      <div className="mt-2 flex flex-wrap items-center justify-end gap-3">
+        {done && job && (
+          <>
+            <a
+              href={recordingApi.jobFileUrl(job.id)}
+              target="_blank"
+              rel="noreferrer"
+              className="font-pretendard text-[13px] text-white/50 underline-offset-4 hover:text-white/80 hover:underline"
+            >
+              새 창에서 보기
+            </a>
+            <a href={recordingApi.jobFileUrl(job.id, true)} className={cn(btn, "h-[42px] px-4 text-[14px] text-white")}>
+              MP4 받기 · {gb(job.size)}
+            </a>
+          </>
+        )}
+        <NeonButton
+          data-tour="recording.merge-start"
+          onClick={start}
+          disabled={!canOperate || !video || !recording || !video.hasAudio || running || isMerging || !!upload}
+          className="min-w-[140px] max-md:w-full"
+        >
+          {running ? "합치는 중" : "합치기"}
+        </NeonButton>
+      </div>
+
       {others.length > 0 && (
-        <div className="mt-1 border-t border-white/[0.06] pt-3">
-          <p className="mb-2 font-mbc text-sm text-white/55">전에 합친 영상</p>
+        <div className="mt-4 border-t border-white/[0.06] pt-3">
+          <p className="mb-2 font-mbc text-[13px] text-white/55">전에 합친 영상</p>
           <div className="flex flex-col gap-1.5">
             {others.map((j) => (
               <div key={j.id} className="flex items-center gap-2 font-pretendard text-[13px] text-white/60">
-                <span className="truncate text-white/80">{j.name}</span>
+                <span className="min-w-0 truncate text-white/80">{j.name}</span>
                 <span className="shrink-0 text-xs text-white/35">{when(j.createdAt)}</span>
-                <a href={recordingApi.jobFileUrl(j.id, true)} className={cn(btn, "ml-auto flex shrink-0 items-center")}>
+                <a href={recordingApi.jobFileUrl(j.id, true)} className={cn(btn, "ml-auto")}>
                   받기
                 </a>
-                <button type="button" className={cn(btn, "shrink-0")} disabled={!canOperate} onClick={() => onRemoveJob(j.id)}>
+                <button type="button" className={btn} disabled={!canOperate} onClick={() => onRemoveJob(j.id)}>
                   지우기
                 </button>
               </div>

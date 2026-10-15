@@ -32,6 +32,8 @@ export const recordingApi = {
   }),
   retryImport: (id: string) => post<RecordingItem>(`/recordings/${seg(id)}/import`),
   remove: (id: string) => del<{ success: boolean }>(`/recordings/${seg(id)}`),
+  /** 목록 카드 파형 — 고르게 나눈 칸마다 가장 큰 값(0~1). 서버가 없으면 이때 만든다 */
+  peaks: (id: string) => request<{ peaks: number[] }>(`/recordings/${seg(id)}/peaks`),
   /** 듣기(바로 재생) · 받기(download) 주소. lane 0 = 2채널 원본, 1·2 = 통로 하나 */
   audioUrl: (id: string, lane = 0, download = false) =>
     `${getApiBase()}/recordings/${seg(id)}/audio?lane=${lane}${download ? "&download=1" : ""}`,

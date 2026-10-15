@@ -9,12 +9,13 @@ export function clock(seconds: number): string {
   return [h, m, s % 60].map((v) => String(v).padStart(2, "0")).join(":");
 }
 
-/** 길이 — 목록용 0:48:02 */
+/** 길이 — 목록용 1:02:14 · 48:02 · 6:12 */
 export function duration(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
   const h = Math.floor(s / 3600);
   const m = Math.floor(s / 60) % 60;
-  return `${h}:${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  const ss = String(s % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
 }
 
 export function gb(bytes: number): string {

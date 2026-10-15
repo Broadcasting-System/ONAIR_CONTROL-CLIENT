@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { posToDb } from "@/components/common/LedMeter";
 import SectionHeader from "@/components/common/SectionHeader";
-import { Notice, Panel, StatusChip } from "@/components/hall/HallControls";
+import { Panel } from "@/components/hall/HallControls";
 import AvDeck from "@/components/recording/AvDeck";
 import AvList from "@/components/recording/AvList";
 import ChannelSettings, { RecorderInfo } from "@/components/recording/ChannelSettings";
@@ -10,13 +12,18 @@ import MergePanel from "@/components/recording/MergePanel";
 import SourcePicker from "@/components/recording/SourcePicker";
 import { useAvLibrary, useAvState } from "@/hooks/useAv";
 import { useMe } from "@/hooks/useMe";
+import { useMixer } from "@/hooks/useMixer";
 import { usePersistentState } from "@/hooks/usePersistentState";
 import { useMerge, useRecording, useRecordings } from "@/hooks/useRecording";
+import { cn } from "@/lib/utils";
 
 const topBtn =
   "flex h-9 items-center rounded-xl border border-white/10 bg-white/[0.05] px-3.5 font-mbc text-sm text-white/70 hover:bg-white/10 hover:text-white max-md:h-11";
 
-/** 녹음·녹화 — 화면(없음·CH1~5)과 소리(홀 콘솔·없음)를 골라 한 번에. 목록 하나, 휴대폰 영상 합치기는 맨 아래 */
+const card =
+  "rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:px-[18px] md:py-4 md:shadow-2xl";
+
+/** 녹음·녹화 (시안 A) — 위 녹화 데크와 화면 카드 줄, 아래 왼쪽 목록 카드, 오른쪽 휴대폰 영상 합치기 */
 export default function RecordingPage() {
   const { state, error, fetchedAt, start, stop, isStarting, isStopping, recheck } = useAvState();
   const library = useAvLibrary();
@@ -49,8 +56,9 @@ export default function RecordingPage() {
         ? pickAudio
         : defaultHall;
 
-  // 고른 홀 콘솔의 레벨(바늘) — 이 화면 밖(말로 하는 조작 등)에서 시작한 콘솔 녹음도 여기서 보인다
+  // 고른 홀 콘솔의 녹음 상태(레벨·시간) — 이 화면 밖(말로 하는 조작 등)에서 시작한 콘솔 녹음도 여기서 보인다
   const { state: hallState, fetchedAt: hallFetchedAt } = useRecording(audio);
+  const { state: mixer } = useMixer(audio);
   const external = !session && !!hallState?.recording;
   const recording = !!session || external;
 
@@ -60,7 +68,7 @@ export default function RecordingPage() {
   const onScreen = (n: number | null) => {
     setPickScreen(n);
     if (n !== null) {
-      // 채널을 고르면 그 채널에 연결된 홀 콘솔이 소리로 (바꿀 수 있다)
+      // 채널을 고르면 그 채널에 연결된 홀 콘솔이 소리로 (연결된 홀이 없으면 소리 없음, 바꿀 수 있다)
       setPickAudio(channels.find((c) => c.channel === n)?.hall ?? "");
     } else if (!audio) {
       // 소리만인데 소리가 없으면 콘솔 하나를 먼저 골라 둔다
@@ -68,11 +76,6 @@ export default function RecordingPage() {
     }
   };
 
-  const what = session
-    ? session.source
-    : [channel ? `CH${channel.channel} ${channel.name}`.trim() : "", hall ? `${hall.name} 콘솔` : ""]
-        .filter(Boolean)
-        .join(" + ") || "고른 것 없음";
   const fps = session?.fps ?? fpsPick ?? recorder?.fps ?? 30;
   const mbPerHour = (screen !== null ? state?.mbPerHour.video ?? 0 : 0) + (audio ? state?.mbPerHour.audio ?? 0 : 0);
   const free = state?.disk.free ?? null;
@@ -80,22 +83,26 @@ export default function RecordingPage() {
 
   let reason = "";
   if (!canOperate) reason = "보기 전용";
-  else if (screen === null && !audio) reason = "고른 것 없음";
-  else if (screen !== null && recorder && !recorder.ready) reason = `서버 PC 녹화기 준비 안 됨 · ${recorder.detail}`;
+  else if (screen === null && !audio) reason = "화면이나 소리를 골라 주세요";
+  else if (screen !== null && recorder && !recorder.ready) reason = "서버 PC 녹화기 준비 안 됨";
   else if (channel && !channel.live) reason = `CH${channel.channel} 송출 화면 없음`;
-  else if (hall && !hall.configured)
-    reason = `${hall.name} 콘솔 녹음 꺼짐`;
-  else if (hall && hallState && hallState.configured && !hallState.connected)
-    reason = `${hall.name} 녹음 장치 연결 안 됨 · ${hallState.detail}`;
+  else if (hall && !hall.configured) reason = `${hall.name} 콘솔 녹음 꺼짐`;
+  else if (hall && hallState && hallState.configured && !hallState.connected) reason = `${hall.name} 녹음 장치 연결 안 됨`;
 
-  const chipLabel = !recorder ? "확인 중" : recorder.ready ? "준비됨 · 서버 PC" : "준비 안 됨 · 서버 PC";
-  const lanes = hallState?.lanes.map((l) => l.name) ?? [];
-  const levels = hallState?.configured ? hallState.levels : [];
-  const showMerge = mergeOpen || videos.length > 0 || jobs.length > 0;
+  // 레벨 — 고른 홀의 녹음 입력(콘솔에서 들어오는 통로) → 콘솔 미터(MAIN) → 없으면 숨김
+  const masterMeter = mixer?.connected && mixer.capabilities.includes("meter") ? mixer.master?.meter ?? null : null;
+  const levels: (number | null)[] | null =
+    hallState?.configured && hallState.connected && hallState.levels.length
+      ? hallState.levels
+      : masterMeter != null
+        ? [posToDb(masterMeter / 100)]
+        : null;
+
   const mergeRecordingId = mergeRec ?? recordings.find((r) => r.status === "ready")?.id ?? null;
+  const statusLabel = !recorder ? "서버 PC 확인 중" : recorder.ready ? "서버 PC 준비됨" : "서버 PC 준비 안 됨";
 
   return (
-    <div className="flex h-full flex-col gap-4 md:gap-6">
+    <div className="flex h-full flex-col gap-4">
       <header className="flex flex-wrap items-center gap-3 md:gap-5">
         <SectionHeader className="mb-0 max-md:text-[26px]">녹음·녹화</SectionHeader>
         <div className="relative ml-auto flex items-center gap-2.5">
@@ -103,11 +110,21 @@ export default function RecordingPage() {
             data-tour="recording.status"
             type="button"
             onClick={() => setShowInfo((v) => !v)}
-            title={recorder ? `${recorder.encoder ?? ""} · ${recorder.fps}fps` : undefined}
+            title={recorder ? [recorder.encoder, `${recorder.fps}fps`, recorder.detail].filter(Boolean).join(" · ") : undefined}
             aria-expanded={showInfo}
-            className="max-md:flex max-md:h-11 max-md:items-center"
+            className="flex h-9 items-center gap-[7px] rounded-xl px-2 font-pretendard text-[13px] font-medium text-white/75 hover:text-white max-md:h-11"
           >
-            <StatusChip tone={recorder?.ready ? "good" : "off"} label={chipLabel} />
+            <i
+              className={cn(
+                "h-[7px] w-[7px] rounded-full",
+                !recorder
+                  ? "bg-white/30"
+                  : recorder.ready
+                    ? "bg-white shadow-[0_0_6px_rgba(255,255,255,0.6)]"
+                    : "bg-[#ff3b3b] shadow-[0_0_6px_#ff3b3b]",
+              )}
+            />
+            {statusLabel}
           </button>
           {isAdmin && (
             <button data-tour="recording.settings-toggle" type="button" onClick={() => setShowSettings((v) => !v)} className={topBtn}>
@@ -115,15 +132,14 @@ export default function RecordingPage() {
             </button>
           )}
           {showInfo && recorder && (
-            <div className="absolute right-0 top-11 z-40 w-[300px] max-md:top-12 rounded-2xl border border-white/10 bg-[#161618] p-4 shadow-2xl">
+            <div className="absolute right-0 top-11 z-40 w-[300px] rounded-2xl border border-white/10 bg-[#161618] p-4 shadow-2xl max-md:top-12">
               <RecorderInfo recorder={recorder} onRecheck={recheck} />
             </div>
           )}
         </div>
       </header>
 
-      {error && <Notice>{error.message}</Notice>}
-      {!canOperate && <Notice tone="info">보기 전용</Notice>}
+      {error && <p className="font-pretendard text-[13px] text-[#ff8a8a]">{error.message}</p>}
 
       {isAdmin && showSettings && state && (
         <Panel tour="recording.settings" title="채널 설정">
@@ -131,44 +147,38 @@ export default function RecordingPage() {
         </Panel>
       )}
 
-      <SourcePicker
+      <AvDeck
+        recording={recording}
+        busy={isStarting ? "starting" : isStopping ? "stopping" : null}
+        audioOnly={screen === null}
+        elapsed={session ? session.elapsed : (hallState?.elapsed ?? 0)}
+        fetchedAt={session ? fetchedAt : hallFetchedAt}
+        label={session?.label ?? hallState?.label ?? ""}
+        free={free}
+        hoursLeft={hoursLeft}
+        ready={!!state}
+        disabled={!!reason || !state}
+        reason={reason}
+        error={session?.error}
         channels={channels}
         halls={halls}
         screen={screen}
         audio={audio}
-        laneNames={lanes}
-        recordingChannel={session?.channel ?? null}
         locked={recording || !canOperate}
         onScreen={onScreen}
         onAudio={(h) => setPickAudio(h ?? "")}
-      />
-
-      <AvDeck
-        recording={recording}
-        elapsed={session ? session.elapsed : (hallState?.elapsed ?? 0)}
-        fetchedAt={session ? fetchedAt : hallFetchedAt}
-        what={what}
-        hasScreen={screen !== null}
-        hasAudio={!!audio}
         fps={fps}
         fpsOptions={recorder?.fpsOptions ?? [30, 60]}
         onFps={setFpsPick}
-        hoursLeft={hoursLeft}
-        label={session?.label ?? hallState?.label ?? ""}
-        disabled={!!reason || !state}
-        reason={reason}
-        busy={isStarting || isStopping}
-        error={session?.error}
-        lanes={lanes}
         levels={levels}
-        onStart={(label) =>
-          start({ channel: screen, hall: audio, label, ...(screen !== null ? { fps } : {}) })
-        }
+        onStart={(label) => start({ channel: screen, hall: audio, label, ...(screen !== null ? { fps } : {}) })}
         onStop={() => stop(session ? null : audio)}
-      />
+      >
+        <SourcePicker channels={channels} screen={screen} locked={recording || !canOperate} onScreen={onScreen} />
+      </AvDeck>
 
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <Panel tour="recording.list" title="목록">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section data-tour="recording.list" className={card}>
           <AvList
             items={library.items}
             canOperate={canOperate}
@@ -177,9 +187,20 @@ export default function RecordingPage() {
             onRetry={library.retry}
             onRemove={library.remove}
           />
-        </Panel>
-        <Panel tour="recording.merge" title="휴대폰 영상 합치기">
-          {showMerge ? (
+        </section>
+        <section data-tour="recording.merge" className={card}>
+          {/* 폰에서는 접어 둔다 — 제목을 누르면 펼침 */}
+          <button
+            data-tour="recording.merge-open"
+            type="button"
+            aria-expanded={mergeOpen}
+            onClick={() => setMergeOpen((v) => !v)}
+            className="flex w-full items-center gap-2 text-left md:pointer-events-none"
+          >
+            <h3 className="font-mbc text-[17px] text-white md:text-[18px]">휴대폰 영상 합치기</h3>
+            <ChevronDown size={18} className={cn("ml-auto text-white/50 transition-transform md:hidden", mergeOpen && "rotate-180")} />
+          </button>
+          <div className={cn("mt-1", !mergeOpen && "max-md:hidden")}>
             <MergePanel
               recordings={recordings}
               recordingId={mergeRecordingId}
@@ -192,20 +213,8 @@ export default function RecordingPage() {
               isMerging={isMerging}
               onRemoveJob={removeJob}
             />
-          ) : (
-            <div className="flex flex-wrap items-center gap-3.5">
-              <button
-                data-tour="recording.merge-open"
-                type="button"
-                disabled={!canOperate}
-                onClick={() => setMergeOpen(true)}
-                className="inline-flex h-[38px] items-center rounded-[10px] border border-white/12 bg-white/5 px-3.5 font-pretendard text-sm font-bold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35 max-md:h-11"
-              >
-                + 휴대폰 영상 올리기
-              </button>
-            </div>
-          )}
-        </Panel>
+          </div>
+        </section>
       </div>
     </div>
   );

@@ -1,20 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Mic } from "lucide-react";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 import { cn } from "@/lib/utils";
-import type { AvChannel, AvHall } from "@/types/av";
-
-const NOW_PLAYING: Record<string, string> = {
-  standby: "대기 화면",
-  image: "이미지",
-  video: "영상",
-  presentation: "PPT",
-  screen: "화면 공유",
-  timer: "타이머",
-  youtube: "유튜브",
-  audio: "오디오",
-};
+import type { AvChannel } from "@/types/av";
 
 // 미러를 640x360 으로 그린 뒤 카드 너비에 맞춰 줄인다 (작은 칸에서도 송출 화면과 같은 배치)
 const MIRROR_W = 640;
@@ -43,133 +33,72 @@ function ChannelThumb({ channel }: { channel: number }) {
   );
 }
 
-const cardCls =
-  "grid content-start gap-2.5 rounded-[14px] border p-2.5 text-left transition-[border-color,box-shadow] disabled:cursor-not-allowed";
-const cardOn = "border-red-400/60 shadow-[0_0_0_1px_rgba(248,113,113,0.35)]";
-const cardOff = "border-white/[0.08] bg-black/30";
+const card =
+  "min-w-0 rounded-xl border p-1.5 text-left transition-[border-color,background-color] disabled:cursor-not-allowed";
+const on = "border-white/80 bg-white/[0.06]";
+const off = "border-white/[0.08] bg-black/30 enabled:hover:border-white/25";
 
-/** 화면(없음·CH1~5)과 소리(홀 콘솔·없음) 고르기 */
+/** 화면 고르기 카드 줄 — 소리만 · CH1~5. 송출 중이면 작은 미리보기와 LIVE, 꺼진 채널은 흐리게 */
 export default function SourcePicker({
   channels,
-  halls,
   screen,
-  audio,
-  laneNames,
-  recordingChannel,
   locked,
   onScreen,
-  onAudio,
 }: {
   channels: AvChannel[];
-  halls: AvHall[];
   screen: number | null;
-  audio: string | null;
-  /** 고른 홀 콘솔의 통로 이름 (예: 마이크·음악) */
-  laneNames: string[];
-  /** 지금 녹화 중인 채널 — 썸네일에 빨간 점 */
-  recordingChannel: number | null;
   /** 녹음·녹화 중에는 바꿀 수 없다 */
   locked: boolean;
   onScreen: (channel: number | null) => void;
-  onAudio: (hall: string | null) => void;
 }) {
   return (
-    <section data-tour="recording.sources" className="grid gap-[18px] max-md:gap-3.5 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-7 md:shadow-2xl">
-      <div className="grid gap-[18px] max-md:gap-2.5 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <div className="pt-1 font-pretendard text-sm font-bold text-white/60">
-          화면
+    <div data-tour="recording.screen" className="grid grid-cols-3 gap-2 md:grid-cols-6">
+      <button
+        type="button"
+        disabled={locked}
+        aria-pressed={screen === null}
+        onClick={() => onScreen(null)}
+        className={cn(card, screen === null ? on : off)}
+      >
+        <div className="grid aspect-video place-items-center rounded-[7px] bg-[#0b0b0d] text-white/30">
+          <Mic size={20} strokeWidth={2} />
         </div>
-        <div data-tour="recording.screen" className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:gap-3 xl:grid-cols-6">
+        <div className="mt-1.5 truncate px-[3px] font-mbc text-[13px] text-white">소리만</div>
+      </button>
+      {channels.map((c) => {
+        const picked = screen === c.channel;
+        const dead = !c.live;
+        return (
           <button
+            key={c.channel}
             type="button"
-            disabled={locked}
-            onClick={() => onScreen(null)}
-            className={cn(cardCls, screen === null ? cardOn : cardOff, screen === null && "bg-black/30")}
+            disabled={locked || dead}
+            aria-pressed={picked}
+            onClick={() => onScreen(c.channel)}
+            title={c.name || undefined}
+            className={cn(card, picked ? on : off, dead && "opacity-45")}
           >
-            <div className="grid aspect-video place-items-center rounded-lg bg-[#0a0a0c] font-pretendard text-[13px] text-white/45">
-              화면 없음
-            </div>
-            <div>
-              <div className="font-pretendard text-[15px] font-bold text-white">소리만</div>
-              <div className="font-pretendard text-[12.5px] text-white/50">콘솔 녹음</div>
-            </div>
-          </button>
-          {channels.map((c) => {
-            const on = screen === c.channel;
-            const off = !c.live;
-            const now = NOW_PLAYING[c.type] ?? c.type;
-            return (
-              <button
-                key={c.channel}
-                type="button"
-                disabled={locked || off}
-                onClick={() => onScreen(c.channel)}
-                className={cn(cardCls, on ? cardOn : cardOff, on && "bg-black/30", off && "opacity-45")}
-              >
-                <div className="relative aspect-video overflow-hidden rounded-lg bg-[#0a0a0c]">
-                  {off ? (
-                    <span className="absolute inset-0 grid place-items-center font-pretendard text-[13px] text-white/40">
-                      꺼짐
-                    </span>
-                  ) : (
-                    <ChannelThumb channel={c.channel} />
-                  )}
-                  <span className="absolute left-2 top-2 z-30 inline-flex h-5 items-center rounded-[5px] bg-black/65 px-[7px] font-mono text-[11px] font-bold text-white">
-                    CH{c.channel}
+            <div className="relative aspect-video overflow-hidden rounded-[7px] bg-[#0b0b0d]">
+              {dead ? (
+                <span className="absolute inset-0 grid place-items-center font-pretendard text-[11px] text-white/30">꺼짐</span>
+              ) : (
+                <>
+                  <ChannelThumb channel={c.channel} />
+                  <span className="absolute right-[5px] top-[5px] z-30 rounded bg-[#ff3b3b] px-1 py-px font-orbitron text-[8.5px] font-bold tracking-[0.08em] text-white">
+                    LIVE
                   </span>
-                  {recordingChannel === c.channel && (
-                    <span className="absolute right-2 top-2 z-30 h-2 w-2 rounded-full bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]" />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <div className="truncate font-pretendard text-[15px] font-bold text-white">{c.name || c.label}</div>
-                  <div className="line-clamp-2 font-pretendard text-[12.5px] text-white/50">
-                    {off ? "연결된 화면 없음" : [c.hallName, now].filter(Boolean).join(" · ")}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="grid gap-[18px] border-t border-white/[0.07] pt-[18px] max-md:gap-2.5 max-md:pt-3.5 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <div className="pt-1 font-pretendard text-sm font-bold text-white/60">
-          소리
-        </div>
-        <div data-tour="recording.audio" className="flex flex-wrap gap-2.5 max-md:grid max-md:grid-cols-1">
-          {halls.map((h) => {
-            const on = audio === h.id;
-            const sub = !h.configured ? "설정 안 됨" : on && laneNames.length ? `${laneNames.join("·")} ${laneNames.length}통로` : "2통로";
-            return (
-              <button
-                key={h.id}
-                type="button"
-                disabled={locked}
-                onClick={() => onAudio(h.id)}
-                className={cn(
-                  "inline-flex h-[46px] items-center gap-2.5 rounded-xl border bg-black/30 px-4 font-pretendard text-[15px] font-bold transition-[border-color,box-shadow] disabled:cursor-not-allowed",
-                  on ? cn(cardOn, "text-white") : "border-white/10 text-white/75",
-                )}
-              >
-                {h.name} 콘솔
-                <small className="text-[12.5px] font-medium text-white/45">{sub}</small>
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            disabled={locked}
-            onClick={() => onAudio(null)}
-            className={cn(
-              "inline-flex h-[46px] items-center rounded-xl border bg-black/30 px-4 font-pretendard text-[15px] font-bold transition-[border-color,box-shadow] disabled:cursor-not-allowed",
-              audio === null ? cn(cardOn, "text-white") : "border-white/10 text-white/75",
-            )}
-          >
-            소리 없음
+                </>
+              )}
+            </div>
+            <div className="mt-1.5 flex min-w-0 items-center gap-1.5 px-[3px]">
+              <span className="shrink-0 font-mbc text-[13px] text-white">CH{c.channel}</span>
+              {c.hallName && (
+                <small className="ml-auto truncate font-pretendard text-[11px] font-medium text-white/40">{c.hallName}</small>
+              )}
+            </div>
           </button>
-        </div>
-      </div>
-    </section>
+        );
+      })}
+    </div>
   );
 }

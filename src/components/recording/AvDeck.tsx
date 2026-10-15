@@ -1,95 +1,103 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { clock } from "@/components/recording/format";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import LedMeter from "@/components/common/LedMeter";
+import OnairButton, { type OnairButtonState } from "@/components/common/OnairButton";
+import Select from "@/components/common/Select";
+import { clock, gb } from "@/components/recording/format";
 import { cn } from "@/lib/utils";
+import type { AvChannel, AvHall } from "@/types/av";
 
-// VU 바늘 — 0 VU = -18 dBFS (방송 기준). 왼쪽 끝 -20 VU, 오른쪽 끝 +3 VU
-const VU_REF_DBFS = -18;
-const VU_MIN = -20;
-const VU_MAX = 3;
-const NEEDLE_MIN_DEG = -42;
-const NEEDLE_MAX_DEG = 42;
+const field =
+  "h-[38px] rounded-[11px] border border-white/[0.14] bg-black/20 font-pretendard text-[13.5px] font-medium text-white max-md:h-11";
 
-function needleDeg(dbfs: number | null): number {
-  if (dbfs == null || !Number.isFinite(dbfs)) return NEEDLE_MIN_DEG;
-  const vu = Math.max(VU_MIN, Math.min(VU_MAX, dbfs - VU_REF_DBFS));
-  return NEEDLE_MIN_DEG + ((vu - VU_MIN) / (VU_MAX - VU_MIN)) * (NEEDLE_MAX_DEG - NEEDLE_MIN_DEG);
-}
-
-/** 바늘 VU 미터 (어두운 판 · 흰 바늘 · 오른쪽 끝 빨간 구간) */
-export function VuMeter({ name, dbfs }: { name: string; dbfs: number | null }) {
+/** 앞에 작은 이름(화면·소리)을 붙인 ONAIR 고르기 칸 */
+function Picker<T extends string>({
+  name,
+  tour,
+  ...props
+}: {
+  name: string;
+  tour: string;
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: ReactNode; disabled?: boolean; textValue?: string }[];
+  disabled?: boolean;
+}) {
   return (
-    <div
-      className="relative h-[86px] w-[150px] overflow-hidden rounded-[10px] max-md:w-full border border-black bg-[radial-gradient(ellipse_at_50%_120%,#26272c,#141518_70%)] shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)]"
-      role="meter"
-      aria-label={`${name} 레벨`}
-      aria-valuemin={-60}
-      aria-valuemax={0}
-      aria-valuenow={dbfs ?? -60}
-    >
-      <span className="absolute left-[15px] right-[15px] top-[18px] h-[100px] rounded-[50%] border-t-2 border-white/35" />
-      <span className="absolute right-[26px] top-5 h-3 w-[34px] rounded-tr-[40px] border-t-[3px] border-[#FF3B3B]" />
-      <span
-        className="absolute -bottom-2.5 left-1/2 -ml-px h-[82px] w-0.5 origin-bottom bg-[#f4f4f4] shadow-[0_0_6px_rgba(255,255,255,0.4)] transition-transform duration-300 ease-out"
-        style={{ transform: `rotate(${needleDeg(dbfs)}deg)` }}
-      />
-      <span className="absolute bottom-1.5 left-2.5 font-orbitron text-[10px] font-bold tracking-[0.1em] text-white/60">VU</span>
-      <span className="absolute bottom-1.5 right-2.5 max-w-[96px] truncate font-pretendard text-xs font-bold text-white/60">
+    <div className="relative min-w-0">
+      <span className="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2 font-mbc text-[12px] text-white/45">
         {name}
       </span>
+      <Select {...props} tour={tour} aria-label={name} className={cn(field, "w-full pl-[42px] pr-3 disabled:cursor-default disabled:opacity-80")} />
     </div>
   );
 }
 
-const tag = "inline-flex h-7 items-center gap-2 rounded-lg bg-white/[0.06] px-2.5 font-pretendard text-[13px] text-white/80";
+const sub = "font-pretendard text-[11.5px] font-medium text-white/40";
 
-/** 녹음대 — 라디오 버튼 같은 둥근 REC 버튼, 큰 시간, 무엇을 녹음하는지, 이름, 바늘 VU */
+/** 녹화 데크 — 로고 녹화 버튼, 큰 시간, 화면·소리 고르기와 이름, 가로 LED 레벨 미터. 아래에 화면 카드 줄(children) */
 export default function AvDeck({
   recording,
+  busy,
+  audioOnly,
   elapsed,
   fetchedAt,
-  what,
-  hasScreen,
-  hasAudio,
+  label,
+  free,
+  hoursLeft,
+  ready,
+  disabled,
+  reason,
+  error,
+  channels,
+  halls,
+  screen,
+  audio,
+  locked,
+  onScreen,
+  onAudio,
   fps,
   fpsOptions,
   onFps,
-  hoursLeft,
-  label,
-  disabled,
-  reason,
-  busy,
-  error,
-  lanes,
   levels,
   onStart,
   onStop,
+  children,
 }: {
   recording: boolean;
-  /** 서버가 알려 준 녹음·녹화 시간(초) — 그 사이는 이 기기 시계로 채운다 */
+  /** 시작·멈춤 요청 중 */
+  busy: "starting" | "stopping" | null;
+  /** 화면 없이 소리만 (글자를 '녹음'으로) */
+  audioOnly: boolean;
+  /** 서버가 알려 준 시간(초) — 그 사이는 이 기기 시계로 채운다 */
   elapsed: number;
   fetchedAt: number;
-  what: string;
-  hasScreen: boolean;
-  hasAudio: boolean;
-  fps: number;
-  fpsOptions: number[];
-  /** 녹화 전에만 — 누르면 30 ↔ 60 */
-  onFps?: (fps: number) => void;
-  hoursLeft: number | null;
   /** 녹음·녹화 중인 것의 이름 */
   label: string;
+  free: number | null;
+  hoursLeft: number | null;
+  /** 상태를 받아 왔는지 */
+  ready: boolean;
   disabled: boolean;
-  /** 누를 수 없는 까닭 (녹화 전) */
-  reason?: string;
-  busy: boolean;
+  /** 누를 수 없는 까닭 — 버튼 아래 글자로 */
+  reason: string;
   error?: string;
-  lanes: string[];
-  /** 통로마다 dBFS (없으면 바늘이 쉰다) */
-  levels: (number | null)[];
+  channels: AvChannel[];
+  halls: AvHall[];
+  screen: number | null;
+  audio: string | null;
+  locked: boolean;
+  onScreen: (channel: number | null) => void;
+  onAudio: (hall: string | null) => void;
+  fps: number;
+  fpsOptions: number[];
+  onFps: (fps: number) => void;
+  /** 줄마다 dBFS — 없으면 미터를 숨긴다 */
+  levels: (number | null)[] | null;
   onStart: (label: string) => void;
   onStop: () => void;
+  children?: ReactNode;
 }) {
   const [name, setName] = useState("");
   const [confirmStop, setConfirmStop] = useState(false);
@@ -101,6 +109,9 @@ export default function AvDeck({
     const t = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(t);
   }, [recording]);
+  useEffect(() => {
+    if (!recording) setConfirmStop(false);
+  }, [recording]);
   useEffect(
     () => () => {
       if (confirmTimer.current) clearTimeout(confirmTimer.current);
@@ -109,6 +120,7 @@ export default function AvDeck({
   );
 
   const shown = recording ? elapsed + Math.max(0, (now - fetchedAt) / 1000) : 0;
+  const word = audioOnly ? "녹음" : "녹화";
 
   const press = () => {
     if (busy) return;
@@ -129,92 +141,152 @@ export default function AvDeck({
     onStop();
   };
 
-  const canPress = recording ? !busy : !disabled && !busy;
+  // 버튼 상태와 아래 글자 (마이크 방송 버튼과 같은 방식)
+  const [btn, caption] = ((): [OnairButtonState, string] => {
+    if (busy === "starting") return ["waiting", "시작하는 중"];
+    if (busy === "stopping") return ["waiting", "멈추는 중"];
+    if (recording) return ["active", confirmStop ? "한 번 더 누르면 멈춰요" : "누르면 멈춰요"];
+    if (!ready) return ["disabled", "확인 중"];
+    if (disabled) return ["disabled", reason];
+    return ["idle", `누르면 ${word}`];
+  })();
+
+  const side = recording
+    ? `${label || "이름 없음"} · ${word} 중`
+    : [free != null ? `남은 공간 ${gb(free).replace(" ", "")}` : "", hoursLeft != null ? `${Math.floor(hoursLeft)}시간` : ""]
+        .filter(Boolean)
+        .join(" · ");
   const nextFps = fpsOptions.find((f) => f !== fps) ?? fps;
 
+  const screenValue = screen === null ? "none" : String(screen);
+  const screenOptions = [
+    { value: "none", label: "소리만" },
+    ...channels.map((c) => ({
+      value: String(c.channel),
+      disabled: !c.live,
+      textValue: `CH${c.channel} ${c.name}`,
+      label: (
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="truncate">{`CH${c.channel}${c.name ? ` ${c.name}` : c.hallName ? ` ${c.hallName}` : ""}`}</span>
+          {!c.live ? <small className={sub}>꺼짐</small> : c.name && c.hallName ? <small className={sub}>{c.hallName}</small> : null}
+        </span>
+      ),
+    })),
+  ];
+  const audioOptions = [
+    ...halls.map((h) => ({
+      value: h.id,
+      textValue: `${h.name} 콘솔`,
+      label: (
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="truncate">{h.name} 콘솔</span>
+          {!h.configured && <small className={sub}>설정 안 됨</small>}
+        </span>
+      ),
+    })),
+    { value: "", label: "소리 없음" },
+  ];
+
   return (
-    <section data-tour="recording.deck" className="grid items-center gap-7 max-md:gap-4 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-7 md:shadow-2xl md:grid-cols-[auto_minmax(0,1fr)] xl:grid-cols-[auto_minmax(0,1fr)_auto]">
-      <div className="flex flex-col items-center gap-2">
-        <button
-          data-tour="recording.start"
-          type="button"
-          onClick={press}
-          disabled={!canPress}
-          aria-label={recording ? "멈추기" : "녹음·녹화 시작"}
-          className={cn(
-            "grid h-24 w-24 place-items-center rounded-full border border-black transition-shadow disabled:cursor-not-allowed disabled:opacity-40",
-            "bg-[radial-gradient(circle_at_50%_38%,#3b3e44,#1d1f23_70%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_4px_0_#08090a]",
-          )}
-        >
+    <section
+      data-tour="recording.deck"
+      className="rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:px-[22px] md:py-[18px] md:shadow-2xl"
+    >
+      <div
+        className={cn(
+          "grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3.5 gap-y-3",
+          levels ? "[grid-template-areas:'btn_info''pick_pick''meter_meter']" : "[grid-template-areas:'btn_info''pick_pick']",
+          "md:gap-x-[22px] md:gap-y-3 md:grid-cols-[150px_minmax(0,1fr)_auto] md:[grid-template-areas:'btn_info_meter''btn_pick_pick']",
+        )}
+      >
+        <div className="[grid-area:btn]">
+          <OnairButton state={btn} label={recording ? "멈추기" : `${word} 시작`} caption={caption} size="md" tour="recording.start" onPress={press} />
+        </div>
+
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-1 [grid-area:info]">
           <span
             className={cn(
-              "h-[30px] w-[30px] bg-[radial-gradient(circle_at_40%_35%,#ff7c70,#e3201f)] shadow-[0_0_22px_rgba(255,59,59,0.8)] transition-[border-radius]",
-              recording ? "rounded-md" : "rounded-full",
+              "font-orbitron text-[30px] font-bold leading-none tracking-[0.04em] tabular-nums md:text-[44px]",
+              recording ? "text-[#ff4d55]" : "text-white",
             )}
-          />
-        </button>
-        <span className={cn("h-4 font-pretendard text-xs", confirmStop ? "text-[#ff9a9a]" : "text-white/35")}>
-          {confirmStop ? "한 번 더 누르면 멈춰요" : ""}
-        </span>
-      </div>
-
-      <div className="grid min-w-0 gap-3">
-        <div className="flex items-center gap-3.5">
-          <span className="font-mono text-[40px] font-bold leading-none tracking-[0.02em] text-white tabular-nums">
+          >
             {clock(shown)}
           </span>
-          {recording && (
-            <span className="inline-flex h-7 items-center rounded-lg border border-red-400/50 bg-red-400/15 px-2.5 font-orbitron text-[11px] tracking-[0.15em] text-white">
-              REC
-            </span>
-          )}
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+            {side && <span className="truncate font-pretendard text-[12.5px] font-medium text-white/45">{side}</span>}
+            {screen !== null &&
+              (!recording && !locked && fpsOptions.length > 1 ? (
+                <button
+                  data-tour="recording.fps"
+                  type="button"
+                  onClick={() => onFps(nextFps)}
+                  className="h-6 rounded-md border border-white/[0.12] px-2 font-orbitron text-[10.5px] font-semibold text-white/60 hover:border-white/30 hover:text-white max-md:h-8"
+                >
+                  1080p {fps}fps
+                </button>
+              ) : (
+                <span className="font-orbitron text-[10.5px] font-semibold text-white/40">1080p {fps}fps</span>
+              ))}
+          </span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <span className={tag}>{what}</span>
-          {hasScreen &&
-            (onFps && !recording && fpsOptions.length > 1 ? (
-              <button
-                data-tour="recording.fps"
-                type="button"
-                onClick={() => onFps(nextFps)}
-                className={cn(tag, "hover:bg-white/10")}
-              >
-                1080p · {fps}fps
-              </button>
+
+        <div className="grid min-w-0 gap-2 [grid-area:pick]">
+          <div
+            data-tour="recording.sources"
+            className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center"
+          >
+            <div className="md:w-[180px]">
+              <Picker
+                name="화면"
+                tour="recording.screen-pick"
+                value={screenValue}
+                onChange={(v) => onScreen(v === "none" ? null : Number(v))}
+                options={screenOptions}
+                disabled={locked}
+              />
+            </div>
+            <div className="md:w-[180px]">
+              <Picker
+                name="소리"
+                tour="recording.audio"
+                value={audio ?? ""}
+                onChange={(v) => onAudio(v || null)}
+                options={audioOptions}
+                disabled={locked}
+              />
+            </div>
+            {recording ? (
+              <div className={cn(field, "col-span-2 flex min-w-0 items-center px-3.5 md:min-w-[220px] md:flex-1")}>
+                <span className="truncate">{label || "이름 없음"}</span>
+              </div>
             ) : (
-              <span className={tag}>1080p · {fps}fps</span>
-            ))}
-          {hasAudio && <span className={tag}>48kHz · 24비트</span>}
-          {hoursLeft != null && <span className={tag}>남은 공간 {Math.floor(hoursLeft)}시간</span>}
-        </div>
-        {recording ? (
-          <div className="flex h-[42px] max-w-[420px] items-center rounded-[10px] max-md:h-12 max-md:max-w-none border border-white/12 bg-[#0c0d0f] px-3.5 font-pretendard text-base text-white">
-            <span className="truncate">{label || "이름 없음"}</span>
+              <input
+                data-tour="recording.name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && press()}
+                maxLength={60}
+                disabled={disabled || !!busy}
+                placeholder={`${word} 이름`}
+                aria-label={`${word} 이름`}
+                className={cn(
+                  field,
+                  "col-span-2 min-w-0 px-3.5 outline-none placeholder:text-white/35 focus:border-white/35 disabled:opacity-50 max-md:text-base md:min-w-[220px] md:flex-1",
+                )}
+              />
+            )}
           </div>
-        ) : (
-          <input
-            data-tour="recording.name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && press()}
-            maxLength={60}
-            disabled={disabled}
-            placeholder="예: 2학기 학예회 1부"
-            className="h-[42px] w-full max-w-[420px] rounded-[10px] border border-white/12 bg-[#0c0d0f] px-3.5 font-pretendard text-base text-white outline-none placeholder:text-white/35 focus:border-white/35 disabled:opacity-50 max-md:h-12 max-md:max-w-none"
-          />
-        )}
-        {(error || (!recording && reason)) && (
-          <p className={cn("font-pretendard text-[13px]", error ? "text-[#ff9a9a]" : "text-white/45")}>{error || reason}</p>
+          {error && <p className="font-pretendard text-[12.5px] text-[#ff8a8a]">{error}</p>}
+        </div>
+
+        {levels && (
+          <div className="[grid-area:meter] md:self-start md:pt-1.5">
+            <LedMeter levels={levels} tour="recording.meters" className="max-md:w-full" />
+          </div>
         )}
       </div>
 
-      {hasAudio && (
-        <div data-tour="recording.meters" className="flex gap-3 max-md:grid max-md:grid-cols-2 md:col-span-2 xl:col-span-1">
-          {(lanes.length ? lanes : ["마이크", "음악"]).slice(0, 2).map((n, i) => (
-            <VuMeter key={i} name={`${i + 1} ${n}`} dbfs={levels[i] ?? null} />
-          ))}
-        </div>
-      )}
+      {children && <div className="mt-4">{children}</div>}
     </section>
   );
 }
