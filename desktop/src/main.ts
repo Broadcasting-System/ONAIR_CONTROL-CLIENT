@@ -32,8 +32,8 @@ async function renderSetup() {
   const pending = await call<string | null>("pending_link");
   const mobile = isMobile(state.platform);
   document.documentElement.classList.toggle("mobile", mobile);
-  // 모바일은 카메라로 QR 찍기가 먼저
-  let tab: Tab = mobile && !pending ? "qr" : "link";
+  // 받은 링크가 있으면 링크, 아니면 코드가 먼저 (모바일은 카메라로 QR 찍기가 먼저)
+  let tab: Tab = pending ? "link" : mobile ? "qr" : "code";
   let parsed: ParsedLink | null = null;
   // 8자리 코드는 한 번만 쓸 수 있어서, 받은 접속 정보는 앱(Rust)에 두고 같은 코드로 다시 부르지 않는다
   let redeemedFor: string | null = null;
@@ -74,7 +74,7 @@ async function renderSetup() {
         <div class="tabs" role="tablist">
           ${mobile
             ? `<button data-tab="qr">QR</button><button data-tab="code">코드</button><button data-tab="link">링크</button>`
-            : `<button data-tab="link">링크 붙여넣기</button><button data-tab="qr">QR 사진</button><button data-tab="code">코드</button>`}
+            : `<button data-tab="code">코드</button><button data-tab="link">링크 붙여넣기</button><button data-tab="qr">QR 사진</button>`}
           <button data-tab="manual">직접 입력</button>
         </div>
 
@@ -96,9 +96,9 @@ async function renderSetup() {
         <div data-pane="code" class="hidden">
           <label class="f" for="code">초대 코드</label>
           <input class="in code-in" id="code" spellcheck="false" autocomplete="one-time-code" autocapitalize="characters" maxlength="9" placeholder="XXXX-XXXX">
-          <label class="f" for="cserver">서버 주소</label>
-          <input class="in" id="cserver" type="url" inputmode="url" spellcheck="false" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="https://onair.bssmcast.com" value="${esc(state.server ?? "https://onair.bssmcast.com")}">
           <details><summary>고급</summary>
+            <label class="f" for="cserver">서버 주소</label>
+            <input class="in" id="cserver" type="url" inputmode="url" spellcheck="false" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="https://onair.bssmcast.com" value="${esc(state.server ?? "https://onair.bssmcast.com")}">
             <label class="f" for="capi">API 주소</label>
             <input class="in" id="capi" type="url" inputmode="url" spellcheck="false" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="http://100.95.97.82:8000">
           </details>
