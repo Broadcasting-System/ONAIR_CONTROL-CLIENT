@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { Popover as P } from "radix-ui";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -227,9 +227,41 @@ function Wheel({ count, value, onChange, label }: { count: number; value: number
     const n = Math.max(0, Math.min(count - 1, i));
     ref.current?.scrollTo({ top: n * ROW, behavior: "smooth" });
   };
+
+  // 마우스로 잡고 끌어도 돈다 (폰처럼). 스크롤 칸은 마우스 끌기로는 안 움직여서 직접 옮긴다.
+  // 조금이라도 끌어야 잡는다 — 그냥 누르면 숫자 누르기(go)로 간다
+  const drag = useRef<{ y: number; top: number; moved: boolean } | null>(null);
+  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    drag.current = { y: e.clientY, top: e.currentTarget.scrollTop, moved: false };
+  };
+  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d) return;
+    const el = e.currentTarget;
+    const dy = e.clientY - d.y;
+    if (!d.moved) {
+      if (Math.abs(dy) < 4) return;
+      d.moved = true;
+      el.style.scrollSnapType = "none";
+      el.setPointerCapture(e.pointerId);
+    }
+    el.scrollTop = d.top - dy;
+  };
+  const endDrag = (e: PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d?.moved) return;
+    e.currentTarget.style.scrollSnapType = "";
+    go(Math.round(e.currentTarget.scrollTop / ROW));
+  };
   return (
     <div
       ref={ref}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
       role="listbox"
       tabIndex={0}
       aria-label={label}
@@ -251,7 +283,7 @@ function Wheel({ count, value, onChange, label }: { count: number; value: number
           go(value + (e.key === "ArrowUp" ? -1 : 1));
         }
       }}
-      className="relative z-10 h-[220px] w-[84px] snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-xl py-[88px] outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="relative z-10 h-[220px] w-[84px] cursor-grab select-none snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-xl py-[88px] outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {Array.from({ length: count }, (_, i) => {
         const dist = Math.abs(i - pos);
