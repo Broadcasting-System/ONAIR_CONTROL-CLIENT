@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "@/components/common/Toast";
 import { cn } from "@/lib/utils";
+import { DurationWheel } from "@/components/common/DateTimePicker";
 import { useFiles } from "@/hooks/useFiles";
 import { UploadedFile } from "@/types/file";
 import {
@@ -1056,8 +1057,6 @@ function BannerTimerEditor({
   onSend: () => void;
   onClear: () => void;
 }) {
-  const min = Math.floor((value.durationSec ?? 0) / 60);
-  const sec = (value.durationSec ?? 0) % 60;
   const mode = value.mode ?? "down";
 
   return (
@@ -1089,36 +1088,11 @@ function BannerTimerEditor({
       </div>
 
       {mode === "down" && (
-        <div className="flex items-end gap-3">
-          <div className="flex flex-col gap-1.5">
-            <span className="font-mbc text-xs text-white/40">분</span>
-            <input
-              type="number"
-              min={0}
-              value={min}
-              onChange={(e) =>
-                onChange({ ...value, durationSec: Math.max(0, Number(e.target.value)) * 60 + sec })
-              }
-              className="h-11 w-24 rounded-xl border border-white/10 bg-black/40 px-4 font-orbitron text-white focus:border-white/30 focus:outline-none"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <span className="font-mbc text-xs text-white/40">초</span>
-            <input
-              type="number"
-              min={0}
-              max={59}
-              value={sec}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  durationSec: min * 60 + Math.min(59, Math.max(0, Number(e.target.value))),
-                })
-              }
-              className="h-11 w-24 rounded-xl border border-white/10 bg-black/40 px-4 font-orbitron text-white focus:border-white/30 focus:outline-none"
-            />
-          </div>
-        </div>
+        <DurationWheel
+          value={value.durationSec ?? 0}
+          onChange={(sec) => onChange({ ...value, durationSec: sec })}
+          className="self-start"
+        />
       )}
 
       <div className="flex gap-3">

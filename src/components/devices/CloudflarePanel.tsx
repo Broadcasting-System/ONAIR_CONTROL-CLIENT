@@ -725,7 +725,7 @@ function AccessEmailSection() {
               className={cn(field, "max-w-[420px]")}
             />
             <ActionButton tone="primary" className="max-md:h-11" busy={add.isPending} disabled={!valid} onClick={() => add.mutate(value)}>
-              더하기
+              추가
             </ActionButton>
           </div>
           <ul className="flex flex-col rounded-xl border border-white/10">

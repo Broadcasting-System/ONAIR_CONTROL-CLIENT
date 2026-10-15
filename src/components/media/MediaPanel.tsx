@@ -16,6 +16,7 @@ import { useMe } from "@/hooks/useMe";
 import { useHealth } from "@/hooks/useHealth";
 import { parseYouTubeId } from "@/lib/youtube";
 import { toast } from "@/components/common/Toast";
+import { DurationWheel } from "@/components/common/DateTimePicker";
 import { FileType, UploadedFile } from "@/types/file";
 
 const TYPE_TABS: { key: FileType; label: string }[] = [
@@ -620,12 +621,9 @@ function TimerComposer({
   onSend: (opts: { label?: string; durationSec: number; mode: "down" | "up" }) => void;
   onClear: () => void;
 }) {
-  const [min, setMin] = useState(5);
-  const [sec, setSec] = useState(0);
+  const [durationSec, setDurationSec] = useState(300);
   const [label, setLabel] = useState("");
   const [mode, setMode] = useState<"down" | "up">("down");
-
-  const durationSec = Math.max(0, Math.floor(min) * 60 + Math.floor(sec));
 
   return (
     <div className="flex flex-1 flex-col gap-5 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5" data-tour="media.timer-panel">
@@ -657,31 +655,7 @@ function TimerComposer({
       </div>
 
       {/* 시간 (카운트다운일 때만) */}
-      {mode === "down" && (
-        <div className="flex items-end gap-3">
-          <div className="flex flex-col gap-1.5">
-            <span className="font-mbc text-xs text-white/40">분</span>
-            <input
-              type="number"
-              min={0}
-              value={min}
-              onChange={(e) => setMin(Math.max(0, Number(e.target.value)))}
-              className="h-11 w-24 rounded-xl border border-white/10 bg-[#141414] px-4 font-orbitron text-white focus:border-white/30 focus:outline-none"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <span className="font-mbc text-xs text-white/40">초</span>
-            <input
-              type="number"
-              min={0}
-              max={59}
-              value={sec}
-              onChange={(e) => setSec(Math.min(59, Math.max(0, Number(e.target.value))))}
-              className="h-11 w-24 rounded-xl border border-white/10 bg-[#141414] px-4 font-orbitron text-white focus:border-white/30 focus:outline-none"
-            />
-          </div>
-        </div>
-      )}
+      {mode === "down" && <DurationWheel value={durationSec} onChange={setDurationSec} className="self-start" />}
 
       <div className="mt-auto flex gap-3">
         <button

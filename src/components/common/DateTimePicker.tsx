@@ -211,13 +211,16 @@ const okBtn =
 function Wheel({ count, value, onChange, label }: { count: number; value: number; onChange: (v: number) => void; label: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const timer = useRef<number | undefined>(undefined);
+  const rolling = useRef(false);
   const [pos, setPos] = useState(value);
 
+  // 바깥에서 값이 바뀌면(처음 열 때 포함) 그 자리로 — 사용자가 굴리는 중이면 건드리지 않는다
   useLayoutEffect(() => {
-    if (ref.current) ref.current.scrollTop = value * ROW;
-    // 처음 열 때만 맞춘다 — 그 뒤는 사용자가 굴린 자리
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const el = ref.current;
+    if (!el || rolling.current) return;
+    if (Math.round(el.scrollTop / ROW) !== value) el.scrollTop = value * ROW;
+    setPos(value);
+  }, [value]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   const go = (i: number) => {
@@ -234,8 +237,10 @@ function Wheel({ count, value, onChange, label }: { count: number; value: number
       onScroll={(e) => {
         const top = e.currentTarget.scrollTop;
         setPos(top / ROW);
+        rolling.current = true;
         window.clearTimeout(timer.current);
         timer.current = window.setTimeout(() => {
+          rolling.current = false;
           const i = Math.max(0, Math.min(count - 1, Math.round(top / ROW)));
           if (i !== value) onChange(i);
         }, 80);
@@ -318,5 +323,35 @@ export function TimePicker({ value, onChange, placeholder = "시간", className,
         </P.Content>
       </P.Portal>
     </P.Root>
+  );
+}
+
+/** 타이머 길이 — 시·분·초 휠 (칸 안에 바로 펼쳐 둔다). value·onChange 는 초 */
+export function DurationWheel({ value, onChange, maxHours = 23, className }: {
+  value: number;
+  onChange: (sec: number) => void;
+  maxHours?: number;
+  className?: string;
+}) {
+  const v = Math.max(0, Math.floor(value));
+  const h = Math.min(maxHours, Math.floor(v / 3600));
+  const m = Math.floor((v % 3600) / 60);
+  const s = v % 60;
+  const set = (nh: number, nm: number, ns: number) => onChange(nh * 3600 + nm * 60 + ns);
+  const col = (label: string, node: ReactNode) => (
+    <div className="flex flex-col items-center gap-1">
+      {node}
+      <span className="font-mbc text-[12px] text-white/40">{label}</span>
+    </div>
+  );
+  return (
+    <div className={cn("relative flex items-start justify-center gap-1.5 rounded-2xl border border-white/10 bg-[#0c0d0f] px-3 pt-1 pb-2 shadow-[inset_0_2px_8px_rgba(0,0,0,0.7)]", className)}>
+      <div className="pointer-events-none absolute inset-x-3 top-[92px] h-11 rounded-xl border border-white/[0.14] bg-white/[0.08]" />
+      {col("시간", <Wheel count={maxHours + 1} value={h} onChange={(x) => set(x, m, s)} label="시간" />)}
+      <span className="relative z-10 mt-[96px] font-orbitron text-[22px] text-white/60">:</span>
+      {col("분", <Wheel count={60} value={m} onChange={(x) => set(h, x, s)} label="분" />)}
+      <span className="relative z-10 mt-[96px] font-orbitron text-[22px] text-white/60">:</span>
+      {col("초", <Wheel count={60} value={s} onChange={(x) => set(h, m, x)} label="초" />)}
+    </div>
   );
 }

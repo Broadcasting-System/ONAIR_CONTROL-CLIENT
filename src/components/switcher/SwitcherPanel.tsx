@@ -8,6 +8,8 @@ import MediaSelectModal from "@/components/common/MediaSelectModal";
 import InputModal from "@/components/common/InputModal";
 import { toast } from "@/components/common/Toast";
 import { SlotPreview, SwitchGrid } from "@/components/switcher/SlotPreview";
+import Portal from "@/components/common/Portal";
+import { DurationWheel } from "@/components/common/DateTimePicker";
 import { useChannelStore, MAX_CHANNELS } from "@/stores/channelStore";
 import { useDisplaySync } from "@/hooks/useDisplaySync";
 import { useHealth } from "@/hooks/useHealth";
@@ -172,7 +174,7 @@ export default function SwitcherPanel({ lead }: { lead: ReactNode }) {
   const setSlot = (i: number, patch: Partial<SwitchSlot>, delay = 0) =>
     push({ ...view, slots: slots.map((s, j) => (j === i ? { ...s, ...patch } : s)) }, delay);
 
-  // 소스 목록 — 이 채널로 허용된 외부 화면 + 기다리는 요청 + 더해 둔 미디어
+  // 소스 목록 — 이 채널로 허용된 외부 화면 + 기다리는 요청 + 추가해 둔 미디어
   const requests = share.data?.requests ?? [];
   const byId = new Map(requests.map((r) => [r.id, r] as const));
   const shareSources: SwitchSource[] = requests
@@ -327,7 +329,7 @@ export default function SwitcherPanel({ lead }: { lead: ReactNode }) {
               className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-white/12 font-mbc text-[13.5px] text-white/80 disabled:opacity-40"
             >
               <Plus size={14} />
-              미디어 더하기
+              미디어 추가
             </button>
             {adding === "menu" && (
               <div className="absolute bottom-12 right-0 z-20 flex w-[160px] flex-col rounded-xl border border-white/10 bg-[#161618] p-1 shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85)]">
@@ -441,7 +443,7 @@ export default function SwitcherPanel({ lead }: { lead: ReactNode }) {
         onClose={() => setAdding(null)}
         title="유튜브 링크"
         placeholder="https://youtu.be/…"
-        confirmText="더하기"
+        confirmText="추가"
         onConfirm={async (v: string) => {
           const id = parseYouTubeId(v);
           if (!id) {
@@ -451,21 +453,16 @@ export default function SwitcherPanel({ lead }: { lead: ReactNode }) {
           addSource({ kind: "youtube", videoId: id, name: `youtu.be/${id}` });
         }}
       />
-      <InputModal
-        isOpen={adding === "timer"}
-        onClose={() => setAdding(null)}
-        title="타이머 (분)"
-        placeholder="5"
-        confirmText="더하기"
-        onConfirm={async (v: string) => {
-          const m = Number(v);
-          if (!Number.isFinite(m) || m <= 0 || m > 360) {
-            toast.error("1~360분으로 적어 주세요");
-            return;
-          }
-          addSource({ kind: "timer", durationSec: Math.round(m * 60), mode: "down", label: "", name: `${m}분 타이머` });
-        }}
-      />
+      {adding === "timer" && (
+        <TimerAddModal
+          onClose={() => setAdding(null)}
+          onAdd={(durationSec, label) => {
+            const p = (n: number) => String(n).padStart(2, "0");
+            const t = `${Math.floor(durationSec / 3600) ? `${Math.floor(durationSec / 3600)}:` : ""}${p(Math.floor((durationSec % 3600) / 60))}:${p(durationSec % 60)}`;
+            addSource({ kind: "timer", durationSec, mode: "down", label, name: label || `${t} 타이머` });
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -516,5 +513,48 @@ function Program({
     >
       <SwitchGrid layout={layout} cell={cell} />
     </div>
+  );
+}
+
+/** 타이머 추가 — 이름과 시·분·초 휠 */
+function TimerAddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (durationSec: number, label: string) => void }) {
+  const [sec, setSec] = useState(300);
+  const [label, setLabel] = useState("");
+  return (
+    <Portal>
+      <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div className="absolute inset-0" onClick={onClose} />
+        <div className="relative z-10 w-full max-w-[420px] overflow-hidden rounded-2xl border border-white/10 bg-[#1C1C1C] shadow-2xl">
+          <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4">
+            <h2 className="font-mbc text-lg text-white">타이머 추가</h2>
+            <button type="button" onClick={onClose} aria-label="닫기" className="rounded-full p-1 text-white/50 hover:bg-white/10 hover:text-white">
+              <X size={20} />
+            </button>
+          </div>
+          <div className="flex flex-col items-center gap-4 p-6">
+            <input
+              value={label}
+              onChange={(e) => setLabel(e.target.value.slice(0, 40))}
+              placeholder="질문 시간"
+              className="h-11 w-full rounded-xl border border-white/10 bg-[#141414] px-4 font-pretendard text-white placeholder:text-white/25 focus:border-white/30 focus:outline-none"
+            />
+            <DurationWheel value={sec} onChange={setSec} maxHours={6} />
+            <div className="flex w-full gap-3">
+              <button type="button" onClick={onClose} className="h-12 flex-1 rounded-xl border border-white/10 bg-white/5 font-mbc text-white/70 hover:bg-white/10">
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={sec <= 0}
+                onClick={() => onAdd(sec, label.trim())}
+                className="h-12 flex-1 rounded-xl border border-[#FF3B3B]/60 bg-[#FF3B3B]/25 font-mbc text-white hover:bg-[#FF3B3B]/35 disabled:opacity-40"
+              >
+                추가
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Portal>
   );
 }

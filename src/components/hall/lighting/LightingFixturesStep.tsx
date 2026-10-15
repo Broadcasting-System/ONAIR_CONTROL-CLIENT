@@ -519,7 +519,7 @@ function ChannelEditor({
       <IconBtn label="채널 빼기" disabled={channels.length <= 1} onClick={() => onChange(channels.slice(0, -1))}>
         <Minus size={14} />
       </IconBtn>
-      <IconBtn label="채널 더하기" disabled={channels.length >= 32} onClick={() => onChange([...channels, "none"])}>
+      <IconBtn label="채널 추가" disabled={channels.length >= 32} onClick={() => onChange([...channels, "none"])}>
         <Plus size={14} />
       </IconBtn>
     </div>
