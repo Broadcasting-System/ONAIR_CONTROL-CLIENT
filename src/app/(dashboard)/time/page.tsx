@@ -104,6 +104,7 @@ export default function TimePage() {
     liveName,
     isSpecialActive,
     setSpecialMode,
+    loaded,
   } = useTimeGroups();
 
   const { files, fetchFiles } = useFiles();
@@ -294,7 +295,7 @@ export default function TimePage() {
                 onPaste={pasteBells}
                 onReset={() => setResetOpen(true)}
               />
-              <ApplyButtons isLive={isLive} count={unsent} busy={busy} onApply={onApply} className="max-md:hidden" />
+              <ApplyButtons isLive={isLive} count={unsent} busy={busy || !loaded} onApply={onApply} className="max-md:hidden" />
             </div>
           </div>
 
@@ -327,7 +328,7 @@ export default function TimePage() {
       {/* 폰: 적용하기는 하단 탭 위에 붙는 막대 */}
       {tab === "table" && (
         <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-30 border-t border-white/[0.08] bg-[rgba(12,12,14,0.9)] px-4 py-2.5 backdrop-blur-xl md:hidden">
-          <ApplyButtons isLive={isLive} count={unsent} busy={busy} onApply={onApply} className="w-full" />
+          <ApplyButtons isLive={isLive} count={unsent} busy={busy || !loaded} onApply={onApply} className="w-full" />
         </div>
       )}
 

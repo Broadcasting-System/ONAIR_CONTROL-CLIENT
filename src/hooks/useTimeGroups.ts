@@ -44,6 +44,8 @@ export interface GroupDiff {
 
 export const useTimeGroups = () => {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
+  // 서버 시간표를 한 번이라도 받기 전에는 보내지 않는다 (빈 시간표로 덮어쓰지 않게)
+  const [loaded, setLoaded] = useState(false);
   // 서버에서 마지막으로 받은 시간표 — 안 보낸 변경을 세고, 재조회가 편집 중인 요일을 덮지 않게 비교한다
   const [server, setServer] = useState<Group[]>(INITIAL_GROUPS);
   const serverRef = useRef<Group[]>(INITIAL_GROUPS);
@@ -179,6 +181,7 @@ export const useTimeGroups = () => {
       if (!res.ok) return;
       const json = await res.json();
       if (!json.success || !json.data) return;
+      setLoaded(true);
       const data = json.data as Record<string, { name?: string; schedules?: DaySchedule[] }>;
       const next: Group[] = INITIAL_GROUPS.map((g) => {
         const gd = data[g.id];
@@ -362,6 +365,7 @@ export const useTimeGroups = () => {
     resetBells,
     sendTimeTable,
     renameGroup,
+    loaded,
     liveGroupId: live.groupId,
     liveGroup,
     liveName: live.groupId != null ? live.name || (liveGroup ? groupLabel(liveGroup) : `GROUP ${live.groupId}`) : null,
