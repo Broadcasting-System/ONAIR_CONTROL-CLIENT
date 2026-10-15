@@ -62,26 +62,22 @@ export interface AutoAudioState {
   log: AutoLogEntry[];
 }
 
-export const FEATURE_INFO: Record<AutoFeature, { en: string; desc: string; tone: string }> = {
+export const FEATURE_INFO: Record<AutoFeature, { en: string; desc: string }> = {
   duck: {
     en: "DUCKING",
     desc: "목소리 채널에 말소리가 들어오면 음악 채널을 줄였다가, 말이 끝나면 천천히 원래대로.",
-    tone: "#3FC8FF",
   },
   idle: {
     en: "IDLE MIC",
     desc: "마이크가 한동안 조용하면 조금씩 줄여 잡음·하울링을 막아요. 소리가 나면 바로 원래대로. 끄지는 않아요.",
-    tone: "#B48CFF",
   },
   level: {
     en: "AUTO LEVEL",
     desc: "말하는 동안 소리가 목표보다 작거나 크면 페이더를 조금씩 움직여 맞춰요. 정한 범위 밖으로는 안 가요.",
-    tone: "#00FF57",
   },
   gain: {
     en: "CLIP GUARD",
     desc: "입력이 자꾸 꽉 차서 찢어지면 게인을 조금씩 내려요. 올리지는 않아요.",
-    tone: "#FFB23F",
   },
 };
 
@@ -119,11 +115,12 @@ export const LIST_INFO: Record<AutoFeature, { key: string; label: string }[]> = 
   gain: [{ key: "channels", label: "대상 채널" }],
 };
 
+/** 채널 × 기능 표의 열 이름 */
 export const RULE_TAG: Record<AutoFeature, string> = {
   duck: "음악 줄이기",
   idle: "안 쓰면 줄이기",
   level: "자동 맞추기",
-  gain: "찢어짐 감시",
+  gain: "게인 내리기",
 };
 
 // ---------------- 음악 조명 ----------------

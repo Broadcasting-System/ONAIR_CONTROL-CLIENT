@@ -39,10 +39,10 @@ export function useAutoAudio(hallId: string | null) {
   });
 
   const paramsMutation = useMutation({
-    mutationFn: ({ feature, params }: { feature: AutoFeature; params: AutoParams }) =>
+    mutationFn: ({ feature, params }: { feature: AutoFeature; params: AutoParams; quiet?: boolean }) =>
       autoAudioApi.updateFeature(hallId as string, feature, params),
-    onSuccess: () => {
-      toast.success("저장했습니다.");
+    onSuccess: (_data, { quiet }) => {
+      if (!quiet) toast.success("저장했습니다.");
       refresh();
     },
     onError: fail,
@@ -77,8 +77,9 @@ export function useAutoAudio(hallId: string | null) {
     error: query.error as Error | null,
     setEnabled: (feature: AutoFeature, enabled: boolean) =>
       enableMutation.mutate({ feature, enabled }),
-    saveParams: (feature: AutoFeature, params: AutoParams) =>
-      paramsMutation.mutateAsync({ feature, params }),
+    /** quiet — 표의 칸을 누를 때처럼 바로 보이는 변경은 '저장했습니다' 알림을 띄우지 않는다 */
+    saveParams: (feature: AutoFeature, params: AutoParams, quiet?: boolean) =>
+      paramsMutation.mutateAsync({ feature, params, quiet }),
     isSavingParams: paramsMutation.isPending,
     saveSettings: settingsMutation.mutateAsync,
     isSavingSettings: settingsMutation.isPending,
