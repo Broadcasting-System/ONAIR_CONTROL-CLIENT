@@ -233,27 +233,21 @@ export function ScoreboardEditor({
   value,
   onChange,
   onScore,
-  live,
 }: {
   value: ScoreboardPayload;
   /** 초안만 바꾸는 편집 (제목·팀 이름·크기 등) */
   onChange: (v: ScoreboardPayload) => void;
   /** 점수 조작 — 점수보드가 떠 있으면 바로 나간다 */
   onScore: (op: ScoreOp) => void;
-  /** 이 점수보드가 지금 떠 있는지 */
-  live: boolean;
 }) {
   const set = (patch: Partial<ScoreboardPayload>) => onChange({ ...value, ...patch });
   const nameA = value.teamA.name || "왼쪽";
   const nameB = value.teamB.name || "오른쪽";
   return (
     <div className="flex flex-col gap-3" data-tour="banner.scoreboard">
-      <div className={cn("rounded-2xl border p-3 md:px-4 md:py-3.5", live ? "border-[#FF3B3B]/25 bg-[#FF3B3B]/[0.04]" : "border-white/[0.08] bg-white/[0.015]")}>
+      <div>
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span className="font-mbc text-[15px] text-white">점수</span>
-          {live && (
-            <span className="rounded-md border border-[#FF3B3B]/45 bg-[#FF3B3B]/10 px-2 py-0.5 font-pretendard text-[11px] font-semibold text-[#ff8a8a]">바로 나감</span>
-          )}
           <span className="ml-auto" />
           <button type="button" data-tour="banner.court-change" onClick={() => onScore(courtChange)} className={ghostSm}>
             <Shuffle size={14} />

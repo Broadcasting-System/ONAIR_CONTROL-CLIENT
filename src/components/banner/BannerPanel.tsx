@@ -601,7 +601,7 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
 
           <div data-tour="banner.editor" className="mt-3.5 min-h-0 flex-1 lg:-mr-2 lg:overflow-y-auto lg:pr-2">
             {draft.scene === "default" && <DefaultBannerEditor value={draft.p.default} onChange={setP("default")} />}
-            {draft.scene === "scoreboard" && <ScoreboardEditor value={draft.p.scoreboard} onChange={setP("scoreboard")} onScore={onScore} live={scoreLive} />}
+            {draft.scene === "scoreboard" && <ScoreboardEditor value={draft.p.scoreboard} onChange={setP("scoreboard")} onScore={onScore} />}
             {draft.scene === "image" && <ImageEditor value={draft.p.image} onChange={setP("image")} images={images} />}
             {draft.scene === "gif" && <GifEditor value={draft.p.gif} onChange={setP("gif")} gifs={images} />}
             {draft.scene === "timer" && <BannerTimerEditor value={draft.p.timer} onChange={setP("timer")} />}
