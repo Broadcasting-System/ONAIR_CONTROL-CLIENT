@@ -2,15 +2,25 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { RadioTower } from "lucide-react";
-import ConfirmModal from "@/components/common/ConfirmModal";
+import { Popover as P } from "radix-ui";
+import { ChevronDown, History, MoreHorizontal, RadioTower, Settings2 } from "lucide-react";
 import LearnWizard from "@/components/devices/LearnWizard";
+import NeonButton from "@/components/common/NeonButton";
 import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
+import { TimeConfirm, ghostBtn } from "@/components/time/TimeToolbar";
+import { StatusDot, adminField, adminPanel, chipCls } from "@/components/devices/adminUi";
+import { CATEGORY_ORDER, DEAD_SPEAKERS, SPEAKER_CATEGORY } from "@/constants/speakerMap";
 import { SPEAKER_MATRIX_KEY } from "@/hooks/useSpeakerMatrix";
+import { SPEAKER_COVERAGE } from "@/lib/speakerCoverage";
 import { speakerApi, type SpeakerMatrix } from "@/lib/speakerApi";
 import { cn } from "@/lib/utils";
 import { useSpeakerStore } from "@/stores/speakerStore";
+
+/* 관리 › 스피커 매핑 (시안 스피커매핑)
+   매트릭스 칸(행·열)마다 시험음을 울려 보고, 어디서 들리는지 듣고 이름을 붙인다.
+   위: 매트릭스 연결 줄(연결 설정 펼침·새 장비 배우기·백업에서 되돌리기)
+   가운데: 찾기 판(지금 울리는 칸 원 · 어디서 들려요? · 아직 안 붙인 곳) / 아래: 칸 표, 바뀐 칸·되돌리기·저장·찾기 끝내기 */
 
 const CAL_KEY = ["speakerCalibration"] as const;
 const CONN_KEY = ["speakerConnection"] as const;
@@ -18,12 +28,31 @@ const BACKUP_KEY = ["speakerMatrixBackups"] as const;
 
 type Coord = [number, number];
 const key = ([r, c]: Coord) => `${r}-${c}`;
+const same = (a: Coord | null, b: Coord | null) => !!a && !!b && a[0] === b[0] && a[1] === b[1];
 
 function copyCells(m: SpeakerMatrix): string[][] {
   return m.cells.map((row) => [...row]);
 }
 
-/** 스피커 매핑(캘리브레이션) — 매트릭스 좌표마다 실제 구역 이름을 붙인다. */
+/** 학교 지도에 이어진 스피커 이름 (분류 순서) — "아직 안 붙인 곳" 후보. 실제 스피커가 없는 이름은 뺀다 */
+const PLACE_NAMES: string[] = (() => {
+  const names = new Set<string>([...Object.keys(SPEAKER_CATEGORY), ...Object.keys(SPEAKER_COVERAGE)]);
+  DEAD_SPEAKERS.forEach((n) => names.delete(n));
+  const rank = (n: string) => {
+    const i = CATEGORY_ORDER.indexOf(SPEAKER_CATEGORY[n] ?? "기타");
+    return i < 0 ? CATEGORY_ORDER.length : i;
+  };
+  const base = [...names];
+  return [...base].sort((a, b) => rank(a) - rank(b) || base.indexOf(a) - base.indexOf(b));
+})();
+
+/** 칩에 올렸을 때 보일 지도 방 이름 */
+function roomsOf(name: string): string | undefined {
+  const cells = SPEAKER_COVERAGE[name]?.cells;
+  if (!cells?.length) return undefined;
+  return [...new Set(cells)].join(" · ");
+}
+
 export default function SpeakerMappingPanel() {
   const qc = useQueryClient();
   const matrixQuery = useQuery({ queryKey: SPEAKER_MATRIX_KEY, queryFn: speakerApi.matrix });
@@ -34,18 +63,35 @@ export default function SpeakerMappingPanel() {
   const [draft, setDraft] = useState<string[][] | null>(null);
   const [selected, setSelected] = useState<Coord>([1, 1]);
   const [busy, setBusy] = useState(false);
-  const [fillText, setFillText] = useState("");
   const [confirmStop, setConfirmStop] = useState(false);
   const inputs = useRef(new Map<string, HTMLInputElement>());
+  const answerRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (matrix && draft === null) setDraft(copyCells(matrix));
   }, [matrix, draft]);
 
+  // 찾는 중에는 고른 칸이 울리는 칸을 따라간다 (연속 채우기 시작점)
+  const curKey = cal?.active && cal.current ? key(cal.current) : "";
+  const gridRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!cal?.active || !cal.current) return;
+    setSelected(cal.current);
+    // 폰에서 칸 표가 옆으로 넘치면 울리는 칸이 보이게 민다
+    const box = gridRef.current;
+    const cell = inputs.current.get(curKey)?.parentElement;
+    if (box && cell && box.scrollWidth > box.clientWidth) {
+      box.scrollTo({ left: cell.offsetLeft - (box.clientWidth - cell.offsetWidth) / 2, behavior: "smooth" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [curKey, draft === null]);
+
   const rows = matrix?.rows ?? 0;
   const cols = matrix?.cols ?? 0;
   const active = !!cal?.active;
-  const current = cal?.current ?? null;
+  const current: Coord | null = cal?.current ?? null;
+  /** 지금 이름을 붙이는 칸 — 매핑 중이면 울리는 칸, 아니면 고른 칸 */
+  const cur: Coord = active && current ? current : selected;
 
   const changed = useMemo(() => {
     if (!matrix || !draft) return 0;
@@ -58,6 +104,12 @@ export default function SpeakerMappingPanel() {
     const seen = new Map<string, number>();
     (draft ?? []).flat().filter(Boolean).forEach((n) => seen.set(n.trim(), (seen.get(n.trim()) ?? 0) + 1));
     return new Set(Array.from(seen).filter(([, count]) => count > 1).map(([n]) => n));
+  }, [draft]);
+
+  const filled = useMemo(() => (draft ?? []).flat().filter((n) => n.trim()).length, [draft]);
+  const missing = useMemo(() => {
+    const used = new Set((draft ?? []).flat().map((n) => n.trim()).filter(Boolean));
+    return PLACE_NAMES.filter((n) => !used.has(n));
   }, [draft]);
 
   async function run<T>(fn: () => Promise<T>, ok?: string): Promise<T | undefined> {
@@ -74,24 +126,33 @@ export default function SpeakerMappingPanel() {
     }
   }
 
-  const focus = (coord: Coord) => requestAnimationFrame(() => inputs.current.get(key(coord))?.focus());
+  const focusCell = (coord: Coord) => requestAnimationFrame(() => inputs.current.get(key(coord))?.focus());
+  const focusAnswer = () => requestAnimationFrame(() => answerRef.current?.focus());
 
-  const ping = async (coord: Coord) => {
+  /** 그 칸으로 옮긴다 — 매핑 중이면 그 칸을 울린다. from: 다음에 글자를 넣을 곳 */
+  const ping = async (coord: Coord, from: "grid" | "answer" = active ? "answer" : "grid") => {
     setSelected(coord);
-    focus(coord);
+    if (from === "grid") focusCell(coord);
+    else focusAnswer();
     if (!active) return;
     const st = await run(() => speakerApi.ping(coord[0], coord[1]));
     if (st) qc.setQueryData(CAL_KEY, st);
   };
 
   const nextOf = ([r, c]: Coord): Coord => (c < cols ? [r, c + 1] : r < rows ? [r + 1, 1] : [1, 1]);
+  const prevOf = ([r, c]: Coord): Coord => (c > 1 ? [r, c - 1] : r > 1 ? [r - 1, cols] : [rows, cols]);
 
   const setName = ([r, c]: Coord, value: string) =>
     setDraft((d) => d && d.map((row, ri) => (ri === r - 1 ? row.map((v, ci) => (ci === c - 1 ? value : v)) : row)));
 
-  const fillFromSelected = () => {
-    const names = fillText.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
-    if (!names.length || !draft) return;
+  const nameAt = ([r, c]: Coord) => draft?.[r - 1]?.[c - 1] ?? "";
+
+  /** 저장하고 다음 — 이름은 칸 표와 같은 고친 내용(draft)에 남고, 서버 저장은 아래 [저장] */
+  const answerNext = () => ping(nextOf(cur), "answer");
+
+  const fill = (text: string) => {
+    const names = text.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+    if (!names.length || !draft) return false;
     let pos = selected;
     const next = draft.map((row) => [...row]);
     for (const name of names) {
@@ -99,8 +160,8 @@ export default function SpeakerMappingPanel() {
       pos = nextOf(pos);
     }
     setDraft(next);
-    setFillText("");
     toast.success(`${names.length}칸을 채웠어요`);
+    return true;
   };
 
   const save = async () => {
@@ -115,9 +176,9 @@ export default function SpeakerMappingPanel() {
 
   const session = async (action: "start" | "stop" | "silence") => {
     const fn = action === "start" ? speakerApi.start : action === "stop" ? speakerApi.stop : speakerApi.silence;
-    const st = await run(fn, action === "start" ? "매핑을 시작했어요" : undefined);
+    const st = await run(fn, action === "start" ? "찾기를 시작했어요" : undefined);
     if (st) qc.setQueryData(CAL_KEY, st);
-    if (action === "start") focus(selected);
+    if (action === "start") focusAnswer();
   };
 
   if (matrixQuery.isError) {
@@ -127,101 +188,204 @@ export default function SpeakerMappingPanel() {
     return <p className="font-pretendard text-white/40">불러오는 중…</p>;
   }
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 pb-4 md:gap-4 md:overflow-auto">
-      <ConnectionCard />
+  const total = rows * cols;
+  const ringing = active && !!current;
+  const answer = nameAt(cur);
 
-      {/* 세션 */}
-      <div
-        data-tour="mapping.session"
-        className={cn(
-          "flex flex-wrap items-center gap-3 rounded-[20px] border px-4 py-3.5 md:rounded-xl md:px-5 md:py-4",
-          active ? "border-red-400/40 bg-red-400/10" : "border-white/[0.09] bg-white/[0.045] md:border-white/10 md:bg-white/[0.03]",
-        )}
-      >
-        {active ? (
-          <>
-            <span className="flex items-center gap-2 font-mbc text-sm text-white">
-              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-400 shadow-[0_0_8px_#f87171]" />
-              매핑 중
-              <span className="text-white/45">· 시험음 {cal?.tone ? "재생 중" : "없음"}</span>
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-3 pb-4 md:overflow-auto">
+      <ConnectionBar onRestored={(m) => setDraft(copyCells(m))} />
+
+      {/* 찾기 판 */}
+      <section data-tour="mapping.session" className={cn(adminPanel, "flex flex-col gap-4 p-4 md:px-5 md:py-[18px]")}>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h3 className="font-mbc text-[17px] text-white">찾기</h3>
+          {active && (
+            <button
+              type="button"
+              data-tour="mapping.silence"
+              onClick={() => session("silence")}
+              disabled={busy}
+              className={cn(ghostBtn, "h-9 px-3 md:h-8 md:text-[12.5px]")}
+            >
+              모두 끄기
+            </button>
+          )}
+          <div className="ml-auto flex min-w-0 items-center gap-3 max-md:order-last max-md:w-full">
+            <span className="shrink-0 font-pretendard text-[12.5px] font-medium text-white/45">
+              이름 붙은 칸 <span className="font-orbitron text-white/70">{filled}</span> / <span className="font-orbitron">{total}</span>
             </span>
-            <span className="font-pretendard text-xs text-white/40">
-              울리는 칸 {current ? `${current[0]}행 ${current[1]}열` : "없음"}
-            </span>
-            <div data-tour="mapping.session.controls" className="grid w-full grid-cols-3 gap-2 md:ml-auto md:flex md:w-auto">
-              <PanelButton onClick={() => ping(nextOf(selected))} disabled={busy}>
-                다음 칸 ▶
-              </PanelButton>
-              <PanelButton onClick={() => session("silence")} disabled={busy}>
-                모두 끄기
-              </PanelButton>
-              <PanelButton tone="danger" onClick={() => (changed ? setConfirmStop(true) : session("stop"))} disabled={busy}>
-                매핑 종료
-              </PanelButton>
+            <div className="h-1.5 min-w-[80px] flex-1 overflow-hidden rounded-full bg-white/[0.08] md:w-[180px] md:flex-none">
+              <i
+                className="block h-full bg-[#ff3b3b] shadow-[0_0_8px_#ff3b3b] transition-[width] duration-300"
+                style={{ width: `${total ? (filled / total) * 100 : 0}%` }}
+              />
             </div>
-          </>
-        ) : (
-          <div className="ml-auto">
-            <PanelButton tour="mapping.start" tone="primary" onClick={() => session("start")} disabled={busy}>
-              매핑 시작
-            </PanelButton>
+          </div>
+          {!active && (
+            <NeonButton data-tour="mapping.start" className="min-w-[132px] max-md:ml-auto" disabled={busy} onClick={() => session("start")}>
+              찾기 시작
+            </NeonButton>
+          )}
+        </div>
+
+        {active && (
+          <div className="grid gap-5 md:grid-cols-[280px_minmax(0,1fr)] md:gap-6">
+            {/* 지금 울리는 칸 */}
+            <div className="flex flex-col items-center gap-3.5">
+              <div
+                className={cn(
+                  "flex h-[124px] w-[124px] flex-col items-center justify-center gap-1 rounded-full border-2 transition-shadow md:h-[150px] md:w-[150px]",
+                  ringing
+                    ? "border-[rgba(255,59,59,0.6)] shadow-[0_0_30px_-6px_#ff3b3b,inset_0_0_24px_-8px_#ff3b3b]"
+                    : "border-white/15",
+                )}
+              >
+                <small className="font-mbc text-[12px] text-white/60 md:text-[13px]">{cal?.tone === false ? "시험음 없이 켠 칸" : "지금 울리는 칸"}</small>
+                <b className={cn("font-orbitron text-[28px] font-extrabold md:text-[34px]", ringing ? "text-white" : "text-white/45")}>
+                  {cur[0]}·{cur[1]}
+                </b>
+              </div>
+              <div data-tour="mapping.session.controls" className="flex gap-2">
+                <button type="button" onClick={() => ping(prevOf(cur))} disabled={busy} className={cn(ghostBtn, "md:h-9")}>
+                  ◀ 이전
+                </button>
+                <button type="button" onClick={() => ping(cur)} disabled={busy} className={cn(ghostBtn, "md:h-9")}>
+                  {ringing ? "다시 울리기" : "울리기"}
+                </button>
+                <button type="button" onClick={() => ping(nextOf(cur))} disabled={busy} className={cn(ghostBtn, "md:h-9")}>
+                  다음 ▶
+                </button>
+              </div>
+            </div>
+
+            {/* 어디서 들려요? */}
+            <div className="flex min-w-0 flex-col">
+              <label htmlFor="mapping-answer" className="mb-2 font-mbc text-[14px] text-white/55">
+                어디서 들려요?
+              </label>
+              <div data-tour="mapping.answer" className="flex gap-2 max-md:flex-col">
+                <input
+                  id="mapping-answer"
+                  ref={answerRef}
+                  value={answer}
+                  maxLength={20}
+                  onChange={(e) => setName(cur, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      answerNext();
+                    }
+                  }}
+                  placeholder={`${cur[0]}·${cur[1]} 칸 이름`}
+                  autoComplete="off"
+                  className={cn(adminField, "h-12 md:h-11 md:flex-1")}
+                />
+                <NeonButton data-tour="mapping.answer.next" className="min-w-[180px] md:h-11" disabled={busy} onClick={answerNext}>
+                  저장하고 다음
+                </NeonButton>
+              </div>
+              <span className="mb-[7px] mt-3 font-mbc text-[14px] text-white/55">아직 안 붙인 곳</span>
+              <div data-tour="mapping.places" className="flex flex-wrap gap-[5px]">
+                {missing.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    title={roomsOf(n)}
+                    onClick={() => {
+                      setName(cur, n);
+                      focusAnswer();
+                    }}
+                    className={chipCls(answer.trim() === n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setName(cur, "");
+                    answerNext();
+                  }}
+                  disabled={busy}
+                  className={chipCls(false, "border-dashed")}
+                >
+                  안 들림 · 빈 칸
+                </button>
+              </div>
+            </div>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* 좌표 표 */}
-      <div data-tour="mapping.grid" className="no-scrollbar overflow-x-auto rounded-[20px] border border-white/5 bg-[#0a0a0a] p-3 md:overflow-visible md:rounded-2xl md:p-4">
+      {/* 칸 표 */}
+      <div ref={gridRef} data-tour="mapping.grid" className={cn(adminPanel, "no-scrollbar relative overflow-x-auto p-2.5 md:overflow-visible md:p-3.5")}>
         <div
-          className="grid gap-1.5 max-md:min-w-[calc(var(--cols)*78px)]"
+          className="grid gap-1 max-md:min-w-[calc(var(--cols)*86px)]"
           style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, ["--cols" as string]: cols }}
         >
           {draft.map((row, ri) =>
             row.map((name, ci) => {
               const coord: Coord = [ri + 1, ci + 1];
-              const isCurrent = !!current && current[0] === coord[0] && current[1] === coord[1];
-              const isSelected = selected[0] === coord[0] && selected[1] === coord[1];
+              const isCurrent = active ? same(current, coord) : false;
+              const isSelected = !active && same(selected, coord);
               const dirty = name !== (matrix.cells[ri]?.[ci] ?? "");
               const dup = !!name.trim() && duplicates.has(name.trim());
+              const empty = !name.trim();
               return (
                 <div
                   key={key(coord)}
+                  onClick={() => {
+                    if (active && !isCurrent) ping(coord, "grid");
+                    else setSelected(coord);
+                  }}
                   className={cn(
-                    "flex flex-col gap-0.5 rounded-lg border p-1 transition-colors",
+                    "flex h-[54px] cursor-pointer flex-col justify-between overflow-hidden rounded-[8px] border px-[5px] py-[3px] transition-colors md:h-[46px]",
+                    empty ? "border-dashed" : "border-solid",
                     isCurrent
-                      ? "border-red-400/60 bg-red-400/15 shadow-[0_0_14px_-4px_#ff5a5a]"
+                      ? "border-solid border-[#ff4a43] bg-[rgba(255,59,59,0.15)] shadow-[0_0_14px_-3px_#ff3b3b]"
                       : isSelected
-                        ? "border-white/30 bg-white/[0.06]"
-                        : "border-white/[0.07] bg-black/30",
-                    dirty && !isCurrent && "border-amber-300/40",
+                        ? "border-white/35 bg-white/[0.06]"
+                        : dirty
+                          ? "border-white/25 bg-black/30"
+                          : "border-white/[0.07] bg-black/30",
                   )}
                 >
-                  <button
-                    type="button"
-                    onClick={() => ping(coord)}
-                    title={active ? "소리 확인" : undefined}
-                    className="flex h-6 items-center justify-between px-0.5 font-orbitron text-[10px] tracking-wider text-white/30 hover:text-white/60 md:h-auto md:text-[9px]"
-                  >
-                    {coord[0]}·{coord[1]}
-                    {isCurrent && <span className="text-red-400">●</span>}
-                    {dup && !isCurrent && <span className="text-amber-300" title="이름 중복">≡</span>}
-                  </button>
+                  <small className="flex items-center gap-1 font-orbitron text-[9px] font-semibold leading-none text-white/30 md:text-[8.5px]">
+                    <span className={cn(dirty && "text-white/70")}>
+                      {coord[0]}·{coord[1]}
+                    </span>
+                    {isCurrent && <span className="text-[#ff4a43]">●</span>}
+                    {dup && (
+                      <span className="ml-auto font-pretendard text-[10px] text-[#ff8a8a]" title="이름 중복">
+                        ≡
+                      </span>
+                    )}
+                  </small>
                   <input
                     ref={(el) => {
                       if (el) inputs.current.set(key(coord), el);
                       else inputs.current.delete(key(coord));
                     }}
                     value={name}
+                    title={name || undefined}
                     maxLength={20}
-                    onFocus={() => setSelected(coord)}
+                    aria-label={`${coord[0]}행 ${coord[1]}열 이름`}
+                    placeholder={isCurrent ? "?" : "·"}
+                    onFocus={() => {
+                      if (!active) setSelected(coord);
+                    }}
                     onChange={(e) => setName(coord, e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") {
+                      if (e.key === "Enter" && !e.nativeEvent.isComposing) {
                         e.preventDefault();
-                        ping(nextOf(coord));
+                        ping(nextOf(coord), "grid");
                       }
                     }}
-                    className="h-10 w-full min-w-0 rounded bg-transparent px-1 text-center font-mbc text-base md:h-7 md:text-[13px] text-white placeholder:text-white/15 focus:bg-white/10 focus:outline-none"
+                    className={cn(
+                      "h-7 w-full min-w-0 truncate rounded bg-transparent px-0.5 text-center font-mbc text-base text-white outline-none focus:bg-white/10 md:h-[22px] md:text-[12px]",
+                      isCurrent ? "placeholder:text-white" : "placeholder:text-white/20",
+                    )}
                   />
                 </div>
               );
@@ -230,112 +394,134 @@ export default function SpeakerMappingPanel() {
         </div>
       </div>
 
-      {/* 도구 + 저장 */}
-      <div className="flex flex-wrap items-end gap-3 border px-4 py-3.5 md:px-5 md:py-4 rounded-[20px] border-white/[0.09] bg-white/[0.045] md:rounded-xl md:border-white/10 md:bg-white/[0.03]">
-        <div data-tour="mapping.fill" className="flex w-full flex-1 flex-col gap-1 md:w-auto md:min-w-[320px]">
-          <span className="font-mbc text-xs text-white/40">
-            연속 채우기 ({selected[0]}·{selected[1]}부터)
-          </span>
-          <div className="flex gap-2">
-            <input
-              value={fillText}
-              onChange={(e) => setFillText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && fillFromSelected()}
-              placeholder="예: 1-1, 1-2"
-              className="h-11 min-w-0 flex-1 rounded-lg border border-white/10 bg-[#141414] px-3 font-pretendard text-base text-white focus:border-white/30 focus:outline-none md:h-10 md:text-sm"
-            />
-            <PanelButton onClick={fillFromSelected} disabled={!fillText.trim()}>
-              채우기
-            </PanelButton>
-          </div>
-        </div>
-        <BackupRestore onRestored={(m) => setDraft(copyCells(m))} />
-        <div className="ml-auto flex items-center gap-3">
-          {changed > 0 && <span className="font-pretendard text-sm text-amber-200/80">바뀐 칸 {changed}개</span>}
-          <PanelButton tour="mapping.revert" onClick={() => setDraft(copyCells(matrix))} disabled={!changed || busy}>
-            되돌리기
-          </PanelButton>
-          <PanelButton tour="mapping.save" tone="primary" onClick={save} disabled={!changed || busy}>
-            저장
-          </PanelButton>
-        </div>
+      {/* 바뀐 칸 · 되돌리기 · 저장 · 찾기 끝내기 */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="mr-auto font-pretendard text-[12.5px] font-medium text-white/45 max-md:w-full">
+          {changed > 0 ? `바뀐 칸 ${changed}개` : "바뀐 칸 없음"}
+        </span>
+        <FillMenu from={selected} onFill={fill} />
+        <button
+          type="button"
+          data-tour="mapping.revert"
+          onClick={() => setDraft(copyCells(matrix))}
+          disabled={!changed || busy}
+          className={cn(ghostBtn, "md:h-[42px]")}
+        >
+          되돌리기
+        </button>
+        <NeonButton data-tour="mapping.save" className="min-w-[130px] max-md:flex-1" onClick={save} disabled={!changed || busy}>
+          저장
+        </NeonButton>
+        {active && (
+          <button
+            type="button"
+            data-tour="mapping.stop"
+            onClick={() => (changed ? setConfirmStop(true) : session("stop"))}
+            disabled={busy}
+            className="flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-[12px] border border-[rgba(255,59,59,0.45)] px-4 font-mbc text-[14px] text-[#ff7b7b] transition-colors hover:bg-[#ff3b3b]/10 disabled:opacity-40 max-md:w-full md:h-[42px] md:text-[15px]"
+          >
+            찾기 끝내기
+          </button>
+        )}
       </div>
 
-      <ConfirmModal
-        isOpen={confirmStop}
-        onClose={() => setConfirmStop(false)}
-        onConfirm={() => {
-          setConfirmStop(false);
-          session("stop");
-        }}
-        title="매핑 종료"
+      <TimeConfirm
+        open={confirmStop}
+        title="찾기 끝내기"
         message={`저장하지 않은 칸 ${changed}개`}
-        confirmText="종료"
+        confirmText="끝내기"
+        danger
+        onClose={() => setConfirmStop(false)}
+        onConfirm={() => session("stop")}
       />
     </div>
   );
 }
 
-function PanelButton({
-  children,
-  onClick,
-  disabled,
-  tone = "default",
-  tour,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-  tone?: "default" | "primary" | "danger";
-  /** CUE 튜토리얼 이름표 (data-tour) */
-  tour?: string;
-}) {
+/* ---------------------------------------------------------------- 연속 채우기 (⋯) */
+
+function FillMenu({ from, onFill }: { from: Coord; onFill: (text: string) => boolean }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const submit = () => {
+    if (onFill(text)) {
+      setText("");
+      setOpen(false);
+    }
+  };
   return (
-    <button
-      type="button"
-      data-tour={tour}
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "h-11 shrink-0 rounded-lg border px-4 font-mbc text-sm text-white transition-colors disabled:opacity-40 md:h-10",
-        tone === "primary" && "border-emerald-400/40 bg-emerald-500/20 hover:bg-emerald-500/30",
-        tone === "danger" && "border-red-400/40 bg-red-500/20 hover:bg-red-500/30",
-        tone === "default" && "border-white/15 bg-white/10 hover:bg-white/15",
-      )}
-    >
-      {children}
-    </button>
+    <P.Root open={open} onOpenChange={setOpen}>
+      <P.Trigger data-tour="mapping.more" aria-label="더 보기" className={cn(ghostBtn, "w-11 px-0 md:h-[42px] md:w-[42px]")}>
+        <MoreHorizontal size={18} />
+      </P.Trigger>
+      <P.Portal>
+        <P.Content
+          side="top"
+          align="end"
+          sideOffset={8}
+          collisionPadding={12}
+          className="z-[900] w-[min(360px,calc(100vw-24px))] rounded-[18px] border border-white/[0.12] bg-[#141416] p-3 text-white shadow-[0_24px_60px_rgba(0,0,0,0.65)] outline-none"
+        >
+          <div data-tour="mapping.fill" className="flex flex-col gap-2">
+            <span className="font-mbc text-[13.5px] text-white/60">
+              연속 채우기 <span className="font-orbitron text-[12px] text-white/80">{from[0]}·{from[1]}</span>부터
+            </span>
+            <div className="flex gap-2">
+              <input
+                value={text}
+                autoFocus
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) submit();
+                }}
+                placeholder="1-1, 1-2, 1-3"
+                className={cn(adminField, "h-11 flex-1 md:h-10 md:text-[14px]")}
+              />
+              <button type="button" onClick={submit} disabled={!text.trim()} className={cn(ghostBtn, "md:h-10")}>
+                채우기
+              </button>
+            </div>
+          </div>
+        </P.Content>
+      </P.Portal>
+    </P.Root>
   );
 }
 
-/** 스피커 매트릭스 접속 정보 — 다른 학교에 설치할 때 .env를 고치지 않고 화면에서 바꾼다. */
-function ConnectionCard() {
+/* ---------------------------------------------------------------- 매트릭스 연결 줄 */
+
+const barBtn = cn(ghostBtn, "max-md:px-2 max-md:text-[12.5px] md:h-[34px] [&>svg]:max-md:hidden");
+
+/** 스피커 매트릭스 연결 — 상태 한 줄. 연결 설정은 펼쳐서(다른 학교에 설치할 때 .env 대신 화면에서) */
+function ConnectionBar({ onRestored }: { onRestored: (m: SpeakerMatrix) => void }) {
   const qc = useQueryClient();
   const { data } = useQuery({ queryKey: CONN_KEY, queryFn: speakerApi.connection, refetchInterval: 10_000 });
+  const [open, setOpen] = useState(false);
   const [form, setForm] = useState<{ driver: string; host: string; port: string } | null>(null);
-  const [testResult, setTestResult] = useState<string>("");
+  const [testResult, setTestResult] = useState("");
   const [learning, setLearning] = useState(false);
 
   useEffect(() => {
     if (data && form === null) setForm({ driver: data.driver, host: data.host, port: String(data.port) });
   }, [data, form]);
 
-  if (!data || !form) return null;
-  const port = Number(form.port);
-  const valid = form.host.trim() && Number.isInteger(port) && port > 0 && port < 65536;
-  const dirty = form.driver !== data.driver || form.host !== data.host || port !== data.port;
+  const port = Number(form?.port);
+  const valid = !!form && !!form.host.trim() && Number.isInteger(port) && port > 0 && port < 65536;
+  const dirty = !!data && !!form && (form.driver !== data.driver || form.host !== data.host || port !== data.port);
 
   const test = async () => {
+    if (!form) return;
     setTestResult("확인 중…");
     try {
       const r = await speakerApi.testConnection(form.host.trim(), port);
-      setTestResult(r.connected ? `연결됨 (${r.latency}ms)` : "연결할 수 없음");
+      setTestResult(r.connected ? `연결됨 ${r.latency}ms` : "연결할 수 없어요");
     } catch (e) {
       setTestResult((e as Error).message);
     }
   };
 
   const save = async () => {
+    if (!form) return;
     try {
       await speakerApi.setConnection({ driver: form.driver, host: form.host.trim(), port });
       toast.success("저장했어요");
@@ -346,110 +532,159 @@ function ConnectionCard() {
     }
   };
 
-  const field = "h-11 rounded-lg border border-white/10 bg-[#141414] px-3 text-base text-white focus:border-white/30 focus:outline-none md:h-10 md:text-sm";
-
   return (
-    <div data-tour="mapping.connection" className="flex flex-wrap items-end gap-3 border px-4 py-3.5 md:px-5 md:py-4 rounded-[20px] border-white/[0.09] bg-white/[0.045] md:rounded-xl md:border-white/10 md:bg-white/[0.03]">
-      <div className="flex w-full items-center gap-2 self-center pr-2 md:w-auto">
+    <div data-tour="mapping.connection" className={cn(adminPanel, "flex flex-col px-4 py-3 md:px-[18px]")}>
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
         <span
           className={cn(
-            "h-2.5 w-2.5 rounded-full",
-            data.connected ? "bg-[#00FF57] shadow-[0_0_8px_#00FF57]" : "bg-[#585858]",
+            "inline-flex shrink-0 items-center gap-[7px] font-pretendard text-[13px] font-medium",
+            data?.connected ? "text-white/75" : "text-[#ff8a8a]",
           )}
-        />
-        <span className="font-mbc text-sm text-white/70">매트릭스 {data.connected ? "연결됨" : "연결 안 됨"}</span>
-      </div>
-      <label className="flex w-full flex-col gap-1 md:w-auto">
-        <span className="font-mbc text-xs text-white/40">드라이버</span>
-        <Select
-          value={form.driver}
-          onChange={(driver) => setForm({ ...form, driver })}
-          options={data.drivers.map((d) => ({ value: d, label: d }))}
-          className={cn(field, "max-md:w-full")}
-        />
-      </label>
-      <label className="flex w-full flex-col gap-1 md:w-auto">
-        <span className="font-mbc text-xs text-white/40">주소</span>
-        <input value={form.host} onChange={(e) => setForm({ ...form, host: e.target.value })} className={cn(field, "w-full font-orbitron md:w-44")} />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="font-mbc text-xs text-white/40">포트</span>
-        <input value={form.port} onChange={(e) => setForm({ ...form, port: e.target.value })} className={cn(field, "w-24 font-orbitron")} />
-      </label>
-      <PanelButton tour="mapping.connection.test" onClick={test} disabled={!valid}>
-        연결 테스트
-      </PanelButton>
-      <PanelButton tone="primary" onClick={save} disabled={!valid || !dirty}>
-        저장
-      </PanelButton>
-      {testResult && <span className="self-center font-pretendard text-sm text-white/55">{testResult}</span>}
-      <div className="flex w-full items-center justify-between gap-3 self-center md:ml-auto md:w-auto md:justify-start">
-        <button
-          type="button"
-          data-tour="mapping.learn"
-          onClick={() => setLearning(true)}
-          className="flex min-h-[44px] items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3.5 py-2 font-mbc text-sm text-red-100 md:min-h-0 transition-colors hover:bg-red-500/20"
         >
-          <RadioTower size={15} />
-          새 장비 배우기
-        </button>
-        <span className="font-pretendard text-xs text-white/30">
-          {data.source === "saved" ? "저장값" : "서버 .env"}
+          <StatusDot ok={data ? data.connected : null} />
+          {!data ? "매트릭스 확인 중" : data.connected ? "매트릭스 연결됨" : "매트릭스 연결 안 됨"}
         </span>
+        {data && (
+          <span className="min-w-0 truncate font-pretendard text-[12.5px] font-medium text-white/40">
+            {data.driver} · {data.host}:{data.port}
+            {data.connected && data.latency ? ` · ${data.latency}ms` : ""}
+          </span>
+        )}
+        <div className="grid grid-cols-3 gap-2 max-md:w-full md:ml-auto md:flex">
+          <button
+            type="button"
+            data-tour="mapping.connection.open"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+            className={cn(barBtn, open && "border-white/30 text-white")}
+          >
+            <Settings2 size={14} />
+            연결 설정
+            <ChevronDown size={14} className={cn("transition-transform", open && "rotate-180")} />
+          </button>
+          <button type="button" data-tour="mapping.learn" onClick={() => setLearning(true)} className={barBtn}>
+            <RadioTower size={14} />
+            <span className="md:hidden">장비 배우기</span>
+            <span className="max-md:hidden">새 장비 배우기</span>
+          </button>
+          <BackupMenu onRestored={onRestored} />
+        </div>
       </div>
+
+      {open && data && form && (
+        <div className="mt-3 flex flex-wrap items-end gap-2.5 border-t border-white/[0.06] pt-3">
+          <label className="flex w-full flex-col gap-1 md:w-auto">
+            <span className="font-mbc text-[12.5px] text-white/45">드라이버</span>
+            <Select
+              value={form.driver}
+              onChange={(driver) => setForm({ ...form, driver })}
+              options={data.drivers.map((d) => ({ value: d, label: d }))}
+              aria-label="드라이버"
+              className="h-11 rounded-[12px] border-white/10 bg-[#0c0d0f] max-md:w-full md:h-10 md:min-w-[140px]"
+            />
+          </label>
+          <label className="flex w-full min-w-0 flex-col gap-1 md:w-48">
+            <span className="font-mbc text-[12.5px] text-white/45">주소</span>
+            <input
+              value={form.host}
+              onChange={(e) => setForm({ ...form, host: e.target.value })}
+              className={cn(adminField, "font-orbitron md:h-10 md:text-[13px]")}
+            />
+          </label>
+          <label className="flex w-24 flex-col gap-1">
+            <span className="font-mbc text-[12.5px] text-white/45">포트</span>
+            <input
+              value={form.port}
+              inputMode="numeric"
+              onChange={(e) => setForm({ ...form, port: e.target.value })}
+              className={cn(adminField, "font-orbitron md:h-10 md:text-[13px]")}
+            />
+          </label>
+          <button type="button" data-tour="mapping.connection.test" onClick={test} disabled={!valid} className={cn(ghostBtn, "md:h-10")}>
+            연결 테스트
+          </button>
+          <button
+            type="button"
+            data-tour="mapping.connection.save"
+            onClick={save}
+            disabled={!valid || !dirty}
+            className="flex h-11 shrink-0 items-center justify-center rounded-[11px] bg-white px-4 font-mbc text-[13.5px] text-[#0b0b0d] transition-opacity disabled:opacity-30 md:h-10"
+          >
+            저장
+          </button>
+          <span className="self-center font-pretendard text-[13px] text-white/55">{testResult}</span>
+          <span className="ml-auto self-center font-pretendard text-[12px] text-white/30">{data.source === "saved" ? "저장값" : "서버 .env"}</span>
+        </div>
+      )}
       {learning && <LearnWizard onClose={() => setLearning(false)} />}
     </div>
   );
 }
 
-function BackupRestore({ onRestored }: { onRestored: (m: SpeakerMatrix) => void }) {
+/* ---------------------------------------------------------------- 백업에서 되돌리기 */
+
+function BackupMenu({ onRestored }: { onRestored: (m: SpeakerMatrix) => void }) {
   const qc = useQueryClient();
   const { data } = useQuery({ queryKey: BACKUP_KEY, queryFn: speakerApi.backups });
-  const [name, setName] = useState("");
-  const [confirm, setConfirm] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [pick, setPick] = useState<{ name: string; label: string } | null>(null);
   const backups = data?.backups ?? [];
+  const when = (t: number) => new Date(t * 1000).toLocaleString("ko-KR");
 
-  const restore = async () => {
+  const restore = async (name: string) => {
     try {
       const res = await speakerApi.restore(name);
       qc.setQueryData(SPEAKER_MATRIX_KEY, res.matrix);
       onRestored(res.matrix);
       useSpeakerStore.getState().setZones([]);
       qc.invalidateQueries({ queryKey: BACKUP_KEY });
-      toast.success("복원했어요");
+      toast.success("되돌렸어요");
     } catch (e) {
       toast.error((e as Error).message);
     }
   };
 
-  if (!backups.length) return null;
   return (
-    <div data-tour="mapping.backup" className="flex w-full flex-col gap-1 md:w-auto">
-      <span className="font-mbc text-xs text-white/40">저장 이력</span>
-      <div className="flex gap-2">
-        <Select
-          value={name}
-          onChange={setName}
-          placeholder="백업 선택"
-          aria-label="백업 선택"
-          className="max-md:h-11 max-md:flex-1"
-          options={backups.map((b) => ({ value: b.name, label: new Date(b.savedAt * 1000).toLocaleString("ko-KR") }))}
-        />
-        <PanelButton onClick={() => setConfirm(true)} disabled={!name}>
-          복원
-        </PanelButton>
-      </div>
-      <ConfirmModal
-        isOpen={confirm}
-        onClose={() => setConfirm(false)}
-        onConfirm={() => {
-          setConfirm(false);
-          restore();
-        }}
-        title="매핑 복원"
-        message="선택한 시점으로 되돌릴까요?"
-        confirmText="복원"
+    <>
+      <P.Root open={open} onOpenChange={setOpen}>
+        <P.Trigger data-tour="mapping.backup" disabled={!backups.length} className={barBtn}>
+          <History size={14} />
+          <span className="md:hidden">백업 되돌리기</span>
+          <span className="max-md:hidden">백업에서 되돌리기</span>
+        </P.Trigger>
+        <P.Portal>
+          <P.Content
+            side="bottom"
+            align="end"
+            sideOffset={8}
+            collisionPadding={12}
+            className="z-[900] flex max-h-[min(360px,60dvh)] w-[min(300px,calc(100vw-24px))] flex-col overflow-y-auto rounded-[16px] border border-white/[0.12] bg-[#141416] p-1.5 text-white shadow-[0_24px_60px_rgba(0,0,0,0.65)] outline-none"
+          >
+            <span className="px-3 pb-1 pt-1.5 font-mbc text-[12.5px] text-white/40">저장 이력</span>
+            {backups.map((b) => (
+              <button
+                key={b.name}
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setPick({ name: b.name, label: when(b.savedAt) });
+                }}
+                className="flex h-11 items-center rounded-[10px] px-3 text-left font-pretendard text-[14px] font-medium text-white/80 transition-colors hover:bg-white/[0.07] hover:text-white md:h-9 md:text-[13.5px]"
+              >
+                {when(b.savedAt)}
+              </button>
+            ))}
+          </P.Content>
+        </P.Portal>
+      </P.Root>
+      <TimeConfirm
+        open={!!pick}
+        title="매핑 되돌리기"
+        message={pick ? `${pick.label} 저장본으로 되돌릴까요?` : ""}
+        confirmText="되돌리기"
+        onClose={() => setPick(null)}
+        onConfirm={() => pick && restore(pick.name)}
       />
-    </div>
+    </>
   );
 }

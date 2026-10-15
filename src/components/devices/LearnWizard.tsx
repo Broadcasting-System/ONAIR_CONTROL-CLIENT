@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Crosshair, RadioTower, Wifi, X } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { SPEAKER_MATRIX_KEY } from "@/hooks/useSpeakerMatrix";
@@ -35,7 +36,7 @@ function Shell({ onClose, children }: { onClose: () => void; children: React.Rea
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm max-md:pb-[calc(78px+env(safe-area-inset-bottom))] max-md:pt-[calc(16px+env(safe-area-inset-top))]">
       <div className="absolute inset-0" onClick={onClose} />
-      <div data-tour="mapping.learn-wizard" className="relative z-10 flex max-h-[90vh] w-full max-md:max-h-full max-w-[820px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1C1C1C] shadow-2xl">
+      <div data-tour="mapping.learn-wizard" className="relative z-10 flex max-h-[90vh] w-full max-md:max-h-full max-w-[820px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#141416] shadow-[0_24px_60px_rgba(0,0,0,0.65)]">
         <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-4 py-2.5 md:px-6 md:py-4">
           <div className="flex items-center gap-2.5">
             <RadioTower size={18} className="text-red-400" />
@@ -73,7 +74,7 @@ function StepDots({ phase }: { phase: Phase }) {
             className={cn(
               "flex h-6 w-6 items-center justify-center rounded-full font-orbitron text-[11px] transition-colors",
               i < idx
-                ? "bg-emerald-500/80 text-black"
+                ? "bg-white text-black"
                 : i === idx
                   ? "bg-red-500 text-white"
                   : "bg-white/10 text-white/40",
@@ -373,8 +374,8 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
         <div className="flex flex-col gap-5">
           {/* 제조사 프로그램에 적을 주소 (중계일 때만) */}
           {status.mode !== "manual" && (
-            <div className="flex flex-col gap-2 rounded-xl border border-sky-500/25 bg-sky-500/[0.07] px-5 py-4">
-              <span className="font-mbc text-xs text-sky-200/70">
+            <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
+              <span className="font-mbc text-xs text-white/45">
                 {status.mode === "serial" ? "제조사 프로그램 포트" : "제조사 프로그램 장비 주소"}
               </span>
               <div className="flex flex-wrap items-center gap-2">
@@ -392,10 +393,10 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                 <span
                   className={cn(
                     "ml-1 flex items-center gap-1.5 font-pretendard text-xs",
-                    status.connections > 0 ? "text-emerald-300" : "text-white/40",
+                    status.connections > 0 ? "text-white/85" : "text-white/40",
                   )}
                 >
-                  <span className={cn("h-2 w-2 rounded-full", status.connections > 0 ? "bg-emerald-400 shadow-[0_0_8px_#00FF57]" : "bg-white/25")} />
+                  <span className={cn("h-2 w-2 rounded-full", status.connections > 0 ? "bg-white shadow-[0_0_6px_rgba(255,255,255,0.6)]" : "bg-white/25")} />
                   {status.connections > 0
                     ? status.mode === "serial"
                       ? "포트 열림"
@@ -415,8 +416,8 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
 
           {/* 직접 붙여넣기 */}
           {status.mode === "manual" && (
-            <div className="flex flex-col gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-5 py-4">
-              <span className="font-mbc text-xs text-amber-200/80">패킷 (16진수)</span>
+            <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
+              <span className="font-mbc text-xs text-white/45">패킷 (16진수)</span>
               <div className="flex gap-2">
                 <input
                   value={paste}
@@ -432,7 +433,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                   type="button"
                   onClick={addPacket}
                   disabled={busy || !paste.trim()}
-                  className="h-11 shrink-0 rounded-lg border border-amber-400/40 md:h-10 bg-amber-400/15 px-4 font-mbc text-sm text-amber-100 hover:bg-amber-400/25 disabled:opacity-40"
+                  className="h-11 shrink-0 rounded-lg border border-white/15 bg-white/[0.06] px-4 font-mbc text-sm text-white hover:bg-white/10 disabled:opacity-40 md:h-10"
                 >
                   이 단계에 넣기
                 </button>
@@ -449,7 +450,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
             <span
               className={cn(
                 "flex items-center gap-1.5 rounded-full px-3 py-1 font-pretendard text-xs",
-                capturedHere ? "bg-emerald-500/15 text-emerald-300" : "bg-white/5 text-white/40",
+                capturedHere ? "bg-white text-[#0b0b0d]" : "bg-white/5 text-white/40",
               )}
             >
               {capturedHere ? <Check size={13} /> : <Crosshair size={13} className="animate-pulse" />}
@@ -486,7 +487,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                     i === stepIdx
                       ? "bg-red-500 text-white"
                       : done
-                        ? "bg-emerald-500/25 text-emerald-200"
+                        ? "bg-white/20 text-white"
                         : "bg-white/[0.06] text-white/40 hover:bg-white/10",
                   )}
                 >
@@ -518,7 +519,7 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                 type="button"
                 onClick={finishCapture}
                 disabled={busy}
-                className="h-11 rounded-xl border border-emerald-500/50 bg-emerald-500/15 px-6 font-mbc text-emerald-100 hover:bg-emerald-500/25 disabled:opacity-40"
+                className="h-11 rounded-xl bg-white px-6 font-mbc text-[#0b0b0d] transition-opacity disabled:opacity-40"
               >
                 규칙 찾기
               </button>
@@ -533,11 +534,11 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
             className={cn(
               "flex items-center gap-3 rounded-xl border px-5 py-4",
               result.template.mode === "bitmap"
-                ? "border-emerald-500/30 bg-emerald-500/10"
-                : "border-amber-500/30 bg-amber-500/10",
+                ? "border-white/20 bg-white/[0.05]"
+                : "border-[#FF3B3B]/40 bg-[#FF3B3B]/10",
             )}
           >
-            <span className={cn("h-2.5 w-2.5 rounded-full", result.template.mode === "bitmap" ? "bg-emerald-400" : "bg-amber-400")} />
+            <span className={cn("h-2.5 w-2.5 rounded-full", result.template.mode === "bitmap" ? "bg-white shadow-[0_0_6px_rgba(255,255,255,0.6)]" : "bg-[#FF3B3B] shadow-[0_0_7px_#FF3B3B]")} />
             <p className="font-mbc text-[15px] text-white">
               {result.template.mode === "bitmap"
                 ? "규칙을 찾았어요"
@@ -556,16 +557,16 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
               ))}
             </ul>
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className={cn("rounded-full px-2.5 py-0.5", result.checks.single ? "bg-emerald-500/15 text-emerald-300" : "bg-white/5 text-white/40")}>
+              <span className={cn("rounded-full px-2.5 py-0.5", result.checks.single ? "bg-white/15 text-white" : "bg-white/5 text-white/40")}>
                 {result.checks.single ? "구역별 재현 확인" : "구역별 재현 미확인"}
               </span>
               {result.checks.combo !== null && (
-                <span className={cn("rounded-full px-2.5 py-0.5", result.checks.combo ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300")}>
+                <span className={cn("rounded-full px-2.5 py-0.5", result.checks.combo ? "bg-white/15 text-white" : "bg-[#FF3B3B]/15 text-[#ff8a8a]")}>
                   {result.checks.combo ? "조합 규칙 확인" : "조합 규칙 미확인"}
                 </span>
               )}
               {result.missingZones.length > 0 && (
-                <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-amber-300">
+                <span className="rounded-full bg-[#FF3B3B]/15 px-2.5 py-0.5 text-[#ff8a8a]">
                   캡처 안 된 구역 {result.missingZones.length}개
                 </span>
               )}
@@ -576,14 +577,9 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
             <button type="button" onClick={() => setPhase("capture")} className="h-11 rounded-xl px-4 font-mbc text-sm text-white/50 hover:bg-white/5 hover:text-white">
               캡처로 돌아가기
             </button>
-            <button
-              type="button"
-              onClick={apply}
-              disabled={busy}
-              className="h-11 rounded-xl border border-emerald-500/50 bg-emerald-500/15 px-6 font-mbc text-emerald-100 hover:bg-emerald-500/25 disabled:opacity-40"
-            >
+            <NeonButton onClick={apply} disabled={busy} className="min-w-[150px]">
               이 장비로 연결
-            </button>
+            </NeonButton>
           </div>
         </div>
       )}
