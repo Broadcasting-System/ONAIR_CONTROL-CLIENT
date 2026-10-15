@@ -133,7 +133,7 @@ export default function DevicesPage() {
 
   return (
     <div className="flex flex-col gap-4 md:h-full md:gap-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-0">
+      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-x-5 md:gap-y-3">
         <SectionHeader className="mb-0 max-md:mt-1 max-md:text-[26px] max-md:leading-none">관리</SectionHeader>
         <div ref={tabsRef} className="no-scrollbar -mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
           <PageTabs
