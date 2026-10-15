@@ -1,5 +1,6 @@
 "use client";
 
+import { SwitchMirror } from "@/components/switcher/SlotPreview";
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { cn } from "@/lib/utils";
@@ -458,6 +459,10 @@ export const DisplayMirror = ({
         </span>
       </div>
     );
+  }
+
+  if (content?.type === "switch" && content.slots) {
+    return <SwitchMirror layout={content.layout ?? "four"} slots={content.slots} />;
   }
 
   if (!content || content.type === "standby") {

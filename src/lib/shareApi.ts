@@ -24,8 +24,9 @@ export const shareApi = {
   overview: () => request<{ room: ShareRoom | null; requests: ShareRequest[] }>("/share"),
   openRoom: (channel: number) => post<{ room: ShareRoom }>("/share/room", { channel }),
   closeRoom: () => del<{ room: null }>("/share/room"),
-  approve: (id: string, channel: number) =>
-    post<{ request: ShareRequest }>(`/share/requests/${seg(id)}/approve`, { channel }),
+  /** mode — air: 바로 그 채널에 송출 · source: 스위처 소스로만 */
+  approve: (id: string, channel: number, mode: "air" | "source" = "air") =>
+    post<{ request: ShareRequest }>(`/share/requests/${seg(id)}/approve`, { channel, mode }),
   reject: (id: string) => post<{ request: ShareRequest }>(`/share/requests/${seg(id)}/reject`),
   end: (id: string) => post<{ ok: boolean }>(`/share/requests/${seg(id)}/end`),
   snapshotUrl: (r: ShareRequest) =>

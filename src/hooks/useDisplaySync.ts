@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { backendBase, backendWs, resolveMediaUrl } from '@/lib/backend'
+import type { SwitchLayout, SwitchSlot, SwitchSource } from '@/lib/switchApi'
 
-export type ContentType = 'image' | 'video' | 'presentation' | 'audio' | 'standby' | 'screen' | 'timer' | 'youtube'
+export type ContentType = 'image' | 'video' | 'presentation' | 'audio' | 'standby' | 'screen' | 'timer' | 'youtube' | 'switch'
 
 export interface Playback {
   playing: boolean
@@ -37,6 +38,10 @@ export interface DisplayContent {
   durationSec?: number
   mode?: 'down' | 'up'
   videoId?: string
+  // 스위처(type==='switch') — lib/switchApi 의 모양
+  layout?: SwitchLayout
+  slots?: SwitchSlot[]
+  sources?: SwitchSource[]
   command?: 'display'
   [key: string]: unknown
 }
@@ -103,6 +108,9 @@ export function useDisplaySync(channel: number = 1, role: 'control' | 'live' = '
               durationSec: resolved.durationSec,
               mode: resolved.mode,
               videoId: resolved.videoId,
+              layout: resolved.layout,
+              slots: resolved.slots,
+              sources: resolved.sources,
             })
           }
         }
@@ -153,6 +161,9 @@ export function useDisplaySync(channel: number = 1, role: 'control' | 'live' = '
               durationSec: resolved.durationSec,
               mode: resolved.mode,
               videoId: resolved.videoId,
+              layout: resolved.layout,
+              slots: resolved.slots,
+              sources: resolved.sources,
             })
           }
         } catch (err) {
