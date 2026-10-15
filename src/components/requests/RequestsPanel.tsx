@@ -254,10 +254,10 @@ function RequestsView() {
         새 요청 <small className="font-medium opacity-70">{counts?.new ?? 0}</small>
       </ChoiceChip>
       <ChoiceChip on={filter === "accepted"} onClick={() => setFilter("accepted")}>
-        수락함 <small className="font-medium opacity-70">{counts?.accepted ?? 0}</small>
+        수락 <small className="font-medium opacity-70">{counts?.accepted ?? 0}</small>
       </ChoiceChip>
       <ChoiceChip on={filter === "closed"} onClick={() => setFilter("closed")}>
-        끝난 것
+        완료
       </ChoiceChip>
     </div>
   );
