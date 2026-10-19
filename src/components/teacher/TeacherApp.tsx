@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Check, ChevronLeft, Film, Lock, Mail, Minus, Pencil, Play, Plus, Send } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, Film, House, List, Lock, Mail, Minus, Pencil, Play, Plus, Send, type LucideIcon } from "lucide-react";
 import NeonButton from "@/components/common/NeonButton";
 import OnairMark from "@/components/common/OnairMark";
 import { ToastHost, toast } from "@/components/common/Toast";
@@ -74,6 +74,12 @@ const tomorrow = () => iso(new Date(Date.now() + 86400_000));
 // 뼈대
 // ======================================================================
 
+type NavItem = { k: "home" | "list"; label: string; icon: LucideIcon; go: () => void };
+const navItems = (onHome: () => void, onList: () => void): NavItem[] => [
+  { k: "home", label: "홈", icon: House, go: onHome },
+  { k: "list", label: "내 요청", icon: List, go: onList },
+];
+
 function Header({ me, onHome, onList, view }: { me: Me | undefined; onHome: () => void; onList: () => void; view: string }) {
   const t = me?.teacher;
   const approved = me?.status === "approved";
@@ -85,11 +91,8 @@ function Header({ me, onHome, onList, view }: { me: Me | undefined; onHome: () =
         <span className="ml-1 font-orbitron text-[11px] font-bold tracking-[0.32em] text-[#FF3B3B] max-sm:hidden">TEACHER</span>
       </button>
       {approved && (
-        <nav className="ml-4 flex gap-1 md:ml-10">
-          {[
-            { k: "home", label: "홈", go: onHome },
-            { k: "list", label: "내 요청", go: onList },
-          ].map((x) => (
+        <nav className="ml-10 flex gap-1 max-md:hidden">
+          {navItems(onHome, onList).map((x) => (
             <button
               key={x.k}
               type="button"
@@ -121,6 +124,33 @@ function Header({ me, onHome, onList, view }: { me: Me | undefined; onHome: () =
         </div>
       )}
     </header>
+  );
+}
+
+/** 폰 아래 탭 — 시안 A 의 아래 막대. md 이상은 머리 탭을 쓴다 */
+function TabBar({ onHome, onList, view }: { onHome: () => void; onList: () => void; view: string }) {
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 border-t border-white/[0.07] bg-[#0a0a0c]/[0.82] pb-[env(safe-area-inset-bottom)] backdrop-blur-[14px] md:hidden">
+      {navItems(onHome, onList).map((x) => {
+        const on = view === x.k;
+        const Icon = x.icon;
+        return (
+          <button
+            key={x.k}
+            type="button"
+            onClick={x.go}
+            aria-current={on ? "page" : undefined}
+            className={cn(
+              "flex h-16 flex-col items-center justify-center gap-1 font-pretendard text-[12px] font-bold",
+              on ? "text-white" : "text-white/40 active:text-white/70",
+            )}
+          >
+            <Icon size={22} strokeWidth={on ? 2.2 : 1.8} className={on ? "text-[#FF3B3B]" : undefined} />
+            {x.label}
+          </button>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -384,7 +414,7 @@ function Home({
               진행 중 <small className="font-medium opacity-70">{openRows.length}</small>
             </ChoiceChip>
             <ChoiceChip on={tab === "closed"} onClick={() => setTab("closed")}>
-              끝난 것 <small className="font-medium opacity-70">{closed.length}</small>
+              완료 <small className="font-medium opacity-70">{closed.length}</small>
             </ChoiceChip>
           </div>
         </div>
@@ -1031,6 +1061,7 @@ export default function TeacherApp() {
   const home = () => go("");
   const open = (id: string) => go(`v=req&id=${encodeURIComponent(id)}`);
   const kind = params.get("k") as Kind | null;
+  const navView = v === "list" ? "list" : v === "home" ? "home" : "";
 
   const body = useMemo(() => {
     if (me.isLoading) return <p className="p-16 text-center font-pretendard text-white/40">불러오는 중…</p>;
@@ -1061,10 +1092,11 @@ export default function TeacherApp() {
         <div className="absolute inset-0 bg-gradient-to-br from-[#1a0505] to-black opacity-80" />
         <div className="absolute inset-0 bg-[url('/onair_background.png')] bg-cover bg-center opacity-40 mix-blend-screen" />
       </div>
-      <div className="relative z-10">
-        <Header me={me.data} view={v === "list" ? "list" : v === "home" ? "home" : ""} onHome={home} onList={() => go("v=list")} />
+      <div className={cn("relative z-10", approved && "max-md:pb-[calc(64px+env(safe-area-inset-bottom))]")}>
+        <Header me={me.data} view={navView} onHome={home} onList={() => go("v=list")} />
         {body}
       </div>
+      {approved && <TabBar view={navView} onHome={home} onList={() => go("v=list")} />}
       <ToastHost />
     </main>
   );
