@@ -10,6 +10,8 @@ import { ToastHost, toast } from "@/components/common/Toast";
 import { DatePicker, DatesPicker, TimePicker } from "@/components/common/DateTimePicker";
 import Select from "@/components/common/Select";
 import { backendBase } from "@/lib/backend";
+import { devHeaders, tapi } from "@/components/teacher/api";
+import InstantBroadcast, { type Space } from "@/components/teacher/InstantBroadcast";
 import { parseYouTubeId } from "@/lib/youtube";
 import { cn } from "@/lib/utils";
 import {
@@ -51,34 +53,8 @@ interface Places {
   classes: string[];
   grades: number[];
   channels: { channel: number; label: string; hallName: string | null }[];
-}
-
-/** 시험용 — 서버 자신(localhost)에서 열면 이 칸의 이메일을 선생님으로 (서버도 그 주소에서만 받는다) */
-function devHeaders(): Record<string, string> {
-  if (typeof window === "undefined" || !["localhost", "127.0.0.1"].includes(window.location.hostname)) return {};
-  try {
-    const e = localStorage.getItem("onair.teacher.devEmail");
-    return e ? { "x-teacher-email": e } : {};
-  } catch {
-    return {};
-  }
-}
-
-async function tapi<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const r = await fetch(`${backendBase()}/api/teacher${path}`, {
-    ...init,
-    headers: { ...(init.body && !(init.body instanceof FormData) ? { "content-type": "application/json" } : {}), ...devHeaders(), ...(init.headers ?? {}) },
-    cache: "no-store",
-  });
-  if (!r.ok) {
-    let msg = `HTTP ${r.status}`;
-    try {
-      msg = ((await r.json()) as { detail?: string }).detail ?? msg;
-    } catch {}
-    throw new Error(msg);
-  }
-  const type = r.headers.get("content-type") ?? "";
-  return (type.includes("json") ? await r.json() : await r.blob()) as T;
+  /** 바로 방송 '다른 곳' — 스피커 이름 전부 */
+  spaces?: Space[];
 }
 
 const KINDS: { kind: Kind; title: string; sub: string; lock: string }[] = [
@@ -119,7 +95,7 @@ function Header({ me, onHome, onList, view }: { me: Me | undefined; onHome: () =
               type="button"
               onClick={x.go}
               className={cn(
-                "rounded-[10px] px-3.5 py-2 font-pretendard text-[15px] font-bold",
+                "whitespace-nowrap rounded-[10px] px-3.5 py-2 font-pretendard text-[15px] font-bold",
                 view === x.k ? "bg-white/[0.08] text-white" : "text-white/40 hover:text-white/70",
               )}
             >
@@ -134,7 +110,11 @@ function Header({ me, onHome, onList, view }: { me: Me | undefined; onHome: () =
             <p className="font-pretendard text-[15px] font-bold text-white">{t.name} 선생님</p>
             <p className="font-pretendard text-[13px] text-white/45">{t.dept || t.duty}</p>
           </div>
-          {approved && <TierChip tier={t.tier} />}
+          {approved && (
+            <span className="max-sm:hidden">
+              <TierChip tier={t.tier} />
+            </span>
+          )}
           <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-white/15 bg-white/[0.06] font-pretendard text-[15px] font-bold text-white">
             {t.name.slice(0, 1)}
           </span>
@@ -332,14 +312,34 @@ function RequestTable({ rows, open }: { rows: TeacherRequest[]; open: (id: strin
   );
 }
 
-function Home({ me, reqs, go, open, full }: { me: Me; reqs: TeacherRequest[]; go: (k: Kind) => void; open: (id: string) => void; full?: boolean }) {
+function Home({
+  me,
+  reqs,
+  places,
+  go,
+  open,
+  full,
+}: {
+  me: Me;
+  reqs: TeacherRequest[];
+  places?: Places;
+  go: (k: Kind) => void;
+  open: (id: string) => void;
+  full?: boolean;
+}) {
   const [tab, setTab] = useState<"open" | "closed">("open");
+  // 바로 방송이 나가는 동안 나머지는 흐리게
+  const [onAir, setOnAir] = useState(false);
   const openRows = reqs.filter((r) => r.status === "new" || r.status === "accepted");
   const closed = reqs.filter((r) => !(r.status === "new" || r.status === "accepted"));
+  const dim = cn("transition-opacity", onAir && "pointer-events-none opacity-35");
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 py-8 md:px-12 md:py-9">
       {!full && (
-        <>
+        <InstantBroadcast spaces={places?.spaces ?? []} grades={places?.grades ?? []} dept={me.teacher?.dept} onAirChange={setOnAir} />
+      )}
+      {!full && (
+        <div className={cn("flex flex-col gap-6", dim)}>
           <div>
             <p className="font-orbitron text-[11px] tracking-[0.28em] text-white/40">REQUEST</p>
             <h1 className="mt-2 font-mbc text-[32px] leading-tight text-white md:text-[40px]">무엇을 부탁할까요</h1>
@@ -374,9 +374,9 @@ function Home({ me, reqs, go, open, full }: { me: Me; reqs: TeacherRequest[]; go
               );
             })}
           </div>
-        </>
+        </div>
       )}
-      <Glass className="px-4 pb-2 pt-5 md:px-6">
+      <Glass className={cn("px-4 pb-2 pt-5 md:px-6", !full && dim)}>
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="font-mbc text-[24px] text-white md:text-[26px]">내 요청</h2>
           <div className="flex gap-2">
@@ -1047,7 +1047,7 @@ export default function TeacherApp() {
       return <BellForm back={home} done={open} />;
     }
     if (v === "req" && params.get("id")) return <Detail id={params.get("id")!} back={() => router.back()} />;
-    return <Home me={m} reqs={rows} go={(k) => go(`v=new&k=${k}`)} open={open} full={v === "list"} />;
+    return <Home me={m} reqs={rows} places={places.data} go={(k) => go(`v=new&k=${k}`)} open={open} full={v === "list"} />;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me.data, me.isLoading, me.isError, reqs.data, places.data, v, kind, params, editing]);
 

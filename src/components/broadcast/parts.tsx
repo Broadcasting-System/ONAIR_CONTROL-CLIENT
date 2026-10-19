@@ -126,7 +126,18 @@ export function useElapsed(startedAt: number | null): number {
 }
 
 /** 마이크 소리 크기 막대 — AnalyserNode 주파수 (말소리 대역, 로그 간격) */
-export function LevelMeter({ analyser, bars = 24, className }: { analyser: AnalyserNode | null; bars?: number; className?: string }) {
+export function LevelMeter({
+  analyser,
+  bars = 24,
+  className,
+  barClassName = "bg-[#3ddc84]",
+}: {
+  analyser: AnalyserNode | null;
+  bars?: number;
+  className?: string;
+  /** 막대 색 (선생님 화면은 흰색) */
+  barClassName?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const box = ref.current;
@@ -158,7 +169,7 @@ export function LevelMeter({ analyser, bars = 24, className }: { analyser: Analy
   return (
     <div ref={ref} aria-hidden className={cn("flex h-[30px] items-end justify-center gap-[4px]", className)}>
       {Array.from({ length: bars }, (_, i) => (
-        <span key={i} className="w-[5px] rounded-full bg-[#3ddc84]" style={{ height: 3 }} />
+        <span key={i} className={cn("w-[5px] rounded-full", barClassName)} style={{ height: 3 }} />
       ))}
     </div>
   );

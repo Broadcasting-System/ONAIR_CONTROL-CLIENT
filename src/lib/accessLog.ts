@@ -75,6 +75,9 @@ const RULES: Rule[] = [
   ["*", /^\/api\/share\/join/, "화면 공유 요청", "화면 공유"],
   ["*", /^\/api\/share\/me\/end/, "화면 공유 끝내기", "화면 공유"],
   ["*", /^\/api\/share/, "화면 공유 조작", "화면 공유"],
+  // 선생님 바로 방송 (마이크는 끝날 때 한 줄, 글은 내보낼 때 한 줄 — 사람은 선생님)
+  ["WS", /^\/api\/teacher\/live/, "바로 방송 · 마이크", "방송"],
+  ["*", /^\/api\/teacher\/now/, "바로 방송 · 글", "방송"],
   // 요청 (선생님 → 방송부)
   ["*", /^\/api\/teacher\/register/, "선생님 등록", "요청"],
   ["*", /^\/api\/teacher\/uploads/, "요청 파일 올리기", "요청"],
@@ -298,6 +301,9 @@ function byRules(method: string, path: string): { label: string; group: string }
 
 const opt = (v?: string) => (v && v.trim() ? v.trim() : undefined);
 
+/** 선생님 바로 방송 기록 (WS /api/teacher/live · POST /api/teacher/now) */
+const TEACHER_NOW = /^\/api\/teacher\/(live|now)(\/|$)/;
+
 /** 서버가 남긴 동작 이름 '마이크 방송 시작 · 1-1, 1-2' → 이름과 나머지 */
 function splitAction(action: string): { label: string; rest?: string } {
   const k = action.indexOf(" · ");
@@ -335,6 +341,10 @@ export function describe(l: LogEntry): Described {
   if (l.via === "chat") {
     // CUE 도구가 부른 요청 — 사람은 CUE, 동작은 경로로, 카드 제목은 옆에
     return { ...base, extra: target ?? opt(l.action), detail };
+  }
+  if (l.action && TEACHER_NOW.test(l.path.split("?")[0])) {
+    // '바로 방송 · 마이크' 는 이름 그대로 (뒤가 대상이 아니라 마이크·글)
+    return { label: l.action, group: base.group, extra: target, detail };
   }
   if (l.action) {
     const a = splitAction(l.action);

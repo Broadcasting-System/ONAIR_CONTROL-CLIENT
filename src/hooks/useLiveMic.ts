@@ -4,10 +4,29 @@ import { micErrorMessage, openMic, startPcmCapture, stopStream, type PcmCapture 
 import { toast } from "@/components/common/Toast";
 
 /**
- * 실시간 마이크 방송 (WS /api/broadcast/live).
+ * 실시간 마이크 방송 (WS /api/broadcast/live — 선생님 바로 방송은 /api/teacher/live, 같은 소리 흐름).
  * idle → connecting(마이크·연결·스피커 켜기·딩동댕) → live(소리 보냄) → stopping(끝음·스피커 되돌림) → idle
  */
 export type LiveState = "idle" | "connecting" | "live" | "stopping";
+
+/** 서버가 보낸 글 메시지 (onair·ended·error 말고도 deadline 같은 것) */
+export type LiveMessage = {
+  type?: string;
+  message?: string;
+  reason?: string;
+  warning?: string;
+  maxSeconds?: number;
+  [key: string]: unknown;
+};
+
+export interface LiveMicOptions {
+  /** 웹소켓 주소 (기본: 방송부 마이크) */
+  url?: () => string;
+  /** 끝난 까닭 → 알림 글 (기본: 방송부 마이크 글) */
+  endedText?: (reason: string, maxSeconds: number, serverMessage: string) => string;
+  /** 서버 메시지마다 (onair·deadline 등 — 화면이 남은 시간을 보이려고) */
+  onMessage?: (msg: LiveMessage) => void;
+}
 
 const CLOSE_MESSAGES: Record<number, string> = {
   4403: "마이크 방송 권한이 없어요",
@@ -27,7 +46,11 @@ function endedMessage(reason: string, maxSeconds: number, fallback: string): str
   return fallback || "마이크 방송이 끝났어요";
 }
 
-export function useLiveMic() {
+export function useLiveMic(options: LiveMicOptions = {}) {
+  const optsRef = useRef(options);
+  useEffect(() => {
+    optsRef.current = options;
+  });
   const [state, setState] = useState<LiveState>("idle");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
@@ -65,7 +88,8 @@ export function useLiveMic() {
   }, []);
 
   const start = useCallback(
-    async (opts: { targets: string[]; effect: string; chime: boolean }) => {
+    /** start 메시지에 sampleRate 와 같이 실어 보낼 것 — 방송부 {targets, effect, chime} · 선생님 {target} */
+    async (payload: Record<string, unknown>) => {
       if (stateRef.current !== "idle") return;
       set("connecting");
       framesRef.current = 0;
@@ -102,28 +126,21 @@ export function useLiveMic() {
       setAnalyser(capture.analyser);
 
       let errorShown = false;
-      const ws = new WebSocket(backendWs("/api/broadcast/live"));
+      const ws = new WebSocket(optsRef.current.url?.() ?? backendWs("/api/broadcast/live"));
       ws.binaryType = "arraybuffer";
       wsRef.current = ws;
       ws.onopen = () => {
-        ws.send(
-          JSON.stringify({
-            type: "start",
-            targets: opts.targets,
-            sampleRate: capture.sampleRate,
-            effect: opts.effect,
-            chime: opts.chime,
-          }),
-        );
+        ws.send(JSON.stringify({ ...payload, type: "start", sampleRate: capture.sampleRate }));
       };
       ws.onmessage = (ev) => {
         if (typeof ev.data !== "string") return;
-        let msg: { type?: string; message?: string; reason?: string; warning?: string; maxSeconds?: number };
+        let msg: LiveMessage;
         try {
           msg = JSON.parse(ev.data);
         } catch {
           return;
         }
+        optsRef.current.onMessage?.(msg);
         if (msg.type === "onair") {
           if (typeof msg.maxSeconds === "number") maxRef.current = msg.maxSeconds;
           onairRef.current = true;
@@ -132,7 +149,7 @@ export function useLiveMic() {
           else if (stateRef.current === "stopping") ws.send(JSON.stringify({ type: "stop" }));
         } else if (msg.type === "ended") {
           const reason = msg.reason ?? "stop";
-          const text = endedMessage(reason, maxRef.current, msg.message ?? "");
+          const text = (optsRef.current.endedText ?? endedMessage)(reason, maxRef.current, msg.message ?? "");
           if (reason === "stop") toast.success(text);
           else toast.info(text);
           if (msg.warning) toast.error(msg.warning);

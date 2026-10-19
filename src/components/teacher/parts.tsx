@@ -117,7 +117,7 @@ export function Seg<T extends string>({
   onChange,
 }: {
   value: T;
-  options: { value: T; label: string; sub?: string; disabled?: boolean }[];
+  options: { value: T; label: ReactNode; sub?: string; disabled?: boolean }[];
   onChange: (v: T) => void;
 }) {
   return (
