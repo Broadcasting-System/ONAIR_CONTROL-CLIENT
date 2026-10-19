@@ -1,6 +1,7 @@
 import { Bell, DaySchedule, DayType } from "@/types/time";
 import { CATEGORY_ORDER, DEAD_SPEAKERS, SPEAKER_CATEGORY } from "@/constants/speakerMap";
 import { dayTypeOf } from "@/constants/days";
+import { TEST_SPEAKER_LABEL, isTestSpeaker } from "@/constants/testSpeaker";
 
 /** 시보 음악을 기기 호스트와 무관하게 식별하기 위한 정규화.
  *  절대 URL(http://host:8000/api/files/stream/audio/x.mp3)이 기기마다 호스트가 달라
@@ -123,6 +124,7 @@ export function summarizeSpeakers(
   sections: SpeakerSection[],
 ): { text: string; all: boolean; none: boolean } {
   if (!sel || sel.length === 0) return { text: "장소 없음", all: false, none: true };
+  if (sel.some(isTestSpeaker)) return { text: TEST_SPEAKER_LABEL, all: false, none: false };
   const set = new Set(sel);
   const allIds = sections.flatMap((s) => s.ids);
   if (allIds.length > 0 && allIds.every((id) => set.has(id))) return { text: "학교 전체", all: true, none: false };

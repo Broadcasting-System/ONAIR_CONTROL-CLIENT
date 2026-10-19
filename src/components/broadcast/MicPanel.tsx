@@ -32,12 +32,15 @@ export default function MicPanel({
   targets,
   setTargets,
   canOperate,
+  testSpeaker,
   onBusyChange,
 }: {
   names: string[];
   targets: string[];
   setTargets: (t: string[]) => void;
   canOperate: boolean;
+  /** 최고 관리자 — 대상에 시험 스피커 */
+  testSpeaker?: boolean;
   /** 방송·녹음 중에는 바깥 탭을 잠근다 */
   onBusyChange: (busy: boolean) => void;
 }) {
@@ -185,7 +188,7 @@ export default function MicPanel({
       </Block>
 
       <Block className={cn(mine && "pointer-events-none opacity-60")}>
-        <TargetPicker names={names} selected={targets} onChange={setTargets} disabled={mine || sending} />
+        <TargetPicker names={names} selected={targets} onChange={setTargets} disabled={mine || sending} testSpeaker={testSpeaker} />
       </Block>
     </>
   );

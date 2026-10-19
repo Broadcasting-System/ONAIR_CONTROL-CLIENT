@@ -9,7 +9,7 @@ import MyDevicesModal from "@/components/devices/MyDevicesModal";
 import { useRequestCounts } from "@/components/requests/RequestsPanel";
 
 /** 폰 더보기 — 탭에 없는 메뉴 */
-const ITEMS: { href: string; label: string; sub: string; admin?: boolean; operator?: boolean }[] = [
+const ITEMS: { href: string; label: string; sub: string; admin?: boolean; operator?: boolean; superadmin?: boolean }[] = [
   { href: "/main", label: "방송", sub: "TTS · 방송 모니터링 · 스피커 관리" },
   { href: "/media", label: "송출", sub: "CH1~5 송출 화면" },
   { href: "/media?tab=banner", label: "현수막", sub: "기본 · 점수보드 · 타이머" },
@@ -18,6 +18,7 @@ const ITEMS: { href: string; label: string; sub: string; admin?: boolean; operat
   { href: "/speakers", label: "스피커 지도", sub: "층별 지도 · 검색" },
   { href: "/files", label: "파일", sub: "이미지 · 동영상 · 음원 · PPT" },
   { href: "/logs", label: "로그", sub: "누가 무엇을 했는지", admin: true },
+  { href: "/test-speaker", label: "시험 스피커", sub: "방송을 이 기기에서 듣기", superadmin: true },
 ];
 
 const noop = () => () => {};
@@ -33,7 +34,7 @@ function useAppPlatform(): string | null {
 
 export default function MobileMorePage() {
   useMobileOnly("/main");
-  const { isAdmin, me, canOperate } = useMe();
+  const { isAdmin, me, canOperate, isSuperadmin } = useMe();
   const reqCounts = useRequestCounts(canOperate);
   const newRequests = (reqCounts.data?.new ?? 0) + (reqCounts.data?.pendingTeachers ?? 0);
   const app = useAppPlatform();
@@ -43,7 +44,7 @@ export default function MobileMorePage() {
     <div className="flex flex-col">
       <MobileHeader title="더보기" />
       <div className="flex flex-col gap-2.5" data-tour="more.list">
-        {ITEMS.filter((i) => (!i.admin || isAdmin) && (!i.operator || canOperate)).map((i) => (
+        {ITEMS.filter((i) => (!i.admin || isAdmin) && (!i.operator || canOperate) && (!i.superadmin || isSuperadmin)).map((i) => (
           <GlassCard key={i.href} href={i.href} className="flex items-center justify-between py-4">
             <div>
               <p className="font-pretendard text-[16px] font-semibold">{i.label}</p>

@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { DEAD_SPEAKERS } from "@/constants/speakerMap";
+import { TEST_SPEAKER_ID, TEST_SPEAKER_LABEL, isTestSpeaker, withoutTest } from "@/constants/testSpeaker";
 import type { SpeakerSection } from "./bellUtils";
 
 type Tri = "on" | "part" | "off";
@@ -40,17 +41,23 @@ interface SpeakerPickerProps {
   selected: string[];
   onChange: (next: string[]) => void;
   className?: string;
+  /** 최고 관리자 — 시험 스피커 칩 (다른 스피커와 같이 고를 수 없다) */
+  testSpeaker?: boolean;
 }
 
 /** 장소 고르기 — 분류마다 한 줄(3상태 체크 + 칩), 교실은 학년별 줄 */
-export default function SpeakerPicker({ sections, selected, onChange, className }: SpeakerPickerProps) {
+export default function SpeakerPicker({ sections, selected, onChange: setSelected, className, testSpeaker }: SpeakerPickerProps) {
+  const testOn = selected.some(isTestSpeaker);
+  // 진짜 스피커를 고르면 시험 스피커는 빠진다. 이미 고른 시험 스피커는 최고 관리자가 아니어도 보여서 뺄 수 있게
+  const showTest = !!testSpeaker || testOn;
+  const onChange = (next: string[]) => setSelected(withoutTest(next));
   const set = new Set(selected);
   const all = sections.flatMap((s) => s.ids);
   const known = new Set(all);
-  const count = selected.filter((id) => known.has(id)).length;
+  const count = selected.filter((id) => known.has(id) || isTestSpeaker(id)).length;
   // 스피커 매핑이 바뀌어 지금 목록에 없는 대상 — 보이지 않으면 뺄 수도 없어 소리 없는 시보가 된다
   // 실제 스피커가 없어 숨긴 이름(DEAD_SPEAKERS)은 예전 '학교 전체' 시보에 남아 있어도 문제가 아니라 빼고 센다
-  const stale = selected.filter((id) => !known.has(id) && !DEAD_SPEAKERS.includes(id));
+  const stale = selected.filter((id) => !known.has(id) && !DEAD_SPEAKERS.includes(id) && !isTestSpeaker(id));
   const allOn = all.length > 0 && all.every((id) => set.has(id));
 
   const toggle = (id: string) => onChange(set.has(id) ? selected.filter((s) => s !== id) : [...selected, id]);
@@ -123,6 +130,24 @@ export default function SpeakerPicker({ sections, selected, onChange, className 
               {id} ×
             </button>
           ))}
+        </div>
+      )}
+
+      {showTest && (
+        <div className="flex items-center gap-2 border-b border-[#7c6db0]/15 pb-2">
+          <button
+            type="button"
+            aria-pressed={testOn}
+            onClick={() => setSelected(testOn ? [] : [TEST_SPEAKER_ID])}
+            className={cn(
+              "flex h-9 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 font-pretendard text-[13px] font-medium transition-all md:h-7 md:text-[12.5px]",
+              testOn
+                ? "border-[#c4b5fd] bg-[#a78bfa]/15 font-semibold text-white shadow-[0_0_14px_-3px_#a78bfa]"
+                : "border-[#7c6db0]/35 bg-white/[0.02] text-white/60 hover:border-[#7c6db0]/70 hover:text-white",
+            )}
+          >
+            {TEST_SPEAKER_LABEL}
+          </button>
         </div>
       )}
 

@@ -25,8 +25,8 @@ export default function BroadcastCard() {
   const [tab, setTab] = useState<Tab>("tts");
   const [locked, setLocked] = useState(false);
   const { names } = useSpeakerMatrix();
-  const { selected, setSelected } = useBroadcastTargets(names);
-  const { canOperate } = useMe();
+  const { canOperate, isSuperadmin } = useMe();
+  const { selected, setSelected } = useBroadcastTargets(names, isSuperadmin);
   const showMic = useCallback(() => setTab("mic"), []);
 
   return (
@@ -49,13 +49,20 @@ export default function BroadcastCard() {
       </div>
       <div className="flex flex-col gap-2.5 md:gap-7 md:rounded-[24px] md:border md:border-sidebar-border md:bg-sidebar md:p-8 md:shadow-2xl">
         {tab === "tts" ? (
-          <TtsPanel names={names} targets={selected} setTargets={setSelected} canOperate={canOperate} />
+          <TtsPanel
+            names={names}
+            targets={selected}
+            setTargets={setSelected}
+            canOperate={canOperate}
+            testSpeaker={isSuperadmin}
+          />
         ) : (
           <MicPanel
             names={names}
             targets={selected}
             setTargets={setSelected}
             canOperate={canOperate}
+            testSpeaker={isSuperadmin}
             onBusyChange={setLocked}
           />
         )}

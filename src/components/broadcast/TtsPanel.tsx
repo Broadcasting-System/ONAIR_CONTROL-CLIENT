@@ -77,11 +77,14 @@ export default function TtsPanel({
   targets,
   setTargets,
   canOperate,
+  testSpeaker,
 }: {
   names: string[];
   targets: string[];
   setTargets: (t: string[]) => void;
   canOperate: boolean;
+  /** 최고 관리자 — 대상에 시험 스피커 */
+  testSpeaker?: boolean;
 }) {
   const voicesQ = useQuery({ queryKey: ["tts", "voices"], queryFn: broadcastApi.voices, staleTime: 60_000 });
   const voices = voicesQ.data?.voices?.length ? voicesQ.data.voices : GTTS_ONLY;
@@ -237,7 +240,7 @@ export default function TtsPanel({
       </Block>
 
       <Block>
-        <TargetPicker names={names} selected={targets} onChange={setTargets} />
+        <TargetPicker names={names} selected={targets} onChange={setTargets} testSpeaker={testSpeaker} />
       </Block>
 
       <NeonButton

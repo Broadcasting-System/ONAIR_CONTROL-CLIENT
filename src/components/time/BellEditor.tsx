@@ -19,6 +19,8 @@ interface BellEditorProps {
   /** 고칠 시보 (새 시보면 null) */
   bell: Bell | null;
   sections: SpeakerSection[];
+  /** 최고 관리자 — 장소에 시험 스피커 */
+  testSpeaker?: boolean;
   audioFiles: AudioFile[];
   /** 울리는 요일 처음 값. null 이면 요일 줄을 숨긴다 (특별 P) */
   initialDays: DayType[] | null;
@@ -28,7 +30,7 @@ interface BellEditorProps {
 }
 
 /** 시보 하나 편집 — 저장·지우기는 화면 안에서만 바뀌고, 적용하기로 서버에 보낸다 */
-export default function BellEditor({ bell, sections, audioFiles, initialDays, onSave, onDelete, className }: BellEditorProps) {
+export default function BellEditor({ bell, sections, testSpeaker, audioFiles, initialDays, onSave, onDelete, className }: BellEditorProps) {
   const [label, setLabel] = useState(bell?.label ?? "");
   const [time, setTime] = useState(bell?.time ?? "");
   // 레거시 절대 URL → 경로로 정규화
@@ -194,7 +196,13 @@ export default function BellEditor({ bell, sections, audioFiles, initialDays, on
         </div>
       </div>
 
-      <SpeakerPicker sections={sections} selected={speakers} onChange={setSpeakers} className="md:flex-1" />
+      <SpeakerPicker
+        sections={sections}
+        selected={speakers}
+        onChange={setSpeakers}
+        testSpeaker={testSpeaker}
+        className="md:flex-1"
+      />
 
       <div className="flex gap-2.5">
         {bell && onDelete && (

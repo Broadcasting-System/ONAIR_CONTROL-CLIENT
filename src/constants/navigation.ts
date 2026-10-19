@@ -7,6 +7,8 @@ export type NavItem = {
   hideForAdmin?: boolean;
   /** 부원 이상에게만 */
   operatorOnly?: boolean;
+  /** 최고 관리자에게만 */
+  superadminOnly?: boolean;
 };
 
 export type NavGroup = {
@@ -54,6 +56,8 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
       // 부원(초대·승인·권한·방송부 명단)·Cloudflare·기기·스피커 매핑·강당 장비·접근 로그 탭 — 부장 이상
       { label: "관리", subLabel: "ADMIN", path: "/devices", adminOnly: true },
       { label: "로그", subLabel: "LOG", path: "/logs", adminOnly: true },
+      // 학교 스피커 대신 이 노트북에서 소리가 나는 시험 스피커 — 최고 관리자만
+      { label: "시험 스피커", subLabel: "TEST SPEAKER", path: "/test-speaker", adminOnly: true, superadminOnly: true },
     ],
   },
 ];

@@ -108,7 +108,7 @@ export default function TimePage() {
   } = useTimeGroups();
 
   const { files, fetchFiles } = useFiles();
-  const { isAdmin } = useMe();
+  const { isAdmin, isSuperadmin } = useMe();
   const { names: speakerNames } = useSpeakerMatrix();
   const sections = useMemo(() => buildSections(speakerNames), [speakerNames]);
   const [tab, setTab] = useTabParam(TIME_TAB_KEYS, "table");
@@ -215,6 +215,7 @@ export default function TimePage() {
         key={editorKey}
         bell={editingBell}
         sections={sections}
+        testSpeaker={isSuperadmin}
         audioFiles={audioFiles}
         initialDays={initialDays}
         onSave={handleSave}

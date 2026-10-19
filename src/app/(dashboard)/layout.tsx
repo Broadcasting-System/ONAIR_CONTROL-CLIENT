@@ -47,7 +47,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { me, role, isAdmin, canOperate } = useMe();
+  const { me, role, isAdmin, canOperate, isSuperadmin } = useMe();
   const [devicesOpen, setDevicesOpen] = useState(false);
   // 요청함 — 새 요청과 승인 기다리는 선생님 수 (부원 누구나)
   const reqCounts = useRequestCounts(canOperate);
@@ -96,6 +96,7 @@ export default function DashboardLayout({
               {group.items
                 .filter((item) => (isAdmin ? !item.hideForAdmin : !item.adminOnly))
                 .filter((item) => !item.operatorOnly || canOperate)
+                .filter((item) => !item.superadminOnly || isSuperadmin)
                 .map((item) => {
                   const isActive = pathname.startsWith(item.path);
                   return (

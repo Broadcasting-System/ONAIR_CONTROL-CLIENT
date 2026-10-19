@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getApiBase } from "@/lib/apiBase";
 import { cn } from "@/lib/utils";
+import { TEST_SPEAKER_LABEL, isTestSpeaker } from "@/constants/testSpeaker";
 
 interface SchedulerJob {
   id: string;
@@ -25,6 +26,7 @@ interface SchedulerStatus {
 // 스피커 목록을 사람이 읽기 좋게 요약
 function summarizeSpeakers(speakers: string[]): string {
   if (!speakers || speakers.length === 0) return "-";
+  if (speakers.some(isTestSpeaker)) return TEST_SPEAKER_LABEL;
   if (speakers.includes("전체") || speakers.includes("학교 전체")) return "학교 전체";
   if (speakers.length > 4) return `${speakers.slice(0, 4).join(", ")} 외 ${speakers.length - 4}`;
   return speakers.join(", ");
