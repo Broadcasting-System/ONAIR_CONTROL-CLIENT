@@ -150,9 +150,9 @@ function Recent({ items, className }: { items: NowItem[]; className?: string }) 
   );
   return (
     <div className={className}>
-      <h2 className="mb-3 font-mbc text-[24px] text-white lg:hidden">최근 바로 방송</h2>
+      <h2 className="mb-3 font-mbc text-[24px] text-white lg:hidden">최근 방송</h2>
       <Glass className="px-[18px] py-1.5 lg:px-6 lg:pb-2 lg:pt-[22px]">
-        <h2 className="mb-1.5 font-mbc text-[24px] text-white max-lg:hidden">최근 바로 방송</h2>
+        <h2 className="mb-1.5 font-mbc text-[24px] text-white max-lg:hidden">최근 방송</h2>
         {body}
       </Glass>
     </div>
@@ -349,7 +349,7 @@ export default function InstantBroadcast({
     <Shell recent={recentQ.data?.items ?? []}>
       <Glass className="flex flex-col gap-4 p-[18px] md:gap-[18px] md:px-6 md:pb-6 md:pt-[22px]">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-mbc text-[26px] text-white md:text-[28px]">바로 방송</h2>
+          <h2 className="font-mbc text-[26px] text-white md:text-[28px]">방송</h2>
           <div className="w-[176px] md:w-[240px]">
             <Seg
               value={mode}
