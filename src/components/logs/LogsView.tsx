@@ -139,7 +139,8 @@ export default function LogsView() {
 
   const total = filtered.reduce((n, r) => n + r.count, 0);
   const fails = filtered.reduce((n, r) => n + (r.failed ? r.count : 0), 0);
-  const heads = new Set(filtered.map((r) => r.person.key)).size;
+  // 사람 수 — 서버가 스스로 한 일(자동)은 빼고
+  const heads = new Set(filtered.filter((r) => r.person.kind !== "auto").map((r) => r.person.key)).size;
 
   // 받은 기록이 고른 날짜를 다 덮지 못하면 더 받는다
   const more = !!data && data.length >= limit && limit < MAX_LIMIT;
@@ -574,7 +575,9 @@ function Row({ row, open, onToggle }: { row: LogRow; open: boolean; onToggle: ()
   const canOpen = count > 1 || !!what.detail;
   const time = entry.ts.slice(11, 16);
   const burst = count > 1 && <span className={tagCls}>×{count} · {row.firstTs.slice(11, 16)}부터</span>;
-  const fail = failed && <span className={failCls}>{failWord(entry.status)}</span>;
+  // 동작 이름이 이미 결과를 말하면('시보 건너뜀') 같은 말을 또 붙이지 않는다 — 빨간 줄은 그대로
+  const word = failWord(entry.status, entry.method);
+  const fail = failed && !what.label.endsWith(word) && <span className={failCls}>{word}</span>;
   const icon = (
     <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg border border-white/10 text-white/65">
       <GroupIcon group={what.group} size={14} />
@@ -645,7 +648,7 @@ function Row({ row, open, onToggle }: { row: LogRow; open: boolean; onToggle: ()
             <li key={`${e.ts}-${i}`} className="flex min-h-8 items-center gap-3 border-l border-white/[0.08] pl-3 font-pretendard text-[13px] text-white/60">
               <span className="shrink-0 font-orbitron text-[11.5px] font-semibold text-white/40 tabular-nums">{e.ts.slice(11, 19)}</span>
               <span className="min-w-0 flex-1 break-words">{itemText(e)}</span>
-              {e.status >= 400 && <span className="shrink-0 text-[12px] font-semibold text-[#ff8a8a]">{failWord(e.status)}</span>}
+              {e.status >= 400 && <span className="shrink-0 text-[12px] font-semibold text-[#ff8a8a]">{failWord(e.status, e.method)}</span>}
             </li>
           ))}
         </ul>

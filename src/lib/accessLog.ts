@@ -1,6 +1,7 @@
 /* 접근 로그 (GET /api/logs) — 서버 기록 한 줄을 '누가 · 무엇을 · 어디에' 로 읽는다.
    서버는 바꾸는 요청마다 method·path·status 를 남기고(main.py 미들웨어), 대상(target)·값(detail)을 덧붙인다.
-   부원·Cloudflare 관리(MEMBER·CLOUDFLARE)·디스코드 말로 조작(ASSIST)·CUE(via chat)·실시간 방송(WS) 은 따로 남긴다. */
+   부원·Cloudflare 관리(MEMBER·CLOUDFLARE)·디스코드 말로 조작(ASSIST)·CUE(via chat)·실시간 방송(WS) 은 따로 남긴다.
+   서버가 스스로 한 일(시보·예약 방송·야간 절전·자동 음향·서버 켜고 끄기 등)은 method AUTO, path /auto/<kind> 로 남긴다. */
 
 export interface LogEntry {
   ts: string;
@@ -270,6 +271,21 @@ const CHAT_EVENTS: Record<string, string> = {
   settings: "CUE 설정",
 };
 
+/** 서버가 스스로 한 일(method AUTO) — /auto/<kind> 의 분류와 동작 이름이 없을 때 쓸 이름 */
+const AUTO_KINDS: Record<string, [label: string, group: string]> = {
+  bell: ["시보", "시보"],
+  broadcast: ["예약 방송", "방송"],
+  teacher: ["선생님 요청 방송", "요청"],
+  display: ["예약 송출", "송출"],
+  energy: ["야간 절전", "시보"],
+  "auto-audio": ["자동 음향", "자동 음향"],
+  server: ["서버", "서버"],
+  speaker: ["스피커", "스피커"],
+  recording: ["녹음·녹화", "녹음·녹화"],
+};
+
+const isAuto = (l: LogEntry) => (l.method || "").toUpperCase() === "AUTO";
+
 const lastSeg = (path: string) => path.split("/").filter(Boolean).pop() ?? "";
 
 function byRules(method: string, path: string): { label: string; group: string } {
@@ -293,6 +309,10 @@ export function describe(l: LogEntry): Described {
   const method = (l.method || "").toUpperCase();
   const target = opt(l.target);
   const detail = opt(l.detail);
+  if (method === "AUTO") {
+    const kind = AUTO_KINDS[lastSeg(l.path.split("?")[0])];
+    return { label: opt(l.action) ?? kind?.[0] ?? "자동 실행", group: kind?.[1] ?? "기타", extra: target, detail };
+  }
   if (method === "MEMBER") {
     return { label: MEMBER_ACTIONS[lastSeg(l.path)] ?? "부원 관리", group: "부원", extra: target, detail };
   }
@@ -329,7 +349,7 @@ export function isHidden(l: LogEntry): boolean {
 }
 
 /** 아바타 모양 — 사람이면 이름 두 글자, 나머지는 테두리만 있는 아이콘형 */
-export type PersonKind = "member" | "teacher" | "pc" | "share" | "cue" | "device" | "ip";
+export type PersonKind = "member" | "teacher" | "pc" | "share" | "cue" | "device" | "ip" | "auto";
 
 export interface Person {
   key: string;
@@ -390,8 +410,12 @@ function actorOf(l: LogEntry): Person {
   return { key: "unknown", name: "알 수 없음", sub: "", kind: "ip" };
 }
 
+/** 서버가 스스로 한 일 — 사람 수에는 넣지 않는다 */
+export const AUTO_PERSON: Person = { key: "auto", name: "자동", sub: "", kind: "auto" };
+
 /** 기록 한 줄 → 누가. CUE 가 부른 요청은 CUE, 외부 화면이 보낸 요청은 외부 화면 */
 export function personOf(l: LogEntry): Person {
+  if (isAuto(l)) return AUTO_PERSON;
   const p = l.path.split("?")[0];
   if (l.via === "chat" && (l.method || "").toUpperCase() !== "CHAT") {
     const who = actorOf(l);
@@ -401,8 +425,9 @@ export function personOf(l: LogEntry): Person {
   return actorOf(l);
 }
 
-/** 실패 결과 한 단어 */
-export function failWord(status: number): string {
+/** 실패 결과 한 단어. 서버가 스스로 한 일(AUTO)은 409 면 건너뜀, 나머지는 실패 */
+export function failWord(status: number, method?: string): string {
+  if ((method || "").toUpperCase() === "AUTO") return status === 409 ? "건너뜀" : "실패";
   if (status === 401 || status === 403) return "권한 없음";
   if (status === 404) return "없음";
   if (status === 409) return "막힘";

@@ -3,6 +3,7 @@ import {
   Bell,
   Cable,
   CircleDot,
+  Clock,
   Ellipsis,
   File,
   Globe,
@@ -13,6 +14,7 @@ import {
   MessageSquare,
   Monitor,
   Router,
+  Server,
   Cast,
   SlidersVertical,
   Smartphone,
@@ -44,6 +46,7 @@ export const GROUPS: [group: string, icon: LucideIcon][] = [
   ["자동 음향", AudioWaveform],
   ["영상", Cable],
   ["기기", Router],
+  ["서버", Server],
   ["메일·Cloudflare", Mail],
   ["말로 조작", MessageSquare],
   ["기타", Ellipsis],
@@ -60,7 +63,7 @@ export function GroupIcon({ group, size = 14, className }: { group: string; size
   return <Icon size={size} strokeWidth={1.9} className={className} />;
 }
 
-/** 사람 아바타 — 사람은 이름 두 글자, 방송실 PC·외부 화면·CUE·기기는 테두리만 */
+/** 사람 아바타 — 사람은 이름 두 글자, 방송실 PC·외부 화면·CUE·기기·자동(서버가 스스로 한 일)은 테두리만 */
 export function Avatar({ person, size = 24 }: { person: Person; size?: number }) {
   const outline = !(person.kind === "member" || person.kind === "teacher");
   const icon = Math.round(size * 0.55);
@@ -81,6 +84,8 @@ export function Avatar({ person, size = 24 }: { person: Person; size?: number })
         <Sparkles size={icon} strokeWidth={2} />
       ) : person.kind === "device" ? (
         <Smartphone size={icon} strokeWidth={2} />
+      ) : person.kind === "auto" ? (
+        <Clock size={icon} strokeWidth={2} />
       ) : person.kind === "ip" ? (
         <Globe size={icon} strokeWidth={2} />
       ) : (
