@@ -316,11 +316,11 @@ function RequestTable({ rows, open }: { rows: TeacherRequest[]; open: (id: strin
             return (
               <tr key={r.id} onClick={() => open(r.id)} className="cursor-pointer border-t border-white/[0.09] hover:bg-white/[0.03]">
                 <td className="px-3 py-4">
-                  <span className={cn("flex items-center gap-2.5 font-bold", dim ? "text-white/55" : "text-white")}>
+                  <span className={cn("flex min-w-0 items-center gap-2.5 font-bold", dim ? "text-white/55" : "text-white")}>
                     <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-white/[0.07]">
                       <KindIcon kind={r.kind} size={17} />
                     </span>
-                    {r.kindLabel}
+                    <span className="shrink-0 whitespace-nowrap">{r.kindLabel}</span>
                     {r.kind === "announce" && r.payload.text ? <span className="truncate font-medium text-white/45">· {String(r.payload.text).slice(0, 14)}</span> : null}
                     {r.kind === "event" && r.payload.title ? <span className="truncate font-medium text-white/45">· {r.payload.title}</span> : null}
                   </span>
