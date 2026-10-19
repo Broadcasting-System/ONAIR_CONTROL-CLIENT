@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Check, ChevronLeft, Film, House, List, Lock, Mail, Minus, Pencil, Play, Plus, Send, type LucideIcon } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, Film, House, Inbox, List, Lock, Mail, Minus, Pencil, Play, Plus, Radio, Send, type LucideIcon } from "lucide-react";
 import NeonButton from "@/components/common/NeonButton";
 import OnairMark from "@/components/common/OnairMark";
 import { ToastHost, toast } from "@/components/common/Toast";
@@ -40,7 +40,7 @@ import {
 } from "@/components/teacher/parts";
 
 /** 선생님 요청(teacher.bssmcast.com) — 학교 계정으로 들어와 등록 → 방송부 승인 → 요청 보내기·확인.
- *  화면은 주소 쿼리로 나눈다: ?v=new&k=announce · ?v=req&id=… · ?v=list */
+ *  화면은 주소 쿼리로 나눈다: ?v=new&k=announce · ?v=req&id=… · ?v=list · ?v=ask (폰 요청 탭, PC 는 홈과 같다) */
 
 interface Me {
   email: string;
@@ -74,15 +74,24 @@ const tomorrow = () => iso(new Date(Date.now() + 86400_000));
 // 뼈대
 // ======================================================================
 
-type NavItem = { k: "home" | "list"; label: string; icon: LucideIcon; go: () => void };
-const navItems = (onHome: () => void, onList: () => void): NavItem[] => [
-  { k: "home", label: "홈", icon: House, go: onHome },
-  { k: "list", label: "내 요청", icon: List, go: onList },
+/** home = 폰 방송 탭 · PC 홈, ask = 폰 요청 탭 (PC 는 홈), list = 내 요청 */
+type NavView = "home" | "ask" | "list";
+type NavItem = { k: NavView; label: string; icon: LucideIcon; on: "pc" | "phone" | "both" };
+/** 머리 탭(PC)과 아래 탭(폰)이 같이 쓰는 목록 — PC 는 홈 · 내 요청, 폰은 방송 · 요청 · 내 요청 */
+const NAV: NavItem[] = [
+  { k: "home", label: "홈", icon: House, on: "pc" },
+  { k: "home", label: "방송", icon: Radio, on: "phone" },
+  { k: "ask", label: "요청", icon: Inbox, on: "phone" },
+  { k: "list", label: "내 요청", icon: List, on: "both" },
 ];
+const navFor = (where: "pc" | "phone") => NAV.filter((x) => x.on === where || x.on === "both");
 
-function Header({ me, onHome, onList, view }: { me: Me | undefined; onHome: () => void; onList: () => void; view: string }) {
+function Header({ me, onNav, view }: { me: Me | undefined; onNav: (k: NavView) => void; view: string }) {
   const t = me?.teacher;
   const approved = me?.status === "approved";
+  const onHome = () => onNav("home");
+  // PC 에는 요청 탭이 없다 — 홈으로 본다
+  const pcView = view === "ask" ? "home" : view;
   return (
     <header className="sticky top-0 z-30 flex h-[72px] items-center gap-2.5 border-b border-white/[0.07] bg-[#0a0a0c]/70 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-md md:px-12">
       <button type="button" onClick={onHome} className="flex items-center gap-2.5">
@@ -92,14 +101,14 @@ function Header({ me, onHome, onList, view }: { me: Me | undefined; onHome: () =
       </button>
       {approved && (
         <nav className="ml-10 flex gap-1 max-md:hidden">
-          {navItems(onHome, onList).map((x) => (
+          {navFor("pc").map((x) => (
             <button
               key={x.k}
               type="button"
-              onClick={x.go}
+              onClick={() => onNav(x.k)}
               className={cn(
                 "whitespace-nowrap rounded-[10px] px-3.5 py-2 font-pretendard text-[15px] font-bold",
-                view === x.k ? "bg-white/[0.08] text-white" : "text-white/40 hover:text-white/70",
+                pcView === x.k ? "bg-white/[0.08] text-white" : "text-white/40 hover:text-white/70",
               )}
             >
               {x.label}
@@ -128,17 +137,17 @@ function Header({ me, onHome, onList, view }: { me: Me | undefined; onHome: () =
 }
 
 /** 폰 아래 탭 — 시안 A 의 아래 막대. md 이상은 머리 탭을 쓴다 */
-function TabBar({ onHome, onList, view }: { onHome: () => void; onList: () => void; view: string }) {
+function TabBar({ onNav, view }: { onNav: (k: NavView) => void; view: string }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 border-t border-white/[0.07] bg-[#0a0a0c]/[0.82] pb-[env(safe-area-inset-bottom)] backdrop-blur-[14px] md:hidden">
-      {navItems(onHome, onList).map((x) => {
+    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-white/[0.07] bg-[#0a0a0c]/[0.82] pb-[env(safe-area-inset-bottom)] backdrop-blur-[14px] md:hidden">
+      {navFor("phone").map((x) => {
         const on = view === x.k;
         const Icon = x.icon;
         return (
           <button
             key={x.k}
             type="button"
-            onClick={x.go}
+            onClick={() => onNav(x.k)}
             aria-current={on ? "page" : undefined}
             className={cn(
               "flex h-16 flex-col items-center justify-center gap-1 font-pretendard text-[12px] font-bold",
@@ -321,11 +330,11 @@ function RequestTable({ rows, open }: { rows: TeacherRequest[]; open: (id: strin
                       <KindIcon kind={r.kind} size={17} />
                     </span>
                     <span className="shrink-0 whitespace-nowrap">{r.kindLabel}</span>
-                    {r.kind === "announce" && r.payload.text ? <span className="truncate font-medium text-white/45">· {String(r.payload.text).slice(0, 14)}</span> : null}
-                    {r.kind === "event" && r.payload.title ? <span className="truncate font-medium text-white/45">· {r.payload.title}</span> : null}
+                    {r.kind === "announce" && r.payload.text ? <span className="truncate font-medium text-white/45 max-md:hidden">· {String(r.payload.text).slice(0, 14)}</span> : null}
+                    {r.kind === "event" && r.payload.title ? <span className="truncate font-medium text-white/45 max-md:hidden">· {r.payload.title}</span> : null}
                   </span>
                 </td>
-                <td className={cn("px-3 py-4 tabular-nums", dim && "text-white/45")}>{whenOf(r)}</td>
+                <td className={cn("whitespace-nowrap px-3 py-4 tabular-nums", dim && "text-white/45")}>{whenOf(r)}</td>
                 <td className={cn("px-3 py-4", dim && "text-white/45")}>{whereOf(r)}</td>
                 <td className="max-w-[320px] truncate px-3 py-4 text-[14px] text-white/45">
                   {c ? `${c.by} · "${c.text}"` : r.status === "new" ? "아직 확인 전" : r.handledBy || ""}
@@ -348,14 +357,15 @@ function Home({
   places,
   go,
   open,
-  full,
+  view,
 }: {
   me: Me;
   reqs: TeacherRequest[];
   places?: Places;
   go: (k: Kind) => void;
   open: (id: string) => void;
-  full?: boolean;
+  /** PC: list 만 내 요청 한 장, 나머지는 한 쪽에 다. 폰: 탭마다 한 덩이 */
+  view: NavView;
 }) {
   const [tab, setTab] = useState<"open" | "closed">("open");
   // 바로 방송이 나가는 동안 나머지는 흐리게
@@ -363,13 +373,16 @@ function Home({
   const openRows = reqs.filter((r) => r.status === "new" || r.status === "accepted");
   const closed = reqs.filter((r) => !(r.status === "new" || r.status === "accepted"));
   const dim = cn("transition-opacity", onAir && "pointer-events-none opacity-35");
+  const full = view === "list";
+  // 탭을 옮겨도 바로 방송은 내리지 않고 숨기기만 한다 (나가는 마이크가 끊기지 않게)
+  const show = (k: NavView) => (full ? (k === "list" ? "" : "hidden") : k === "list" ? "max-md:hidden" : view === k ? "" : "max-md:hidden");
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 py-8 md:px-12 md:py-9">
-      {!full && (
+      <div className={show("home")}>
         <InstantBroadcast spaces={places?.spaces ?? []} grades={places?.grades ?? []} dept={me.teacher?.dept} onAirChange={setOnAir} />
-      )}
+      </div>
       {!full && (
-        <div className={cn("flex flex-col gap-6", dim)}>
+        <div className={cn("flex flex-col gap-6", dim, show("ask"))}>
           <div>
             <p className="font-orbitron text-[11px] tracking-[0.28em] text-white/40">REQUEST</p>
             <h1 className="mt-2 font-mbc text-[32px] leading-tight text-white md:text-[40px]">무엇을 부탁할까요</h1>
@@ -406,7 +419,7 @@ function Home({
           </div>
         </div>
       )}
-      <Glass className={cn("px-4 pb-2 pt-5 md:px-6", !full && dim)}>
+      <Glass className={cn("px-4 pb-2 pt-5 md:px-6", dim, show("list"))}>
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="font-mbc text-[24px] text-white md:text-[26px]">내 요청</h2>
           <div className="flex gap-2">
@@ -1058,10 +1071,12 @@ export default function TeacherApp() {
     router.push(q ? `?${q}` : "?", { scroll: false });
     window.scrollTo({ top: 0 });
   };
-  const home = () => go("");
   const open = (id: string) => go(`v=req&id=${encodeURIComponent(id)}`);
+  const nav = (k: NavView) => go(k === "home" ? "" : `v=${k}`);
+  // 요청 쓰기에서 뒤로 — 폰은 요청 탭으로 (PC 는 홈과 같다)
+  const backToAsk = () => go("v=ask");
   const kind = params.get("k") as Kind | null;
-  const navView = v === "list" ? "list" : v === "home" ? "home" : "";
+  const navView = v === "list" || v === "ask" || v === "home" ? v : "";
 
   const body = useMemo(() => {
     if (me.isLoading) return <p className="p-16 text-center font-pretendard text-white/40">불러오는 중…</p>;
@@ -1072,13 +1087,13 @@ export default function TeacherApp() {
     if (m.status === "pending") return <Waiting me={m} onEdit={() => setEditing(true)} />;
     const rows = reqs.data?.requests ?? [];
     if (v === "new" && kind && m.allowed.kinds.includes(kind)) {
-      if (kind === "announce") return <AnnounceForm me={m} places={places.data} back={home} done={open} />;
-      if (kind === "media") return <MediaForm places={places.data} back={home} done={open} />;
-      if (kind === "event") return <EventForm back={home} done={open} />;
-      return <BellForm back={home} done={open} />;
+      if (kind === "announce") return <AnnounceForm me={m} places={places.data} back={backToAsk} done={open} />;
+      if (kind === "media") return <MediaForm places={places.data} back={backToAsk} done={open} />;
+      if (kind === "event") return <EventForm back={backToAsk} done={open} />;
+      return <BellForm back={backToAsk} done={open} />;
     }
     if (v === "req" && params.get("id")) return <Detail id={params.get("id")!} back={() => router.back()} />;
-    return <Home me={m} reqs={rows} places={places.data} go={(k) => go(`v=new&k=${k}`)} open={open} full={v === "list"} />;
+    return <Home me={m} reqs={rows} places={places.data} go={(k) => go(`v=new&k=${k}`)} open={open} view={v === "list" || v === "ask" ? v : "home"} />;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me.data, me.isLoading, me.isError, reqs.data, places.data, v, kind, params, editing]);
 
@@ -1093,10 +1108,10 @@ export default function TeacherApp() {
         <div className="absolute inset-0 bg-[url('/onair_background.png')] bg-cover bg-center opacity-40 mix-blend-screen" />
       </div>
       <div className={cn("relative z-10", approved && "max-md:pb-[calc(64px+env(safe-area-inset-bottom))]")}>
-        <Header me={me.data} view={navView} onHome={home} onList={() => go("v=list")} />
+        <Header me={me.data} view={navView} onNav={nav} />
         {body}
       </div>
-      {approved && <TabBar view={navView} onHome={home} onList={() => go("v=list")} />}
+      {approved && <TabBar view={navView} onNav={nav} />}
       <ToastHost />
     </main>
   );
