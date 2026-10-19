@@ -108,7 +108,7 @@ export function statusText(r: TeacherRequest): string {
   return r.statusLabel;
 }
 
-/** 방송부 요청함 API (부원 이상, 선생님 관리는 부장 이상) */
+/** 방송부 요청함 API (부원 이상, 선생님 승인·등급·내보내기는 부장 이상) */
 export const requestsApi = {
   list: () => request<{ requests: TeacherRequest[]; counts: Counts }>("/requests"),
   counts: () => request<Counts>("/requests/counts"),

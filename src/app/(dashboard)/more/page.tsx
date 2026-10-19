@@ -35,7 +35,7 @@ export default function MobileMorePage() {
   useMobileOnly("/main");
   const { isAdmin, me, canOperate } = useMe();
   const reqCounts = useRequestCounts(canOperate);
-  const newRequests = (reqCounts.data?.new ?? 0) + (isAdmin ? (reqCounts.data?.pendingTeachers ?? 0) : 0);
+  const newRequests = (reqCounts.data?.new ?? 0) + (reqCounts.data?.pendingTeachers ?? 0);
   const app = useAppPlatform();
   const [devicesOpen, setDevicesOpen] = useState(false);
   const devices = me?.status === "approved" ? (me.devices ?? []) : [];

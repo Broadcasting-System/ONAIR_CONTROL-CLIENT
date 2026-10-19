@@ -26,7 +26,7 @@ import {
 import Select from "@/components/common/Select";
 import { ChoiceChip, Glass, KindIcon, NewDot, Seg, StatusPill, TierChip, YouTubeLink, ghostBtn, inputCls, redBtn } from "@/components/teacher/parts";
 
-/** 요청함 — 선생님(teacher.bssmcast.com) 요청을 수락·거절·완료, 선생님 승인·등급 (부장 이상) */
+/** 요청함 — 선생님(teacher.bssmcast.com) 요청을 수락·거절·완료 (부원 이상), 선생님 목록은 부원 누구나 보고 승인·등급·내보내기는 부장 이상 */
 
 type Filter = "new" | "accepted" | "closed";
 
@@ -282,7 +282,8 @@ function RequestsView() {
   );
 }
 
-function TeachersView() {
+/** canDecide = 부장 이상. 아니면 목록만 보여 주고 승인·등급·내보내기 버튼은 그리지 않는다 */
+function TeachersView({ canDecide }: { canDecide: boolean }) {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["request-teachers"], queryFn: requestsApi.teachers, refetchInterval: 20_000 });
   const [tiers, setTiers] = useState<Record<string, Tier>>({});
@@ -305,7 +306,13 @@ function TeachersView() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       {pending.map((t) => (
-        <Glass key={t.id} className="grid items-center gap-4 border-white/25 p-5 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,460px)_auto] md:px-6">
+        <Glass
+          key={t.id}
+          className={cn(
+            "grid items-center gap-4 border-white/25 p-5 md:px-6",
+            canDecide ? "md:grid-cols-[auto_minmax(0,1fr)_minmax(0,460px)_auto]" : "md:grid-cols-[auto_minmax(0,1fr)]",
+          )}
+        >
           <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] font-pretendard font-bold">{t.name.slice(0, 1)}</span>
           <div className="min-w-0">
             <div className="flex items-center gap-2.5">
@@ -314,19 +321,23 @@ function TeachersView() {
             </div>
             <p className="mt-1 truncate font-pretendard text-[13.5px] text-white/45">{[t.dept, t.duty, t.email].filter(Boolean).join(" · ")}</p>
           </div>
-          <Seg
-            value={tiers[t.id] ?? "general"}
-            onChange={(v) => setTiers((x) => ({ ...x, [t.id]: v }))}
-            options={(["general", "lead", "admin"] as Tier[]).map((v) => ({ value: v, label: TIER_LABEL[v] }))}
-          />
-          <div className="grid grid-cols-2 gap-2 md:flex">
-            <button type="button" className={cn(ghostBtn, "h-11 text-[15px]")} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.revoke(t.id))}>
-              거절
-            </button>
-            <button type="button" className={cn(redBtn, "h-11 text-[15px]")} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.approve(t.id, tiers[t.id] ?? "general"))}>
-              승인
-            </button>
-          </div>
+          {canDecide && (
+            <>
+              <Seg
+                value={tiers[t.id] ?? "general"}
+                onChange={(v) => setTiers((x) => ({ ...x, [t.id]: v }))}
+                options={(["general", "lead", "admin"] as Tier[]).map((v) => ({ value: v, label: TIER_LABEL[v] }))}
+              />
+              <div className="grid grid-cols-2 gap-2 md:flex">
+                <button type="button" className={cn(ghostBtn, "h-11 text-[15px]")} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.revoke(t.id))}>
+                  거절
+                </button>
+                <button type="button" className={cn(redBtn, "h-11 text-[15px]")} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.approve(t.id, tiers[t.id] ?? "general"))}>
+                  승인
+                </button>
+              </div>
+            </>
+          )}
         </Glass>
       ))}
       <Glass className="flex-1 p-5 md:px-6">
@@ -343,7 +354,7 @@ function TeachersView() {
                   <th className="px-3 pb-3 font-bold">등급</th>
                   <th className="px-3 pb-3 font-bold">할 수 있는 요청</th>
                   <th className="px-3 pb-3 font-bold">요청</th>
-                  <th className="w-12 px-3 pb-3" />
+                  {canDecide && <th className="w-12 px-3 pb-3" />}
                 </tr>
               </thead>
               <tbody>
@@ -357,28 +368,34 @@ function TeachersView() {
                     </td>
                     <td className="px-3 py-3.5 text-white/80">{t.dept || t.duty}</td>
                     <td className="px-3 py-3.5">
-                      <Select
-                        value={t.tier}
-                        onChange={(v) => act.mutate(() => requestsApi.setTier(t.id, v))}
-                        className="h-9 rounded-lg border-white/15 bg-[#0c0d0f] text-[13.5px] font-bold"
-                        aria-label={`${t.name} 등급`}
-                        options={(["general", "lead", "admin"] as Tier[]).map((v) => ({ value: v, label: TIER_LABEL[v] }))}
-                      />
+                      {canDecide ? (
+                        <Select
+                          value={t.tier}
+                          onChange={(v) => act.mutate(() => requestsApi.setTier(t.id, v))}
+                          className="h-9 rounded-lg border-white/15 bg-[#0c0d0f] text-[13.5px] font-bold"
+                          aria-label={`${t.name} 등급`}
+                          options={(["general", "lead", "admin"] as Tier[]).map((v) => ({ value: v, label: TIER_LABEL[v] }))}
+                        />
+                      ) : (
+                        <span className="text-[13.5px] font-bold text-white">{TIER_LABEL[t.tier]}</span>
+                      )}
                     </td>
                     <td className="px-3 py-3.5 text-[14px] text-white/45">{can(t.tier)}</td>
                     <td className="px-3 py-3.5 tabular-nums text-white/80">{t.requests}</td>
-                    <td className="relative px-3 py-3.5 text-right">
-                      <button type="button" aria-label="더 보기" onClick={() => setMenu(menu === t.id ? null : t.id)} className="rounded-md p-1.5 text-white/45 hover:bg-white/10 hover:text-white">
-                        <Ellipsis size={20} />
-                      </button>
-                      {menu === t.id && (
-                        <div className="absolute right-3 top-12 z-10 min-w-[130px] rounded-xl border border-white/10 bg-[#18181b] p-1 shadow-2xl">
-                          <button type="button" onClick={() => setConfirm(t)} className="w-full rounded-lg px-3 py-2 text-left font-pretendard text-[14px] text-[#ff8a84] hover:bg-white/[0.06]">
-                            내보내기
-                          </button>
-                        </div>
-                      )}
-                    </td>
+                    {canDecide && (
+                      <td className="relative px-3 py-3.5 text-right">
+                        <button type="button" aria-label="더 보기" onClick={() => setMenu(menu === t.id ? null : t.id)} className="rounded-md p-1.5 text-white/45 hover:bg-white/10 hover:text-white">
+                          <Ellipsis size={20} />
+                        </button>
+                        {menu === t.id && (
+                          <div className="absolute right-3 top-12 z-10 min-w-[130px] rounded-xl border border-white/10 bg-[#18181b] p-1 shadow-2xl">
+                            <button type="button" onClick={() => setConfirm(t)} className="w-full rounded-lg px-3 py-2 text-left font-pretendard text-[14px] text-[#ff8a84] hover:bg-white/[0.06]">
+                              내보내기
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -411,19 +428,17 @@ export default function RequestsPanel() {
     <div className="flex min-h-0 flex-col gap-4 md:h-full md:gap-5">
       <div className="flex flex-wrap items-center gap-4">
         <SectionHeader className="mb-0 max-md:mt-1 max-md:text-[26px] max-md:leading-none">요청함</SectionHeader>
-        {isAdmin && (
-          <PageTabs
-            tour="requests.tab"
-            value={tab}
-            onChange={setTab}
-            tabs={[
-              { key: "requests", label: "요청" },
-              { key: "teachers", label: counts.data?.pendingTeachers ? `선생님 ${counts.data.pendingTeachers}` : "선생님" },
-            ]}
-          />
-        )}
+        <PageTabs
+          tour="requests.tab"
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { key: "requests", label: "요청" },
+            { key: "teachers", label: counts.data?.pendingTeachers ? `선생님 ${counts.data.pendingTeachers}` : "선생님" },
+          ]}
+        />
       </div>
-      {tab === "teachers" && isAdmin ? <TeachersView /> : <RequestsView />}
+      {tab === "teachers" ? <TeachersView canDecide={isAdmin} /> : <RequestsView />}
     </div>
   );
 }

@@ -49,9 +49,9 @@ export default function DashboardLayout({
   const router = useRouter();
   const { me, role, isAdmin, canOperate } = useMe();
   const [devicesOpen, setDevicesOpen] = useState(false);
-  // 요청함 — 새 요청과 승인 기다리는 선생님(부장 이상) 수
+  // 요청함 — 새 요청과 승인 기다리는 선생님 수 (부원 누구나)
   const reqCounts = useRequestCounts(canOperate);
-  const newRequests = (reqCounts.data?.new ?? 0) + (isAdmin ? (reqCounts.data?.pendingTeachers ?? 0) : 0);
+  const newRequests = (reqCounts.data?.new ?? 0) + (reqCounts.data?.pendingTeachers ?? 0);
   const hasDevices = me?.status === "approved" && (me.devices?.length ?? 0) > 0;
 
   // 초대받은 기기인데 아직 등록 전이거나 승인 대기면 첫 화면(등록·승인 대기)으로
