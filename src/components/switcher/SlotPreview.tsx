@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- 미리보기 사진·썸네일은 서버·유튜브가 주는 임의 주소 */
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { resolveMediaUrl } from "@/lib/backend";
 import { shareApi, type ShareRequest } from "@/lib/shareApi";
 import type { SwitchLayout, SwitchSlot, SwitchSource } from "@/lib/switchApi";
@@ -32,15 +32,50 @@ function Countdown({ startedAt, durationSec, mode, label }: { startedAt: number;
   );
 }
 
+/** 영상 칸 — 송출 중인 칸이면 서버 시각(startedAt) 기준 같은 자리로 맞춘다 */
+function VideoPreview({ url, startedAt, live, fit, loop }: { url: string; startedAt: number; live: boolean; fit: Fit; loop: boolean }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const sync = () => {
+    const v = ref.current;
+    if (!v || !live || !startedAt || !v.duration || !isFinite(v.duration)) return;
+    const el = Math.max(0, (Date.now() - startedAt) / 1000);
+    const want = loop ? el % v.duration : Math.min(el, v.duration);
+    if (Math.abs(v.currentTime - want) > 1.5) v.currentTime = want;
+  };
+  useEffect(sync); // startedAt 이 바뀌면 (진행바로 옮김) 다시 맞춘다
+  return (
+    <video
+      ref={ref}
+      src={resolveMediaUrl(url)}
+      muted
+      playsInline
+      autoPlay={live}
+      loop={loop}
+      preload="metadata"
+      onLoadedMetadata={sync}
+      className="absolute inset-0 h-full w-full"
+      style={{ objectFit: fit }}
+    />
+  );
+}
+
+type Fit = "contain" | "cover";
+
 export function SlotPreview({
   source,
   startedAt = 0,
   share,
   live = true,
   shareNote,
+  fit = "contain",
+  loop = true,
 }: {
   source: SwitchSource | null | undefined;
   startedAt?: number;
+  /** 화면 맞춤 · 꽉 채움 */
+  fit?: Fit;
+  /** 영상 반복 */
+  loop?: boolean;
   /** 외부 화면이면 그 요청 (미리보기 사진·끝났는지) */
   share?: ShareRequest;
   /** 영상을 움직이게 (소스 목록 작은 칸은 멈춘 첫 화면) */
@@ -52,25 +87,14 @@ export function SlotPreview({
   if (source.kind === "share") {
     if (!share) return <Note text={shareNote ?? "끝남"} />;
     return share.hasSnapshot ? (
-      <img src={shareApi.snapshotUrl(share)} alt="" className="absolute inset-0 h-full w-full object-contain" />
+      <img src={shareApi.snapshotUrl(share)} alt="" className="absolute inset-0 h-full w-full" style={{ objectFit: fit }} />
     ) : (
       <Note text="연결 중" />
     );
   }
-  if (source.kind === "video")
-    return (
-      <video
-        src={resolveMediaUrl(source.url)}
-        muted
-        playsInline
-        autoPlay={live}
-        loop
-        preload="metadata"
-        className="absolute inset-0 h-full w-full object-contain"
-      />
-    );
+  if (source.kind === "video") return <VideoPreview url={source.url} startedAt={startedAt} live={live} fit={fit} loop={loop} />;
   if (source.kind === "image")
-    return <img src={resolveMediaUrl(source.url)} alt="" className="absolute inset-0 h-full w-full object-contain" />;
+    return <img src={resolveMediaUrl(source.url)} alt="" className="absolute inset-0 h-full w-full" style={{ objectFit: fit }} />;
   if (source.kind === "youtube")
     return <img src={`https://i.ytimg.com/vi/${source.videoId}/hqdefault.jpg`} alt="" className="absolute inset-0 h-full w-full object-cover" />;
   return <Countdown startedAt={startedAt} durationSec={source.durationSec} mode={source.mode} label={source.label} />;
@@ -127,7 +151,13 @@ export function SwitchMirror({ layout, slots }: { layout: SwitchLayout; slots: S
         layout={layout}
         cell={(i, cls, style) => (
           <div key={i} className={`overflow-hidden bg-black ${cls}`} style={style}>
-            <SlotPreview source={slots[i]?.source} startedAt={slots[i]?.startedAt} shareNote="외부 화면" />
+            <SlotPreview
+              source={slots[i]?.source}
+              startedAt={slots[i]?.startedAt}
+              fit={slots[i]?.fit}
+              loop={slots[i]?.loop !== false}
+              shareNote="외부 화면"
+            />
           </div>
         )}
       />

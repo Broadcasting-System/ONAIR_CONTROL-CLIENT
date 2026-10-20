@@ -1,14 +1,15 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- 발표자가 몇 초마다 올리는 미리보기 사진 (서버가 그대로 준다) */
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MonitorUp } from "lucide-react";
 import { toast } from "@/components/common/Toast";
-import { avApi } from "@/lib/avApi";
+import { SourceCard } from "@/components/media/parts";
 import { shareApi, type ShareRequest } from "@/lib/shareApi";
+import type { SwitchSource } from "@/lib/switchApi";
 import { cn } from "@/lib/utils";
 
-/** 외부 화면 받기 — 기다리는 요청 수 (송출 화면 탭의 빨간 숫자). 열어 둔 동안은 자주, 아니면 가끔 */
+/** 외부 화면 받기 — 요청 목록 (송출 › 외부 화면의 빨간 숫자도 이걸로). 열어 둔 동안은 자주, 아니면 가끔 */
 export function useExternalShare(open: boolean, enabled: boolean) {
   return useQuery({
     queryKey: ["share"],
@@ -25,23 +26,43 @@ function left(until: string, now: number): string {
   return s >= 3600 ? `${Math.floor(s / 3600)}:${p(Math.floor((s % 3600) / 60))}:${p(s % 60)}` : `${Math.floor(s / 60)}:${p(s % 60)}`;
 }
 
-function minutes(iso: string, now: number): number {
-  return Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60_000));
+export const shareSource = (r: ShareRequest): SwitchSource => ({ kind: "share", id: r.id, name: r.name });
+
+function Mini({ white, className, ...rest }: { white?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      {...rest}
+      className={cn(
+        "inline-flex h-9 shrink-0 items-center whitespace-nowrap rounded-lg border px-2.5 font-mbc text-[12.5px] transition-colors disabled:opacity-40 md:h-[30px]",
+        white ? "border-white bg-white text-[#0b0b0d]" : "border-white/12 text-white/70 hover:text-white",
+        className,
+      )}
+    />
+  );
 }
 
-/** 송출 › 송출 화면 › 외부 화면 — 발표자가 share.bssmcast.com 에서 코드로 보낸 화면을 허용·끊기 */
+/** 송출 › 외부 화면 — 발표자가 share.bssmcast.com 에서 코드로 보낸 화면.
+ *  허용하면 이 채널의 소스가 되고, 카드를 눌러 고른 뒤 아래 송출 버튼으로 내보낸다 (분할이면 고른 칸에 들어간다). */
 export default function ExternalSharePanel({
   channel,
   disabled,
+  isOn,
+  slotOf,
+  onPick,
 }: {
   channel: number;
   disabled?: boolean;
+  /** 고른 것 (한 화면: 보낼 것 · 분할: 고른 칸에 든 것) */
+  isOn: (s: SwitchSource) => boolean;
+  /** 분할에서 그 외부 화면이 들어간 칸 (-1 = 없음) */
+  slotOf: (s: SwitchSource) => number;
+  /** 이 채널로 허용된 외부 화면을 눌렀을 때 */
+  onPick: (s: SwitchSource) => void;
 }) {
   const qc = useQueryClient();
   const q = useExternalShare(true, !disabled);
-  const av = useQuery({ queryKey: ["av-state"], queryFn: () => avApi.state(), staleTime: 60_000 });
   const [now, setNow] = useState(() => Date.now());
-  const [pick, setPick] = useState<Record<string, number>>({});
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
@@ -49,181 +70,98 @@ export default function ExternalSharePanel({
 
   const room = q.data?.room ?? null;
   const requests = q.data?.requests ?? [];
-  const label = (n: number) => {
-    const c = av.data?.channels?.find((x) => x.channel === n);
-    return c?.hallName ? `CH${n} ${c.hallName}` : (c?.label ?? `CH${n}`);
-  };
+  const approved = requests.filter((r) => r.status === "approved");
+  const waiting = requests.filter((r) => r.status === "waiting");
 
   const run = useMutation({
     mutationFn: (f: () => Promise<unknown>) => f(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["share"] }),
     onError: (e: Error) => toast.error(e.message),
   });
-
-  if (!room && requests.length === 0) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-white/5 bg-[#0a0a0a] p-6 text-center">
-        <MonitorUp size={32} className="text-white/30" />
-        <button
-          type="button"
-          data-tour="media.share-open"
-          disabled={disabled || run.isPending}
-          onClick={() => run.mutate(() => shareApi.openRoom(channel))}
-          className="h-11 rounded-xl border border-[#FF3B3B]/60 bg-[#FF3B3B]/20 px-5 font-mbc text-sm text-white hover:bg-[#FF3B3B]/30 disabled:opacity-40"
-        >
-          코드 만들기
-        </button>
-      </div>
-    );
-  }
+  const busy = disabled || run.isPending;
 
   return (
-    <div
-      className="flex flex-1 flex-col gap-3 overflow-auto rounded-2xl border border-white/5 bg-[#0a0a0a] p-3"
-      data-tour="media.share"
-    >
-      {room ? (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl bg-[#151519] px-4 py-3.5">
-          <div>
-            <p className="font-pretendard text-[12.5px] text-white/50">share.bssmcast.com 코드</p>
-            <p className="font-mono text-[30px] font-bold leading-tight tracking-[0.18em] tabular-nums text-white">
+    <div className="flex min-h-0 flex-1 flex-col" data-tour="media.share">
+      <p className="mb-3 hidden font-mbc text-[17px] text-white md:block">외부 화면</p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-[#151519] px-3.5 py-2.5">
+        <span className="font-pretendard text-[12.5px] text-white/45">share 코드</span>
+        {room ? (
+          <>
+            <b className="font-mono text-[20px] font-bold tracking-[0.16em] tabular-nums text-white">
               {room.code.slice(0, 3)} {room.code.slice(3)}
-            </p>
-            <p className="font-pretendard text-[12.5px] tabular-nums text-white/45">
-              {left(room.expiresAt, now)} 남음
-            </p>
-          </div>
-          <div className="ml-auto flex gap-2">
-            <button
-              type="button"
-              disabled={disabled || run.isPending}
-              onClick={() => run.mutate(() => shareApi.openRoom(channel))}
-              className="h-10 rounded-lg border border-white/10 px-3.5 font-mbc text-sm text-white/75 hover:bg-white/10 disabled:opacity-40"
-            >
-              새 코드
-            </button>
-            <button
-              type="button"
-              disabled={disabled || run.isPending}
-              onClick={() => run.mutate(() => shareApi.closeRoom())}
-              className="h-10 rounded-lg border border-white/10 px-3.5 font-mbc text-sm text-white/75 hover:bg-white/10 disabled:opacity-40"
-            >
-              받기 끝내기
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3 rounded-xl bg-[#151519] px-4 py-3">
-          <p className="font-pretendard text-[13.5px] text-white/50">코드가 끝났어요</p>
-          <button
-            type="button"
-            disabled={disabled || run.isPending}
-            onClick={() => run.mutate(() => shareApi.openRoom(channel))}
-            className="ml-auto h-10 rounded-lg border border-[#FF3B3B]/60 bg-[#FF3B3B]/20 px-3.5 font-mbc text-sm text-white hover:bg-[#FF3B3B]/30 disabled:opacity-40"
-          >
+            </b>
+            <span className="font-pretendard text-[12px] tabular-nums text-white/40">{left(room.expiresAt, now)}</span>
+            <span className="ml-auto flex gap-1.5">
+              <Mini disabled={busy} onClick={() => run.mutate(() => shareApi.openRoom(channel))}>
+                새 코드
+              </Mini>
+              <Mini disabled={busy} onClick={() => run.mutate(() => shareApi.closeRoom())}>
+                받기 끝내기
+              </Mini>
+            </span>
+          </>
+        ) : (
+          <Mini white className="ml-auto" data-tour="media.share-open" disabled={busy} onClick={() => run.mutate(() => shareApi.openRoom(channel))}>
             코드 만들기
-          </button>
-        </div>
-      )}
+          </Mini>
+        )}
+      </div>
 
-      {requests.length === 0 ? (
-        <p className="px-2 py-6 text-center font-pretendard text-[14px] text-white/40">
-          요청을 기다리는 중
-        </p>
-      ) : (
-        requests.map((r: ShareRequest) => {
-          const live = r.status === "approved";
-          const ch = pick[r.id] ?? channel;
+      <div className="mt-3 grid min-h-0 grid-cols-2 content-start gap-2.5 overflow-auto">
+        {approved.map((r) => {
+          const here = r.channel === channel;
+          const src = shareSource(r);
           return (
-            <div
+            <SourceCard
               key={r.id}
-              className={cn(
-                "grid grid-cols-[120px_minmax(0,1fr)] gap-3 rounded-xl bg-[#151519] p-2.5 md:grid-cols-[150px_minmax(0,1fr)]",
-                live && "ring-1 ring-[#FF3B3B]/50",
-              )}
+              thumb={r.hasSnapshot ? <img src={shareApi.snapshotUrl(r)} alt="" className="absolute inset-0 h-full w-full object-contain" /> : null}
+              name={r.name}
+              on={here && isOn(src)}
+              slot={here ? slotOf(src) : -1}
+              disabled={disabled || !here}
+              onClick={here ? () => onPick(src) : undefined}
+              sub={here ? "연결됨" : `CH${r.channel}에 연결됨`}
             >
-              <div className="relative aspect-video overflow-hidden rounded-lg bg-[#1d1d22]">
-                {r.hasSnapshot ? (
-                  // 발표자가 몇 초마다 올리는 미리보기 사진 (서버가 그대로 준다)
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={shareApi.snapshotUrl(r)}
-                    alt=""
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center font-pretendard text-[12px] text-white/30">
-                    화면 고르는 중
-                  </div>
-                )}
-              </div>
-              <div className="flex min-w-0 flex-col gap-2">
-                <div className="min-w-0">
-                  <p className="truncate font-pretendard text-[15px] font-semibold text-white">
-                    {r.name}
-                  </p>
-                  <p className="font-pretendard text-[12.5px] text-white/50">
-                    {live ? (
-                      <span className="text-[#FF6B6B]">
-                        ● ON AIR {label(r.channel ?? 1)} ·{" "}
-                        {minutes(r.approvedAt ?? r.createdAt, now) < 1
-                          ? "방금 시작"
-                          : `${minutes(r.approvedAt ?? r.createdAt, now)}분째`}
-                      </span>
-                    ) : minutes(r.createdAt, now) < 1 ? (
-                      "방금 요청"
-                    ) : (
-                      `${minutes(r.createdAt, now)}분 전 요청`
-                    )}
-                  </p>
-                </div>
-                <div className="mt-auto flex flex-wrap items-center gap-2">
-                  {live ? (
-                    <button
-                      type="button"
-                      disabled={disabled || run.isPending}
-                      onClick={() => run.mutate(() => shareApi.end(r.id))}
-                      className="h-9 rounded-lg border border-white/15 px-3.5 font-mbc text-sm text-white/80 hover:bg-white/10 disabled:opacity-40"
-                    >
-                      끊기
-                    </button>
-                  ) : (
-                    <>
-                      <select
-                        value={ch}
-                        onChange={(e) => setPick((p) => ({ ...p, [r.id]: Number(e.target.value) }))}
-                        className="h-9 rounded-lg border border-white/10 bg-[#0c0d0f] px-2 font-pretendard text-[13px] text-white"
-                        aria-label="보낼 채널"
-                      >
-                        {[1, 2, 3, 4, 5].map((n) => (
-                          <option key={n} value={n}>
-                            {label(n)}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        disabled={disabled || run.isPending}
-                        onClick={() => run.mutate(() => shareApi.reject(r.id))}
-                        className="h-9 rounded-lg border border-white/15 px-3.5 font-mbc text-sm text-white/75 hover:bg-white/10 disabled:opacity-40"
-                      >
-                        거절
-                      </button>
-                      <button
-                        type="button"
-                        disabled={disabled || run.isPending || !r.hasSnapshot}
-                        onClick={() => run.mutate(() => shareApi.approve(r.id, ch))}
-                        className="h-9 rounded-lg border border-[#FF3B3B]/60 bg-[#FF3B3B]/25 px-4 font-mbc text-sm text-white hover:bg-[#FF3B3B]/35 disabled:opacity-40"
-                      >
-                        허용
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
+              <span className="mx-[3px] mb-0.5 mt-1.5 flex">
+                <Mini
+                  disabled={busy}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    run.mutate(() => shareApi.end(r.id));
+                  }}
+                >
+                  끊기
+                </Mini>
+              </span>
+            </SourceCard>
           );
-        })
+        })}
+        {waiting.map((r) => (
+          <SourceCard
+            key={r.id}
+            dashed
+            thumb={
+              r.hasSnapshot ? (
+                <img src={shareApi.snapshotUrl(r)} alt="" className="absolute inset-0 h-full w-full object-contain" />
+              ) : (
+                <span className="absolute inset-0 flex items-center justify-center font-pretendard text-[12px] text-white/30">화면 고르는 중</span>
+              )
+            }
+            name={r.name}
+          >
+            <span className="mx-[3px] mb-0.5 mt-1.5 flex gap-1.5">
+              <Mini white disabled={busy || !r.hasSnapshot} onClick={() => run.mutate(() => shareApi.approve(r.id, channel, "source"))}>
+                허용
+              </Mini>
+              <Mini disabled={busy} onClick={() => run.mutate(() => shareApi.reject(r.id))}>
+                거절
+              </Mini>
+            </span>
+          </SourceCard>
+        ))}
+      </div>
+      {requests.length === 0 && (
+        <p className="py-10 text-center font-pretendard text-[13.5px] text-white/35">{room ? "요청을 기다리는 중" : "받은 화면이 없어요"}</p>
       )}
     </div>
   );
