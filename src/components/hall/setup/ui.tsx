@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Check, Loader2, X } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import { cn } from "@/lib/utils";
 import type { ConnectionTestResult } from "@/types/hall";
 
@@ -114,7 +115,7 @@ export function OptionCard({
   );
 }
 
-/** 평평한 버튼 (광택 없는 새 스타일) */
+/** 세팅 화면 버튼 — 공용 네온 버튼. primary = 빨강(주 동작), default·ghost = 흰색(보조 동작) */
 export function ActionButton({
   onClick,
   children,
@@ -138,24 +139,17 @@ export function ActionButton({
   tour?: string;
 }) {
   return (
-    <button
+    <NeonButton
       data-tour={tour}
-      type="button"
+      tone={tone === "primary" ? "red" : "white"}
       onClick={onClick}
       disabled={disabled || busy}
       title={title}
-      className={cn(
-        "flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-4 font-mbc text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 max-md:h-11",
-        tone === "primary" && "border-[#FF3B3B]/60 bg-[#FF3B3B]/20 text-white enabled:hover:bg-[#FF3B3B]/30",
-        tone === "default" &&
-          "border-white/10 bg-white/[0.04] text-white/75 enabled:hover:bg-white/10 enabled:hover:text-white",
-        tone === "ghost" && "border-transparent text-white/55 enabled:hover:bg-white/[0.06] enabled:hover:text-white",
-        className,
-      )}
+      icon={busy ? <Loader2 className="animate-spin" /> : icon}
+      className={cn("shrink-0", className)}
     >
-      {busy ? <Loader2 size={15} className="animate-spin" /> : icon}
       {children}
-    </button>
+    </NeonButton>
   );
 }
 

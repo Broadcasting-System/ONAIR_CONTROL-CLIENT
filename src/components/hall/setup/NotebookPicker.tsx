@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import EmptyState from "@/components/common/EmptyState";
 import { hallApi } from "@/lib/hallApi";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,9 @@ export default function NotebookPicker({
 
   if (list.length === 0) {
     return (
-      <p className="font-pretendard text-xs text-white/35">켜진 노트북이 없어요</p>
+      <EmptyState size="sm" className="py-1 text-left">
+        켜진 노트북이 없어요
+      </EmptyState>
     );
   }
   return (

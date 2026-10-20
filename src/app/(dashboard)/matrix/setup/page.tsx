@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import SectionHeader from "@/components/common/SectionHeader";
 import { toast } from "@/components/common/Toast";
 import { HallSwitcher, Notice, StatusChip } from "@/components/hall/HallControls";
@@ -49,7 +50,7 @@ export default function MatrixSetupPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>매트릭스 현장 세팅</SectionHeader>
-        <Notice tone="info">영상 매트릭스 없음</Notice>
+        <EmptyState>영상 매트릭스가 없어요</EmptyState>
       </div>
     );
   }

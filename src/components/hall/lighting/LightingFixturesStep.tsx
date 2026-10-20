@@ -2,6 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Lightbulb, Minus, Plus, Radio, Trash2, X } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { Notice } from "@/components/hall/HallControls";
@@ -285,10 +286,10 @@ export default function LightingFixturesStep({
               </button>
             </div>
             <ActionButton
+              tone={testLit ? "primary" : "default"}
               icon={<Lightbulb size={14} />}
               disabled={!canTest}
               onClick={() => (testLit ? void clearLight() : light(testAddr, testAddr))}
-              className={cn(testLit && "border-[#FFD49A] bg-[#FFD49A]/15 text-[#FFD49A] enabled:hover:bg-[#FFD49A]/20")}
             >
               {testLit ? "끄기" : "켜 보기"}
             </ActionButton>
@@ -315,11 +316,7 @@ export default function LightingFixturesStep({
               <Th className="text-right">켜 보기·순서·삭제</Th>
             </div>
 
-            {rows.length === 0 && !pending && (
-              <p className="px-2 py-6 text-center font-pretendard text-sm text-white/30">
-                조명이 없어요
-              </p>
-            )}
+            {rows.length === 0 && !pending && <EmptyState>조명이 없어요</EmptyState>}
 
             {rows.map((r, i) => {
               const span = spanOf(r, types);
@@ -429,7 +426,7 @@ export default function LightingFixturesStep({
                     {pendingSpan ? rangeText(pendingSpan.from, pendingSpan.to) : ""}
                   </span>
                   <div className="flex justify-end gap-1 max-md:ml-auto">
-                    <ActionButton tone="primary" onClick={addPending} disabled={!pendingSpan} className="h-9 px-3">
+                    <ActionButton tone="primary" onClick={addPending} disabled={!pendingSpan} className="md:h-9">
                       추가
                     </ActionButton>
                     <IconBtn label="새 줄 취소" onClick={() => setPending(null)}>

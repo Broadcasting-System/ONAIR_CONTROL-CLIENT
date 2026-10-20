@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Check, Plus } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
+import NeonButton from "@/components/common/NeonButton";
 import PageTabs from "@/components/common/PageTabs";
 import SectionHeader from "@/components/common/SectionHeader";
 import { ConfigButton } from "@/components/hall/HallConfigModal";
@@ -60,17 +62,14 @@ export default function LightingPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>조명</SectionHeader>
-        <Notice tone="info">
-          조명 공간 없음
+        <div className="flex flex-col items-center gap-2">
+          <EmptyState className="pb-2">조명 공간이 없어요</EmptyState>
           {isAdmin && (
-            <>
-              {" "}
-              <Link href="/lighting/setup" className="font-mbc text-red-300 underline-offset-4 hover:underline">
-                조명 세팅 열기 →
-              </Link>
-            </>
+            <NeonButton tone="white" onClick={() => router.push("/lighting/setup")}>
+              조명 세팅 열기
+            </NeonButton>
           )}
-        </Notice>
+        </div>
       </div>
     );
   }
@@ -113,8 +112,26 @@ export default function LightingPage() {
       )}
 
       {/* 음악 조명 탭에서는 조작 화면을 숨긴다 (페이더 상태는 그대로 유지) */}
-      <Panel tour="lighting.scenes" title="장면" className={cn(tab !== "control" && "hidden")}>
-        <div className="grid grid-cols-2 gap-2.5 md:flex md:flex-wrap md:items-center">
+      <Panel
+        tour="lighting.scenes"
+        title="장면"
+        className={cn(tab !== "control" && "hidden")}
+        action={
+          isAdmin && !saving ? (
+            <NeonButton
+              data-tour="lighting.scene-save"
+              tone="white"
+              icon={<Plus />}
+              disabled={!connected}
+              onClick={() => setSaving(true)}
+            >
+              지금 상태 저장
+            </NeonButton>
+          ) : null
+        }
+      >
+        {state && state.scenes.length === 0 && !saving && <EmptyState className="py-6">장면이 없어요</EmptyState>}
+        <div className="grid grid-cols-2 gap-2.5 empty:hidden md:flex md:flex-wrap md:items-center">
           {(state?.scenes ?? []).map((scene) => {
             const active = state?.current === scene.id;
             return (
@@ -154,8 +171,7 @@ export default function LightingPage() {
             );
           })}
 
-          {isAdmin &&
-            (saving ? (
+          {isAdmin && saving && (
               <form
                 data-tour="lighting.scene-save-form"
                 className="flex items-center gap-2 max-md:col-span-2 max-md:flex-wrap"
@@ -189,36 +205,14 @@ export default function LightingPage() {
                   />
                   초
                 </label>
-                <button
-                  type="submit"
-                  disabled={!sceneName.trim() || isSavingScene}
-                  className="h-11 rounded-xl border border-white/15 bg-white/10 px-4 font-mbc text-sm text-white hover:bg-white/15 disabled:opacity-40"
-                >
+                <NeonButton type="submit" icon={<Check />} disabled={!sceneName.trim() || isSavingScene}>
                   저장
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSaving(false)}
-                  className="h-11 rounded-xl border border-white/10 bg-white/5 px-3 font-mbc text-sm text-white/60"
-                >
+                </NeonButton>
+                <NeonButton tone="white" onClick={() => setSaving(false)}>
                   취소
-                </button>
+                </NeonButton>
               </form>
-            ) : (
-              <button
-                data-tour="lighting.scene-save"
-                type="button"
-                disabled={!connected}
-                onClick={() => setSaving(true)}
-                className="flex h-[54px] items-center rounded-[14px] border border-dashed border-white/20 px-[18px] font-mbc text-[15px] text-white/45 hover:text-white/75 disabled:opacity-40 max-md:h-[60px] max-md:justify-center max-md:px-3"
-              >
-                + 지금 상태 저장
-              </button>
-            ))}
-
-          {state && state.scenes.length === 0 && !isAdmin && (
-            <span className="font-pretendard text-sm text-white/40">장면 없음</span>
-          )}
+            )}
         </div>
       </Panel>
 
@@ -228,17 +222,14 @@ export default function LightingPage() {
         className={cn("flex flex-1 flex-col p-3 md:min-h-[520px] md:p-7", tab !== "control" && "hidden")}
       >
         {fixtures.length === 0 ? (
-          <Notice tone="info">
-            조명 없음
+          <div className="flex flex-col items-center gap-2">
+            <EmptyState className="pb-2">조명이 없어요</EmptyState>
             {isAdmin && (
-              <>
-                {" "}
-                <Link href="/lighting/setup" className="font-mbc text-red-300 underline-offset-4 hover:underline">
-                  조명 세팅 열기 →
-                </Link>
-              </>
+              <NeonButton tone="white" onClick={() => router.push("/lighting/setup")}>
+                조명 세팅 열기
+              </NeonButton>
             )}
-          </Notice>
+          </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col gap-2 md:flex-row md:gap-3">
             {/* 조명이 많으면 줄을 바꿔 쌓는다 */}

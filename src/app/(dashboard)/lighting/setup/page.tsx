@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronLeft, RotateCcw, Save } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import SectionHeader from "@/components/common/SectionHeader";
 import { toast } from "@/components/common/Toast";
 import { HallSwitcher, Notice, StatusChip } from "@/components/hall/HallControls";
@@ -164,7 +165,7 @@ export default function LightingSetupPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>조명 세팅</SectionHeader>
-        <Notice tone="info">공간 없음</Notice>
+        <EmptyState>공간이 없어요</EmptyState>
       </div>
     );
   }

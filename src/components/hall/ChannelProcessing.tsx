@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Crosshair, Link2, Lock, Pencil } from "lucide-react";
 import InputModal from "@/components/common/InputModal";
+import NeonButton from "@/components/common/NeonButton";
 import { toast } from "@/components/common/Toast";
 import Knob, { LedKey } from "@/components/hall/Knob";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -475,9 +476,9 @@ export default function ChannelProcessing({
               ? `${learn.target.label} ${ROLE_NAME[learn.target.role]} 켜기 대기`
               : `${learn.target.label} ${ROLE_NAME[learn.target.role]} 돌리기 대기`}
           </p>
-          <button type="button" onClick={learn.cancel} className="font-pretendard text-xs text-white/55 hover:text-white max-md:h-11 max-md:px-2 max-md:text-[13px]">
+          <NeonButton tone="white" onClick={learn.cancel} className="shrink-0 md:h-9">
             취소
-          </button>
+          </NeonButton>
         </div>
       )}
 

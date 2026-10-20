@@ -11,6 +11,7 @@ import { useMe } from "@/hooks/useMe";
 import { Chip, Dot, GlassCard, MobileHeader, fmtElapsed } from "@/components/mobile/ui";
 import { useMobileOnly } from "@/components/mobile/useMobileOnly";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import EmptyState from "@/components/common/EmptyState";
 import type { HallSummary } from "@/types/hall";
 import { cn } from "@/lib/utils";
 
@@ -135,7 +136,11 @@ function HallCard({ hall }: { hall: HallSummary }) {
                 {s.name}
               </Chip>
             ))}
-            {!m?.scenes?.length && <p className="font-pretendard text-[13px] text-white/40">씬 없음</p>}
+            {!m?.scenes?.length && (
+              <EmptyState size="sm" className="py-1 text-left">
+                씬이 없어요
+              </EmptyState>
+            )}
           </div>
           {!!m?.channels?.length && m.mode !== "scenes" && (
             <button

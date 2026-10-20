@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronLeft, RotateCcw, Save } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import SectionHeader from "@/components/common/SectionHeader";
 import { toast } from "@/components/common/Toast";
 import { HallSwitcher, Notice, StatusChip } from "@/components/hall/HallControls";
@@ -106,7 +107,7 @@ export default function MixerSetupPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>믹서 현장 세팅</SectionHeader>
-        <Notice tone="info">오디오 믹서 없음</Notice>
+        <EmptyState>오디오 믹서가 없어요</EmptyState>
       </div>
     );
   }

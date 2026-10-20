@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Play, Plus, Square } from "lucide-react";
 import { Notice, Panel } from "@/components/hall/HallControls";
 import { OnSwitch } from "@/components/hall/AutoAudio";
+import EmptyState from "@/components/common/EmptyState";
+import NeonButton from "@/components/common/NeonButton";
 import Select from "@/components/common/Select";
 import { lightColor } from "@/components/hall/LightStrip";
 import { useMusicLight, useMusicShow } from "@/hooks/useMusicLight";
@@ -394,15 +397,15 @@ function UploadBox({
             e.target.value = "";
           }}
         />
-        <button
+        <NeonButton
           data-tour="music.upload"
-          type="button"
+          icon={<Plus />}
           disabled={disabled}
           onClick={() => input.current?.click()}
-          className="rounded-[14px] border border-dashed border-white/20 p-3.5 text-center font-mbc text-[15px] text-white/50 enabled:hover:text-white/80 disabled:opacity-40 max-md:w-full"
+          className="max-md:w-full"
         >
-          + MR 올리기
-        </button>
+          MR 올리기
+        </NeonButton>
       </>
     );
   }
@@ -424,26 +427,20 @@ function UploadBox({
         ))}
       </div>
       <div className="flex gap-2">
-        <button
-          type="button"
+        <NeonButton
           disabled={uploading}
           onClick={() =>
             onUpload(file, name, style)
               .then(() => setFile(null))
               .catch(() => undefined)
           }
-          className="h-9 flex-1 rounded-lg border border-red-400/50 bg-red-400/15 font-mbc text-sm text-white disabled:opacity-50 max-md:h-11"
+          className="flex-1 md:h-9"
         >
           {uploading ? "분석하는 중…" : "분석해서 쇼 만들기"}
-        </button>
-        <button
-          type="button"
-          disabled={uploading}
-          onClick={() => setFile(null)}
-          className="h-9 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-sm text-white/60 max-md:h-11"
-        >
+        </NeonButton>
+        <NeonButton tone="white" disabled={uploading} onClick={() => setFile(null)} className="md:h-9">
           취소
-        </button>
+        </NeonButton>
       </div>
     </div>
   );
@@ -533,13 +530,9 @@ function MusicSettings({
           </>
         )}
       </div>
-      <button
-        type="button"
-        onClick={() => onSave(draft)}
-        className="h-9 w-fit rounded-lg border border-white/15 bg-white/10 px-4 font-mbc text-[13px] text-white hover:bg-white/15 max-md:h-11"
-      >
+      <NeonButton onClick={() => onSave(draft)} className="w-fit md:h-9">
         저장
-      </button>
+      </NeonButton>
     </div>
   );
 }
@@ -613,30 +606,25 @@ export default function MusicLightPanel({
 
   return (
     <div className="flex flex-col gap-5">
-      {noFixtures && <Notice tone="info">조명 목록이 비어 있어요</Notice>}
+      {noFixtures && <EmptyState size="sm">조명이 없어요</EmptyState>}
       {state.lastError && <Notice>{state.lastError}</Notice>}
       {(playing?.error || live?.error) && <Notice>{playing?.error || live?.error}</Notice>}
 
       <section data-tour="music.player" className="flex flex-col gap-4 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:gap-5 md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-7 md:shadow-2xl">
         {!summary || !show ? (
-          <p className="font-pretendard text-sm text-white/45">쇼가 없어요</p>
+          <EmptyState>쇼가 없어요</EmptyState>
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-[18px] max-md:gap-3">
-              <button
+              <NeonButton
                 data-tour="music.play"
-                type="button"
+                icon={playing ? <Square /> : <Play />}
                 disabled={!operable}
                 onClick={press}
-                className={cn(
-                  "flex h-10 items-center gap-2 rounded-xl border px-4 font-pretendard text-[15px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 max-md:order-last max-md:h-14 max-md:w-full max-md:justify-center max-md:text-[18px]",
-                  playing
-                    ? "border-red-400/60 bg-red-400/25 shadow-[0_0_18px_rgba(255,59,59,0.35)]"
-                    : "border-red-400/50 bg-red-400/15 enabled:hover:bg-red-400/20",
-                )}
+                className="max-md:order-last max-md:h-14 max-md:w-full"
               >
-                {playing ? "■ 멈춤" : "▶ 시작"}
-              </button>
+                {playing ? "멈춤" : "시작"}
+              </NeonButton>
               <div className="min-w-0 max-md:flex-1">
                 <div className="truncate font-pretendard text-xl font-extrabold text-white max-md:text-[18px]">
                   {summary.name}
@@ -758,25 +746,26 @@ export default function MusicLightPanel({
                   />
                 </>
               )}
-              <button
+              <NeonButton
                 data-tour="music.edit-cues"
-                type="button"
+                tone="white"
+                aria-expanded={editCues}
                 onClick={() => setEditCues((v) => !v)}
-                className="ml-auto h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/60 hover:text-white max-md:ml-0 max-md:h-11 max-md:px-4"
+                className="ml-auto max-md:ml-0 md:h-8"
               >
                 {editCues ? "큐 편집 닫기" : "큐 편집"}
-              </button>
-              <button
+              </NeonButton>
+              <NeonButton
                 data-tour="music.delete"
-                type="button"
+                tone="white"
                 disabled={!operable || !!playing}
                 onClick={() => {
                   if (window.confirm(`'${summary.name}' 쇼를 지울까요?`)) remove(summary.id);
                 }}
-                className="h-8 rounded-lg border border-white/10 bg-white/5 px-3 font-mbc text-[13px] text-white/50 enabled:hover:text-red-300 disabled:opacity-40 max-md:h-11 max-md:px-4"
+                className="md:h-8"
               >
                 쇼 지우기
-              </button>
+              </NeonButton>
             </div>
             {editCues && (
               <CueEditor
@@ -817,17 +806,17 @@ export default function MusicLightPanel({
                 </button>
                 <span className="font-mono text-sm tabular-nums text-white/50 max-md:hidden">{Math.round(s.bpm)} BPM</span>
                 <span className="font-mono text-sm tabular-nums text-white/50">{fmt(s.duration)}</span>
-                <button
-                  type="button"
+                <NeonButton
+                  tone="white"
+                  icon={isPlaying ? undefined : <Play />}
                   disabled={!operable || isPlaying}
                   onClick={() => {
                     setSelected(s.id);
                     start(s.id, 0);
                   }}
-                  className="h-10 rounded-xl border border-white/[0.12] bg-white/5 px-4 font-pretendard text-[15px] font-bold text-white enabled:hover:bg-white/10 disabled:cursor-default disabled:opacity-60 max-md:h-11"
                 >
-                  {isPlaying ? "재생 중" : "▶ 틀기"}
-                </button>
+                  {isPlaying ? "재생 중" : "틀기"}
+                </NeonButton>
               </div>
             );
           })}

@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SectionHeader from "@/components/common/SectionHeader";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import EmptyState from "@/components/common/EmptyState";
 import MinSizeGuard from "@/components/common/MinSizeGuard";
+import NeonButton from "@/components/common/NeonButton";
 import { ConfigButton, MatrixLabelsModal } from "@/components/hall/HallConfigModal";
 import { HallSwitcher, LockToggle, Notice, Panel, StatusChip } from "@/components/hall/HallControls";
 import { useHalls } from "@/hooks/useHalls";
@@ -41,7 +43,7 @@ export default function VideoMatrixPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>영상 매트릭스</SectionHeader>
-        <Notice tone="info">영상 매트릭스 없음</Notice>
+        <EmptyState>영상 매트릭스가 없어요</EmptyState>
       </div>
     );
   }
@@ -195,13 +197,13 @@ export default function VideoMatrixPage() {
                   placeholder="프리셋 이름"
                   className="h-11 min-w-0 flex-1 rounded-xl border border-dashed border-white/20 bg-transparent px-3 font-pretendard text-sm text-white placeholder:text-white/35 focus:border-white/40 focus:outline-none"
                 />
-                <button
+                <NeonButton
                   type="submit"
                   disabled={!presetName.trim() || isSavingPreset || !connected}
-                  className="h-11 shrink-0 rounded-xl border border-white/15 bg-white/10 px-4 font-mbc text-sm text-white hover:bg-white/15 disabled:opacity-40"
+                  className="shrink-0 md:h-11"
                 >
                   저장
-                </button>
+                </NeonButton>
               </form>
             )}
           </Panel>

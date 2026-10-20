@@ -140,11 +140,7 @@ export default function LightingCheckStep({
           title="이 공간 조명 끄기"
           className="border-red-500/20"
           action={
-            <ActionButton
-              icon={<Power size={14} />}
-              onClick={() => setConfirmRemove(true)}
-              className="border-red-500/40 text-red-300 enabled:hover:bg-red-500/15"
-            >
+            <ActionButton tone="primary" icon={<Power size={14} />} onClick={() => setConfirmRemove(true)}>
               조명 끄기
             </ActionButton>
           }

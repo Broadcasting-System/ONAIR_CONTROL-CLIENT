@@ -431,6 +431,7 @@ export default function MatrixConnectionForm({
                         busy={sending === c.route}
                         disabled={urlBad || (!!sending && sending !== c.route)}
                         onClick={() => send(c.route)}
+                        className="md:h-9"
                       >
                         보내기
                       </ActionButton>
@@ -438,6 +439,7 @@ export default function MatrixConnectionForm({
                         onClick={() => setProto({ route: c.route })}
                         disabled={inUse}
                         icon={inUse ? <Check size={13} /> : undefined}
+                        className="md:h-9"
                       >
                         {inUse ? "사용 중" : "이걸로"}
                       </ActionButton>

@@ -108,6 +108,7 @@ export function Panel({
   className,
   children,
   tour,
+  action,
 }: {
   title: string;
   hint?: string;
@@ -115,6 +116,8 @@ export function Panel({
   children: React.ReactNode;
   /** CUE 튜토리얼 이름표 (data-tour) */
   tour?: string;
+  /** 제목 줄 오른쪽 버튼 */
+  action?: React.ReactNode;
 }) {
   return (
     <section
@@ -127,6 +130,7 @@ export function Panel({
       <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 md:mb-4">
         <h3 className="whitespace-nowrap font-mbc text-[20px] text-white md:text-2xl">{title}</h3>
         {hint && <span className="font-pretendard text-[13px] text-white/40">{hint}</span>}
+        {action && <div className="ml-auto self-center">{action}</div>}
       </div>
       {children}
     </section>

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import EmptyState from "@/components/common/EmptyState";
 import PageTabs from "@/components/common/PageTabs";
 import SectionHeader from "@/components/common/SectionHeader";
 import AutoAudioPanel from "@/components/hall/AutoAudioPanel";
-import { HallSwitcher, Notice } from "@/components/hall/HallControls";
+import { HallSwitcher } from "@/components/hall/HallControls";
 import MixerPanel from "@/components/hall/MixerPanel";
 import { useHalls } from "@/hooks/useHalls";
 import { usePersistentState } from "@/hooks/usePersistentState";
@@ -33,7 +34,7 @@ export default function AudioPage() {
     return (
       <div className="flex flex-col gap-5">
         <SectionHeader>오디오</SectionHeader>
-        <Notice tone="info">오디오 믹서 없음</Notice>
+        <EmptyState>오디오 믹서가 없어요</EmptyState>
       </div>
     );
   }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { Check, X } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import Portal from "@/components/common/Portal";
 import { cn } from "@/lib/utils";
@@ -287,14 +288,13 @@ export function FeatureParamsModal({
           </div>
           {isAdmin && (
             <div className="flex items-center gap-3 border-t border-white/[0.08] px-5 py-3.5">
-              <button
-                type="button"
+              <NeonButton
+                tone="white"
                 disabled={!dirty}
                 onClick={() => setDraft(Object.fromEntries(keys.map((k) => [k, server(k)])))}
-                className="h-11 rounded-xl px-3 font-mbc text-[14px] text-white/55 transition-colors enabled:hover:text-white disabled:opacity-30 md:h-[42px]"
               >
                 되돌리기
-              </button>
+              </NeonButton>
               <NeonButton icon={<Check />} disabled={!dirty || saving} onClick={save} className="ml-auto min-w-[120px]">
                 {saving ? "저장 중..." : "저장"}
               </NeonButton>
@@ -466,7 +466,7 @@ export function ChannelMatrix({
   };
 
   if (state.channels.length === 0) {
-    return <p className="px-3.5 py-4 font-pretendard text-sm text-white/40">채널이 없어요</p>;
+    return <EmptyState size="sm">채널이 없어요</EmptyState>;
   }
 
   return (
@@ -670,14 +670,9 @@ export function AutoSettings({
         />
         <span>초</span>
       </div>
-      <button
-        type="button"
-        disabled={saving}
-        onClick={save}
-        className="h-9 w-fit rounded-lg border border-white/15 bg-white/10 px-4 font-mbc text-[13px] text-white hover:bg-white/15 disabled:opacity-40 max-md:h-11"
-      >
+      <NeonButton disabled={saving} onClick={save} className="w-fit md:h-9">
         저장
-      </button>
+      </NeonButton>
     </div>
   );
 }

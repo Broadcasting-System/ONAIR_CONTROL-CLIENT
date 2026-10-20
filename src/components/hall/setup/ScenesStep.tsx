@@ -3,6 +3,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, Play, Plus, Trash2 } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import { toast } from "@/components/common/Toast";
 import { hallApi } from "@/lib/hallApi";
 import { cn } from "@/lib/utils";
@@ -75,9 +76,7 @@ export default function ScenesStep({
             <Th />
           </div>
 
-          {draft.scenes.length === 0 && (
-            <p className="px-2 py-6 text-center font-pretendard text-sm text-white/30">씬이 없어요</p>
-          )}
+          {draft.scenes.length === 0 && <EmptyState>씬이 없어요</EmptyState>}
 
           {draft.scenes.map((s, i) => {
             const now = state.currentScene === s.pc;
@@ -144,7 +143,7 @@ export default function ScenesStep({
                   busy={trying === s.pc}
                   disabled={!canTry || trying !== null}
                   onClick={() => tryScene(s.pc)}
-                  className="order-5 h-9 px-3 md:order-none"
+                  className="order-5 md:order-none md:h-9"
                 >
                   불러오기
                 </ActionButton>

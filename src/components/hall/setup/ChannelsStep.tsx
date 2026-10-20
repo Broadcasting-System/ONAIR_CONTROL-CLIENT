@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, Crosshair, Eye, EyeOff, Minus, Plus, Trash2, Wand2 } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import { toast } from "@/components/common/Toast";
 import { hallApi } from "@/lib/hallApi";
 import { cn } from "@/lib/utils";
@@ -213,9 +214,7 @@ export default function ChannelsStep({
             <Th className="text-right">보기·삭제</Th>
           </div>
 
-          {draft.channels.length === 0 && (
-            <p className="px-2 py-6 text-center font-pretendard text-sm text-white/30">채널이 없어요</p>
-          )}
+          {draft.channels.length === 0 && <EmptyState>채널이 없어요</EmptyState>}
 
           {draft.channels.map((c, i) => {
             const lv = live(c.id);
