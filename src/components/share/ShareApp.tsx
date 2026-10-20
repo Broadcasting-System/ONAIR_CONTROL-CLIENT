@@ -271,7 +271,6 @@ export default function ShareApp() {
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value.slice(0, 40))}
-                  placeholder="김민수 · 과학 동아리"
                   className="h-12 rounded-xl border border-white/[0.12] bg-[#0c0d0f] px-4 font-pretendard text-[16px] text-white outline-none placeholder:text-white/30 focus:border-[#FF3B3B]/70"
                 />
               </label>
