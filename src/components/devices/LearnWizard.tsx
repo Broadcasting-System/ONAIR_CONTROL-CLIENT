@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Crosshair, RadioTower, Wifi, X } from "lucide-react";
 import NeonButton from "@/components/common/NeonButton";
+import Portal from "@/components/common/Portal";
 import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { SPEAKER_MATRIX_KEY } from "@/hooks/useSpeakerMatrix";
@@ -33,8 +34,10 @@ const MODES: { key: LearnMode; title: string }[] = [
 ];
 
 function Shell({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  // body 에 그린다 — 흐림(backdrop-blur) 판 안에 두면 fixed 창이 그 판에 갇혀 잘리고 뒤 카드에 가려진다
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm max-md:pb-[calc(78px+env(safe-area-inset-bottom))] max-md:pt-[calc(16px+env(safe-area-inset-top))]">
+    <Portal>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm max-md:pb-[calc(78px+env(safe-area-inset-bottom))] max-md:pt-[calc(16px+env(safe-area-inset-top))]">
       <div className="absolute inset-0" onClick={onClose} />
       <div data-tour="mapping.learn-wizard" className="relative z-10 flex max-h-[90vh] w-full max-md:max-h-full max-w-[820px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#141416] shadow-[0_24px_60px_rgba(0,0,0,0.65)]">
         <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-4 py-2.5 md:px-6 md:py-4">
@@ -56,6 +59,7 @@ function Shell({ onClose, children }: { onClose: () => void; children: React.Rea
         <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">{children}</div>
       </div>
     </div>
+    </Portal>
   );
 }
 

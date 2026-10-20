@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { X } from "lucide-react";
 import NeonButton from "@/components/common/NeonButton";
+import Portal from "@/components/common/Portal";
 import type { InviteCreated } from "@/types/member";
 
 function left(until: string, now: number): string {
@@ -56,7 +57,8 @@ export default function InviteModal({
   const code = `${invite.code.slice(0, 4)}-${invite.code.slice(4)}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm max-md:pb-[calc(78px+env(safe-area-inset-bottom))] max-md:pt-[calc(16px+env(safe-area-inset-top))]">
+    <Portal>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm max-md:pb-[calc(78px+env(safe-area-inset-bottom))] max-md:pt-[calc(16px+env(safe-area-inset-top))]">
       <div className="absolute inset-0" onClick={onClose} />
       <div data-tour="members.invite-modal" className="relative z-10 grid max-h-full w-full max-w-[720px] items-center gap-4 overflow-y-auto rounded-[20px] border border-white/10 bg-[#151515] p-5 shadow-2xl md:max-h-none md:grid-cols-[230px_minmax(0,1fr)] md:gap-6 md:overflow-visible md:rounded-[24px] md:p-7">
         <div data-tour="members.invite-qr" className="order-2 aspect-square w-full max-w-[230px] justify-self-center rounded-xl bg-white p-3 md:order-none">
@@ -111,5 +113,6 @@ export default function InviteModal({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

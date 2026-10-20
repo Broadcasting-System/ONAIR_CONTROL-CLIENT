@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Settings2, X } from "lucide-react";
 import NeonButton from "@/components/common/NeonButton";
+import Portal from "@/components/common/Portal";
 import { toast } from "@/components/common/Toast";
 import { hallApi } from "@/lib/hallApi";
 import { cn } from "@/lib/utils";
@@ -59,7 +60,8 @@ function Shell({
   children: ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+    <Portal>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />
       <div
         className={cn(
@@ -93,6 +95,7 @@ function Shell({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 

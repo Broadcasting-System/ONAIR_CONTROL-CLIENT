@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, X } from "lucide-react";
 import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
+import Portal from "@/components/common/Portal";
 import { toast } from "@/components/common/Toast";
 import {
   BgTile,
@@ -154,7 +155,8 @@ function Profile({ p, domain, onEdit }: { p: CrewMember; domain: string; onEdit:
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm max-md:pb-[calc(78px+env(safe-area-inset-bottom))] max-md:pt-[calc(16px+env(safe-area-inset-top))]">
+    <Portal>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm max-md:pb-[calc(78px+env(safe-area-inset-bottom))] max-md:pt-[calc(16px+env(safe-area-inset-top))]">
       <div className="absolute inset-0" onClick={onClose} />
       <div className="relative z-10 grid max-h-[calc(100dvh-2rem)] w-full max-w-[560px] gap-5 overflow-y-auto rounded-[20px] border border-white/10 bg-[#151515] p-5 shadow-2xl max-md:max-h-full md:rounded-[24px] md:p-7">
         <div className="flex items-center gap-3">
@@ -171,6 +173,7 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
         {children}
       </div>
     </div>
+    </Portal>
   );
 }
 
