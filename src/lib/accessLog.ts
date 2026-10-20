@@ -76,8 +76,8 @@ const RULES: Rule[] = [
   ["*", /^\/api\/share\/me\/end/, "화면 공유 끝내기", "화면 공유"],
   ["*", /^\/api\/share/, "화면 공유 조작", "화면 공유"],
   // 선생님 바로 방송 (마이크는 끝날 때 한 줄, 글은 내보낼 때 한 줄 — 사람은 선생님)
-  ["WS", /^\/api\/teacher\/live/, "바로 방송 · 마이크", "방송"],
-  ["*", /^\/api\/teacher\/now/, "바로 방송 · 글", "방송"],
+  ["WS", /^\/api\/teacher\/live/, "방송 · 마이크", "방송"],
+  ["*", /^\/api\/teacher\/now/, "방송 · 글", "방송"],
   // 요청 (선생님 → 방송부)
   ["*", /^\/api\/teacher\/register/, "선생님 등록", "요청"],
   ["*", /^\/api\/teacher\/uploads/, "요청 파일 올리기", "요청"],
@@ -343,8 +343,8 @@ export function describe(l: LogEntry): Described {
     return { ...base, extra: target ?? opt(l.action), detail };
   }
   if (l.action && TEACHER_NOW.test(l.path.split("?")[0])) {
-    // '바로 방송 · 마이크' 는 이름 그대로 (뒤가 대상이 아니라 마이크·글)
-    return { label: l.action, group: base.group, extra: target, detail };
+    // '방송 · 마이크' 는 이름 그대로 (뒤가 대상이 아니라 마이크·글). 예전 기록의 '바로 방송 · …' 도 '방송 · …' 으로
+    return { label: l.action.replace(/^바로 방송 · /, "방송 · "), group: base.group, extra: target, detail };
   }
   if (l.action) {
     const a = splitAction(l.action);
