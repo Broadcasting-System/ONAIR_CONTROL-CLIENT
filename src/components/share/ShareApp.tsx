@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MonitorUp, Radio } from "lucide-react";
+import NeonButton from "@/components/common/NeonButton";
 import OnairMark from "@/components/common/OnairMark";
 import { backendBase, backendWs } from "@/lib/backend";
 import { getIceServers, startScreenSender, type ScreenSender } from "@/lib/screenSender";
@@ -275,13 +276,14 @@ export default function ShareApp() {
                 />
               </label>
               {err ? <p className="font-pretendard text-[14px] text-[#ff6b6b]">{err}</p> : null}
-              <button
+              <NeonButton
                 type="submit"
+                size="lg"
                 disabled={busy || code.length !== 6 || !name.trim()}
-                className="h-[52px] rounded-xl bg-[#FF3B3B] font-pretendard text-[17px] font-bold text-white transition-opacity disabled:opacity-35"
+                className="w-full"
               >
                 {busy ? "확인하는 중…" : "다음"}
-              </button>
+              </NeonButton>
             </form>
           )}
 
@@ -315,13 +317,9 @@ export default function ShareApp() {
                     {err ? (
                       <p className="font-pretendard text-[14px] text-[#ff6b6b]">{err}</p>
                     ) : null}
-                    <button
-                      type="button"
-                      onClick={pick}
-                      className="h-[52px] rounded-xl bg-white font-pretendard text-[17px] font-bold text-black"
-                    >
+                    <NeonButton size="lg" icon={<MonitorUp />} onClick={pick} className="w-full">
                       화면 고르기
-                    </button>
+                    </NeonButton>
                   </>
                 ) : (
                   <p className="font-pretendard text-[15px] text-white/70">
@@ -345,26 +343,13 @@ export default function ShareApp() {
 
               <div className={cn("grid gap-2", stream ? "grid-cols-2" : "grid-cols-1")}>
                 {stream ? (
-                  <button
-                    type="button"
-                    onClick={pick}
-                    className="h-12 rounded-xl border border-white/15 font-pretendard text-[15px] text-white/80 hover:bg-white/[0.06]"
-                  >
+                  <NeonButton tone="white" onClick={pick} className="w-full">
                     다른 화면
-                  </button>
+                  </NeonButton>
                 ) : null}
-                <button
-                  type="button"
-                  onClick={() => void end()}
-                  className={cn(
-                    "h-12 rounded-xl font-pretendard text-[15px] font-bold",
-                    live
-                      ? "bg-[#FF3B3B] text-white"
-                      : "border border-white/15 text-white/80 hover:bg-white/[0.06]",
-                  )}
-                >
+                <NeonButton tone={live ? "red" : "white"} onClick={() => void end()} className="w-full">
                   {live ? "공유 끝내기" : "취소"}
-                </button>
+                </NeonButton>
               </div>
             </>
           )}

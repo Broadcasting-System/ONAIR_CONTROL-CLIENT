@@ -83,8 +83,6 @@ function Tuner({ at, device, status }: { at: Step; device: string; status: strin
 const lblCls = "mb-2 block font-pretendard text-sm font-bold text-white/80";
 const inpCls =
   "w-full rounded-[10px] border border-white/[0.12] bg-[#0c0d0f] px-3.5 font-pretendard text-base text-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.7)] outline-none placeholder:text-white/35 focus:border-red-400/70";
-const ghostCls =
-  "inline-flex h-11 items-center justify-center rounded-[10px] border border-white/15 bg-transparent px-[18px] font-pretendard text-[15px] font-bold text-white/80 hover:text-white disabled:opacity-40";
 const noteCls = "font-pretendard text-sm leading-relaxed text-white/60";
 const errCls = "mt-2 font-pretendard text-[13px] leading-snug text-[#ff9b9b]";
 
@@ -464,9 +462,9 @@ export default function WelcomePage() {
               />
               <div className="flex flex-wrap items-center justify-end gap-2.5">
                 {editing && (
-                  <button type="button" className={cn(ghostCls, "max-md:h-[54px] max-md:flex-1")} onClick={() => setEditing(false)}>
+                  <NeonButton tone="white" size="lg" className="max-md:flex-1" onClick={() => setEditing(false)}>
                     취소
-                  </button>
+                  </NeonButton>
                 )}
                 <NeonButton type="submit" size="lg" icon={<Send />} disabled={!valid || submit.isPending} className="max-md:flex-1">
                   {submit.isPending ? "보내는 중…" : editing ? "다시 보내기" : "승인 요청"}
@@ -521,9 +519,9 @@ export default function WelcomePage() {
                 )}
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2.5">
-                <button type="button" className={ghostCls} onClick={startEdit}>
+                <NeonButton tone="white" onClick={startEdit}>
                   정보 고치기
-                </button>
+                </NeonButton>
               </div>
             </>
           )}

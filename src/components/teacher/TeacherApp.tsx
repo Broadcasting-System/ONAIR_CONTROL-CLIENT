@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Check, ChevronLeft, Film, House, Inbox, List, Lock, Mail, Minus, Pencil, Play, Plus, Radio, Send, type LucideIcon } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import OnairMark from "@/components/common/OnairMark";
 import { ToastHost, toast } from "@/components/common/Toast";
@@ -290,10 +291,9 @@ function Waiting({ me, onEdit }: { me: Me; onEdit: () => void }) {
         <Glass className="w-full p-6 text-left">
           <Meta rows={[["이름", t.name], ["담당", t.dept || "-"], ["하는 일", t.duty], ["계정", me.email]]} />
         </Glass>
-        <button type="button" onClick={onEdit} className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/15 px-3.5 py-2 font-pretendard text-[14px] font-bold text-white/80">
-          <Pencil size={15} />
+        <NeonButton tone="white" icon={<Pencil />} onClick={onEdit}>
           정보 고치기
-        </button>
+        </NeonButton>
       </div>
     </div>
   );
@@ -304,7 +304,7 @@ function Waiting({ me, onEdit }: { me: Me; onEdit: () => void }) {
 // ======================================================================
 
 function RequestTable({ rows, open }: { rows: TeacherRequest[]; open: (id: string) => void }) {
-  if (!rows.length) return <p className="py-10 text-center font-pretendard text-[15px] text-white/40">요청이 없어요</p>;
+  if (!rows.length) return <EmptyState>요청이 없어요</EmptyState>;
   const last = (r: TeacherRequest) => [...r.comments].reverse().find((c) => c.side === "crew");
   return (
     <div className="overflow-x-auto">
@@ -557,10 +557,9 @@ function AnnounceForm({ me, places, back, done }: { me: Me; places?: Places; bac
             <div>
               <FieldLabel
                 right={
-                  <button type="button" onClick={listen} disabled={!text.trim() || playing} className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/15 px-3 py-1.5 text-[13.5px] font-bold text-white disabled:opacity-40">
-                    <Play size={14} />
+                  <NeonButton tone="white" icon={<Play />} onClick={listen} disabled={!text.trim() || playing} className="h-9 md:h-9">
                     {playing ? "듣는 중" : "들어 보기"}
-                  </button>
+                  </NeonButton>
                 }
               >
                 내용
@@ -933,7 +932,7 @@ function BellForm({ back, done }: { back: () => void; done: (id: string) => void
               ))}
             </div>
           ) : (
-            <p className="py-8 text-center font-pretendard text-[15px] text-white/40">{bells.isLoading ? "불러오는 중…" : "그날 걸린 종이 없어요"}</p>
+            <EmptyState>{bells.isLoading ? "불러오는 중…" : "그날은 시보가 없어요"}</EmptyState>
           )}
         </Glass>
       </div>
@@ -1045,9 +1044,9 @@ function Detail({ id, back }: { id: string; back: () => void }) {
             )}
           </Glass>
           {open && (
-            <button type="button" className={cn(ghostBtn, "w-full")} disabled={cancel.isPending} onClick={() => cancel.mutate()}>
+            <NeonButton tone="white" size="lg" className="w-full" disabled={cancel.isPending} onClick={() => cancel.mutate()}>
               요청 취소
-            </button>
+            </NeonButton>
           )}
         </div>
       </div>

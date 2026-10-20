@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, MapPin, Mic, Play, Radio, Send, Square, Type } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import OnairButton, { type OnairButtonState } from "@/components/common/OnairButton";
 import Select from "@/components/common/Select";
@@ -11,7 +12,7 @@ import { LevelMeter, fmtClock } from "@/components/broadcast/parts";
 import { useLiveMic } from "@/hooks/useLiveMic";
 import { cn } from "@/lib/utils";
 import { tapi, teacherLiveUrl } from "@/components/teacher/api";
-import { ChoiceChip, Glass, Seg, ghostBtn, inputCls } from "@/components/teacher/parts";
+import { ChoiceChip, Glass, Seg, inputCls } from "@/components/teacher/parts";
 
 /** 선생님 바로 방송 — 홈 맨 위 한 장(시안 B). 마이크는 방송부 마이크와 같은 ONAIR 버튼, 글은 들어 보기·바로 내보내기.
  *  다른 방송·종이 가까우면 버튼을 끄고 까닭 한 줄. 규칙·시간 여유는 서버 app/services/teacher_now.py */
@@ -146,7 +147,7 @@ function Recent({ items, className }: { items: NowItem[]; className?: string }) 
       ))}
     </div>
   ) : (
-    <p className="py-6 text-center font-pretendard text-[14.5px] text-white/40">아직 없어요</p>
+    <EmptyState>최근 방송이 없어요</EmptyState>
   );
   return (
     <div className={className}>
@@ -412,10 +413,9 @@ export default function InstantBroadcast({
             </div>
             {why}
             <div className="flex gap-2.5">
-              <button type="button" onClick={listen} disabled={!text.trim() || playing} className={cn(ghostBtn, "h-14 shrink-0 px-4 md:px-6")}>
-                <Play size={16} />
+              <NeonButton tone="white" size="lg" icon={<Play />} onClick={listen} disabled={!text.trim() || playing} className="shrink-0">
                 {playing ? "듣는 중" : "들어 보기"}
-              </button>
+              </NeonButton>
               <NeonButton
                 size="lg"
                 icon={<Send />}

@@ -9,11 +9,12 @@ import {
   MonitorUp,
   Music,
   Play,
-  Radio,
   Timer,
   Volume2,
   VolumeX,
 } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
+import NeonButton from "@/components/common/NeonButton";
 import OnairMark from "@/components/common/OnairMark";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 import { backendBase, resolveMediaUrl } from "@/lib/backend";
@@ -169,9 +170,8 @@ function Header({ onBack }: { onBack?: () => void }) {
 
 function Empty() {
   return (
-    <div className="flex min-h-[60dvh] flex-col items-center justify-center gap-4 px-6 text-center">
-      <Radio size={40} className="text-white/25" />
-      <p className="font-pretendard text-[17px] text-white/60">지금 송출 중인 화면이 없어요</p>
+    <div className="flex min-h-[60dvh] items-center justify-center px-6">
+      <EmptyState>송출 중인 화면이 없어요</EmptyState>
     </div>
   );
 }
@@ -214,9 +214,10 @@ function Home({
                 {[place(hero), clock(hero.startedAt)].filter(Boolean).join(" · ")}
               </p>
             </div>
-            <span className="pointer-events-auto inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-white px-6 font-pretendard text-[16px] font-bold text-black transition-transform group-hover:scale-[1.03]">
-              <Play size={18} fill="currentColor" /> 보기
-            </span>
+            {/* 누르면 위의 카드(role=button)가 받는다 — 키보드 초점은 카드 하나로 */}
+            <NeonButton tabIndex={-1} size="lg" icon={<Play fill="currentColor" />} className="pointer-events-auto shrink-0">
+              보기
+            </NeonButton>
           </div>
         </div>
         <div className="md:hidden">
@@ -285,13 +286,7 @@ function Watch({
             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-black/85">
               <p className="font-pretendard text-[17px] text-white/70">송출이 끝났어요</p>
               {list.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => open(list[0].channel)}
-                  className="h-11 rounded-xl bg-white px-5 font-pretendard text-[15px] font-bold text-black"
-                >
-                  다른 송출 보기
-                </button>
+                <NeonButton onClick={() => open(list[0].channel)}>다른 송출 보기</NeonButton>
               ) : null}
             </div>
           )}
