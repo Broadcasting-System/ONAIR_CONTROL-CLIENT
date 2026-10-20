@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Popover as P } from "radix-ui";
 import { ChevronDown, History, MoreHorizontal, RadioTower, Settings2 } from "lucide-react";
 import LearnWizard from "@/components/devices/LearnWizard";
+import MappingBellNote from "@/components/devices/MappingBellNote";
 import NeonButton from "@/components/common/NeonButton";
 import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
@@ -176,10 +177,17 @@ export default function SpeakerMappingPanel() {
 
   const session = async (action: "start" | "stop" | "silence") => {
     const fn = action === "start" ? speakerApi.start : action === "stop" ? speakerApi.stop : speakerApi.silence;
-    const st = await run(fn, action === "start" ? "찾기를 시작했어요" : undefined);
+    // 종 때문에 멈췄던 찾기는 그 칸부터 이어서
+    const resume = action === "start" && cal?.ended?.reason === "bell" ? cal.ended.resume : null;
+    const st = await run(fn, action === "start" ? (resume ? "이어서 찾아요" : "찾기를 시작했어요") : undefined);
     if (st) qc.setQueryData(CAL_KEY, st);
+    if (st && resume) {
+      const again = await run(() => speakerApi.ping(resume[0], resume[1]));
+      if (again) qc.setQueryData(CAL_KEY, again);
+    }
     if (action === "start") focusAnswer();
   };
+  const resumable = !cal?.active && cal?.ended?.reason === "bell" && !!cal.ended.resume;
 
   if (matrixQuery.isError) {
     return <p className="font-pretendard text-white/40">스피커 구역표를 불러오지 못했어요</p>;
@@ -224,10 +232,11 @@ export default function SpeakerMappingPanel() {
           </div>
           {!active && (
             <NeonButton data-tour="mapping.start" className="min-w-[132px] max-md:ml-auto" disabled={busy} onClick={() => session("start")}>
-              찾기 시작
+              {resumable ? "이어서 찾기" : "찾기 시작"}
             </NeonButton>
           )}
         </div>
+        <MappingBellNote cal={cal} />
 
         {active && (
           <div className="grid gap-5 md:grid-cols-[280px_minmax(0,1fr)] md:gap-6">

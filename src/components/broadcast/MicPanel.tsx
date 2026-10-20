@@ -5,9 +5,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Chip } from "@/components/mobile/ui";
 import { toast } from "@/components/common/Toast";
 import { useLiveMic } from "@/hooks/useLiveMic";
+import { mmss, useBellGuard } from "@/hooks/useBellGuard";
 import { useClipRecorder } from "@/hooks/useClipRecorder";
 import { broadcastApi, type MicOptions } from "@/lib/broadcastApi";
 import { cn } from "@/lib/utils";
+import BellLine from "./BellLine";
 import MicButton, { type MicButtonState } from "./MicButton";
 import TargetPicker from "./TargetPicker";
 import { Block, Label, Segmented, Switch, Waveform, fmtClock, useElapsed } from "./parts";
@@ -53,11 +55,28 @@ export default function MicPanel({
   const effect = effectPick ?? opts.effectDefault;
   const chime = chimePick ?? opts.chimeDefault;
 
-  const live = useLiveMic();
+  // 종이 최우선 — 끝날 시각(최대 시간·종 20초 전)은 서버가 onair·deadline 으로 알려 준다
+  const [plan, setPlan] = useState<{ endsAt: number; cut: string; bell: string | null; warn: number } | null>(null);
+  const live = useLiveMic({
+    onMessage: (m) => {
+      if (m.type === "onair" || m.type === "deadline") {
+        setPlan((p) => ({
+          endsAt: Date.now() + Number(m.endsIn ?? 0) * 1000,
+          cut: String(m.cut ?? "max"),
+          bell: typeof m.bell === "string" ? m.bell : null,
+          warn: Number(m.warnSeconds ?? p?.warn ?? 30),
+        }));
+      }
+    },
+  });
+  const guard = useBellGuard();
   const rec = useClipRecorder(opts.clip.maxSeconds);
   const [sending, setSending] = useState(false);
 
   const mine = live.state !== "idle";
+  useEffect(() => {
+    if (!mine) setPlan(null);
+  }, [mine]);
   const recording = rec.state === "recording" || rec.state === "starting";
   const busy = mine || recording || sending;
   useEffect(() => onBusyChange(busy), [busy, onBusyChange]);
@@ -83,6 +102,7 @@ export default function MicPanel({
       if (other) return ["disabled", `${other.by ?? "다른 기기"} 방송 중`];
       if (!canOperate) return ["disabled", "부원 이상만 쓸 수 있어요"];
       if (noTarget) return ["disabled", "대상을 골라 주세요"];
+      if (guard.micBlocked) return ["disabled", "마이크 켜기"];
       return ["idle", "마이크 켜기"];
     }
     if (rec.state === "recording") return ["active", "끝내기"];
@@ -116,6 +136,17 @@ export default function MicPanel({
   };
 
   const ready = mode === "clip" && rec.state === "ready" && rec.clip;
+  const clipBellBlocked =
+    !!ready && !sending && guard.playBlocked(rec.clip!.seconds + (chime ? 2 * guard.chimeSeconds : 0));
+  const micBellBlocked = mode === "live" && live.state === "idle" && !other && guard.micBlocked;
+  const bellLine = (clipBellBlocked || micBellBlocked) && guard.bell && (
+    <BellLine text={`${guard.bell.time} 종이 곧 울려요`} countdown={guard.countdown} className="max-w-[420px]" />
+  );
+  const left = plan && live.state === "live" && live.startedAt ? (plan.endsAt - live.startedAt) / 1000 - liveElapsed : null;
+  const bellWarn =
+    plan && plan.cut === "bell" && left !== null && left <= plan.warn
+      ? `${plan.bell ?? ""} 종이 울려서 ${mmss(left)} 뒤에 끝나요`.trim()
+      : null;
 
   return (
     <>
@@ -148,7 +179,7 @@ export default function MicPanel({
               <Chip disabled={sending} active={rec.playing} onClick={rec.togglePlay}>
                 {rec.playing ? "■ 멈추기" : "▶ 들어보기"}
               </Chip>
-              <Chip active={!sending && !noTarget && canOperate} disabled={sending || noTarget || !canOperate || !!other} onClick={sendClip}>
+              <Chip active={!sending && !noTarget && canOperate} disabled={sending || noTarget || !canOperate || !!other || clipBellBlocked} onClick={sendClip}>
                 {sending ? "방송 중" : noTarget ? "대상을 골라 주세요" : "방송하기"}
               </Chip>
             </div>
@@ -162,6 +193,9 @@ export default function MicPanel({
             onPress={press}
           />
         )}
+
+        {bellLine}
+        {bellWarn && <p className="text-center font-pretendard text-[15px] font-semibold text-white/80">{bellWarn}</p>}
 
         {mode === "live" && live.state === "live" && (
           <p className="rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-1 text-center font-pretendard text-[12px] text-amber-100/85">

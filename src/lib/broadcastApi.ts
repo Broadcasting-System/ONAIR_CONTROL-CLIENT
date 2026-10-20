@@ -42,6 +42,22 @@ export interface LiveStatus {
   maxSeconds: number;
 }
 
+/** GET /api/broadcast/bell-guard — 종이 최우선 (서버 docs/bell.md) */
+export interface BellGuardStatus {
+  bell: { time: string; label: string; at: number; jobAt: number } | null;
+  /** 지금 보내면 낼 수 있는 소리 길이(초, 시작·끝 음원 포함). 걸린 종이 없으면 null */
+  playSeconds: number | null;
+  chimeSeconds: number;
+  playBlocked: boolean;
+  micSeconds: number;
+  micMinSeconds: number;
+  micBlocked: boolean;
+  maxSeconds: number;
+  warnSeconds: number;
+  cutLeadSeconds: number;
+  now: number | null;
+}
+
 export const RATE_MIN = 0.8;
 export const RATE_MAX = 1.3;
 export const TTS_MAX_CHARS = 500;
@@ -65,6 +81,7 @@ export const broadcastApi = {
   voices: () => request<TtsVoices>("/tts/voices"),
   micOptions: () => request<MicOptions>("/broadcast/mic/options"),
   liveStatus: () => request<LiveStatus>("/broadcast/live/status"),
+  bellGuard: () => request<BellGuardStatus>("/broadcast/bell-guard"),
 
   /** 목소리 미리 듣기 — 교실 스피커는 켜지 않는다. audio/mpeg 와 기본 음성으로 대신했는지 */
   async preview(voice: string, rate: number, signal?: AbortSignal): Promise<{ blob: Blob; fallback: boolean }> {

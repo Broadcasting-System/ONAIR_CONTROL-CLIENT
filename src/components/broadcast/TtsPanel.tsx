@@ -8,11 +8,13 @@ import Select from "@/components/common/Select";
 import CueRing from "@/components/common/CueRing";
 import { toast } from "@/components/common/Toast";
 import { useTts } from "@/hooks/useTts";
+import { readSeconds, useBellGuard } from "@/hooks/useBellGuard";
 import { useFiles } from "@/hooks/useFiles";
 import {
   broadcastApi, fmtRate, RATE_MAX, RATE_MIN, TTS_MAX_CHARS, voiceCardText, type TtsVoice,
 } from "@/lib/broadcastApi";
 import { cn } from "@/lib/utils";
+import BellLine from "./BellLine";
 import TargetPicker from "./TargetPicker";
 import { Block, Label } from "./parts";
 
@@ -118,6 +120,11 @@ export default function TtsPanel({
 
   const noTarget = targets.length === 0;
   const sendLabel = isSending ? "송출 중..." : noTarget ? "대상을 골라 주세요" : "TTS 송출하기";
+
+  // 종이 최우선 — 다음 종 전에 다 못 읽을 글은 보내지 않는다 (서버가 실제 길이로 다시 본다)
+  const guard = useBellGuard();
+  const sounds = (startSound !== "none" ? 1 : 0) + (endSound !== "none" ? 1 : 0);
+  const bellBlocked = !isSending && guard.playBlocked(readSeconds(text) + sounds * guard.chimeSeconds);
 
   return (
     <>
@@ -243,11 +250,17 @@ export default function TtsPanel({
         <TargetPicker names={names} selected={targets} onChange={setTargets} testSpeaker={testSpeaker} />
       </Block>
 
+      {bellBlocked && guard.bell && (
+        <Block>
+          <BellLine text={`${guard.bell.time} 종이 곧 울려요`} countdown={guard.countdown} />
+        </Block>
+      )}
+
       <NeonButton
         size="lg"
         icon={<Send />}
         onClick={handleSend}
-        disabled={!text.trim() || isSending || !canOperate || noTarget}
+        disabled={!text.trim() || isSending || !canOperate || noTarget || bellBlocked}
         className="w-full"
         data-tour="main.tts-send"
       >

@@ -9,7 +9,7 @@ import { toast } from "@/components/common/Toast";
  */
 export type LiveState = "idle" | "connecting" | "live" | "stopping";
 
-/** 서버가 보낸 글 메시지 (onair·ended·error 말고도 deadline 같은 것) */
+/** 서버가 보낸 글 메시지 (onair·ended·error 말고도 deadline·bellSoon 같은 것) */
 export type LiveMessage = {
   type?: string;
   message?: string;
@@ -40,6 +40,8 @@ const STOP_WAIT_MS = 10_000;
 const MAX_BUFFERED_BYTES = 96_000;
 
 function endedMessage(reason: string, maxSeconds: number, fallback: string): string {
+  // 종이 최우선 — 서버가 종 20초 전에 끝냈다 ('8:50 종이 울릴 시간이라 마이크 방송을 마쳤어요.')
+  if (reason === "bell") return fallback.replace(/\.$/, "") || "종이 울릴 시간이라 끝났어요";
   if (reason === "idle") return "소리가 오지 않아 끝났어요";
   if (reason === "max") return `${Math.round(maxSeconds / 60)}분이 지나 끝났어요`;
   if (reason === "stop") return "마이크 방송을 마쳤어요";

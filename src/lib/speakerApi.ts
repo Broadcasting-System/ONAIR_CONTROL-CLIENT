@@ -17,6 +17,11 @@ export interface CalibrationStatus {
   idleTimeoutSec: number;
   rows: number;
   cols: number;
+  /** 종이 최우선 — 종 때문에 멈출 시각(ms)과 그 종. 걸린 종이 없으면 null */
+  pauseAt?: number | null;
+  bell?: { time: string; label: string; at: number; jobAt: number } | null;
+  /** 마지막으로 저절로 멈춘 까닭 — 다시 시작하면 사라진다. resume: 멈출 때 켜 둔 칸 */
+  ended?: { reason: "bell" | "idle" | string; message: string; bell: string | null; at: number; resume: [number, number] | null } | null;
 }
 
 export interface SpeakerConnection {
