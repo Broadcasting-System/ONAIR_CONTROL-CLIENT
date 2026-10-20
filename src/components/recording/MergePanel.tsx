@@ -17,8 +17,15 @@ const STAGES: { key: MergeJob["stage"]; name: string }[] = [
   { key: "render", name: "합치기" },
 ];
 
-const btn =
-  "inline-flex h-[34px] shrink-0 items-center rounded-[10px] border border-white/12 bg-white/5 px-3 font-mbc text-[13px] text-white/75 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-35 max-md:h-11 max-md:px-3.5";
+/** 작은 줄 버튼 높이 — 폰 44, PC 34 */
+const small = "shrink-0 md:h-[34px]";
+
+/** 받기 — 링크를 눌러 내려받는다 */
+const download = (url: string) => {
+  const link = document.createElement("a");
+  link.href = url;
+  link.click();
+};
 
 type StepState = "done" | "cur" | "todo";
 
@@ -163,9 +170,9 @@ export default function MergePanel({
             <div className="flex items-center gap-2 font-pretendard text-[12.5px] text-white/60">
               <span className="min-w-0 truncate text-[13px] font-semibold text-white">{upload.name}</span>
               <span className="ml-auto shrink-0 font-orbitron text-[11px]">{Math.round(upload.ratio * 100)}%</span>
-              <button type="button" className={btn} onClick={upload.abort}>
+              <NeonButton tone="white" className={small} onClick={upload.abort}>
                 멈추기
-              </button>
+              </NeonButton>
             </div>
             <div className="h-1.5 overflow-hidden rounded bg-white/[0.07]">
               <div className="h-full bg-[#FF3B3B] shadow-[0_0_8px_#FF3B3B]" style={{ width: `${upload.ratio * 100}%` }} />
@@ -176,9 +183,9 @@ export default function MergePanel({
             <p className="min-w-0 flex-1 truncate font-pretendard text-[12.5px] font-medium text-white/45">
               {[video.name, duration(video.duration), gb(video.size), !video.hasAudio ? "소리 없음" : ""].filter(Boolean).join(" · ")}
             </p>
-            <button type="button" className={btn} onClick={() => setVideoId(null)} disabled={running}>
+            <NeonButton tone="white" className={small} onClick={() => setVideoId(null)} disabled={running}>
               바꾸기
-            </button>
+            </NeonButton>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -348,9 +355,9 @@ export default function MergePanel({
             >
               새 창에서 보기
             </a>
-            <a href={recordingApi.jobFileUrl(job.id, true)} className={cn(btn, "h-[42px] px-4 text-[14px] text-white")}>
+            <NeonButton tone="white" onClick={() => download(recordingApi.jobFileUrl(job.id, true))}>
               MP4 받기 · {gb(job.size)}
-            </a>
+            </NeonButton>
           </>
         )}
         <NeonButton
@@ -371,12 +378,12 @@ export default function MergePanel({
               <div key={j.id} className="flex items-center gap-2 font-pretendard text-[13px] text-white/60">
                 <span className="min-w-0 truncate text-white/80">{j.name}</span>
                 <span className="shrink-0 text-xs text-white/35">{when(j.createdAt)}</span>
-                <a href={recordingApi.jobFileUrl(j.id, true)} className={cn(btn, "ml-auto")}>
+                <NeonButton tone="white" className={cn(small, "ml-auto")} onClick={() => download(recordingApi.jobFileUrl(j.id, true))}>
                   받기
-                </a>
-                <button type="button" className={btn} disabled={!canOperate} onClick={() => onRemoveJob(j.id)}>
+                </NeonButton>
+                <NeonButton tone="white" className={small} disabled={!canOperate} onClick={() => onRemoveJob(j.id)}>
                   지우기
-                </button>
+                </NeonButton>
               </div>
             ))}
           </div>

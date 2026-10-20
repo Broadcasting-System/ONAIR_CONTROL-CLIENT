@@ -194,12 +194,12 @@ function NameDialog({
             className={cn(inputCls, "mt-3.5 h-11 md:h-11")}
           />
           <div className="mt-5 flex gap-2">
-            <button type="button" onClick={onClose} className={cn(ghostBtn, "h-11 flex-1 md:h-11")}>
+            <NeonButton tone="white" onClick={onClose} className="h-11 flex-1 md:h-11">
               취소
-            </button>
-            <button type="submit" disabled={busy || !value.trim()} className="h-11 flex-1 rounded-[11px] bg-white font-mbc text-[14px] text-[#0b0b0d] disabled:opacity-40">
+            </NeonButton>
+            <NeonButton type="submit" disabled={busy || !value.trim()} className="h-11 flex-1 md:h-11">
               {confirmText}
-            </button>
+            </NeonButton>
           </div>
         </form>
       </div>
@@ -444,10 +444,9 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
   const bar = (compact: boolean) => (
     <>
       {hasSaved && (
-        <button type="button" data-tour="banner.save" disabled={!loaded || !unsaved} onClick={() => void onSave()} className={cn(ghostBtn, compact && "px-3")}>
-          <Save size={15} />
+        <NeonButton tone="white" data-tour="banner.save" disabled={!loaded || !unsaved} onClick={() => void onSave()} icon={<Save />} className="shrink-0">
           저장
-        </button>
+        </NeonButton>
       )}
       {unsent && (
         <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap font-pretendard text-[12px] font-semibold text-[#ff8080] before:h-1.5 before:w-1.5 before:rounded-full before:bg-[#FF3B3B]">
@@ -497,16 +496,15 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
             <span className="min-w-0 truncate font-pretendard text-[12.5px] font-medium text-white/40">
               {isOn ? [liveName, live.since ? `${hhmm(live.since)}부터` : ""].filter(Boolean).join(" · ") : "꺼짐"}
             </span>
-            <button
-              type="button"
+            <NeonButton
               data-tour="banner.off"
               disabled={!isOn}
               onClick={() => void onClear()}
-              className="ml-auto flex h-10 shrink-0 items-center gap-[7px] rounded-[11px] border border-[#FF3B3B]/45 px-3.5 font-mbc text-[13.5px] text-[#ff8a8a] transition-colors hover:bg-[#FF3B3B]/10 disabled:border-white/10 disabled:text-white/30 disabled:hover:bg-transparent md:h-9"
+              icon={<Power />}
+              className="ml-auto h-10 shrink-0 md:h-9"
             >
-              <Power size={14} />
               <span className="max-sm:hidden">현수막 </span>끄기
-            </button>
+            </NeonButton>
           </div>
           <div
             data-tour="banner.preview"

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { TOUR_CLOSE_EVENT, useTour } from "@/stores/tourStore";
 import { cn } from "@/lib/utils";
+import NeonButton from "@/components/common/NeonButton";
 
 /**
  * CUE 화면 튜토리얼 (시안 A) — 그 화면으로 옮기고, data-tour 이름표 요소만 뚫어 보여 주고, 옆에 설명 카드.
@@ -382,22 +383,13 @@ export default function TourOverlay() {
             </div>
             <div className="flex gap-2">
               {index > 0 && (
-                <button
-                  type="button"
-                  onClick={prev}
-                  className="rounded-[10px] border border-white/15 px-3.5 py-2 font-pretendard text-[14px] text-white/75 transition-colors hover:bg-white/[0.06] hover:text-white"
-                >
+                <NeonButton tone="white" onClick={prev} className="h-9 md:h-9">
                   이전
-                </button>
+                </NeonButton>
               )}
-              <button
-                type="button"
-                onClick={next}
-                autoFocus
-                className="rounded-[10px] bg-white px-[18px] py-2 font-pretendard text-[14px] font-bold text-[#0a0a0c] transition-opacity hover:opacity-90"
-              >
+              <NeonButton onClick={next} autoFocus className="h-9 md:h-9">
                 {last ? "끝" : "다음"}
-              </button>
+              </NeonButton>
             </div>
           </div>
         </div>

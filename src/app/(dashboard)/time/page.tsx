@@ -15,6 +15,7 @@ import SchedulerPanel from "@/components/time/SchedulerPanel";
 import EnergyPanel from "@/components/time/EnergyPanel";
 import PageTabs from "@/components/common/PageTabs";
 import SectionHeader from "@/components/common/SectionHeader";
+import EmptyState from "@/components/common/EmptyState";
 import { toast } from "@/components/common/Toast";
 import { groupLabel, useTimeGroups } from "@/hooks/useTimeGroups";
 import { useFiles } from "@/hooks/useFiles";
@@ -317,8 +318,8 @@ export default function TimePage() {
               {!isMobile && editor ? (
                 editor
               ) : (
-                <div className="flex flex-1 flex-col items-center justify-center gap-1.5 text-center font-pretendard">
-                  <p className="text-[15px] text-white/45">{bells.length ? "고른 시보가 없어요" : "이 요일은 시보가 없어요"}</p>
+                <div className="flex flex-1 flex-col items-center justify-center">
+                  <EmptyState>{bells.length ? "고른 시보가 없어요" : "이 요일은 시보가 없어요"}</EmptyState>
                 </div>
               )}
             </div>

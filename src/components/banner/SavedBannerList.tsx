@@ -4,6 +4,8 @@ import { useState, type ComponentType } from "react";
 import { Popover as P } from "radix-ui";
 import { Columns2, Copy, Image as ImageIcon, MoreHorizontal, Pencil, Plus, SquarePlay, Timer, Trash2, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
+import EmptyState from "@/components/common/EmptyState";
+import NeonButton from "@/components/common/NeonButton";
 import type { BannerScene, SavedBanner } from "@/lib/bannerApi";
 import { BannerDraftRender, LedStrip } from "./BannerRender";
 
@@ -132,18 +134,13 @@ export default function SavedBannerList({ items, selectedId, liveId, onPick, onN
       <div className="mb-2.5 flex items-center gap-2.5 lg:px-0.5">
         <h3 className="font-mbc text-[16px] text-white">저장한 현수막</h3>
         <span className="font-orbitron text-[11px] text-white/40">{items.length}</span>
-        <button
-          type="button"
-          onClick={onNew}
-          className="ml-auto flex h-10 items-center gap-1.5 rounded-[11px] border border-white/[0.12] bg-white/[0.03] px-3 font-mbc text-[13.5px] text-white/75 transition-colors hover:text-white lg:h-8"
-        >
-          <Plus size={14} />
+        <NeonButton tone="white" onClick={onNew} icon={<Plus />} className="ml-auto h-10 md:h-10 lg:h-8">
           새로
-        </button>
+        </NeonButton>
       </div>
 
       {items.length === 0 ? (
-        <p className="rounded-[14px] border border-dashed border-white/10 px-4 py-6 text-center font-pretendard text-[14px] text-white/40">저장한 현수막이 없어요</p>
+        <EmptyState>저장한 현수막이 없어요</EmptyState>
       ) : (
         <div className="no-scrollbar -mx-4 flex snap-x gap-2 overflow-x-auto px-4 md:mx-0 md:px-0 lg:min-h-0 lg:flex-1 lg:snap-none lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden">
           {items.map((it) => {

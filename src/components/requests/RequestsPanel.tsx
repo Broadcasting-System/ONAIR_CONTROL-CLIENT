@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, Check, ChevronLeft, Ellipsis, FileText, Play, X } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import PageTabs from "@/components/common/PageTabs";
 import SectionHeader from "@/components/common/SectionHeader";
@@ -24,7 +25,7 @@ import {
   type Tier,
 } from "@/lib/teacherRequests";
 import Select from "@/components/common/Select";
-import { ChoiceChip, Glass, KindIcon, NewDot, Seg, StatusPill, TierChip, YouTubeLink, ghostBtn, inputCls, redBtn } from "@/components/teacher/parts";
+import { ChoiceChip, Glass, KindIcon, NewDot, Seg, StatusPill, TierChip, YouTubeLink, inputCls } from "@/components/teacher/parts";
 
 /** 요청함 — 선생님(teacher.bssmcast.com) 요청을 수락·거절·완료 (부원 이상), 선생님 목록은 부원 누구나 보고 승인·등급·내보내기는 부장 이상 */
 
@@ -184,10 +185,9 @@ function Detail({ r, onBack }: { r: TeacherRequest; onBack?: () => void }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <Meta rows={rows} />
         {r.kind === "announce" && p.text && (
-          <button type="button" onClick={listen} disabled={playing} className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/15 px-3 py-2 font-pretendard text-[13.5px] font-bold text-white disabled:opacity-40">
-            <Play size={14} />
+          <NeonButton tone="white" onClick={listen} disabled={playing} icon={<Play />} className="h-9 md:h-9">
             {playing ? "듣는 중" : "TTS로 들어 보기"}
-          </button>
+          </NeonButton>
         )}
       </div>
       {r.status === "new" && auto && (
@@ -213,19 +213,18 @@ function Detail({ r, onBack }: { r: TeacherRequest; onBack?: () => void }) {
           <div className="grid grid-cols-2 gap-2 md:flex">
             {r.status === "new" ? (
               <>
-                <button type="button" className={ghostBtn} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.reject(r.id, text))}>
-                  <X size={18} />
+                <NeonButton tone="white" size="lg" icon={<X />} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.reject(r.id, text))}>
                   거절
-                </button>
+                </NeonButton>
                 <NeonButton size="lg" icon={<Check />} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.accept(r.id, text))}>
                   수락
                 </NeonButton>
               </>
             ) : (
               <>
-                <button type="button" className={ghostBtn} disabled={act.isPending || !text.trim()} onClick={() => act.mutate(() => requestsApi.comment(r.id, text))}>
+                <NeonButton tone="white" size="lg" disabled={act.isPending || !text.trim()} onClick={() => act.mutate(() => requestsApi.comment(r.id, text))}>
                   보내기
-                </button>
+                </NeonButton>
                 <NeonButton size="lg" icon={<Check />} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.done(r.id, text))}>
                   완료
                 </NeonButton>
@@ -266,7 +265,11 @@ function RequestsView() {
       {filters}
       {rows.length === 0 ? (
         <Glass className="flex flex-1 items-center justify-center p-10">
-          <p className="font-pretendard text-[15px] text-white/40">{q.isLoading ? "불러오는 중…" : filter === "new" ? "새 요청이 없어요" : "없어요"}</p>
+          {q.isLoading ? (
+            <p className="font-pretendard text-[15px] text-white/40">불러오는 중…</p>
+          ) : (
+            <EmptyState className="py-0">{filter === "new" ? "새 요청이 없어요" : "요청이 없어요"}</EmptyState>
+          )}
         </Glass>
       ) : (
         <div className="grid min-h-0 flex-1 gap-5 md:grid-cols-[430px_minmax(0,1fr)]">
@@ -329,12 +332,12 @@ function TeachersView({ canDecide }: { canDecide: boolean }) {
                 options={(["general", "lead", "admin"] as Tier[]).map((v) => ({ value: v, label: TIER_LABEL[v] }))}
               />
               <div className="grid grid-cols-2 gap-2 md:flex">
-                <button type="button" className={cn(ghostBtn, "h-11 text-[15px]")} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.revoke(t.id))}>
+                <NeonButton tone="white" className="h-11 md:h-11" disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.revoke(t.id))}>
                   거절
-                </button>
-                <button type="button" className={cn(redBtn, "h-11 text-[15px]")} disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.approve(t.id, tiers[t.id] ?? "general"))}>
+                </NeonButton>
+                <NeonButton className="h-11 md:h-11" disabled={act.isPending} onClick={() => act.mutate(() => requestsApi.approve(t.id, tiers[t.id] ?? "general"))}>
                   승인
-                </button>
+                </NeonButton>
               </div>
             </>
           )}
@@ -343,7 +346,11 @@ function TeachersView({ canDecide }: { canDecide: boolean }) {
       <Glass className="flex-1 p-5 md:px-6">
         <h2 className="mb-2 font-mbc text-[24px] text-white md:text-[26px]">선생님 {approved.length}</h2>
         {approved.length === 0 ? (
-          <p className="py-8 text-center font-pretendard text-[15px] text-white/40">{q.isLoading ? "불러오는 중…" : "승인한 선생님이 없어요"}</p>
+          q.isLoading ? (
+            <p className="py-8 text-center font-pretendard text-[15px] text-white/40">불러오는 중…</p>
+          ) : (
+            <EmptyState>승인한 선생님이 없어요</EmptyState>
+          )
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] border-collapse font-pretendard text-[15px]">

@@ -6,6 +6,7 @@ import { SpeakerFloorMap } from "@/components/speaker/SpeakerFloorMap";
 import { FLOOR_KEYS } from "@/lib/speakerCoverage";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { SpeakerZone } from "@/types/speaker";
+import NeonButton from "@/components/common/NeonButton";
 import Portal from "@/components/common/Portal";
 import { Chip } from "@/components/mobile/ui";
 import { useSpeakerStore } from "@/stores/speakerStore";
@@ -194,20 +195,12 @@ export default function TargetPicker({
               </div>
               )}
               <div className="flex gap-2.5 border-t border-white/[0.08] px-5 py-4 md:px-6">
-                <button
-                  type="button"
-                  onClick={() => onChange([])}
-                  className="h-12 flex-1 rounded-xl border border-white/10 bg-white/[0.06] font-pretendard text-[15px] font-semibold text-white/80 hover:bg-white/10"
-                >
+                <NeonButton tone="white" onClick={() => onChange([])} className="h-12 flex-1 md:h-12">
                   모두 빼기
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSheet(false)}
-                  className="h-12 flex-1 rounded-xl bg-white font-pretendard text-[15px] font-semibold text-black hover:bg-white/90"
-                >
+                </NeonButton>
+                <NeonButton onClick={() => setSheet(false)} className="h-12 flex-1 md:h-12">
                   완료
-                </button>
+                </NeonButton>
               </div>
             </div>
           </div>

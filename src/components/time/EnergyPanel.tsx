@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import NeonButton from "@/components/common/NeonButton";
 import { TimePicker } from "@/components/common/DateTimePicker";
 import { useEnergy, type EnergyConfig, type EnergyDay, type EnergyRun } from "@/hooks/useEnergy";
 import { cn } from "@/lib/utils";
@@ -176,23 +177,13 @@ export default function EnergyPanel() {
 
         <div className="flex justify-end gap-3">
           {dirty && (
-            <button
-              type="button"
-              onClick={() => setForm(toConfig(state))}
-              className="h-11 rounded-xl px-4 font-mbc text-sm text-white/45 hover:bg-white/5 hover:text-white"
-            >
+            <NeonButton tone="white" onClick={() => setForm(toConfig(state))}>
               되돌리기
-            </button>
+            </NeonButton>
           )}
-          <button
-            type="button"
-            data-tour="energy.save"
-            disabled={!canSave || isSaving}
-            onClick={() => save(toConfig(form))}
-            className="h-11 rounded-xl border border-white/15 bg-white/10 px-6 font-mbc text-white transition-colors hover:bg-white/15 disabled:opacity-40"
-          >
+          <NeonButton data-tour="energy.save" disabled={!canSave || isSaving} onClick={() => save(toConfig(form))}>
             {isSaving ? "저장 중…" : "저장"}
-          </button>
+          </NeonButton>
         </div>
       </section>
 
@@ -203,15 +194,9 @@ export default function EnergyPanel() {
             {state.lastRun ? `${fmtDate(state.lastRun.at)} · ${describeRun(state.lastRun)}` : "없음"}
           </p>
         </div>
-        <button
-          type="button"
-          data-tour="energy.run-now"
-          onClick={() => setConfirm(true)}
-          disabled={isRunning}
-          className="h-11 shrink-0 rounded-xl border border-[#FF3B3B]/45 bg-[#FF3B3B]/10 px-5 font-mbc text-sm text-[#ff8a8a] transition-colors hover:bg-[#FF3B3B]/20 disabled:opacity-40"
-        >
+        <NeonButton data-tour="energy.run-now" onClick={() => setConfirm(true)} disabled={isRunning} className="shrink-0">
           {isRunning ? "끄는 중…" : "지금 모두 끄기"}
-        </button>
+        </NeonButton>
       </section>
 
       <ConfirmModal

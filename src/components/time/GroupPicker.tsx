@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Popover as P } from "radix-ui";
 import { Pencil, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import NeonButton from "@/components/common/NeonButton";
 
 export interface GroupPickerItem {
   id: number;
@@ -161,13 +162,9 @@ function RenameButton({ group, onRename }: { group: GroupPickerItem; onRename: G
               placeholder={`GROUP ${group.id}`}
               className="h-11 rounded-xl border border-white/10 bg-[#0c0d0f] px-3.5 font-pretendard text-[15px] text-white outline-none placeholder:text-white/30 focus:border-white/30"
             />
-            <button
-              type="submit"
-              disabled={busy}
-              className="h-10 rounded-xl bg-white font-mbc text-[14px] text-[#0b0b0d] transition-opacity disabled:opacity-50"
-            >
+            <NeonButton type="submit" disabled={busy} className="h-10 md:h-10">
               저장
-            </button>
+            </NeonButton>
           </form>
         </P.Content>
       </P.Portal>

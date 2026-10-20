@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getApiBase } from "@/lib/apiBase";
 import { cn } from "@/lib/utils";
+import EmptyState from "@/components/common/EmptyState";
 import { TEST_SPEAKER_LABEL, isTestSpeaker } from "@/constants/testSpeaker";
 
 interface SchedulerJob {
@@ -85,7 +86,7 @@ export default function SchedulerPanel() {
         {/* 폰 — 표 대신 한 줄씩 */}
         <div className="divide-y divide-white/[0.06] font-pretendard md:hidden">
           {jobs.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-white/30">시보가 없어요</p>
+            <EmptyState>시보가 없어요</EmptyState>
           ) : (
             jobs.map((j) => (
               <div key={j.id} className="flex items-start gap-3 px-4 py-3">
@@ -124,8 +125,8 @@ export default function SchedulerPanel() {
           <tbody>
             {jobs.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-white/30">
-                  시보가 없어요
+                <td colSpan={5}>
+                  <EmptyState>시보가 없어요</EmptyState>
                 </td>
               </tr>
             ) : (

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { posToDb } from "@/components/common/LedMeter";
+import NeonButton from "@/components/common/NeonButton";
 import SectionHeader from "@/components/common/SectionHeader";
 import { Panel } from "@/components/hall/HallControls";
 import AvDeck from "@/components/recording/AvDeck";
@@ -16,9 +17,6 @@ import { useMixer } from "@/hooks/useMixer";
 import { usePersistentState } from "@/hooks/usePersistentState";
 import { useMerge, useRecording, useRecordings } from "@/hooks/useRecording";
 import { cn } from "@/lib/utils";
-
-const topBtn =
-  "flex h-9 items-center rounded-xl border border-white/10 bg-white/[0.05] px-3.5 font-mbc text-sm text-white/70 hover:bg-white/10 hover:text-white max-md:h-11";
 
 const card =
   "rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:px-[18px] md:py-4 md:shadow-2xl";
@@ -125,9 +123,15 @@ export default function RecordingPage() {
             {statusLabel}
           </button>
           {isAdmin && (
-            <button data-tour="recording.settings-toggle" type="button" onClick={() => setShowSettings((v) => !v)} className={topBtn}>
+            <NeonButton
+              tone="white"
+              data-tour="recording.settings-toggle"
+              aria-expanded={showSettings}
+              onClick={() => setShowSettings((v) => !v)}
+              className="h-11 md:h-9"
+            >
               {showSettings ? "설정 닫기" : "채널 설정"}
-            </button>
+            </NeonButton>
           )}
           {showInfo && recorder && (
             <div className="absolute right-0 top-11 z-40 w-[300px] rounded-2xl border border-white/10 bg-[#161618] p-4 shadow-2xl max-md:top-12">

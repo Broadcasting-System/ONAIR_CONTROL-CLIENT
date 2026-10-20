@@ -3,6 +3,8 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { ChevronDown, Minus, Plus, Shuffle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import EmptyState from "@/components/common/EmptyState";
+import NeonButton from "@/components/common/NeonButton";
 import { DurationWheel } from "@/components/common/DateTimePicker";
 import { UploadedFile } from "@/types/file";
 import {
@@ -24,9 +26,6 @@ const chipCls =
   "flex h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[9px] border px-3 font-mbc text-[13.5px] transition-colors md:h-[34px]";
 const chipOn = "border-white bg-white text-[#0b0b0d]";
 const chipOff = "border-white/[0.12] text-white/60 hover:text-white";
-const ghostSm =
-  "flex h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[11px] border border-white/[0.12] bg-white/[0.03] px-3 font-mbc text-[13.5px] text-white/75 transition-colors hover:text-white md:h-9";
-
 export function Label({ children, className }: { children: ReactNode; className?: string }) {
   return <span className={cn("font-mbc text-[14px] text-white/55", className)}>{children}</span>;
 }
@@ -249,13 +248,12 @@ export function ScoreboardEditor({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span className="font-mbc text-[15px] text-white">점수</span>
           <span className="ml-auto" />
-          <button type="button" data-tour="banner.court-change" onClick={() => onScore(courtChange)} className={ghostSm}>
-            <Shuffle size={14} />
+          <NeonButton tone="white" data-tour="banner.court-change" onClick={() => onScore(courtChange)} icon={<Shuffle />} className="h-11 shrink-0 md:h-9">
             코트 체인지
-          </button>
-          <button type="button" data-tour="banner.score-reset" onClick={() => onScore(resetScore)} className={ghostSm}>
+          </NeonButton>
+          <NeonButton tone="white" data-tour="banner.score-reset" onClick={() => onScore(resetScore)} className="h-11 shrink-0 md:h-9">
             점수 초기화
-          </button>
+          </NeonButton>
         </div>
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_32px_minmax(0,1fr)] md:items-center">
           <TeamCard name={value.teamA.name ?? ""} side="왼쪽" team={value.teamA} showSet={value.showSet} onBump={(f, d) => onScore(bump("teamA", f, d))} />
@@ -352,7 +350,7 @@ const DEFAULT_OVERLAY: BannerOverlay = {
 
 function ImagePicker({ files, activeUrl, onPick, empty }: { files: UploadedFile[]; activeUrl?: string; onPick: (url: string) => void; empty: string }) {
   if (files.length === 0) {
-    return <p className="rounded-xl border border-dashed border-white/10 px-4 py-5 text-center font-pretendard text-[14px] text-white/40">{empty}</p>;
+    return <EmptyState size="sm">{empty}</EmptyState>;
   }
   return (
     <div className="grid max-h-[208px] grid-cols-3 gap-2 overflow-auto rounded-xl border border-white/[0.07] bg-black/30 p-2 sm:grid-cols-4 lg:grid-cols-6">

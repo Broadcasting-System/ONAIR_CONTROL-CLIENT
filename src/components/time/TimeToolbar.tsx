@@ -23,7 +23,6 @@ export function TimeConfirm({
   title,
   message,
   confirmText,
-  danger,
   onClose,
   onConfirm,
 }: {
@@ -31,6 +30,7 @@ export function TimeConfirm({
   title: string;
   message: ReactNode;
   confirmText: string;
+  /** 지우는 확인 (지금은 모양이 같다) */
   danger?: boolean;
   onClose: () => void;
   onConfirm: () => void;
@@ -44,23 +44,19 @@ export function TimeConfirm({
           <h2 className="font-mbc text-[19px] text-white">{title}</h2>
           <div className="mt-2.5 whitespace-pre-line font-pretendard text-[14.5px] leading-relaxed text-white/70">{message}</div>
           <div className="mt-5 flex gap-2">
-            <button type="button" onClick={onClose} className={cn(ghostBtn, "h-11 flex-1 md:h-11")}>
+            <NeonButton tone="white" onClick={onClose} className="h-11 flex-1 md:h-11">
               취소
-            </button>
-            <button
-              type="button"
+            </NeonButton>
+            <NeonButton
               autoFocus
               onClick={() => {
                 onConfirm();
                 onClose();
               }}
-              className={cn(
-                "h-11 flex-1 rounded-[11px] font-mbc text-[14px]",
-                danger ? "border border-[#FF3B3B]/60 bg-[#FF3B3B]/15 text-[#ff8a8a]" : "bg-white text-[#0b0b0d]",
-              )}
+              className="h-11 flex-1 md:h-11"
             >
               {confirmText}
-            </button>
+            </NeonButton>
           </div>
         </div>
       </div>
@@ -135,14 +131,13 @@ export function CopyDaysButton({
             {lost > 0 && (
               <p className="mt-3 font-pretendard text-[13px] text-[#ff8a8a]">{names}에 있던 시보 {lost}개는 지워져요</p>
             )}
-            <button
-              type="button"
+            <NeonButton
               disabled={targets.length === 0}
               onClick={() => (lost > 0 ? setConfirm(true) : run())}
-              className="mt-3 h-10 w-full rounded-[11px] bg-white font-mbc text-[14px] text-[#0b0b0d] disabled:opacity-35"
+              className="mt-3 h-10 w-full md:h-10"
             >
               {targets.length ? `${names}에 복사` : "요일을 골라요"}
-            </button>
+            </NeonButton>
           </P.Content>
         </P.Portal>
       </P.Root>
@@ -235,9 +230,9 @@ export function ApplyButtons({
     );
   return (
     <div className={cn("flex gap-2", className)}>
-      <button type="button" disabled={busy || count === 0} onClick={() => onApply(false)} className={ghostBtn}>
+      <NeonButton tone="white" disabled={busy || count === 0} onClick={() => onApply(false)} className="shrink-0">
         저장만
-      </button>
+      </NeonButton>
       <NeonButton data-tour="time.send" disabled={busy} onClick={() => onApply(true)} icon={<Send />} count={count} className="min-w-0 max-md:flex-1">
         이 시간표로 울리기
       </NeonButton>

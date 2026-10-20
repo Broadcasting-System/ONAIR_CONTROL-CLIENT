@@ -20,6 +20,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import SectionHeader from "@/components/common/SectionHeader";
 import Select from "@/components/common/Select";
@@ -500,15 +501,13 @@ function Detail({
         </div>
       )}
       <div className="grid grid-cols-2 gap-2">
-        <button type="button" disabled={!canOperate} onClick={onRename} data-tour="files.menu.rename" className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-white/12 font-mbc text-[13.5px] text-white/80 hover:bg-white/5 disabled:opacity-40">
-          <Pencil size={14} />
+        <NeonButton tone="white" disabled={!canOperate} onClick={onRename} data-tour="files.menu.rename" icon={<Pencil />} className="h-10 md:h-10">
           이름 바꾸기
-        </button>
+        </NeonButton>
         {canDelete && (
-          <button type="button" onClick={onDelete} data-tour="files.menu.delete" className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-[#FF3B3B]/35 font-mbc text-[13.5px] text-[#ff8a8a] hover:bg-[#FF3B3B]/10">
-            <Trash2 size={14} />
+          <NeonButton tone="white" onClick={onDelete} data-tour="files.menu.delete" icon={<Trash2 />} className="h-10 md:h-10">
             지우기
-          </button>
+          </NeonButton>
         )}
       </div>
     </div>
@@ -673,7 +672,7 @@ export default function FileLibrary() {
       <div className="grid min-h-0 flex-1 gap-5 md:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-h-0 overflow-auto pb-6 [scrollbar-width:thin]">
           {shown.length === 0 ? (
-            <p className="py-20 text-center font-pretendard text-[15px] text-white/35">{all.length ? "찾는 파일이 없어요" : "파일이 없어요"}</p>
+            <EmptyState className="py-20">{all.length ? "찾는 파일이 없어요" : "파일이 없어요"}</EmptyState>
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
               {shown.map((f) => (

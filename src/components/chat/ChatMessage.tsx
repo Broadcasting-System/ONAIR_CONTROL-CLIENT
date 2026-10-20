@@ -3,6 +3,7 @@
 import { ArrowUpRight, Check, Minus, Play, X } from "lucide-react";
 import ActionCard from "@/components/chat/ActionCard";
 import CueRing from "@/components/common/CueRing";
+import NeonButton from "@/components/common/NeonButton";
 import ChatMarkdown from "@/components/chat/ChatMarkdown";
 import { KindIcon } from "@/components/chat/Composer";
 import type { LiveMessage } from "@/hooks/useChatConversation";
@@ -51,15 +52,9 @@ function UploadThumbs({ uploads }: { uploads: ChatUpload[] }) {
 function TourButton({ tour }: { tour: import("@/types/chat").ChatTour }) {
   const start = useTour((s) => s.start);
   return (
-    <button
-      type="button"
-      onClick={() => start(tour)}
-      className="flex h-10 w-fit items-center gap-2 rounded-lg border border-white/20 bg-white/[0.07] px-3.5 font-pretendard text-[14px] font-semibold text-white transition-colors hover:bg-white/[0.12]"
-    >
-      <Play size={14} className="fill-current" />
-      화면에서 보기
-      <span className="font-normal text-white/50">{tour.steps.length}단계</span>
-    </button>
+    <NeonButton tone="white" onClick={() => start(tour)} icon={<Play className="fill-current" />} className="h-10 w-fit md:h-10">
+      화면에서 보기 <span className="font-normal text-white/50">{tour.steps.length}단계</span>
+    </NeonButton>
   );
 }
 

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Loader2, Music, Pencil, Play, Square } from "lucide-react";
 import { Bell, AudioFile, DayType } from "@/types/time";
+import NeonButton from "@/components/common/NeonButton";
 import { cn } from "@/lib/utils";
 import Select from "@/components/common/Select";
 import { TimePicker } from "@/components/common/DateTimePicker";
@@ -206,23 +207,13 @@ export default function BellEditor({ bell, sections, testSpeaker, audioFiles, in
 
       <div className="flex gap-2.5">
         {bell && onDelete && (
-          <button
-            type="button"
-            data-tour="time.editor.delete"
-            onClick={onDelete}
-            className="h-12 w-[110px] shrink-0 rounded-xl border border-[#FF3B3B]/45 font-mbc text-[15px] text-[#ff7b7b] transition-colors hover:bg-[#FF3B3B]/10 md:h-11"
-          >
+          <NeonButton tone="white" data-tour="time.editor.delete" onClick={onDelete} className="h-12 w-[110px] shrink-0 md:h-11">
             지우기
-          </button>
+          </NeonButton>
         )}
-        <button
-          type="button"
-          data-tour="time.editor.save"
-          onClick={handleSave}
-          className="h-12 flex-1 rounded-xl bg-white font-mbc text-[15px] text-[#0b0b0d] transition-opacity hover:opacity-90 md:h-11"
-        >
+        <NeonButton data-tour="time.editor.save" onClick={handleSave} className="h-12 flex-1 md:h-11">
           {bell ? "저장" : "추가"}
-        </button>
+        </NeonButton>
       </div>
     </div>
   );

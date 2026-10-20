@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Chip } from "@/components/mobile/ui";
+import NeonButton from "@/components/common/NeonButton";
 import { toast } from "@/components/common/Toast";
 import { useLiveMic } from "@/hooks/useLiveMic";
 import { mmss, useBellGuard } from "@/hooks/useBellGuard";
@@ -173,15 +174,15 @@ export default function MicPanel({
               <span className="font-orbitron tabular-nums">{fmtClock(rec.clip!.seconds).replace(/^0/, "")}</span> 녹음됨
             </p>
             <div className="flex flex-wrap justify-center gap-2" data-tour="main.mic.button">
-              <Chip disabled={sending} onClick={rec.discard}>
+              <NeonButton tone="white" disabled={sending} onClick={rec.discard}>
                 다시
-              </Chip>
-              <Chip disabled={sending} active={rec.playing} onClick={rec.togglePlay}>
+              </NeonButton>
+              <NeonButton tone="white" disabled={sending} aria-pressed={rec.playing} onClick={rec.togglePlay}>
                 {rec.playing ? "■ 멈추기" : "▶ 들어보기"}
-              </Chip>
-              <Chip active={!sending && !noTarget && canOperate} disabled={sending || noTarget || !canOperate || !!other || clipBellBlocked} onClick={sendClip}>
+              </NeonButton>
+              <NeonButton disabled={sending || noTarget || !canOperate || !!other || clipBellBlocked} onClick={sendClip}>
                 {sending ? "방송 중" : noTarget ? "대상을 골라 주세요" : "방송하기"}
-              </Chip>
+              </NeonButton>
             </div>
           </div>
         ) : (

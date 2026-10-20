@@ -4,7 +4,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Film, Mic, MoreHorizontal, Pause, Pencil, Play, RotateCcw, Trash2, Video, X } from "lucide-react";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import EmptyState from "@/components/common/EmptyState";
 import InputModal from "@/components/common/InputModal";
+import NeonButton from "@/components/common/NeonButton";
 import Portal from "@/components/common/Portal";
 import { duration, gb, when } from "@/components/recording/format";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -260,9 +262,6 @@ function Player({ item, onClose }: { item: AvItem; onClose: () => void }) {
   );
 }
 
-const sheetBtn =
-  "flex h-12 items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] font-mbc text-[14px] text-white disabled:opacity-35";
-
 /** 폰 — 카드를 누르면 아래에서 올라오는 판 (하단 탭 위) */
 function Sheet({
   item,
@@ -298,14 +297,27 @@ function Sheet({
           <p className="mt-2 font-pretendard text-[12.5px] text-[#ff8a8a]">{item.error}</p>
         )}
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <button type="button" className={sheetBtn} disabled={!playable} onClick={onPlay}>
-            {playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
+          <NeonButton
+            disabled={!playable}
+            onClick={onPlay}
+            icon={playing ? <Pause fill="currentColor" /> : <Play fill="currentColor" />}
+            className="h-12 md:h-12"
+          >
             {playing ? "멈추기" : item.kind === "audio" ? "듣기" : "보기"}
-          </button>
-          <a href={playable ? downloadUrl(item) : undefined} aria-disabled={!playable} className={cn(sheetBtn, !playable && "pointer-events-none opacity-35")}>
-            <Download size={15} />
+          </NeonButton>
+          <NeonButton
+            tone="white"
+            disabled={!playable}
+            onClick={() => {
+              const link = document.createElement("a");
+              link.href = downloadUrl(item);
+              link.click();
+            }}
+            icon={<Download />}
+            className="h-12 md:h-12"
+          >
             받기
-          </a>
+          </NeonButton>
         </div>
         <div className="mt-2 flex flex-col">
           <MoreItems item={item} a={a} done={onClose} />
@@ -414,7 +426,7 @@ export default function AvList({
       </div>
 
       {shown.length === 0 ? (
-        <p className="py-10 text-center font-pretendard text-sm text-white/40">{items.length ? "여기엔 없어요" : "녹음·녹화가 없어요"}</p>
+        <EmptyState>{!items.length ? "녹음·녹화가 없어요" : filter === "audio" ? "소리 녹음이 없어요" : "영상이 없어요"}</EmptyState>
       ) : (
         <div className="grid grid-cols-2 gap-2.5 md:gap-3 lg:grid-cols-3">
           {shown.map((it, idx) => {

@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Popover as P } from "radix-ui";
 import { Check, ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
+import NeonButton from "@/components/common/NeonButton";
 import SectionHeader from "@/components/common/SectionHeader";
 import { DatePicker } from "@/components/common/DateTimePicker";
 import { ghostBtn } from "@/components/time/TimeToolbar";
@@ -283,7 +285,7 @@ export default function LogsView() {
             {logs.isLoading || !now ? (
               <p className="px-5 py-16 text-center font-pretendard text-[15px] text-white/35">불러오는 중…</p>
             ) : visible.length === 0 ? (
-              <p className="px-5 py-16 text-center font-pretendard text-[15px] text-white/35">기록이 없어요</p>
+              <EmptyState>기록이 없어요</EmptyState>
             ) : (
               visible.map((r, i) => {
                 const k = rowKey(r);
@@ -407,7 +409,7 @@ function Filters({
           )}
         </div>
         {people.length === 0 ? (
-          <p className="px-2 py-2 font-pretendard text-[13px] text-white/30">기록이 없어요</p>
+          <EmptyState size="sm">기록이 없어요</EmptyState>
         ) : (
           people.map(({ person: p, n }) => {
             const on = person === p.key;
@@ -504,12 +506,12 @@ function Sheet({ children, onClose, onReset, count }: { children: ReactNode; onC
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-2">{children}</div>
         <div className="flex shrink-0 gap-2 border-t border-white/[0.06] px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3">
-          <button type="button" disabled={!onReset} onClick={onReset} className={cn(ghostBtn, "h-11 flex-1 md:h-11")}>
+          <NeonButton tone="white" disabled={!onReset} onClick={onReset} className="h-11 flex-1 md:h-11">
             초기화
-          </button>
-          <button type="button" onClick={onClose} className="h-11 flex-[2] rounded-[11px] bg-white font-mbc text-[14px] text-[#0b0b0d]">
+          </NeonButton>
+          <NeonButton onClick={onClose} className="h-11 flex-[2] md:h-11">
             {count}건 보기
-          </button>
+          </NeonButton>
         </div>
       </div>
     </div>,

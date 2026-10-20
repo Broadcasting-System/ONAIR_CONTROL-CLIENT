@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { OnSwitch } from "@/components/hall/AutoAudio";
 import { chatApi } from "@/lib/chatApi";
 import { cn } from "@/lib/utils";
+import NeonButton from "@/components/common/NeonButton";
 import Select from "@/components/common/Select";
 import type { ChatSettingsUpdate, ChatStatus, ChatTestResult } from "@/types/chat";
 
@@ -120,19 +121,14 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
             className={field}
           />
           {s.keySet && (
-            <button
-              type="button"
+            <NeonButton
+              tone={clearArmed ? "red" : "white"}
               disabled={save.isPending}
               onClick={() => (clearArmed ? save.mutate({ apiKey: null }) : setClearArmed(true))}
-              className={cn(
-                "h-10 shrink-0 rounded-lg border px-3 font-pretendard text-[13px] transition-colors disabled:opacity-50",
-                clearArmed
-                  ? "border-[#FF3B3B] bg-[#FF3B3B] text-white"
-                  : "border-white/10 text-white/60 hover:bg-white/[0.06] hover:text-white",
-              )}
+              className="h-10 shrink-0 md:h-10"
             >
               {clearArmed ? "정말 지우기" : "키 지우기"}
-            </button>
+            </NeonButton>
           )}
         </div>
       </Row>
@@ -181,27 +177,26 @@ export default function ChatSettingsForm({ status }: { status?: ChatStatus }) {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
+        <NeonButton
           onClick={submit}
           disabled={save.isPending}
-          className="flex h-10 items-center gap-1.5 rounded-lg border border-white/20 bg-white px-4 font-pretendard text-[14px] font-semibold text-black transition-colors enabled:hover:bg-white/85 disabled:opacity-50"
+          icon={save.isPending ? <Loader2 className="animate-spin" /> : undefined}
+          className="h-10 md:h-10"
         >
-          {save.isPending && <Loader2 size={14} className="animate-spin" />}
           저장
-        </button>
-        <button
-          type="button"
+        </NeonButton>
+        <NeonButton
+          tone="white"
           onClick={() => {
             setTest(null);
             runTest.mutate();
           }}
           disabled={runTest.isPending || !s.keySet}
-          className="flex h-10 items-center gap-1.5 rounded-lg border border-white/10 px-4 font-pretendard text-[14px] text-white/75 transition-colors enabled:hover:bg-white/[0.06] enabled:hover:text-white disabled:opacity-40"
+          icon={runTest.isPending ? <Loader2 className="animate-spin" /> : undefined}
+          className="h-10 md:h-10"
         >
-          {runTest.isPending && <Loader2 size={14} className="animate-spin" />}
           연결 확인
-        </button>
+        </NeonButton>
       </div>
 
       {msg && (

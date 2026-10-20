@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Upload } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import SectionHeader from "@/components/common/SectionHeader";
 import FileCard from "./FileCard";
@@ -47,9 +48,7 @@ export default function FileUploadSection({
 
         <div className="flex-1 w-full">
           {files.length === 0 ? (
-            <div className="flex items-center justify-center h-full min-h-[72px] text-white/40 text-sm md:min-h-[120px]">
-              파일이 없어요
-            </div>
+            <EmptyState>올린 파일이 없어요</EmptyState>
           ) : displayType === "grid" ? (
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
               {files.map((file) => (

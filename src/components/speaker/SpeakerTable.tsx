@@ -9,6 +9,7 @@ import {
 import { SPEAKER_COVERAGE, coverageTag } from "@/lib/speakerCoverage";
 import { SpeakerZone } from "@/types/speaker";
 import { cn } from "@/lib/utils";
+import EmptyState from "@/components/common/EmptyState";
 
 const DEAD = new Set(DEAD_SPEAKERS);
 
@@ -106,9 +107,7 @@ export function SpeakerTable({
         className="min-h-0 flex-1 overflow-y-auto md:max-h-[clamp(320px,calc(100vh_-_420px),760px)] md:pr-1"
       >
         {shown === 0 ? (
-          <p className="py-8 text-center font-pretendard text-[13px] text-white/30">
-            {onlyOn ? "켜진 스피커가 없어요" : "찾는 스피커가 없어요"}
-          </p>
+          <EmptyState>{onlyOn ? "켜진 스피커가 없어요" : "찾는 스피커가 없어요"}</EmptyState>
         ) : (
           <div className="flex flex-col gap-3">
             {groups.map((g) => {

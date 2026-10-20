@@ -7,6 +7,8 @@ import { ChevronLeft, History, ImagePlus, Loader2, Settings, SquarePen, Trash2, 
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatSettingsForm from "@/components/chat/ChatSettingsForm";
 import TourOverlay from "@/components/tour/TourOverlay";
+import EmptyState from "@/components/common/EmptyState";
+import NeonButton from "@/components/common/NeonButton";
 import Composer, { type ComposerHandle } from "@/components/chat/Composer";
 import { suggestionsFor, type Suggestion } from "@/components/chat/suggestions";
 import { useChatConversation } from "@/hooks/useChatConversation";
@@ -122,7 +124,7 @@ function HistoryView({
     );
   const items = list.data ?? [];
   if (!items.length)
-    return <p className="px-5 py-6 font-pretendard text-[14px] text-white/50">대화가 없어요</p>;
+    return <EmptyState>대화가 없어요</EmptyState>;
 
   return (
     <ul className="flex flex-col gap-1 px-3 py-3">
@@ -164,7 +166,7 @@ function HistoryView({
   );
 }
 
-function EmptyState({ suggestions, onPick }: { suggestions: Suggestion[]; onPick: (s: Suggestion) => void }) {
+function Welcome({ suggestions, onPick }: { suggestions: Suggestion[]; onPick: (s: Suggestion) => void }) {
   return (
     <div className="flex flex-col gap-5 px-5 py-6">
       <p className="font-mbc text-2xl text-white">무엇을 도와드릴까요?</p>
@@ -414,13 +416,9 @@ function ChatPanelBody() {
         ) : !st ? (
           <div className="flex flex-col items-start gap-3 px-5 py-6">
             <p className="font-pretendard text-[16px] font-semibold text-white">CUE에 연결하지 못했어요</p>
-            <button
-              type="button"
-              onClick={() => status.refetch()}
-              className="h-9 rounded-lg border border-white/15 px-4 font-pretendard text-[14px] text-white/80 hover:bg-white/[0.06] hover:text-white"
-            >
+            <NeonButton tone="white" onClick={() => status.refetch()} className="h-9 md:h-9">
               다시 시도
-            </button>
+            </NeonButton>
           </div>
         ) : !enabled ? (
           <DisabledState status={st} />
@@ -429,7 +427,7 @@ function ChatPanelBody() {
             <Loader2 size={15} className="animate-spin" /> 대화 불러오는 중…
           </p>
         ) : !convo.messages.length ? (
-          <EmptyState suggestions={suggestions} onPick={pick} />
+          <Welcome suggestions={suggestions} onPick={pick} />
         ) : (
           <div className="flex flex-col gap-5 px-5 py-5">
             {convo.messages.map((m) => (

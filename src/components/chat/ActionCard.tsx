@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Check, Loader2, Plus, X } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
+import NeonButton from "@/components/common/NeonButton";
 import { chatApi } from "@/lib/chatApi";
 import { cn } from "@/lib/utils";
 import type { ChatAction, TablePreview } from "@/types/chat";
@@ -98,8 +100,8 @@ function TableView({
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={cols.length + (editing ? 1 : 0)} className="px-2.5 py-3 text-center text-white/40">
-                  줄이 없어요
+                <td colSpan={cols.length + (editing ? 1 : 0)}>
+                  <EmptyState size="sm" className="py-3">줄이 없어요</EmptyState>
                 </td>
               </tr>
             )}
@@ -253,30 +255,17 @@ export default function ActionCard({
 
       {(pending || status === "running") && (
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
+          <NeonButton
             onClick={confirm}
             disabled={!!busy || status === "running"}
-            className={cn(
-              "flex h-9 items-center gap-1.5 rounded-lg border px-4 font-pretendard text-[14px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-              danger
-                ? armed
-                  ? "border-[#FF3B3B] bg-[#FF3B3B] text-white"
-                  : "border-[#FF3B3B]/60 bg-[#FF3B3B]/15 text-white enabled:hover:bg-[#FF3B3B]/25"
-                : "border-white/20 bg-white text-black enabled:hover:bg-white/85",
-            )}
+            icon={busy === "confirm" ? <Loader2 className="animate-spin" /> : undefined}
+            className="h-9 md:h-9"
           >
-            {busy === "confirm" && <Loader2 size={14} className="animate-spin" />}
             {danger ? (armed ? "정말 실행" : "실행") : dirty ? "고친 대로 확인" : "확인"}
-          </button>
-          <button
-            type="button"
-            onClick={cancel}
-            disabled={!!busy || status === "running"}
-            className="flex h-9 items-center rounded-lg border border-white/10 px-4 font-pretendard text-[14px] text-white/70 transition-colors enabled:hover:bg-white/[0.06] enabled:hover:text-white disabled:opacity-50"
-          >
+          </NeonButton>
+          <NeonButton tone="white" onClick={cancel} disabled={!!busy || status === "running"} className="h-9 md:h-9">
             취소
-          </button>
+          </NeonButton>
           {pending && action.expiresAt && (
             <span className="ml-auto font-pretendard text-[12px] text-white/35">
               {minutesLeft(action.expiresAt, now)}

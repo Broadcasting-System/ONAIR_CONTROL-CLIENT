@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { Plus } from "lucide-react";
 import { Bell } from "@/types/time";
 import { cn } from "@/lib/utils";
+import NeonButton from "@/components/common/NeonButton";
+import EmptyState from "@/components/common/EmptyState";
 import { sortBells, summarizeSpeakers, type SpeakerSection } from "./bellUtils";
 
 interface BellTimelineProps {
@@ -62,7 +64,7 @@ export default function BellTimeline({
     <div className={cn("relative flex min-h-0 flex-col rounded-[20px] border border-white/[0.08] bg-[rgba(8,8,10,0.55)]", className)}>
       <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto pb-[64px] pr-2 pt-2.5 [scrollbar-width:thin]">
         {rows.length === 0 ? (
-          <p className="py-16 text-center font-pretendard text-[14.5px] text-white/35">이 요일에는 시보가 없어요</p>
+          <EmptyState>이 요일은 시보가 없어요</EmptyState>
         ) : (
           <div data-tour="time.bells" className="relative">
             <span className="pointer-events-none absolute bottom-[22px] left-[78px] top-[22px] w-[2px] bg-white/[0.08] md:left-[88px]" />
@@ -138,18 +140,16 @@ export default function BellTimeline({
         )}
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 rounded-b-[20px] bg-[linear-gradient(transparent,rgba(14,14,17,0.95))]" />
-      <button
-        type="button"
+      <NeonButton
+        tone="white"
         data-tour="time.add"
+        aria-pressed={adding}
         onClick={onAdd}
-        className={cn(
-          "absolute bottom-3 left-1/2 flex h-10 -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-[11px] border px-3.5 font-mbc text-[13.5px] transition-colors md:h-[38px]",
-          adding ? "border-white/70 bg-[#202024] text-white" : "border-white/[0.12] bg-[#16161a] text-white/75 hover:text-white",
-        )}
+        icon={<Plus strokeWidth={2.4} />}
+        className="absolute bottom-3 left-1/2 h-10 -translate-x-1/2 md:h-[38px]"
       >
-        <Plus size={15} strokeWidth={2.4} />
         시보 추가
-      </button>
+      </NeonButton>
     </div>
   );
 }
