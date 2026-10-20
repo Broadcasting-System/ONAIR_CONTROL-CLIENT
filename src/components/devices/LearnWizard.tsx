@@ -294,14 +294,9 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                         </option>
                       ))}
                     </datalist>
-                    <button
-                      type="button"
-                      onClick={loadPorts}
-                      disabled={busy}
-                      className="h-11 shrink-0 rounded-lg border border-white/10 bg-white/[0.04] px-3 font-mbc md:h-10 text-sm text-white/70 hover:bg-white/10 disabled:opacity-40"
-                    >
+                    <NeonButton tone="white" onClick={loadPorts} disabled={busy} className="h-11 shrink-0 md:h-10">
                       목록
-                    </button>
+                    </NeonButton>
                   </div>
                   {ports && (
                     <span className="font-pretendard text-xs text-white/30">
@@ -354,18 +349,12 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={onClose} className="h-11 rounded-xl px-4 font-mbc text-sm text-white/50 hover:bg-white/5 hover:text-white">
+            <NeonButton tone="white" onClick={onClose}>
               취소
-            </button>
-            <button
-              type="button"
-              onClick={begin}
-              disabled={busy || !host.trim()}
-              className="flex h-11 items-center gap-2 rounded-xl border border-red-500/50 bg-red-500/15 px-5 font-mbc text-red-100 transition-colors hover:bg-red-500/25 disabled:opacity-40"
-            >
-              <Wifi size={16} />
+            </NeonButton>
+            <NeonButton icon={<Wifi />} onClick={begin} disabled={busy || !host.trim()}>
               {mode === "manual" ? "붙여넣기 시작" : "중계 시작"}
-            </button>
+            </NeonButton>
           </div>
         </div>
       )}
@@ -429,14 +418,9 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
                   spellCheck={false}
                   className={cn(input, "min-w-0 flex-1 font-mono")}
                 />
-                <button
-                  type="button"
-                  onClick={addPacket}
-                  disabled={busy || !paste.trim()}
-                  className="h-11 shrink-0 rounded-lg border border-white/15 bg-white/[0.06] px-4 font-mbc text-sm text-white hover:bg-white/10 disabled:opacity-40 md:h-10"
-                >
+                <NeonButton tone="white" onClick={addPacket} disabled={busy || !paste.trim()} className="h-11 shrink-0 md:h-10">
                   이 단계에 넣기
-                </button>
+                </NeonButton>
               </div>
             </div>
           )}
@@ -498,31 +482,17 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => goStep(Math.max(0, stepIdx - 1))}
-              disabled={stepIdx === 0}
-              className="h-11 rounded-xl px-4 font-mbc text-sm text-white/50 hover:bg-white/5 hover:text-white disabled:opacity-30"
-            >
+            <NeonButton tone="white" onClick={() => goStep(Math.max(0, stepIdx - 1))} disabled={stepIdx === 0}>
               이전
-            </button>
+            </NeonButton>
             {stepIdx < steps.length - 1 ? (
-              <button
-                type="button"
-                onClick={() => goStep(stepIdx + 1)}
-                className="h-11 rounded-xl border border-white/15 bg-white/10 px-6 font-mbc text-white hover:bg-white/15"
-              >
+              <NeonButton onClick={() => goStep(stepIdx + 1)} className="min-w-[120px]">
                 다음 단계
-              </button>
+              </NeonButton>
             ) : (
-              <button
-                type="button"
-                onClick={finishCapture}
-                disabled={busy}
-                className="h-11 rounded-xl bg-white px-6 font-mbc text-[#0b0b0d] transition-opacity disabled:opacity-40"
-              >
+              <NeonButton onClick={finishCapture} disabled={busy} className="min-w-[120px]">
                 규칙 찾기
-              </button>
+              </NeonButton>
             )}
           </div>
         </div>
@@ -574,9 +544,9 @@ export default function LearnWizard({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex justify-between">
-            <button type="button" onClick={() => setPhase("capture")} className="h-11 rounded-xl px-4 font-mbc text-sm text-white/50 hover:bg-white/5 hover:text-white">
+            <NeonButton tone="white" onClick={() => setPhase("capture")}>
               캡처로 돌아가기
-            </button>
+            </NeonButton>
             <NeonButton onClick={apply} disabled={busy} className="min-w-[150px]">
               이 장비로 연결
             </NeonButton>

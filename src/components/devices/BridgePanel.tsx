@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import EmptyState from "@/components/common/EmptyState";
 import NotebookKit from "@/components/devices/NotebookKit";
 import { hallApi } from "@/lib/hallApi";
 import { cn } from "@/lib/utils";
@@ -120,8 +121,8 @@ function BridgeCard({ bridge }: { bridge: BridgeInfo }) {
               ))}
               {devices.length === 0 && bridge.missing.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-xs text-white/30">
-                    장치가 없어요
+                  <td colSpan={4}>
+                    <EmptyState size="sm">장치가 없어요</EmptyState>
                   </td>
                 </tr>
               )}
@@ -213,9 +214,7 @@ export default function BridgePanel() {
       )}
 
       {data && bridges.length === 0 && (
-        <div className="rounded-[20px] border border-white/[0.09] bg-white/[0.045] px-4 py-6 md:rounded-2xl md:border-white/5 md:bg-[#0a0a0a] md:px-6 md:py-8">
-          <h3 className="font-mbc text-lg text-white">연결된 노트북이 없어요</h3>
-        </div>
+        <EmptyState>연결된 노트북이 없어요</EmptyState>
       )}
 
       {bridges.length > 0 && (

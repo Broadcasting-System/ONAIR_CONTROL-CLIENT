@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Laptop, Monitor, Smartphone } from "lucide-react";
 import InputModal from "@/components/common/InputModal";
+import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
-import { TimeConfirm, ghostBtn } from "@/components/time/TimeToolbar";
+import { TimeConfirm } from "@/components/time/TimeToolbar";
 import { RowMenu, StatusDot, adminField, adminPanel, chipCls } from "@/components/devices/adminUi";
 import { useMe } from "@/hooks/useMe";
 import { del, put, request, seg, HttpError } from "@/lib/http";
@@ -226,7 +227,7 @@ export default function DevicesPanel({ onDenied }: { onDenied: () => void }) {
         {devices === null ? (
           <p className="px-4 py-8 text-center font-pretendard text-sm text-white/35">불러오는 중…</p>
         ) : devices.length === 0 ? (
-          <p className="px-4 py-8 text-center font-pretendard text-sm text-white/35">등록된 기기가 없어요</p>
+          <EmptyState>기기가 없어요</EmptyState>
         ) : (
           devices.map((d, i) => (
             <div key={d.ip} className="border-t border-white/[0.05] first:border-t-0 md:first:border-t">
@@ -305,9 +306,9 @@ export default function DevicesPanel({ onDenied }: { onDenied: () => void }) {
               ))}
             </div>
             <div className="ml-auto flex gap-2 max-md:mt-1 max-md:w-full">
-              <button type="button" onClick={() => setAdding(false)} className={cn(ghostBtn, "max-md:flex-1 md:h-[42px]")}>
+              <NeonButton tone="white" onClick={() => setAdding(false)} className="max-md:flex-1">
                 취소
-              </button>
+              </NeonButton>
               <NeonButton data-tour="devices.add.submit" className="min-w-[120px] max-md:flex-1" disabled={!ipOk || busy} onClick={register}>
                 등록
               </NeonButton>

@@ -209,15 +209,9 @@ export default function SpeakerMappingPanel() {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h3 className="font-mbc text-[17px] text-white">찾기</h3>
           {active && (
-            <button
-              type="button"
-              data-tour="mapping.silence"
-              onClick={() => session("silence")}
-              disabled={busy}
-              className={cn(ghostBtn, "h-9 px-3 md:h-8 md:text-[12.5px]")}
-            >
+            <NeonButton tone="white" data-tour="mapping.silence" onClick={() => session("silence")} disabled={busy} className="h-9 md:h-8">
               모두 끄기
-            </button>
+            </NeonButton>
           )}
           <div className="ml-auto flex min-w-0 items-center gap-3 max-md:order-last max-md:w-full">
             <span className="shrink-0 font-pretendard text-[12.5px] font-medium text-white/45">
@@ -409,28 +403,22 @@ export default function SpeakerMappingPanel() {
           {changed > 0 ? `바뀐 칸 ${changed}개` : "바뀐 칸 없음"}
         </span>
         <FillMenu from={selected} onFill={fill} />
-        <button
-          type="button"
-          data-tour="mapping.revert"
-          onClick={() => setDraft(copyCells(matrix))}
-          disabled={!changed || busy}
-          className={cn(ghostBtn, "md:h-[42px]")}
-        >
+        <NeonButton tone="white" data-tour="mapping.revert" onClick={() => setDraft(copyCells(matrix))} disabled={!changed || busy}>
           되돌리기
-        </button>
+        </NeonButton>
         <NeonButton data-tour="mapping.save" className="min-w-[130px] max-md:flex-1" onClick={save} disabled={!changed || busy}>
           저장
         </NeonButton>
         {active && (
-          <button
-            type="button"
+          <NeonButton
+            tone="white"
             data-tour="mapping.stop"
             onClick={() => (changed ? setConfirmStop(true) : session("stop"))}
             disabled={busy}
-            className="flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-[12px] border border-[rgba(255,59,59,0.45)] px-4 font-mbc text-[14px] text-[#ff7b7b] transition-colors hover:bg-[#ff3b3b]/10 disabled:opacity-40 max-md:w-full md:h-[42px] md:text-[15px]"
+            className="shrink-0 max-md:w-full"
           >
             찾기 끝내기
-          </button>
+          </NeonButton>
         )}
       </div>
 
@@ -486,9 +474,9 @@ function FillMenu({ from, onFill }: { from: Coord; onFill: (text: string) => boo
                 placeholder="1-1, 1-2, 1-3"
                 className={cn(adminField, "h-11 flex-1 md:h-10 md:text-[14px]")}
               />
-              <button type="button" onClick={submit} disabled={!text.trim()} className={cn(ghostBtn, "md:h-10")}>
+              <NeonButton onClick={submit} disabled={!text.trim()} className="h-11 shrink-0 md:h-10">
                 채우기
-              </button>
+              </NeonButton>
             </div>
           </div>
         </P.Content>
@@ -609,18 +597,12 @@ function ConnectionBar({ onRestored }: { onRestored: (m: SpeakerMatrix) => void 
               className={cn(adminField, "font-orbitron md:h-10 md:text-[13px]")}
             />
           </label>
-          <button type="button" data-tour="mapping.connection.test" onClick={test} disabled={!valid} className={cn(ghostBtn, "md:h-10")}>
+          <NeonButton tone="white" data-tour="mapping.connection.test" onClick={test} disabled={!valid} className="h-11 shrink-0 md:h-10">
             연결 테스트
-          </button>
-          <button
-            type="button"
-            data-tour="mapping.connection.save"
-            onClick={save}
-            disabled={!valid || !dirty}
-            className="flex h-11 shrink-0 items-center justify-center rounded-[11px] bg-white px-4 font-mbc text-[13.5px] text-[#0b0b0d] transition-opacity disabled:opacity-30 md:h-10"
-          >
+          </NeonButton>
+          <NeonButton data-tour="mapping.connection.save" onClick={save} disabled={!valid || !dirty} className="h-11 shrink-0 md:h-10">
             저장
-          </button>
+          </NeonButton>
           <span className="self-center font-pretendard text-[13px] text-white/55">{testResult}</span>
           <span className="ml-auto self-center font-pretendard text-[12px] text-white/30">{data.source === "saved" ? "저장값" : "서버 .env"}</span>
         </div>

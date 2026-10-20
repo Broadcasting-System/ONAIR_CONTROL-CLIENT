@@ -2,7 +2,9 @@
 
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, X } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
+import NeonButton from "@/components/common/NeonButton";
 import { toast } from "@/components/common/Toast";
 import {
   BgTile,
@@ -13,7 +15,6 @@ import {
   tileBtn,
 } from "@/components/devices/CardBackground";
 import { Notice } from "@/components/hall/HallControls";
-import { ActionButton } from "@/components/hall/setup/ui";
 import { memberApi } from "@/lib/memberApi";
 import { cn } from "@/lib/utils";
 import type { CardBg, CrewMember } from "@/types/member";
@@ -140,9 +141,9 @@ function Profile({ p, domain, onEdit }: { p: CrewMember; domain: string; onEdit:
       </div>
       {p.canEdit && (
         <div data-tour="crew.edit" className="flex justify-end">
-          <ActionButton className="h-11 px-4 md:h-9 md:px-3.5" onClick={onEdit}>
+          <NeonButton tone="white" className="h-11 md:h-9" onClick={onEdit}>
             소개 고치기
-          </ActionButton>
+          </NeonButton>
         </div>
       )}
     </div>
@@ -374,12 +375,17 @@ export function ProfileModal({ target, onClose }: { target: ProfileTarget; onClo
           setPhotoUrl={setPhotoUrl}
         />
         <div className="flex justify-end gap-2">
-          <ActionButton tone="ghost" className="max-md:h-11" onClick={onClose}>
+          <NeonButton tone="white" onClick={onClose}>
             취소
-          </ActionButton>
-          <ActionButton tone="primary" className="max-md:h-11 max-md:px-6" busy={save.isPending} disabled={!ok} onClick={() => save.mutate()}>
+          </NeonButton>
+          <NeonButton
+            className="min-w-[96px]"
+            icon={save.isPending ? <Loader2 className="animate-spin" /> : undefined}
+            disabled={!ok || save.isPending}
+            onClick={() => save.mutate()}
+          >
             저장
-          </ActionButton>
+          </NeonButton>
         </div>
       </form>
     </ModalShell>
@@ -473,12 +479,17 @@ function AddRosterModal({
           <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={TITLE_MAX + 10} placeholder="예: 화영" className={cn(inpCls, "h-11")} />
         </label>
         <div className="flex justify-end gap-2">
-          <ActionButton tone="ghost" className="max-md:h-11" onClick={onClose}>
+          <NeonButton tone="white" onClick={onClose}>
             취소
-          </ActionButton>
-          <ActionButton tone="primary" className="max-md:h-11 max-md:px-6" busy={add.isPending} disabled={!ok} onClick={() => add.mutate()}>
+          </NeonButton>
+          <NeonButton
+            className="min-w-[96px]"
+            icon={add.isPending ? <Loader2 className="animate-spin" /> : undefined}
+            disabled={!ok || add.isPending}
+            onClick={() => add.mutate()}
+          >
             올리기
-          </ActionButton>
+          </NeonButton>
         </div>
       </form>
     </ModalShell>
@@ -532,7 +543,7 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
         ) : !data ? (
           <p className="py-8 font-pretendard text-sm text-white/45">불러오는 중…</p>
         ) : list.length === 0 ? (
-          <p className="py-8 font-pretendard text-sm text-white/45">명단이 없어요</p>
+          <EmptyState>명단이 없어요</EmptyState>
         ) : (
           <div className="grid">
             {groups.map(([cohort, people]) => {
@@ -584,14 +595,9 @@ export default function CrewView({ toggle }: { toggle?: ReactNode }) {
         )}
 
         {data?.canManage && (
-          <button
-            type="button"
-            data-tour="crew.add"
-            onClick={() => setAdding(true)}
-            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/20 py-3 font-mbc text-sm text-white/60 transition-colors hover:border-white/40 hover:text-white"
-          >
-            <Plus size={15} /> 명단에 추가
-          </button>
+          <NeonButton data-tour="crew.add" icon={<Plus />} onClick={() => setAdding(true)} className="mt-3 w-full">
+            명단에 추가
+          </NeonButton>
         )}
       </section>
 

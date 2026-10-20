@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Laptop, Monitor, Plus, Smartphone, Tablet, X } from "lucide-react";
+import { Laptop, Loader2, Monitor, Plus, Smartphone, Tablet, X } from "lucide-react";
 import Portal from "@/components/common/Portal";
 import ConfirmModal from "@/components/common/ConfirmModal";
-import { ActionButton } from "@/components/hall/setup/ui";
+import NeonButton from "@/components/common/NeonButton";
 import { toast } from "@/components/common/Toast";
 import { useMe } from "@/hooks/useMe";
 import { memberApi } from "@/lib/memberApi";
@@ -60,13 +60,9 @@ export function DeviceRow({
         </p>
       </div>
       {onRemove && (
-        <button
-          type="button"
-          onClick={onRemove}
-          className="h-9 shrink-0 rounded-[10px] border border-white/15 px-3 font-pretendard text-[13px] text-white/70 hover:bg-white/[0.06] hover:text-white max-md:h-10"
-        >
+        <NeonButton tone="white" onClick={onRemove} className="h-10 shrink-0 md:h-9">
           끊기
-        </button>
+        </NeonButton>
       )}
     </li>
   );
@@ -129,9 +125,9 @@ function AddDevice({ invite, onBack }: { invite: DeviceInviteCreated; onBack: ()
           {!invite.cloudflare && " · 개발용 토큰"}
         </p>
         <div className="flex justify-end">
-          <ActionButton tone="ghost" className="border-white/15 max-md:h-11 max-md:w-full" onClick={onBack}>
+          <NeonButton tone="white" className="max-md:w-full" onClick={onBack}>
             목록으로
-          </ActionButton>
+          </NeonButton>
         </div>
       </div>
     </div>
@@ -229,17 +225,15 @@ export default function MyDevicesModal({ onClose }: { onClose: () => void }) {
                   />
                 ))}
               </ul>
-              <ActionButton
-                tour="my-devices.add"
-                tone="primary"
-                className="h-12 w-full justify-center"
-                icon={<Plus size={16} />}
-                busy={start.isPending}
-                disabled={full}
+              <NeonButton
+                data-tour="my-devices.add"
+                className="h-12 w-full md:h-12"
+                icon={start.isPending ? <Loader2 className="animate-spin" /> : <Plus />}
+                disabled={full || start.isPending}
                 onClick={() => start.mutate()}
               >
                 {full ? `기기는 ${MAX_DEVICES}대까지` : "다른 기기 추가"}
-              </ActionButton>
+              </NeonButton>
             </>
           )}
         </div>

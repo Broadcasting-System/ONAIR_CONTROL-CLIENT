@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Copy, Download, Link2 } from "lucide-react";
+import { Copy, Download, Link2, Loader2 } from "lucide-react";
 import { toast } from "@/components/common/Toast";
-import { ActionButton, Field, badBorder, inputCls, okBorder } from "@/components/hall/setup/ui";
+import NeonButton from "@/components/common/NeonButton";
+import { Field, badBorder, inputCls, okBorder } from "@/components/hall/setup/ui";
 import { hallApi } from "@/lib/hallApi";
 import { cn } from "@/lib/utils";
 
@@ -112,12 +113,25 @@ export default function NotebookKit() {
             className={cn(inputCls, "font-orbitron", serverBad ? badBorder : okBorder)}
           />
         </Field>
-        <ActionButton tour="bridges.kit.zip" tone="primary" icon={<Download size={15} />} busy={busy === "zip"} disabled={blocked} onClick={downloadZip} className="max-md:h-11 max-md:w-full">
+        <NeonButton
+          data-tour="bridges.kit.zip"
+          icon={busy === "zip" ? <Loader2 className="animate-spin" /> : <Download />}
+          disabled={blocked}
+          onClick={downloadZip}
+          className="max-md:w-full"
+        >
           이 컴퓨터로 받기
-        </ActionButton>
-        <ActionButton tour="bridges.kit.link" icon={<Link2 size={15} />} busy={busy === "link"} disabled={blocked} onClick={makeLink} className="max-md:h-11 max-md:w-full">
+        </NeonButton>
+        <NeonButton
+          tone="white"
+          data-tour="bridges.kit.link"
+          icon={busy === "link" ? <Loader2 className="animate-spin" /> : <Link2 />}
+          disabled={blocked}
+          onClick={makeLink}
+          className="max-md:w-full"
+        >
           노트북에서 받을 주소
-        </ActionButton>
+        </NeonButton>
       </div>
 
       {info && !info.suggestedServer && (
@@ -128,9 +142,9 @@ export default function NotebookKit() {
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#00FF57]/25 bg-[#00FF57]/[0.05] px-4 py-3">
           <span className="font-pretendard text-xs text-white/50">{until} 까지</span>
           <code className="min-w-0 break-all font-mono text-sm text-[#9dffc1]">{link.url}</code>
-          <ActionButton tone="ghost" icon={<Copy size={14} />} onClick={copy} className="ml-auto max-md:h-11">
+          <NeonButton tone="white" icon={<Copy />} onClick={copy} className="ml-auto h-11 md:h-9">
             복사
-          </ActionButton>
+          </NeonButton>
         </div>
       )}
     </section>

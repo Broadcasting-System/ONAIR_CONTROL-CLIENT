@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } fr
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Popover as P } from "radix-ui";
 import { ChevronRight, Crown, Download, KeyRound, Mail, MoreHorizontal, Search, Send, Smartphone, UserPlus, X } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import Portal from "@/components/common/Portal";
 import InputModal from "@/components/common/InputModal";
 import { toast } from "@/components/common/Toast";
@@ -14,7 +15,7 @@ import NeonButton from "@/components/common/NeonButton";
 import { DeviceIcon } from "@/components/devices/MyDevicesModal";
 import { ASSIGNABLE } from "@/components/devices/roleStyle";
 import { Notice } from "@/components/hall/HallControls";
-import { TimeConfirm, ghostBtn, redBtn } from "@/components/time/TimeToolbar";
+import { TimeConfirm } from "@/components/time/TimeToolbar";
 import { useMe } from "@/hooks/useMe";
 import { usePersistentState } from "@/hooks/usePersistentState";
 import { downloadMembersCsv, mailApi, memberApi } from "@/lib/memberApi";
@@ -329,8 +330,8 @@ function Sec({ icon, title, extra, tour, children }: { icon: ReactNode; title: s
   );
 }
 
-const smallBtn =
-  "inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-white/[0.14] px-2.5 font-mbc text-[13px] text-white/75 transition-colors hover:bg-white/[0.06] hover:text-white disabled:opacity-40 md:h-7 md:text-[12.5px]";
+/** 줄 안의 작은 버튼 (흰 네온, 낮게) */
+const smallBtn = "h-9 shrink-0 md:h-8";
 
 /* ---------------------------------------------------------------- 줄 */
 
@@ -446,18 +447,17 @@ function PendingRow({
           className="max-md:w-full max-md:[&>button]:flex-1"
         />
         <span className="ml-auto flex gap-2 max-md:w-full">
-          <button type="button" disabled={busy} onClick={onReject} className={cn(ghostBtn, "max-md:flex-1 md:h-9")}>
+          <NeonButton tone="white" disabled={busy} onClick={onReject} className="max-md:flex-1 md:h-9">
             거절
-          </button>
-          <button
-            type="button"
+          </NeonButton>
+          <NeonButton
             data-tour={first ? "members.pending.approve" : undefined}
             disabled={busy}
             onClick={() => onApprove(role)}
-            className={cn(redBtn, "max-md:flex-[2] md:h-9")}
+            className="min-w-[96px] max-md:flex-[2] md:h-9"
           >
             승인
-          </button>
+          </NeonButton>
         </span>
       </div>
     </div>
@@ -479,9 +479,9 @@ function InviteWaitRow({ i, onCancel }: { i: Invite; onCancel: () => void }) {
       {i.codeActive && (
         <span className="inline-flex h-[22px] items-center rounded-md bg-white/[0.08] px-[7px] text-[11.5px] font-semibold text-white/70">코드 유효</span>
       )}
-      <button type="button" onClick={onCancel} className={smallBtn}>
+      <NeonButton tone="white" onClick={onCancel} className={smallBtn}>
         취소
-      </button>
+      </NeonButton>
     </div>
   );
 }
@@ -667,13 +667,13 @@ function Detail({
           ))}
         {!gone && !fixed && (
           <div className="mt-2 flex gap-1.5">
-            <button type="button" data-tour="members.mail.change" onClick={onMail} className={smallBtn}>
+            <NeonButton tone="white" data-tour="members.mail.change" onClick={onMail} className={smallBtn}>
               {m.mailAddress ? "메일 바꾸기" : "메일 정하기"}
-            </button>
+            </NeonButton>
             {m.mailStatus === "pending" && (
-              <button type="button" data-tour="members.mail.resend" disabled={busy} onClick={onResend} className={smallBtn}>
+              <NeonButton tone="white" data-tour="members.mail.resend" disabled={busy} onClick={onResend} className={smallBtn}>
                 다시 보내기
-              </button>
+              </NeonButton>
             )}
           </div>
         )}
@@ -734,9 +734,9 @@ function Detail({
                     <span className="block truncate font-pretendard text-[11.5px] text-white/40">{current ? "이 기기" : seen(d)}</span>
                   </span>
                   {canRemove && (
-                    <button type="button" onClick={() => onRemoveDevice(d)} className={smallBtn}>
+                    <NeonButton tone="white" onClick={() => onRemoveDevice(d)} className={smallBtn}>
                       끊기
-                    </button>
+                    </NeonButton>
                   )}
                 </li>
               );
@@ -748,29 +748,18 @@ function Detail({
       {!gone && !fixed && (
         <div data-tour="members.actions" className="mt-auto flex gap-2 pt-2">
           {m.role !== "alumni" && (
-            <button type="button" disabled={busy} onClick={onGraduate} className={cn(ghostBtn, "flex-1 md:h-[38px]")}>
+            <NeonButton tone="white" disabled={busy} onClick={onGraduate} className="flex-1">
               졸업 처리
-            </button>
+            </NeonButton>
           )}
           {roster ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onDeleteRoster}
-              className="flex h-11 flex-1 items-center justify-center rounded-[11px] border border-[#FF3B3B]/45 font-mbc text-[13.5px] text-[#ff7b7b] transition-colors hover:bg-[#FF3B3B]/10 disabled:opacity-40 md:h-[38px]"
-            >
+            <NeonButton tone="white" disabled={busy} onClick={onDeleteRoster} className="flex-1">
               명단에서 지우기
-            </button>
+            </NeonButton>
           ) : (
-            <button
-              type="button"
-              data-tour="members.revoke"
-              disabled={busy}
-              onClick={onRevoke}
-              className="flex h-11 flex-1 items-center justify-center rounded-[11px] border border-[#FF3B3B]/45 font-mbc text-[13.5px] text-[#ff7b7b] transition-colors hover:bg-[#FF3B3B]/10 disabled:opacity-40 md:h-[38px]"
-            >
+            <NeonButton tone="white" data-tour="members.revoke" disabled={busy} onClick={onRevoke} className="flex-1">
               퇴출
-            </button>
+            </NeonButton>
           )}
         </div>
       )}
@@ -1034,15 +1023,14 @@ export default function MembersPanel() {
         </label>
         <span className="md:ml-auto">{toggle}</span>
         <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-2 md:flex md:w-auto">
-          <button
-            type="button"
+          <NeonButton
+            tone="white"
             data-tour="members.export"
+            icon={<Download />}
             onClick={() => downloadMembersCsv().catch((e: Error) => toast.error(e.message))}
-            className={cn(ghostBtn, "md:h-10")}
           >
-            <Download size={15} />
             명단 내보내기
-          </button>
+          </NeonButton>
           <NeonButton data-tour="members.invite" disabled={invite.isPending} onClick={() => invite.mutate("")} icon={<UserPlus />}>
             새 부원 초대
           </NeonButton>
@@ -1109,9 +1097,11 @@ export default function MembersPanel() {
           )}
 
           {shown.length === 0 ? (
-            <p className="px-3 py-16 text-center font-pretendard text-[15px] text-white/35">
-              {list.isLoading ? "불러오는 중…" : needle ? "찾는 사람이 없어요" : EMPTY[filter]}
-            </p>
+            list.isLoading ? (
+              <p className="px-3 py-16 text-center font-pretendard text-[15px] text-white/35">불러오는 중…</p>
+            ) : (
+              <EmptyState className="py-16">{needle ? "찾는 사람이 없어요" : EMPTY[filter]}</EmptyState>
+            )
           ) : (
             groups.map(([cohort, people]) => (
               <div key={cohort ?? "none"}>
@@ -1145,8 +1135,10 @@ export default function MembersPanel() {
         <aside data-tour="members.detail" className={cn(panel, "hidden min-h-0 overflow-y-auto p-[22px] [scrollbar-width:thin] lg:block")}>
           {selected ? (
             detail(selected)
+          ) : list.isLoading ? (
+            <p className="py-16 text-center font-pretendard text-[15px] text-white/35">불러오는 중…</p>
           ) : (
-            <p className="py-16 text-center font-pretendard text-[15px] text-white/35">{list.isLoading ? "불러오는 중…" : EMPTY[filter]}</p>
+            <EmptyState className="py-16">{EMPTY[filter]}</EmptyState>
           )}
         </aside>
       </div>

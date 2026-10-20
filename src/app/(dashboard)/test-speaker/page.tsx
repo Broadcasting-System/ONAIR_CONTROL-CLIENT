@@ -2,6 +2,7 @@
 
 import SectionHeader from "@/components/common/SectionHeader";
 import LedMeter from "@/components/common/LedMeter";
+import NeonButton from "@/components/common/NeonButton";
 import { TEST_SPEAKER_LABEL } from "@/constants/testSpeaker";
 import { useMe } from "@/hooks/useMe";
 import { useTestSpeaker, type TestSpeakerConn, type TestSpeakerPlaying } from "@/hooks/useTestSpeaker";
@@ -54,18 +55,13 @@ function TestSpeakerView() {
 
         <LedMeter levels={[level]} labels={["", ""]} className="w-full" />
 
-        <button
-          type="button"
+        <NeonButton
+          tone={enabled ? "white" : "red"}
           onClick={() => void (enabled ? disable() : enable())}
-          className={cn(
-            "h-12 w-full rounded-xl font-pretendard text-[15px] font-semibold transition-colors md:w-[200px]",
-            enabled
-              ? "border border-white/10 bg-white/[0.06] text-white/80 hover:bg-white/10"
-              : "bg-[#FF3B3B] text-white hover:bg-[#ff5252]",
-          )}
+          className="h-12 w-full md:h-12 md:w-[200px]"
         >
           {enabled ? "소리 끄기" : "소리 켜기"}
-        </button>
+        </NeonButton>
 
         {events.length > 0 && (
           <ul className="flex flex-col gap-1.5 border-t border-white/[0.08] pt-4">

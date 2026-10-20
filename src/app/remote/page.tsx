@@ -5,6 +5,7 @@ import { getApiBase } from "@/lib/apiBase";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/common/Toast";
 import { ToastHost } from "@/components/common/Toast";
+import NeonButton from "@/components/common/NeonButton";
 import { useMe } from "@/hooks/useMe";
 import { useHealth } from "@/hooks/useHealth";
 import { useSpeakers } from "@/hooks/useSpeakers";
@@ -72,13 +73,9 @@ export default function RemotePage() {
       )}
 
       {/* 긴급 정지 */}
-      <button
-        onClick={emergencyStop}
-        disabled={!canOperate || stopping}
-        className="mb-5 h-24 w-full rounded-2xl border-2 border-red-500/60 bg-red-600/20 font-mbc text-2xl font-bold text-red-100 active:bg-red-600/40 disabled:opacity-40"
-      >
-        {stopping ? "정지 중…" : "🔴 전체 긴급 정지"}
-      </button>
+      <NeonButton size="lg" onClick={emergencyStop} disabled={!canOperate || stopping} className="mb-5 h-24 w-full md:h-24">
+        {stopping ? "정지 중…" : "전체 긴급 정지"}
+      </NeonButton>
 
       {/* 채널 끄기 */}
       <p className="mb-2 font-mbc text-sm text-white/40">채널별 끄기</p>
@@ -133,13 +130,9 @@ export default function RemotePage() {
           placeholder="방송할 텍스트"
           className="resize-none rounded-xl border border-white/10 bg-[#141414] px-4 py-3 font-pretendard text-white placeholder:text-white/25 focus:border-white/30 focus:outline-none"
         />
-        <button
-          onClick={handleSend}
-          disabled={!canOperate || !text.trim() || isSending}
-          className="h-14 rounded-xl border border-white/15 bg-white/10 font-mbc text-lg active:bg-white/15 disabled:opacity-40"
-        >
+        <NeonButton size="lg" onClick={handleSend} disabled={!canOperate || !text.trim() || isSending} className="w-full">
           {isSending ? "송출 중…" : "TTS 송출"}
-        </button>
+        </NeonButton>
       </div>
     </main>
   );

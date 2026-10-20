@@ -3,10 +3,11 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
-import { TimeConfirm, ghostBtn } from "@/components/time/TimeToolbar";
+import { TimeConfirm } from "@/components/time/TimeToolbar";
 import { StatusDot, adminPanel } from "@/components/devices/adminUi";
 import { useMe } from "@/hooks/useMe";
 import { cloudflareApi } from "@/lib/cloudflareApi";
@@ -71,11 +72,11 @@ function Sec({
   );
 }
 
-/** 테두리 버튼 · 흰 버튼 · 글자만 */
+/** 흰 네온(보조) · 빨간 네온(주 동작) · 글자만(펼치기) */
 function Btn({
   onClick,
   children,
-  tone = "ghost",
+  tone = "white",
   busy,
   disabled,
   icon,
@@ -84,33 +85,41 @@ function Btn({
 }: {
   onClick: () => void;
   children: ReactNode;
-  tone?: "ghost" | "white" | "text" | "danger";
+  tone?: "white" | "red" | "text";
   busy?: boolean;
   disabled?: boolean;
   icon?: ReactNode;
   className?: string;
   tour?: string;
 }) {
+  if (tone === "text") {
+    return (
+      <button
+        type="button"
+        data-tour={tour}
+        onClick={onClick}
+        disabled={disabled || busy}
+        className={cn(
+          "flex h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] px-3 font-mbc text-[13.5px] text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white disabled:opacity-35 md:h-9",
+          className,
+        )}
+      >
+        {busy ? <Loader2 size={14} className="animate-spin" /> : icon}
+        {children}
+      </button>
+    );
+  }
   return (
-    <button
-      type="button"
+    <NeonButton
+      tone={tone}
       data-tour={tour}
       onClick={onClick}
       disabled={disabled || busy}
-      className={cn(
-        tone === "ghost" && ghostBtn,
-        tone === "white" &&
-          "flex h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[11px] bg-white px-4 font-mbc text-[13.5px] text-[#0b0b0d] transition-opacity disabled:opacity-35 md:h-[38px]",
-        (tone === "text" || tone === "danger") &&
-          "flex h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] px-3 font-mbc text-[13.5px] transition-colors hover:bg-white/[0.06] disabled:opacity-35 md:h-9",
-        tone === "text" && "text-white/60 hover:text-white",
-        tone === "danger" && "text-[#ff8a8a] hover:text-[#ffb3b3]",
-        className,
-      )}
+      icon={busy ? <Loader2 className="animate-spin" /> : icon}
+      className={cn("shrink-0 md:h-[38px]", className)}
     >
-      {busy ? <Loader2 size={14} className="animate-spin" /> : icon}
       {children}
-    </button>
+    </NeonButton>
   );
 }
 
@@ -283,12 +292,6 @@ function fixOf(c: CfCheck, ctx: FixCtx): Fix {
 
 function FixCard({ n, fix, first }: { n: number; fix: Fix; first: boolean }) {
   const a = fix.action;
-  const inner = a && (
-    <>
-      {a.label}
-      {a.href && <ExternalLink size={13} className="opacity-60" />}
-    </>
-  );
   const open = () => (a?.href ? window.open(a.href, "_blank", "noopener,noreferrer") : a?.onClick?.());
   return (
     <li className="grid grid-cols-[24px_minmax(0,1fr)] items-center gap-x-3 gap-y-2.5 rounded-[14px] border border-white/[0.07] bg-black/30 px-3.5 py-3.5 md:grid-cols-[26px_minmax(0,1fr)_auto] md:px-4">
@@ -305,9 +308,9 @@ function FixCard({ n, fix, first }: { n: number; fix: Fix; first: boolean }) {
             {a.label}
           </NeonButton>
         ) : (
-          <button type="button" onClick={open} className={cn(ghostBtn, "max-md:col-span-2")}>
-            {inner}
-          </button>
+          <NeonButton tone="white" onClick={open} icon={a.href ? <ExternalLink /> : undefined} className="max-md:col-span-2">
+            {a.label}
+          </NeonButton>
         ))}
     </li>
   );
@@ -576,11 +579,11 @@ function IssueForm({ domain, onDone }: { domain: string; onDone: () => void }) {
         <span className="mr-auto min-w-0 break-all font-pretendard text-[13px] text-white/50 max-md:w-full">
           {l && !problem && emails.length ? `${l}@${domain} → ${emails.join(", ")}` : ""}
         </span>
-        <Btn tone="text" className="max-md:h-11" onClick={onDone}>
+        <Btn onClick={onDone}>
           닫기
         </Btn>
         <Btn
-          tone="white"
+          tone="red"
           busy={issue.isPending}
           disabled={!l || !emails.length || !!problem}
           onClick={() => issue.mutate()}
@@ -678,8 +681,8 @@ function MailSection() {
           <div data-tour="cloudflare.mail.table" className="overflow-x-auto rounded-[14px] border border-white/[0.07] bg-black/30">
             <ul className="font-pretendard text-[14px] md:hidden">
               {rows.length === 0 ? (
-                <li className="px-4 py-8 text-center text-white/45">
-                  {filter === "extra" ? "추가 주소가 없어요" : "주소가 없어요"}
+                <li>
+                  <EmptyState size="sm">{filter === "extra" ? "추가 주소가 없어요" : "주소가 없어요"}</EmptyState>
                 </li>
               ) : (
                 rows.map((a) => (
@@ -719,8 +722,7 @@ function MailSection() {
                         </span>
                         {a.kind === "extra" && (
                           <Btn
-                            tone="text"
-                            className="-mr-2 h-11 px-3"
+                            className="h-10 md:h-9"
                             onClick={() =>
                               setConfirm({
                                 title: "주소 지우기",
@@ -753,8 +755,8 @@ function MailSection() {
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-white/45">
-                      {filter === "extra" ? "추가 주소가 없어요" : "주소가 없어요"}
+                    <td colSpan={5}>
+                      <EmptyState size="sm">{filter === "extra" ? "추가 주소가 없어요" : "주소가 없어요"}</EmptyState>
                     </td>
                   </tr>
                 ) : (
@@ -796,8 +798,7 @@ function MailSection() {
                       <td className="px-4 py-3 text-right">
                         {a.kind === "extra" && (
                           <Btn
-                            tone="text"
-                            className="ml-auto h-9 px-3"
+                            className="ml-auto h-9 md:h-9"
                             onClick={() =>
                               setConfirm({
                                 title: "주소 지우기",
@@ -824,7 +825,9 @@ function MailSection() {
             <div className="overflow-x-auto rounded-[14px] border border-white/[0.07] bg-black/30">
               <ul className="font-pretendard text-[14px] md:hidden">
                 {d.destinations.length === 0 ? (
-                  <li className="px-4 py-6 text-center text-white/45">받을 메일이 없어요</li>
+                  <li>
+                    <EmptyState size="sm">받을 메일이 없어요</EmptyState>
+                  </li>
                 ) : (
                   d.destinations.map((x) => (
                     <li key={x.id} className={mRow}>
@@ -838,8 +841,7 @@ function MailSection() {
                       {x.usedBy.length > 0 && <span className="text-[13px] text-white/60">{x.usedBy.join(", ")}</span>}
                       {!x.verified && (
                         <Btn
-                          tone="text"
-                          className="-ml-2 h-11 w-fit px-3"
+                          className="h-10 w-fit md:h-9"
                           busy={resend.isPending && resend.variables === x.id}
                           onClick={() => resend.mutate(x.id)}
                         >
@@ -862,8 +864,8 @@ function MailSection() {
                 <tbody>
                   {d.destinations.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-6 text-center text-white/45">
-                        받을 메일이 없어요
+                      <td colSpan={4}>
+                        <EmptyState size="sm">받을 메일이 없어요</EmptyState>
                       </td>
                     </tr>
                   ) : (
@@ -880,8 +882,7 @@ function MailSection() {
                         <td className="px-4 py-3 text-right">
                           {!x.verified && (
                             <Btn
-                              tone="text"
-                              className="ml-auto h-9 px-3"
+                              className="ml-auto h-9 md:h-9"
                               busy={resend.isPending && resend.variables === x.id}
                               onClick={() => resend.mutate(x.id)}
                             >
@@ -951,7 +952,7 @@ function AccessEmailSection() {
               spellCheck={false}
               className={cn(field, "max-w-[420px]")}
             />
-            <Btn tone="white" className="max-md:h-11" busy={add.isPending} disabled={!valid} onClick={() => add.mutate(value)}>
+            <Btn tone="red" busy={add.isPending} disabled={!valid} onClick={() => add.mutate(value)}>
               추가
             </Btn>
           </div>
@@ -965,8 +966,7 @@ function AccessEmailSection() {
                 </span>
                 {!e.protected && (
                   <Btn
-                    tone="text"
-                    className="h-11 px-3 md:h-9"
+                    className="h-10 md:h-9"
                     onClick={() =>
                       setConfirm({
                         title: "로그인 허용 빼기",
@@ -1030,7 +1030,9 @@ function DeviceSection() {
         <div className="overflow-x-auto rounded-[14px] border border-white/[0.07] bg-black/30">
           <ul className="font-pretendard text-[14px] md:hidden">
             {d.devices.length === 0 ? (
-              <li className="px-4 py-8 text-center text-white/45">기기 접속 키가 없어요</li>
+              <li>
+                <EmptyState size="sm">기기 접속 키가 없어요</EmptyState>
+              </li>
             ) : (
               d.devices.map((x) => (
                 <li key={x.tokenId} className={mRow}>
@@ -1050,8 +1052,7 @@ function DeviceSection() {
                     </span>
                     {x.canDisconnect ? (
                       <Btn
-                        tone="danger"
-                        className="-mr-2 h-11 px-3"
+                        className="h-10 md:h-9"
                         onClick={() =>
                           setConfirm({
                             title: "기기 키 끊기",
@@ -1088,8 +1089,8 @@ function DeviceSection() {
             <tbody>
               {d.devices.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-white/45">
-                    기기 접속 키가 없어요
+                  <td colSpan={6}>
+                    <EmptyState size="sm">기기 접속 키가 없어요</EmptyState>
                   </td>
                 </tr>
               ) : (
@@ -1109,8 +1110,7 @@ function DeviceSection() {
                     <td className="px-4 py-3 text-right">
                       {x.canDisconnect ? (
                         <Btn
-                          tone="danger"
-                          className="ml-auto h-9 px-3"
+                          className="ml-auto h-9 md:h-9"
                           onClick={() =>
                             setConfirm({
                               title: "기기 키 끊기",
@@ -1237,19 +1237,14 @@ function SettingsSection() {
               className={field}
             />
             {s.tokenSource === "settings" && (
-              <button
-                type="button"
+              <NeonButton
+                tone={clearArmed ? "red" : "white"}
                 disabled={save.isPending}
                 onClick={() => (clearArmed ? save.mutate({ apiToken: null }) : setClearArmed(true))}
-                className={cn(
-                  "h-11 shrink-0 rounded-[11px] border px-3 font-mbc text-[13px] transition-colors disabled:opacity-50 md:h-10",
-                  clearArmed
-                    ? "border-[#FF3B3B] bg-[#FF3B3B] text-white"
-                    : "border-white/10 text-white/60 hover:bg-white/[0.06] hover:text-white",
-                )}
+                className="h-11 shrink-0 md:h-10"
               >
                 {clearArmed ? "정말 지우기" : "토큰 지우기"}
-              </button>
+              </NeonButton>
             )}
           </div>
           <span className="font-pretendard text-[12.5px] text-white/50">
@@ -1295,19 +1290,17 @@ function SettingsSection() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
+          <NeonButton
             data-tour="cloudflare.settings.save"
             onClick={submit}
             disabled={save.isPending}
-            className="flex h-11 items-center gap-1.5 rounded-[11px] bg-white px-4 font-mbc text-[13.5px] text-[#0b0b0d] transition-opacity disabled:opacity-50 md:h-[38px]"
+            icon={save.isPending ? <Loader2 className="animate-spin" /> : undefined}
+            className="min-w-[96px] md:h-[38px]"
           >
-            {save.isPending && <Loader2 size={14} className="animate-spin" />}
             저장
-          </button>
+          </NeonButton>
           <Btn
             tour="cloudflare.settings.test"
-            className="max-md:h-11"
             busy={runTest.isPending}
             onClick={() => {
               setTest(null);

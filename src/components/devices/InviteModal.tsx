@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { X } from "lucide-react";
-import { ActionButton } from "@/components/hall/setup/ui";
+import NeonButton from "@/components/common/NeonButton";
 import type { InviteCreated } from "@/types/member";
 
 function left(until: string, now: number): string {
@@ -101,10 +101,12 @@ export default function InviteModal({
           </p>
 
           <div className="order-5 grid grid-cols-2 gap-2 md:order-none md:flex md:justify-end">
-            <ActionButton tone="ghost" className="border-white/15 max-md:h-11" onClick={onCancelInvite}>
+            <NeonButton tone="white" onClick={onCancelInvite}>
               초대 취소
-            </ActionButton>
-            <ActionButton className="max-md:h-11" onClick={onClose}>닫기</ActionButton>
+            </NeonButton>
+            <NeonButton tone="white" onClick={onClose}>
+              닫기
+            </NeonButton>
           </div>
         </div>
       </div>
