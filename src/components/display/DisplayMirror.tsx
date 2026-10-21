@@ -113,7 +113,17 @@ function ytPos(pb?: Playback | null): number {
 
 /** 미리보기용 유튜브 — 실제 송출과 동일한 IFrame API + 서버 시각 동기화(같은 시점 표시).
  *  sound 가 아니면 음소거 (컨트롤 미리보기는 늘, live 는 학생이 소리를 켜기 전까지). hover 유튜브 UI는 투명 오버레이로 차단. */
-function MirrorYouTube({ videoId, playback, sound = false }: { videoId: string; playback?: Playback | null; sound?: boolean }) {
+function MirrorYouTube({
+  videoId,
+  playback,
+  sound = false,
+  volume = 1,
+}: {
+  videoId: string;
+  playback?: Playback | null;
+  sound?: boolean;
+  volume?: number;
+}) {
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const readyRef = useRef(false);
@@ -121,6 +131,8 @@ function MirrorYouTube({ videoId, playback, sound = false }: { videoId: string; 
   pbRef.current = playback;
   const soundRef = useRef(sound);
   soundRef.current = sound;
+  const volRef = useRef(volume);
+  volRef.current = volume;
 
   const apply = (initial: boolean) => {
     const p = playerRef.current;
@@ -138,7 +150,7 @@ function MirrorYouTube({ videoId, playback, sound = false }: { videoId: string; 
       else p.pauseVideo?.();
       if (soundRef.current && !pb.muted) {
         p.unMute?.();
-        p.setVolume?.(Math.round((typeof pb.volume === "number" ? pb.volume : 1) * 100));
+        p.setVolume?.(Math.round((typeof pb.volume === "number" ? pb.volume : 1) * volRef.current * 100));
       } else p.mute?.();
     } catch {
       /* not ready */
@@ -221,7 +233,7 @@ function MirrorYouTube({ videoId, playback, sound = false }: { videoId: string; 
 
   useEffect(() => {
     if (readyRef.current) apply(false);
-  }, [playback, sound]);
+  }, [playback, sound, volume]);
 
   return (
     <div className="relative h-full w-full bg-black">
@@ -232,8 +244,21 @@ function MirrorYouTube({ videoId, playback, sound = false }: { videoId: string; 
 }
 
 /** 음원 송출 — 화면에는 표시만, sound 를 켜면 송출 시작 시각에 맞춰 같이 튼다 */
-function MirrorAudio({ url, startedAt, sound }: { url: string; startedAt?: number; sound: boolean }) {
+function MirrorAudio({
+  url,
+  startedAt,
+  sound,
+  volume = 1,
+}: {
+  url: string;
+  startedAt?: number;
+  sound: boolean;
+  volume?: number;
+}) {
   const ref = useRef<HTMLAudioElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.volume = Math.min(1, Math.max(0, volume));
+  }, [volume]);
   useEffect(() => {
     const a = ref.current;
     if (!a) return;
@@ -307,11 +332,17 @@ export const DisplayMirror = ({
   badge = true,
   role = "control",
   sound = false,
+  volume = 1,
+  fit,
 }: {
   channel?: number;
   badge?: boolean;
   role?: "control" | "live";
   sound?: boolean;
+  /** 보는 사람 쪽 소리 크기 0~1 — 송출 화면의 볼륨에 곱한다 (live 플레이어) */
+  volume?: number;
+  /** 화면 맞춤 — 정하면 송출 설정 대신 이걸로 (live 플레이어 '꽉 채우기') */
+  fit?: "contain" | "cover";
 }) => {
   const { content } = useDisplaySync(channel, role);
   const soundRef = useRef(sound);
@@ -431,7 +462,7 @@ export const DisplayMirror = ({
     if (content?.type !== "video" || !v || !content.playback) return;
     const pb = content.playback;
     v.muted = !sound || !!pb.muted;
-    v.volume = typeof pb.volume === "number" ? Math.min(1, Math.max(0, pb.volume)) : 1;
+    v.volume = Math.min(1, Math.max(0, (typeof pb.volume === "number" ? pb.volume : 1) * volume));
     const target = posFromPlayback(pb, v.duration);
     if (
       target != null &&
@@ -447,7 +478,7 @@ export const DisplayMirror = ({
     } else if (!v.paused) {
       v.pause();
     }
-  }, [content?.type, content?.playback, sound]);
+  }, [content?.type, content?.playback, sound, volume]);
 
   if (content?.type === "screen") {
     // 다른 컨트롤(노트북)이 이 채널로 화면을 공유 중 — 영상은 P2P라 여기선 볼 수 없다
@@ -480,17 +511,17 @@ export const DisplayMirror = ({
       {content.type === "image" && content.url ? (
         <div
           className="relative flex items-center justify-center"
-          style={{
-            aspectRatio: "16 / 9",
-            maxWidth: "100%",
-            maxHeight: "100%",
-          }}
+          style={
+            fit === "cover"
+              ? { width: "100%", height: "100%" }
+              : { aspectRatio: "16 / 9", maxWidth: "100%", maxHeight: "100%" }
+          }
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={content.url}
             alt="Mirror View"
-            className="h-full w-full object-contain"
+            className={cn("h-full w-full", fit === "cover" ? "object-cover" : "object-contain")}
           />
           {content.overlay ? <MirrorTextOverlay overlay={content.overlay} /> : null}
         </div>
@@ -502,7 +533,7 @@ export const DisplayMirror = ({
           muted={!sound}
           playsInline
           className="h-full w-full"
-          style={{ objectFit: content.playback?.fit ?? "contain" }}
+          style={{ objectFit: fit ?? content.playback?.fit ?? "contain" }}
         />
       ) : null}
 
@@ -517,12 +548,12 @@ export const DisplayMirror = ({
             ]
           }
           alt="Mirror Slide"
-          className="h-full w-full object-contain"
+          className={cn("h-full w-full", fit === "cover" ? "object-cover" : "object-contain")}
         />
       ) : null}
 
       {content.type === "audio" && content.url ? (
-        <MirrorAudio url={content.url} startedAt={content.serverTimestamp} sound={sound} />
+        <MirrorAudio url={content.url} startedAt={content.serverTimestamp} sound={sound} volume={volume} />
       ) : null}
 
       {content.type === "timer" ? (
@@ -535,7 +566,7 @@ export const DisplayMirror = ({
       ) : null}
 
       {content.type === "youtube" && content.videoId ? (
-        <MirrorYouTube videoId={content.videoId} playback={content.playback} sound={sound} />
+        <MirrorYouTube videoId={content.videoId} playback={content.playback} sound={sound} volume={volume} />
       ) : null}
 
       {badge && (

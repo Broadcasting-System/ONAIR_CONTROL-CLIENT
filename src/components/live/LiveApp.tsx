@@ -5,13 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   ChevronLeft,
+  ChevronRight,
   Eye,
   Maximize,
   Minimize,
   MonitorUp,
   Music,
+  PictureInPicture2,
   Play,
+  RectangleHorizontal,
+  Settings,
   Timer,
+  Volume1,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -66,6 +71,8 @@ function clock(startedAt: number | null): string {
 
 // 소리가 있는 송출 — 이것만 [소리 켜기]를 보인다
 const AUDIBLE = new Set(["video", "youtube", "audio"]);
+// 화면 맞춤(원본 비율/꽉 채우기)을 고를 수 있는 송출
+const FITTABLE = new Set(["video", "image", "presentation"]);
 
 const place = (c: LiveChannel) => [c.hallName, c.label].filter(Boolean).join(" · ");
 
@@ -306,6 +313,232 @@ function useFullscreen() {
   return { ref, full: native || filled, filled, toggle };
 }
 
+/** 소리 크기 막대 — 유튜브처럼 3px 선 + 12px 동그라미 (기본 range 는 선이 굵다) */
+function VolumeSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const pick = (clientX: number) => {
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    onChange(Math.round(Math.min(1, Math.max(0, (clientX - r.left) / r.width)) * 100));
+  };
+  return (
+    <div
+      ref={ref}
+      role="slider"
+      tabIndex={0}
+      aria-label="소리 크기"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={value}
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        pick(e.clientX);
+      }}
+      onPointerMove={(e) => e.buttons === 1 && pick(e.clientX)}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowRight" || e.key === "ArrowUp") onChange(Math.min(100, value + 5));
+        if (e.key === "ArrowLeft" || e.key === "ArrowDown") onChange(Math.max(0, value - 5));
+      }}
+      className="relative mr-4 h-10 w-[56px] shrink-0 cursor-pointer touch-none focus-visible:outline-none"
+    >
+      <span className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-white/30" />
+      <span className="absolute left-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-white" style={{ width: `${value}%` }} />
+      <span
+        className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+        style={{ left: `${value}%` }}
+      />
+    </div>
+  );
+}
+
+/** 플레이어 조작부 — 유튜브 플레이어 구조: 바 없이 아래만 살짝 어둡게, 얇은 진행선, 반투명 알약 버튼.
+ *  가만히 두면 2.5초 뒤 사라지고, 폰은 한 번 누르면 나타난다. */
+function PlayerControls({
+  audible,
+  fittable,
+  onPip,
+  volume,
+  setVolume,
+  full,
+  onFull,
+  fit,
+  setFit,
+  viewers,
+}: {
+  audible: boolean;
+  /** 화면 맞춤을 고를 수 있는 송출 (영상·이미지·PPT) */
+  fittable: boolean;
+  /** 작은 화면으로 보기 — 영상 송출이고 브라우저가 될 때만 */
+  onPip?: () => void;
+  volume: number;
+  setVolume: (v: number) => void;
+  full: boolean;
+  onFull: () => void;
+  fit: "contain" | "cover";
+  setFit: (f: "contain" | "cover") => void;
+  viewers: number;
+}) {
+  const [shown, setShown] = useState(true);
+  const [menu, setMenu] = useState(false);
+  const last = useRef(70);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const wake = useCallback(() => {
+    setShown(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setShown(false), 2500);
+  }, []);
+  useEffect(() => {
+    wake();
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [wake]);
+
+  const visible = shown || menu;
+  const muted = volume === 0;
+  const toggleMute = () => {
+    if (muted) setVolume(last.current || 70);
+    else {
+      last.current = volume;
+      setVolume(0);
+    }
+  };
+  const VolIcon = muted ? VolumeX : volume < 50 ? Volume1 : Volume2;
+  const pill = "flex h-10 items-center rounded-[28px] bg-black/30";
+  const btn =
+    "inline-flex h-10 w-12 items-center justify-center rounded-[28px] text-[#eee] transition-colors hover:text-white";
+
+  return (
+    <div
+      className={cn("absolute inset-0 z-20 font-pretendard transition-opacity duration-200", visible ? "opacity-100" : "cursor-none opacity-0")}
+      onPointerMove={(e) => e.pointerType === "mouse" && wake()}
+      onClick={(e) => {
+        if (menu) {
+          setMenu(false);
+          wake();
+          return;
+        }
+        // 폰은 누를 때마다 보였다 숨겼다 (유튜브처럼)
+        const touch = (e.nativeEvent as PointerEvent).pointerType === "touch";
+        if (touch && shown) {
+          if (timer.current) clearTimeout(timer.current);
+          setShown(false);
+        } else wake();
+      }}
+    >
+      {/* 노트북 — 아래만 살짝 어둡게 + 얇은 진행선 + 알약 버튼 */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(to_top,rgba(0,0,0,.55),rgba(0,0,0,0))] max-md:hidden" />
+      <div className="absolute inset-x-3 bottom-14 h-[3px] rounded-full bg-[#FF3B3B] max-md:hidden" />
+      <div
+        className="absolute inset-x-3 bottom-2 flex h-10 items-center gap-2 max-md:hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {audible ? (
+          <div className={cn(pill, "group/vol")}>
+            <button type="button" onClick={toggleMute} aria-label={muted ? "음소거 해제" : "음소거"} className={btn}>
+              <VolIcon size={22} />
+            </button>
+            <span className="flex w-0 items-center overflow-hidden transition-[width] duration-200 group-hover/vol:w-[72px] group-focus-within/vol:w-[72px]">
+              <VolumeSlider value={volume} onChange={setVolume} />
+            </span>
+          </div>
+        ) : null}
+        <div className={cn(pill, "gap-2 px-4 text-[14px] text-[#eee]")}>
+          <span className="h-2 w-2 rounded-full bg-[#FF3B3B]" />
+          실시간
+        </div>
+        <span className="flex-1" />
+        <div className={cn(pill, "px-1")}>
+          <button type="button" aria-label="설정" onClick={() => setMenu((v) => !v)} className={btn}>
+            <Settings size={22} className={cn("transition-transform duration-200", menu && "rotate-45")} />
+          </button>
+          {onPip ? (
+            <button type="button" aria-label="작은 화면으로 보기" onClick={onPip} className={btn}>
+              <PictureInPicture2 size={22} />
+            </button>
+          ) : null}
+          <button type="button" aria-label={full ? "전체 화면 끄기" : "전체 화면"} onClick={onFull} className={btn}>
+            {full ? <Minimize size={22} /> : <Maximize size={22} />}
+          </button>
+        </div>
+      </div>
+
+      {/* 폰 — 한 번 누르면 살짝 어두워지며 네 귀퉁이에 */}
+      <div className="absolute inset-0 bg-black/40 md:hidden">
+        {audible ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMute();
+            }}
+            className="absolute left-2 top-2 inline-flex h-8 items-center gap-1.5 rounded-full bg-black/45 px-3 text-[13px] text-white"
+          >
+            <VolIcon size={17} />
+            {muted ? "음소거 해제" : null}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          aria-label="설정"
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenu((v) => !v);
+          }}
+          className="absolute right-0.5 top-0.5 inline-flex h-10 w-10 items-center justify-center text-white"
+        >
+          <Settings size={21} />
+        </button>
+        <span className="absolute bottom-3.5 left-3 flex items-center gap-1.5 text-[13px] text-white">
+          <span className="h-2 w-2 rounded-full bg-[#FF3B3B]" />
+          실시간
+        </span>
+        <button
+          type="button"
+          aria-label={full ? "전체 화면 끄기" : "전체 화면"}
+          onClick={(e) => {
+            e.stopPropagation();
+            onFull();
+          }}
+          className="absolute bottom-0.5 right-0.5 inline-flex h-10 w-10 items-center justify-center text-white"
+        >
+          {full ? <Minimize size={21} /> : <Maximize size={21} />}
+        </button>
+      </div>
+      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-[#FF3B3B] md:hidden" />
+
+      {/* 설정 메뉴 — 유튜브 팝업처럼 */}
+      {menu ? (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute bottom-[60px] right-3 w-[250px] rounded-xl bg-[rgba(28,28,28,.92)] py-2 text-[13px] text-white max-md:bottom-auto max-md:top-10 max-md:w-[210px]"
+        >
+          {fittable ? (
+            <button
+              type="button"
+              onClick={() => setFit(fit === "contain" ? "cover" : "contain")}
+              className="flex h-10 w-full items-center gap-3.5 px-4 hover:bg-white/10"
+            >
+              <RectangleHorizontal size={19} />
+              화면 맞춤
+              <span className="ml-auto flex items-center gap-0.5 text-white/70">
+                {fit === "contain" ? "원본 비율" : "꽉 채우기"}
+                <ChevronRight size={16} />
+              </span>
+            </button>
+          ) : null}
+          <div className="flex h-10 items-center gap-3.5 px-4">
+            <Eye size={19} />
+            보는 사람
+            <span className="ml-auto text-white/70">{viewers}명</span>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /** 보기 — 큰 화면(소리는 눌러야 켜짐), 정보, 다른 송출 */
 function Watch({
   ch,
@@ -318,13 +551,23 @@ function Watch({
   now: number;
   open: (ch: number) => void;
 }) {
-  const [sound, setSound] = useState(false);
+  const [volume, setVolume] = useState(0);
+  const [fit, setFit] = useState<"contain" | "cover">("contain");
+  const sound = volume > 0;
   const fs = useFullscreen();
+  const [pipOk, setPipOk] = useState(false);
+  useEffect(() => setPipOk(typeof document !== "undefined" && !!document.pictureInPictureEnabled), []);
+  const pip = () => {
+    const v = fs.ref.current?.querySelector("video");
+    if (!v) return;
+    if (document.pictureInPictureElement) void document.exitPictureInPicture().catch(() => {});
+    else void v.requestPictureInPicture().catch(() => {});
+  };
   const c = list.find((x) => x.channel === ch);
   const others = list.filter((x) => x.channel !== ch);
 
   // 채널을 바꾸면 다시 음소거로 시작
-  useEffect(() => setSound(false), [ch]);
+  useEffect(() => setVolume(0), [ch]);
 
   return (
     <div className="mx-auto grid w-full max-w-[1400px] gap-6 pb-[calc(32px+env(safe-area-inset-bottom))] md:px-8 md:pt-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
@@ -341,33 +584,28 @@ function Watch({
                 : "aspect-video md:rounded-2xl",
           )}
         >
-          <DisplayMirror key={ch} channel={ch} role="live" badge={false} sound={sound} />
+          <DisplayMirror
+            key={ch}
+            channel={ch}
+            role="live"
+            badge={false}
+            sound={sound}
+            volume={volume / 100}
+            fit={fit}
+          />
           {c ? (
-            <>
-              <LiveBadge className="absolute left-3 top-3 z-20" />
-              <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2 pb-[env(safe-area-inset-bottom)]">
-                {AUDIBLE.has(c.type) && (
-                  <button
-                    type="button"
-                    onClick={() => setSound((v) => !v)}
-                    aria-pressed={sound}
-                    className="inline-flex h-10 items-center gap-2 rounded-full bg-black/70 px-4 font-pretendard text-[14px] font-semibold text-white backdrop-blur hover:bg-black/85"
-                  >
-                    {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
-                    {sound ? "소리 끄기" : "소리 켜기"}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => void fs.toggle()}
-                  aria-label={fs.full ? "전체 화면 끄기" : "전체 화면"}
-                  title={fs.full ? "전체 화면 끄기" : "전체 화면"}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur hover:bg-black/85"
-                >
-                  {fs.full ? <Minimize size={18} /> : <Maximize size={18} />}
-                </button>
-              </div>
-            </>
+            <PlayerControls
+              audible={AUDIBLE.has(c.type)}
+              fittable={FITTABLE.has(c.type)}
+              onPip={c.type === "video" && pipOk ? pip : undefined}
+              volume={volume}
+              setVolume={setVolume}
+              full={fs.full}
+              onFull={() => void fs.toggle()}
+              fit={fit}
+              setFit={setFit}
+              viewers={c.viewers}
+            />
           ) : (
             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-black/85">
               <p className="font-pretendard text-[17px] text-white/70">송출이 끝났어요</p>
