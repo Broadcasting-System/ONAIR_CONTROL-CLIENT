@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   ChevronLeft,
   Eye,
+  Maximize,
+  Minimize,
   MonitorUp,
   Music,
   Play,
@@ -243,6 +245,67 @@ function Home({
   );
 }
 
+type FsDoc = Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => Promise<void> };
+type FsEl = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+
+/** 송출 화면 전체 화면 — 브라우저 전체 화면이 되면 그걸로, 안 되는 곳(아이폰 등)은 화면을 꽉 채운다 */
+function useFullscreen() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [native, setNative] = useState(false);
+  const [filled, setFilled] = useState(false);
+
+  useEffect(() => {
+    const sync = () => {
+      const d = document as FsDoc;
+      setNative(!!(d.fullscreenElement || d.webkitFullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", sync);
+    document.addEventListener("webkitfullscreenchange", sync);
+    return () => {
+      document.removeEventListener("fullscreenchange", sync);
+      document.removeEventListener("webkitfullscreenchange", sync);
+    };
+  }, []);
+
+  // 꽉 채운 동안은 뒤 페이지가 스크롤되지 않게, Esc 로 나가게
+  useEffect(() => {
+    if (!filled) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setFilled(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [filled]);
+
+  const toggle = useCallback(async () => {
+    const d = document as FsDoc;
+    if (d.fullscreenElement || d.webkitFullscreenElement) {
+      await (d.exitFullscreen?.() ?? d.webkitExitFullscreen?.())?.catch?.(() => {});
+      return;
+    }
+    if (filled) {
+      setFilled(false);
+      return;
+    }
+    const el = ref.current as FsEl | null;
+    try {
+      if (el?.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" });
+      else if (el?.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      else throw new Error("no fullscreen");
+      // 폰은 가로로 돌려 보여 준다 (안 되는 브라우저는 그냥 넘어감)
+      const o = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+      await o?.lock?.("landscape").catch(() => {});
+    } catch {
+      setFilled(true);
+    }
+  }, [filled]);
+
+  return { ref, full: native || filled, filled, toggle };
+}
+
 /** 보기 — 큰 화면(소리는 눌러야 켜짐), 정보, 다른 송출 */
 function Watch({
   ch,
@@ -256,6 +319,7 @@ function Watch({
   open: (ch: number) => void;
 }) {
   const [sound, setSound] = useState(false);
+  const fs = useFullscreen();
   const c = list.find((x) => x.channel === ch);
   const others = list.filter((x) => x.channel !== ch);
 
@@ -265,22 +329,44 @@ function Watch({
   return (
     <div className="mx-auto grid w-full max-w-[1400px] gap-6 pb-[calc(32px+env(safe-area-inset-bottom))] md:px-8 md:pt-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
       <section aria-label="송출 보기" className="flex min-w-0 flex-col gap-3">
-        <div className="relative aspect-video w-full overflow-hidden bg-black md:rounded-2xl">
+        <div
+          ref={fs.ref}
+          onDoubleClick={() => void fs.toggle()}
+          className={cn(
+            "relative w-full overflow-hidden bg-black",
+            fs.filled
+              ? "fixed inset-0 z-[100] h-[100dvh] pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]"
+              : fs.full
+                ? "h-full"
+                : "aspect-video md:rounded-2xl",
+          )}
+        >
           <DisplayMirror key={ch} channel={ch} role="live" badge={false} sound={sound} />
           {c ? (
             <>
               <LiveBadge className="absolute left-3 top-3 z-20" />
-              {AUDIBLE.has(c.type) && (
+              <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2 pb-[env(safe-area-inset-bottom)]">
+                {AUDIBLE.has(c.type) && (
+                  <button
+                    type="button"
+                    onClick={() => setSound((v) => !v)}
+                    aria-pressed={sound}
+                    className="inline-flex h-10 items-center gap-2 rounded-full bg-black/70 px-4 font-pretendard text-[14px] font-semibold text-white backdrop-blur hover:bg-black/85"
+                  >
+                    {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                    {sound ? "소리 끄기" : "소리 켜기"}
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => setSound((v) => !v)}
-                  aria-pressed={sound}
-                  className="absolute bottom-3 right-3 z-20 inline-flex h-10 items-center gap-2 rounded-full bg-black/70 px-4 font-pretendard text-[14px] font-semibold text-white backdrop-blur hover:bg-black/85"
+                  onClick={() => void fs.toggle()}
+                  aria-label={fs.full ? "전체 화면 끄기" : "전체 화면"}
+                  title={fs.full ? "전체 화면 끄기" : "전체 화면"}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur hover:bg-black/85"
                 >
-                  {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
-                  {sound ? "소리 끄기" : "소리 켜기"}
+                  {fs.full ? <Minimize size={18} /> : <Maximize size={18} />}
                 </button>
-              )}
+              </div>
             </>
           ) : (
             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-black/85">
