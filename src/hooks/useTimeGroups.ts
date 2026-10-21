@@ -5,6 +5,9 @@ import { getApiBase } from "@/lib/apiBase";
 import { toast } from "@/components/common/Toast";
 import { DAYS, WEEKDAYS, dayTypeOf } from "@/constants/days";
 import { diffDay, samePair } from "@/components/time/bellUtils";
+import { useQueryClient } from "@tanstack/react-query";
+import type { DeviceSyncResult } from "@/constants/deviceBell";
+import { DEVICE_BELL_KEY } from "./useDeviceBell";
 
 const DAY_ORDER: DayType[] = DAYS.map((d) => d.value);
 const emptyDays = (): DaySchedule[] => DAY_ORDER.map((dayType) => ({ dayType, bells: [] }));
@@ -58,6 +61,7 @@ export const useTimeGroups = () => {
     name: null,
   });
   const pickedLiveTab = useRef(false);
+  const qc = useQueryClient();
 
   // 처음엔 오늘 요일 (주말이면 월)
   useEffect(() => {
@@ -246,9 +250,9 @@ export const useTimeGroups = () => {
   }, [groups, server]);
 
   /** 보고 있는 그룹을 서버로 보낸다. activate 면 이 그룹이 울리는 그룹이 되고, 아니면 저장만 한다.
-   *  평일과 특별(P)은 서버가 따로 받아서, 바뀐 쪽만 보낸다. */
+   *  평일과 특별(P)은 서버가 따로 받아서, 바뀐 쪽만 보낸다. 적용하기면 마지막 장비 전송 결과를 돌려준다. */
   const sendTimeTable = useCallback(
-    async (activate: boolean) => {
+    async (activate: boolean): Promise<DeviceSyncResult | null> => {
       const g = activeGroup;
       const diff = diffs.get(g.id);
       const weekday = WEEKDAYS.some((w) => diff?.days.has(w));
@@ -257,10 +261,11 @@ export const useTimeGroups = () => {
       if (weekday) reqs.push(false);
       if (special) reqs.push(true);
       if (reqs.length === 0) {
-        if (!activate) return;
+        if (!activate) return null;
         reqs.push(activeDay === "P");
       }
       const sent: DayType[] = [];
+      let device: DeviceSyncResult | null = null;
       try {
         for (const isSpecialOnly of reqs) {
           const schedule = g.days.filter((d) => (d.dayType === "P") === isSpecialOnly);
@@ -275,6 +280,8 @@ export const useTimeGroups = () => {
             break;
           }
           sent.push(...schedule.map((d) => d.dayType));
+          const j = await res.json().catch(() => null);
+          if (j?.device) device = j.device as DeviceSyncResult;
         }
       } catch (err: unknown) {
         console.error(err);
@@ -292,8 +299,10 @@ export const useTimeGroups = () => {
       }
       await fetchTimeTable(sent.length ? { group: g.id, days: sent } : undefined);
       fetchLive();
+      if (device) qc.invalidateQueries({ queryKey: DEVICE_BELL_KEY });
+      return device;
     },
-    [activeGroup, activeDay, diffs, fetchTimeTable, fetchLive, live.groupId],
+    [activeGroup, activeDay, diffs, fetchTimeTable, fetchLive, live.groupId, qc],
   );
 
   /** 그룹 이름 바꾸기 (서버에 바로). 빈 이름이면 지운다. */
@@ -335,6 +344,13 @@ export const useTimeGroups = () => {
         }
         setLive((prev) => ({ ...prev, special: active }));
         toast.success(active ? "특별 시간표로 울려요" : "평일 시간표로 울려요");
+        // 장비 TIMER LINK — 꺼져 있거나 잘 바뀌었으면 조용히, 못 바꿨거나 종 뒤로 미뤘으면 알린다
+        const device = ((await res.json().catch(() => null))?.device ?? null) as DeviceSyncResult | null;
+        if (device) {
+          if (device.status === "failed") toast.error(device.message);
+          else if (device.status === "deferred") toast.info(device.message);
+          qc.invalidateQueries({ queryKey: DEVICE_BELL_KEY });
+        }
       } catch (err) {
         console.error(err);
         toast.error("특별 시간표를 바꾸지 못했어요");
@@ -342,7 +358,7 @@ export const useTimeGroups = () => {
         fetchLive();
       }
     },
-    [live.groupId, fetchLive],
+    [live.groupId, fetchLive, qc],
   );
 
   const liveGroup = live.groupId != null ? server.find((g) => g.id === live.groupId) ?? null : null;

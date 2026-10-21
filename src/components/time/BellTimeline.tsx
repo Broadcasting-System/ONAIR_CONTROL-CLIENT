@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { Plus } from "lucide-react";
+import { MonitorOff, Plus, Router } from "lucide-react";
 import { Bell } from "@/types/time";
 import { cn } from "@/lib/utils";
 import NeonButton from "@/components/common/NeonButton";
 import EmptyState from "@/components/common/EmptyState";
 import { sortBells, summarizeSpeakers, type SpeakerSection } from "./bellUtils";
+import { deviceGroupName, hasPcBackup } from "@/constants/deviceBell";
+import { useDeviceBell } from "@/hooks/useDeviceBell";
 
 interface BellTimelineProps {
   bells: Bell[];
@@ -48,6 +50,7 @@ export default function BellTimeline({
   className,
 }: BellTimelineProps) {
   const rows = useMemo(() => sortBells(bells), [bells]);
+  const deviceGroups = useDeviceBell().info.groups;
   const scrollRef = useRef<HTMLDivElement>(null);
   const nowAt = nowHM == null ? -2 : rows.findIndex((b) => b.time > nowHM);
   const hasRows = rows.length > 0;
@@ -73,6 +76,7 @@ export default function BellTimeline({
               const past = !sel && nowHM != null && b.time <= nowHM;
               const place = summarizeSpeakers(b.speakers, sections);
               const vol = b.volume ?? 100;
+              const device = b.ringBy === "device";
               return (
                 <div key={b.id}>
                     {i === nowAt && <NowLine hm={nowHM!} />}
@@ -114,6 +118,24 @@ export default function BellTimeline({
                         )}
                       </span>
                       <span className="flex min-w-0 items-center justify-end gap-2 pl-2">
+                        {device ? (
+                          <span
+                            title="장비"
+                            className={cn(
+                              "inline-flex items-center gap-1.5 whitespace-nowrap font-pretendard text-[12px] font-medium",
+                              past ? "text-white/30" : "text-white/45",
+                            )}
+                          >
+                            <Router size={13} strokeWidth={2} className="shrink-0" aria-label="장비" />
+                            {deviceGroupName(deviceGroups, b.deviceGroup)}
+                            {!hasPcBackup(b) && (
+                              <span title="PC로 대신 못 울려요" className="ml-0.5 inline-flex shrink-0 text-white/30">
+                                <MonitorOff size={12} strokeWidth={2} aria-label="PC로 대신 못 울려요" />
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                        <>
                         {vol !== 100 && (
                           <span className="shrink-0 font-orbitron text-[11px] font-semibold text-white/45">{vol}%</span>
                         )}
@@ -129,6 +151,8 @@ export default function BellTimeline({
                           >
                             <span className="truncate">{place.text}</span>
                           </span>
+                        )}
+                        </>
                         )}
                       </span>
                     </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { Loader2, Music, Pencil, Play, Square } from "lucide-react";
+import { Loader2, Monitor, MonitorOff, Music, Pencil, Play, Router, Square } from "lucide-react";
 import { Bell, AudioFile, DayType } from "@/types/time";
 import NeonButton from "@/components/common/NeonButton";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,15 @@ import { getApiBase } from "@/lib/apiBase";
 import { DAY_LABEL, WEEKDAYS } from "@/constants/days";
 import { audioKey, type SpeakerSection } from "./bellUtils";
 import SpeakerPicker from "./SpeakerPicker";
+import DeviceGroupPicker from "./DeviceGroupPicker";
+import { DEFAULT_DEVICE_GROUP, DEFAULT_DEVICE_TRACK, hasPcBackup } from "@/constants/deviceBell";
+import { useDeviceBell } from "@/hooks/useDeviceBell";
+
+type RingBy = "pc" | "device";
+const RING_OPTIONS: { value: RingBy; label: string; icon: typeof Monitor }[] = [
+  { value: "pc", label: "PC", icon: Monitor },
+  { value: "device", label: "장비", icon: Router },
+];
 
 const VOLUME_MIN = 10;
 const VOLUME_MAX = 150;
@@ -39,6 +48,11 @@ export default function BellEditor({ bell, sections, testSpeaker, audioFiles, in
   const [speakers, setSpeakers] = useState<string[]>(bell?.speakers ?? []);
   const [volume, setVolume] = useState(bell?.volume ?? 100);
   const [days, setDays] = useState<DayType[]>(initialDays ?? []);
+  const [ringBy, setRingBy] = useState<RingBy>(bell?.ringBy ?? "pc");
+  const [deviceGroup, setDeviceGroup] = useState<number | undefined>(bell?.deviceGroup ?? DEFAULT_DEVICE_GROUP);
+  const [deviceTrack, setDeviceTrack] = useState<string>(bell?.deviceTrack ?? DEFAULT_DEVICE_TRACK);
+  const isDevice = ringBy === "device";
+  const { info: device } = useDeviceBell();
   const [previewing, setPreviewing] = useState<"idle" | "loading" | "playing">("idle");
   const previewRef = useRef<HTMLAudioElement | null>(null);
   const labelRef = useRef<HTMLInputElement>(null);
@@ -80,15 +94,31 @@ export default function BellEditor({ bell, sections, testSpeaker, audioFiles, in
     if (!label.trim()) return toast.error("시보 이름을 넣어 주세요");
     if (!/^\d{1,2}:\d{2}$/.test(time)) return toast.error("울릴 시간을 골라 주세요");
     if (initialDays && !bell && days.length === 0) return toast.error("울리는 요일을 골라 주세요");
+    if (isDevice && !deviceGroup) return toast.error("장소를 골라 주세요");
+    if (isDevice && !deviceTrack) return toast.error("음원을 골라 주세요");
     onSave(
-      {
-        id: bell?.id || Date.now().toString(36),
-        label: label.trim(),
-        time,
-        audioFile,
-        speakers,
-        volume,
-      },
+      isDevice
+        ? {
+            // PC 칸(음악·장소·볼륨)은 그대로 남긴다 — 장비에 못 보내면 PC 가 이걸로 대신 울린다
+            id: bell?.id || Date.now().toString(36),
+            label: label.trim(),
+            time,
+            audioFile: audioFile || "none",
+            speakers,
+            volume,
+            ringBy: "device",
+            deviceGroup,
+            deviceTrack,
+          }
+        : {
+            id: bell?.id || Date.now().toString(36),
+            label: label.trim(),
+            time,
+            audioFile,
+            speakers,
+            volume,
+            ringBy: "pc",
+          },
       initialDays ? WEEKDAYS.filter((d) => days.includes(d)) : null,
     );
   };
@@ -110,6 +140,31 @@ export default function BellEditor({ bell, sections, testSpeaker, audioFiles, in
         />
         <Pencil size={15} className="shrink-0 cursor-text text-white/40" aria-hidden />
       </label>
+
+      <div className="flex items-center gap-3">
+        <span className="font-mbc text-[14px] text-white/55">울리는 곳</span>
+        <div data-tour="time.editor.ring" role="radiogroup" aria-label="울리는 곳" className="flex gap-1 rounded-lg bg-white/[0.06] p-1">
+          {RING_OPTIONS.map(({ value, label: text, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={ringBy === value}
+              onClick={() => {
+                if (value === "device") stopPreview();
+                setRingBy(value);
+              }}
+              className={cn(
+                "flex h-9 items-center gap-1.5 rounded-md px-3.5 font-pretendard text-[14px] font-semibold transition-colors md:h-8",
+                ringBy === value ? "bg-white/20 text-white" : "text-white/50 hover:text-white/80",
+              )}
+            >
+              <Icon size={14} strokeWidth={2.2} />
+              {text}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <TimePicker
@@ -142,6 +197,29 @@ export default function BellEditor({ bell, sections, testSpeaker, audioFiles, in
         )}
       </div>
 
+      {isDevice ? (
+        <div className="relative w-full min-w-0">
+          <Music size={13} className="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-white/40" />
+          <Select
+            tour="time.editor.device-track"
+            value={deviceTrack}
+            onChange={setDeviceTrack}
+            placeholder="음원 고르기"
+            aria-label="장비 음원"
+            options={device.tracks.map((t) => ({
+              value: t.no,
+              textValue: `${t.no} ${t.name}`,
+              label: (
+                <span className="flex items-center gap-2.5">
+                  <span className="font-orbitron text-[12px] font-semibold tabular-nums text-white/45">{t.no}</span>
+                  <span>{t.name}</span>
+                </span>
+              ),
+            }))}
+            className="h-11 w-full rounded-xl border-white/10 bg-[#0c0d0f] pl-8 pr-3 text-[14px] md:h-10"
+          />
+        </div>
+      ) : (
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full min-w-0 sm:w-auto sm:flex-1">
           <Music size={13} className="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-white/40" />
@@ -196,18 +274,33 @@ export default function BellEditor({ bell, sections, testSpeaker, audioFiles, in
           <span className="w-[42px] shrink-0 text-right font-orbitron text-[12px] tabular-nums text-white">{volume}%</span>
         </div>
       </div>
+      )}
 
-      <SpeakerPicker
-        sections={sections}
-        selected={speakers}
-        onChange={setSpeakers}
-        testSpeaker={testSpeaker}
-        className="md:flex-1"
-      />
+      {isDevice && !hasPcBackup({ audioFile, speakers }) && (
+        <span className="-mt-1 flex items-center gap-1.5 pl-1 font-pretendard text-[12.5px] font-medium text-white/40">
+          <MonitorOff size={13} strokeWidth={2} className="shrink-0" />
+          PC로 대신 못 울려요
+        </span>
+      )}
+
+      {isDevice ? (
+        <>
+          <DeviceGroupPicker groups={device.groups} value={deviceGroup} onChange={setDeviceGroup} />
+          <div className="max-md:hidden md:flex-1" />
+        </>
+      ) : (
+        <SpeakerPicker
+          sections={sections}
+          selected={speakers}
+          onChange={setSpeakers}
+          testSpeaker={testSpeaker}
+          className="md:flex-1"
+        />
+      )}
 
       <div className="flex gap-2.5">
         {bell && onDelete && (
-          <NeonButton tone="white" data-tour="time.editor.delete" onClick={onDelete} className="h-12 w-[110px] shrink-0 md:h-11">
+          <NeonButton tone="white" data-tour="time.editor.delete" onClick={onDelete} className="h-12 min-w-[132px] shrink-0 md:h-11">
             지우기
           </NeonButton>
         )}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Router } from "lucide-react";
 
 import GroupPicker, { type GroupPickerItem } from "@/components/time/GroupPicker";
 import LiveBellStatus from "@/components/time/LiveBellStatus";
@@ -27,6 +27,7 @@ import { DAYS, DAY_LABEL, WEEKDAYS, dayTypeOf } from "@/constants/days";
 import { Bell, AudioFile, DayType } from "@/types/time";
 import { TOUR_CLOSE_EVENT } from "@/stores/tourStore";
 import { cn } from "@/lib/utils";
+import { useDeviceBell } from "@/hooks/useDeviceBell";
 
 const TIME_TAB_KEYS = ["table", "schedule", "energy"] as const;
 const TIME_TABS = [
@@ -36,6 +37,11 @@ const TIME_TABS = [
 ];
 
 const pad = (n: number) => String(n).padStart(2, "0");
+const hm = (ms: number) => {
+  const d = new Date(ms);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const hms = (ms: number) => `${hm(ms)}:${pad(new Date(ms).getSeconds())}`;
 
 /** 지금 시각 — 분이 바뀔 때마다 (서버 렌더와 어긋나지 않게 처음엔 null) */
 function useMinuteNow(): Date | null {
@@ -130,8 +136,31 @@ export default function TimePage() {
     url: file.fileUrl,
   }));
 
+  // 장비로 울리는 줄 — 요일마다 같은 이름·시간이면 한 줄 (장비 주간 타이머 한 줄)
+  const deviceRows = useMemo(() => {
+    const keys = new Set<string>();
+    for (const d of activeGroup.days)
+      for (const b of d.bells)
+        if (b.ringBy === "device") keys.add(`${d.dayType === "P" ? "P" : "W"}|${b.time}|${b.label.trim()}|${b.deviceGroup}|${b.deviceTrack}`);
+    return keys.size;
+  }, [activeGroup]);
+  const { info: device } = useDeviceBell();
+
   const today = now ? dayTypeOf(now) : null;
   const isLive = liveGroupId === activeGroup.id;
+
+  // 울리는 그룹에 장비 줄이 있으면 적용하기 옆에 장비 상태 한 줄 (서버가 기억하는 마지막 전송)
+  const deviceNote = useMemo(() => {
+    if (!isLive || deviceRows === 0) return null;
+    if (!device.enabled) return { text: "장비 꺼짐 · PC로 울려요", bad: false };
+    if (device.pending) return { text: `장비 ${hms(device.pending.at)}에 보내요`, bad: false };
+    const last = device.last;
+    if (!last) return null;
+    // 실패했거나 장비가 무엇을 들고 있는지 모르면 장비 줄은 PC 가 울린다
+    if (last.status === "failed" || device.rows == null || device.link == null)
+      return { text: "장비 못 보냄 · PC로 울려요", bad: true };
+    return { text: `장비 ${device.rows}줄 · ${hm(last.at)}`, bad: false };
+  }, [isLive, deviceRows, device]);
   // 지금 시각 선: 오늘 요일을 볼 때, 또는 특별 시간표로 울리는 그룹의 특별 탭을 볼 때
   const isTodayView = !!now && (activeDay === today || (activeDay === "P" && isLive && isSpecialActive));
   const nowHM = isTodayView && now ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : null;
@@ -202,7 +231,12 @@ export default function TimePage() {
   const apply = async (activate: boolean) => {
     setBusy(true);
     try {
-      await sendTimeTable(activate);
+      const result = await sendTimeTable(activate);
+      // 장비 줄이 있을 때만 알린다. 못 보냈으면 장비 줄이 없어도 (장비가 옛 표로 울릴 수 있다)
+      if (result && (deviceRows > 0 || result.status === "failed")) {
+        if (result.status === "failed") toast.error(result.message);
+        else toast.info(result.message);
+      }
     } finally {
       setBusy(false);
     }
@@ -297,6 +331,17 @@ export default function TimePage() {
                 onPaste={pasteBells}
                 onReset={() => setResetOpen(true)}
               />
+              {deviceNote && (
+                <span
+                  className={cn(
+                    "flex items-center gap-1.5 whitespace-nowrap pl-1 font-pretendard text-[12.5px] font-medium max-md:hidden",
+                    deviceNote.bad ? "text-[#ff8a8a]" : "text-white/45",
+                  )}
+                >
+                  <Router size={13} strokeWidth={2} />
+                  {deviceNote.text}
+                </span>
+              )}
               <ApplyButtons isLive={isLive} count={unsent} busy={busy || !loaded} onApply={onApply} className="max-md:hidden" />
             </div>
           </div>

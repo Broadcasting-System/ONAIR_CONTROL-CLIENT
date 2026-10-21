@@ -34,6 +34,9 @@ const norm = (b: Bell) =>
     audioKey(b.audioFile ?? ""),
     [...(b.speakers ?? [])].sort(),
     b.volume ?? 100,
+    b.ringBy ?? "pc",
+    b.deviceGroup ?? null,
+    b.deviceTrack ?? null,
   ]);
 
 /** 한 요일의 로컬 시보와 서버 시보 비교.
