@@ -4,6 +4,7 @@ import { SwitchMirror } from "@/components/switcher/SlotPreview";
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { cn } from "@/lib/utils";
+import { HlsVideo, useLiveHlsUrl } from "@/components/live/HlsVideo";
 import {
   useDisplaySync,
   DisplayContent,
@@ -345,6 +346,8 @@ export const DisplayMirror = ({
   fit?: "contain" | "cover";
 }) => {
   const { content } = useDisplaySync(channel, role);
+  // 컨트롤 미리보기 — 화면 공유는 P2P 라 여기서 못 받는다. live 중계가 돌고 있으면 그 HLS 로 보여 준다
+  const liveHls = useLiveHlsUrl(channel, role === "control" && content?.type === "screen");
   const soundRef = useRef(sound);
   soundRef.current = sound;
   const [currentSlideIndex, setCurrentSlideIndex] = useState(() =>
@@ -480,8 +483,12 @@ export const DisplayMirror = ({
     }
   }, [content?.type, content?.playback, sound, volume]);
 
+  if (content?.type === "screen" && liveHls) {
+    return <HlsVideo src={liveHls} />;
+  }
+
   if (content?.type === "screen") {
-    // 다른 컨트롤(노트북)이 이 채널로 화면을 공유 중 — 영상은 P2P라 여기선 볼 수 없다
+    // 다른 컨트롤(노트북)이 이 채널로 화면을 공유 중 — 영상은 P2P라 여기선 볼 수 없다 (live 중계가 돌면 위에서 그걸로)
     return (
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black">
         <span className="flex items-center gap-2 rounded-full border border-red-500/50 bg-red-600/90 px-3 py-1.5">

@@ -1,4 +1,5 @@
 import {
+  RadioTower,
   AudioWaveform,
   Bell,
   Cable,
@@ -41,6 +42,7 @@ export const GROUPS: [group: string, icon: LucideIcon][] = [
   ["요청", Inbox],
   ["화면 공유", Cast],
   ["live 채팅", MessagesSquare],
+  ["live 중계", RadioTower],
   ["CUE", Sparkles],
   ["녹음·녹화", CircleDot],
   ["방송", Megaphone],

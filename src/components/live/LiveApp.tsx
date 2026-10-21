@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Eye,
   MessageSquareOff,
+  SlidersHorizontal,
   SendHorizontal,
   Maximize,
   Minimize,
@@ -27,6 +28,8 @@ import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import OnairMark from "@/components/common/OnairMark";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
+import { HlsVideo, hlsSrc, type LiveHls, type Quality } from "@/components/live/HlsVideo";
+import { useDisplaySync } from "@/hooks/useDisplaySync";
 import { backendBase, resolveMediaUrl } from "@/lib/backend";
 import { cn } from "@/lib/utils";
 import { channelName } from "@/constants/channels";
@@ -41,6 +44,8 @@ interface LiveChannel {
   startedAt: number | null;
   viewers: number;
   thumb: string | null;
+  /** live 중계 — 서버 PC 가 찍어 올린 HLS. 있으면 이걸 튼다 (화면 공유도 보인다) */
+  hls?: LiveHls | null;
 }
 
 async function fetchLive(): Promise<LiveChannel[]> {
@@ -77,6 +82,8 @@ function clock(startedAt: number | null): string {
 const AUDIBLE = new Set(["video", "youtube", "audio"]);
 // 화면 맞춤(원본 비율/꽉 채우기)을 고를 수 있는 송출
 const FITTABLE = new Set(["video", "image", "presentation"]);
+// 중계(HLS)로 볼 때 소리가 있을 수 있는 송출 — 화면 공유·스위처도 소리를 싣는다
+const HLS_AUDIBLE = new Set([...AUDIBLE, "screen", "switch"]);
 
 const place = (c: LiveChannel) => c.label || channelName(c.channel);
 
@@ -159,6 +166,86 @@ function Card({ c, now, onOpen }: { c: LiveChannel; now: number; onOpen: () => v
   );
 }
 
+/** 중계 화면 — 보는 사람으로 세어지도록 송출 연결(role=live)은 그대로 열어 둔다 (보는 사람이 있어야 중계가 돈다) */
+function HlsStage({
+  ch,
+  url,
+  volume,
+  fit,
+  quality,
+  onLevels,
+  onLevel,
+  onFatal,
+}: {
+  ch: number;
+  url: string;
+  volume: number;
+  fit: "contain" | "cover";
+  quality: Quality;
+  onLevels?: (h: number[]) => void;
+  onLevel?: (h: number) => void;
+  onFatal: () => void;
+}) {
+  useDisplaySync(ch, "live");
+  return (
+    <HlsVideo
+      src={hlsSrc(url)}
+      volume={volume}
+      fit={fit}
+      quality={quality}
+      onLevels={onLevels}
+      onLevel={onLevel}
+      onFatal={onFatal}
+    />
+  );
+}
+
+/** 송출 화면 — live 중계(HLS)가 있으면 그것, 없거나 안 되면 송출 내용을 그대로 다시 그린다(DisplayMirror) */
+function LiveStage({
+  c,
+  ch,
+  volume = 0,
+  fit = "contain",
+  quality = "auto",
+  onLevels,
+  onLevel,
+}: {
+  c?: LiveChannel;
+  ch: number;
+  /** 0~100 */
+  volume?: number;
+  fit?: "contain" | "cover";
+  quality?: Quality;
+  onLevels?: (h: number[]) => void;
+  onLevel?: (h: number) => void;
+}) {
+  const url = c?.hls?.url ?? null;
+  const [failed, setFailed] = useState<string | null>(null);
+  const useHls = !!url && failed !== url;
+  // 중계가 바뀌거나 끝나면 화질 목록을 비운다 (예전 화면은 화질을 고를 수 없다)
+  useEffect(() => {
+    if (!useHls) onLevels?.([]);
+  }, [useHls, onLevels]);
+  if (useHls) {
+    return (
+      <HlsStage
+        key={url}
+        ch={ch}
+        url={url}
+        volume={volume / 100}
+        fit={fit}
+        quality={quality}
+        onLevels={onLevels}
+        onLevel={onLevel}
+        onFatal={() => setFailed(url)}
+      />
+    );
+  }
+  return (
+    <DisplayMirror key={ch} channel={ch} role="live" badge={false} sound={volume > 0} volume={volume / 100} fit={fit} />
+  );
+}
+
 function Header({ onBack }: { onBack?: () => void }) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-white/[0.06] bg-[#0b0b0d]/90 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-md md:h-16 md:px-8">
@@ -210,7 +297,7 @@ function Home({
           onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && open(hero.channel)}
           className="group relative aspect-video max-h-[60dvh] w-full cursor-pointer overflow-hidden rounded-2xl bg-black ring-white/60 focus-visible:outline-none focus-visible:ring-2 md:rounded-[22px]"
         >
-          <DisplayMirror channel={hero.channel} role="live" badge={false} />
+          <LiveStage c={hero} ch={hero.channel} />
           <div className="pointer-events-none absolute inset-0 z-20 bg-[linear-gradient(to_top,rgba(0,0,0,.82),rgba(0,0,0,0)_55%)] max-md:hidden" />
           <div className="pointer-events-none absolute left-3 top-3 z-20 flex items-center gap-2 md:left-5 md:top-5">
             <LiveBadge />
@@ -372,6 +459,10 @@ function PlayerControls({
   onFull,
   fit,
   setFit,
+  qualities = [],
+  quality = "auto",
+  setQuality,
+  current,
 }: {
   audible: boolean;
   /** 화면 맞춤을 고를 수 있는 송출 (영상·이미지·PPT) */
@@ -384,10 +475,19 @@ function PlayerControls({
   onFull: () => void;
   fit: "contain" | "cover";
   setFit: (f: "contain" | "cover") => void;
+  /** 중계(HLS) 화질 높이 — 둘 이상이면 설정에 '화질' */
+  qualities?: number[];
+  quality?: Quality;
+  setQuality?: (q: Quality) => void;
+  /** 지금 나오는 화질 높이 (자동일 때 옆에) */
+  current?: number | null;
 }) {
   const [shown, setShown] = useState(true);
   // 설정 — 유튜브처럼 첫 화면(항목 + 지금 값)에서 항목을 누르면 고르는 화면(체크 표시)으로 넘어간다
-  const [menu, setMenu] = useState<null | "main" | "fit">(null);
+  const [menu, setMenu] = useState<null | "main" | "fit" | "quality">(null);
+  const pickable = qualities.length > 1 && !!setQuality;
+  const hasMenu = fittable || pickable;
+  const qualityLabel = quality === "auto" ? (current ? `자동 (${current}p)` : "자동") : `${quality}p`;
   const last = useRef(70);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -458,7 +558,7 @@ function PlayerControls({
         </div>
         <span className="flex-1" />
         <div className={cn(pill, "px-1")}>
-          {fittable ? (
+          {hasMenu ? (
             <button type="button" aria-label="설정" onClick={() => setMenu((v) => (v ? null : "main"))} className={btn}>
               <Settings size={22} className={cn("transition-transform duration-200", menu && "rotate-45")} />
             </button>
@@ -489,7 +589,7 @@ function PlayerControls({
             {muted ? "음소거 해제" : null}
           </button>
         ) : null}
-        {fittable ? (
+        {hasMenu ? (
           <button
             type="button"
             aria-label="설정"
@@ -527,18 +627,36 @@ function PlayerControls({
           className="absolute bottom-[60px] right-3 w-[250px] overflow-hidden rounded-xl bg-[rgba(28,28,28,.92)] py-2 text-[13px] text-white max-md:bottom-auto max-md:top-10 max-md:w-[220px]"
         >
           {menu === "main" ? (
-            <button
-              type="button"
-              onClick={() => setMenu("fit")}
-              className="flex h-10 w-full items-center gap-3.5 px-4 hover:bg-white/10"
-            >
-              <RectangleHorizontal size={19} />
-              화면 맞춤
-              <span className="ml-auto flex items-center gap-0.5 text-white/70">
-                {FIT_LABEL[fit]}
-                <ChevronRight size={16} />
-              </span>
-            </button>
+            <>
+              {fittable ? (
+                <button
+                  type="button"
+                  onClick={() => setMenu("fit")}
+                  className="flex h-10 w-full items-center gap-3.5 px-4 hover:bg-white/10"
+                >
+                  <RectangleHorizontal size={19} />
+                  화면 맞춤
+                  <span className="ml-auto flex items-center gap-0.5 text-white/70">
+                    {FIT_LABEL[fit]}
+                    <ChevronRight size={16} />
+                  </span>
+                </button>
+              ) : null}
+              {pickable ? (
+                <button
+                  type="button"
+                  onClick={() => setMenu("quality")}
+                  className="flex h-10 w-full items-center gap-3.5 px-4 hover:bg-white/10"
+                >
+                  <SlidersHorizontal size={19} />
+                  화질
+                  <span className="ml-auto flex items-center gap-0.5 text-white/70">
+                    {qualityLabel}
+                    <ChevronRight size={16} />
+                  </span>
+                </button>
+              ) : null}
+            </>
           ) : (
             <>
               <button
@@ -547,23 +665,38 @@ function PlayerControls({
                 className="flex h-10 w-full items-center gap-2 border-b border-white/10 px-3 pb-1 hover:bg-white/10"
               >
                 <ChevronLeft size={18} />
-                화면 맞춤
+                {menu === "fit" ? "화면 맞춤" : "화질"}
               </button>
               <div className="pt-1">
-                {(["contain", "cover"] as const).map((f) => (
-                  <button
-                    key={f}
-                    type="button"
-                    onClick={() => {
-                      setFit(f);
-                      setMenu("main");
-                    }}
-                    className="flex h-10 w-full items-center gap-3 px-4 hover:bg-white/10"
-                  >
-                    <span className="flex w-5 justify-center">{fit === f ? <Check size={18} /> : null}</span>
-                    {FIT_LABEL[f]}
-                  </button>
-                ))}
+                {menu === "fit"
+                  ? (["contain", "cover"] as const).map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => {
+                          setFit(f);
+                          setMenu("main");
+                        }}
+                        className="flex h-10 w-full items-center gap-3 px-4 hover:bg-white/10"
+                      >
+                        <span className="flex w-5 justify-center">{fit === f ? <Check size={18} /> : null}</span>
+                        {FIT_LABEL[f]}
+                      </button>
+                    ))
+                  : (["auto", ...qualities] as Quality[]).map((q) => (
+                      <button
+                        key={String(q)}
+                        type="button"
+                        onClick={() => {
+                          setQuality?.(q);
+                          setMenu("main");
+                        }}
+                        className="flex h-10 w-full items-center gap-3 px-4 hover:bg-white/10"
+                      >
+                        <span className="flex w-5 justify-center">{quality === q ? <Check size={18} /> : null}</span>
+                        {q === "auto" ? "자동" : `${q}p`}
+                      </button>
+                    ))}
               </div>
             </>
           )}
@@ -902,7 +1035,9 @@ function Watch({
 }) {
   const [volume, setVolume] = useState(0);
   const [fit, setFit] = useState<"contain" | "cover">("contain");
-  const sound = volume > 0;
+  const [quality, setQuality] = useState<Quality>("auto");
+  const [levels, setLevels] = useState<number[]>([]);
+  const [current, setCurrent] = useState<number | null>(null);
   const fs = useFullscreen();
   const [pipOk, setPipOk] = useState(false);
   useEffect(() => setPipOk(typeof document !== "undefined" && !!document.pictureInPictureEnabled), []);
@@ -916,7 +1051,10 @@ function Watch({
   const others = list.filter((x) => x.channel !== ch);
 
   // 채널을 바꾸면 다시 음소거로 시작
-  useEffect(() => setVolume(0), [ch]);
+  useEffect(() => {
+    setVolume(0);
+    setQuality("auto");
+  }, [ch]);
 
   return (
     <div className="mx-auto grid w-full max-w-[1700px] items-start gap-6 pb-[calc(32px+env(safe-area-inset-bottom))] md:px-8 md:pt-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6">
@@ -933,26 +1071,30 @@ function Watch({
                 : "aspect-video md:rounded-2xl",
           )}
         >
-          <DisplayMirror
-            key={ch}
-            channel={ch}
-            role="live"
-            badge={false}
-            sound={sound}
-            volume={volume / 100}
+          <LiveStage
+            c={c}
+            ch={ch}
+            volume={volume}
             fit={fit}
+            quality={quality}
+            onLevels={setLevels}
+            onLevel={setCurrent}
           />
           {c ? (
             <PlayerControls
-              audible={AUDIBLE.has(c.type)}
-              fittable={FITTABLE.has(c.type)}
-              onPip={c.type === "video" && pipOk ? pip : undefined}
+              audible={c.hls ? HLS_AUDIBLE.has(c.type) : AUDIBLE.has(c.type)}
+              fittable={!!c.hls || FITTABLE.has(c.type)}
+              onPip={(c.hls || c.type === "video") && pipOk ? pip : undefined}
               volume={volume}
               setVolume={setVolume}
               full={fs.full}
               onFull={() => void fs.toggle()}
               fit={fit}
               setFit={setFit}
+              qualities={c.hls ? levels : []}
+              quality={quality}
+              setQuality={setQuality}
+              current={current}
             />
           ) : (
             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-black/85">
