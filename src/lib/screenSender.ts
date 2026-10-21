@@ -5,17 +5,22 @@ import { backendBase } from "@/lib/backend";
  *  같은 채널의 받는 쪽(송출 화면 + 서버 PC 녹화 창 등) 여럿에게 각자 WebRTC 연결을 만든다. */
 
 const FALLBACK: RTCIceServer[] = [{ urls: "stun:stun.l.google.com:19302" }];
-let iceCache: { at: number; servers: RTCIceServer[] } | null = null;
+let iceCache: { at: number; key: string; servers: RTCIceServer[] } | null = null;
 
-/** STUN(+ 학교 밖까지 잇는 Cloudflare TURN) — 서버가 30분 단위로 준다. 못 받으면 STUN 만 */
-export async function getIceServers(): Promise<RTCIceServer[]> {
-  if (iceCache && Date.now() - iceCache.at < 30 * 60_000) return iceCache.servers;
+/** STUN(+ 학교 밖까지 잇는 Cloudflare TURN) — 서버가 20분 단위로 준다. 못 받으면 STUN 만.
+ *  TURN 은 쓴 만큼 돈이 들어 서버가 부원 기기·허용된 발표자에게만 준다 — 발표자는 shareToken 을 같이 보낸다 */
+export async function getIceServers(shareToken?: string | null): Promise<RTCIceServer[]> {
+  const key = shareToken ?? "";
+  if (iceCache && iceCache.key === key && Date.now() - iceCache.at < 20 * 60_000) return iceCache.servers;
   try {
-    const r = await fetch(`${backendBase()}/api/share/ice`, { cache: "no-store" });
+    const r = await fetch(`${backendBase()}/api/share/ice`, {
+      cache: "no-store",
+      headers: shareToken ? { "x-share-token": shareToken } : undefined,
+    });
     if (r.ok) {
       const servers = ((await r.json()) as { iceServers: RTCIceServer[] }).iceServers;
       if (Array.isArray(servers) && servers.length) {
-        iceCache = { at: Date.now(), servers };
+        iceCache = { at: Date.now(), key, servers };
         return servers;
       }
     }

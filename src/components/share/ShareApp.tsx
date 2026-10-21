@@ -165,7 +165,7 @@ export default function ShareApp() {
   useEffect(() => {
     if (!token || !stream || !channel || senderRef.current) return;
     let cancelled = false;
-    void getIceServers().then((ice) => {
+    void getIceServers(token).then((ice) => {
       if (cancelled || senderRef.current) return;
       const url = `${backendWs("/api/display/ws", channel, "signal")}&share=${encodeURIComponent(token)}`;
       senderRef.current = startScreenSender(stream, url, ice, () => {
