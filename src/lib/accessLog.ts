@@ -75,6 +75,9 @@ const RULES: Rule[] = [
   ["*", /^\/api\/share\/join/, "화면 공유 요청", "화면 공유"],
   ["*", /^\/api\/share\/me\/end/, "화면 공유 끝내기", "화면 공유"],
   ["*", /^\/api\/share/, "화면 공유 조작", "화면 공유"],
+  // 학생용 live 채팅 (보낸 채팅·지우기·막기는 WS 기록에 동작 이름이 붙어 온다)
+  ["*", /^\/api\/live\/chat\/words/, "live 채팅 금지어 바꾸기", "live 채팅"],
+  ["*", /^\/api\/live\/chat/, "live 채팅", "live 채팅"],
   // 선생님 바로 방송 (마이크는 끝날 때 한 줄, 글은 내보낼 때 한 줄 — 사람은 선생님)
   ["WS", /^\/api\/teacher\/live/, "방송 · 마이크", "방송"],
   ["*", /^\/api\/teacher\/now/, "방송 · 글", "방송"],
@@ -285,6 +288,7 @@ const AUTO_KINDS: Record<string, [label: string, group: string]> = {
   server: ["서버", "서버"],
   speaker: ["스피커", "스피커"],
   recording: ["녹음·녹화", "녹음·녹화"],
+  "live-chat": ["live 채팅 막기", "live 채팅"],
 };
 
 const isAuto = (l: LogEntry) => (l.method || "").toUpperCase() === "AUTO";
@@ -410,6 +414,8 @@ function actorOf(l: LogEntry): Person {
   if (device) {
     // 기수가 붙어 있거나 메일 계정·선생님이면 사람, 아니면 기기
     if (l.role === "teacher") return { key: `d:${device}`, name: device, sub: "선생님", kind: "teacher" };
+    // live 채팅 — 이름 옆에 학교 메일
+    if ((l.owner ?? "").includes("@")) return { key: `e:${l.owner}`, name: device, sub: l.owner ?? "", kind: "member" };
     if (/^\d+기$/.test(l.owner ?? "") || device.includes("@")) {
       return { key: `d:${device}`, name: device, sub: joinSub(l.owner, role), kind: "member" };
     }

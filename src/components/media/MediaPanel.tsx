@@ -9,6 +9,7 @@ import { toast } from "@/components/common/Toast";
 import { DurationWheel } from "@/components/common/DateTimePicker";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 import ExternalSharePanel, { shareSource, useExternalShare } from "@/components/media/ExternalSharePanel";
+import { LiveChatSwitch } from "@/components/media/LiveChatSwitch";
 import {
   Chip,
   ChannelChips,
@@ -767,6 +768,9 @@ export default function MediaPanel({ lead, fromSwitcher }: { lead: ReactNode; fr
           {!(warn || disabled) && <span className="hidden font-mbc text-[17px] text-white md:block">송출 화면</span>}
           <div className="order-1 md:order-none">
             <ChannelChips channel={channel} health={health} onPick={setChannel} />
+          </div>
+          <div className="order-1 md:order-none">
+            <LiveChatSwitch channel={channel} disabled={disabled} />
           </div>
           <div className="order-1 md:order-none">
             <LayoutSelect value={layout} onChange={setLayout} disabled={disabled} />

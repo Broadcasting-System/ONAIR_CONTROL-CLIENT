@@ -8,6 +8,8 @@ import {
   Check,
   ChevronRight,
   Eye,
+  MessageSquareOff,
+  SendHorizontal,
   Maximize,
   Minimize,
   MonitorUp,
@@ -571,6 +573,327 @@ function PlayerControls({
   );
 }
 
+// ---------------- 채팅 (서버 app/api/live_chat.py — 채널마다 방 하나) ----------------
+interface ChatMsg {
+  id: string;
+  name: string;
+  email: string;
+  text: string;
+  /** 보낸 시각 (ms) */
+  at: number;
+  /** 방송부 — 이름이 빨갛다 */
+  crew?: boolean;
+}
+
+interface ChatMe {
+  name: string;
+  email: string;
+  crew: boolean;
+  canSend: boolean;
+  /** 막혀 있으면 풀리는 시각(ms), 풀 때까지면 0, 안 막혔으면 null */
+  blockedUntil: number | null;
+}
+
+interface ChatBlocked {
+  email: string;
+  name: string;
+  until: number | null;
+}
+
+type ChatEvent =
+  | { type: "hello"; enabled: boolean; messages: ChatMsg[]; me: ChatMe; blocked?: ChatBlocked[] }
+  | { type: "message"; message: ChatMsg }
+  | { type: "deleted"; id: string }
+  | { type: "state"; enabled: boolean }
+  | { type: "me"; me: ChatMe }
+  | { type: "blocks"; blocked: ChatBlocked[] }
+  | { type: "notice" | "error"; message: string };
+
+const CHAT_KEEP = 100;
+const CHAT_MAX = 200;
+
+/** 채널 방 하나 — 끊기면 다시 붙는다 (share·teacher 주소처럼 서버가 거절한 것은 그대로) */
+function useLiveChat(ch: number) {
+  const [ready, setReady] = useState(false);
+  const [enabled, setEnabled] = useState(false);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [me, setMe] = useState<ChatMe | null>(null);
+  const [blocked, setBlocked] = useState<ChatBlocked[]>([]);
+  const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
+  const ws = useRef<WebSocket | null>(null);
+  const lastText = useRef("");
+
+  useEffect(() => {
+    let stop = false;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    let wait = 1000;
+    const connect = () => {
+      const sock = new WebSocket(`${backendBase().replace(/^http/, "ws")}/api/live/chat/ws?channel=${ch}`);
+      ws.current = sock;
+      sock.onmessage = (e) => {
+        let m: ChatEvent;
+        try {
+          m = JSON.parse(e.data as string) as ChatEvent;
+        } catch {
+          return;
+        }
+        if (m.type === "hello") {
+          wait = 1000;
+          setEnabled(m.enabled);
+          setMessages(m.messages);
+          setMe(m.me);
+          setBlocked(m.blocked ?? []);
+          setReady(true);
+        } else if (m.type === "message") setMessages((l) => [...l, m.message].slice(-CHAT_KEEP));
+        else if (m.type === "deleted") setMessages((l) => l.filter((x) => x.id !== m.id));
+        else if (m.type === "state") setEnabled(m.enabled);
+        else if (m.type === "me") setMe(m.me);
+        else if (m.type === "blocks") setBlocked(m.blocked);
+        else if (m.type === "notice" || m.type === "error") setNotice({ text: m.message, error: m.type === "error" });
+      };
+      sock.onclose = (e) => {
+        if (stop || e.code === 4403 || e.code === 4404) return;
+        retry = setTimeout(connect, wait);
+        wait = Math.min(wait * 2, 15_000);
+      };
+    };
+    connect();
+    return () => {
+      stop = true;
+      if (retry) clearTimeout(retry);
+      ws.current?.close();
+      ws.current = null;
+    };
+  }, [ch]);
+
+  // 알림은 잠깐만
+  useEffect(() => {
+    if (!notice) return;
+    const id = setTimeout(() => setNotice(null), 3500);
+    return () => clearTimeout(id);
+  }, [notice]);
+
+  const post = (data: object) => {
+    const sock = ws.current;
+    if (sock?.readyState !== WebSocket.OPEN) return false;
+    sock.send(JSON.stringify(data));
+    return true;
+  };
+
+  return {
+    ready,
+    enabled,
+    messages,
+    me,
+    blocked,
+    notice,
+    send: (text: string) => {
+      lastText.current = text;
+      return post({ type: "send", text });
+    },
+    /** 못 보냈을 때 다시 넣어 줄 글 */
+    lastText,
+    remove: (id: string) => post({ type: "delete", id }),
+    block: (email: string, minutes: number | null) => post({ type: "block", email, minutes }),
+    unblock: (email: string) => post({ type: "unblock", email }),
+  };
+}
+
+function hhmm(ms: number): string {
+  const d = new Date(ms);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+const MOD_BTN =
+  "inline-flex h-7 items-center rounded-full bg-white/[0.08] px-3 font-pretendard text-[12.5px] text-white/85 hover:bg-white/15";
+
+function ChatPanel({ ch, className }: { ch: number; className?: string }) {
+  const chat = useLiveChat(ch);
+  const [text, setText] = useState("");
+  const [picked, setPicked] = useState<string | null>(null);
+  const [blockAsk, setBlockAsk] = useState(false);
+  const list = useRef<HTMLOListElement>(null);
+  const stick = useRef(true);
+  const closed = chat.ready && !chat.enabled;
+  const me = chat.me;
+  const blocked = me?.blockedUntil != null;
+  const canType = chat.ready && !closed && !!me?.canSend && !blocked;
+  const crew = !!me?.crew;
+  const blockedSet = new Set(chat.blocked.map((b) => b.email));
+
+  // 맨 아래를 보고 있으면 새 채팅이 오면 따라 내려간다
+  useEffect(() => {
+    const el = list.current;
+    if (el && stick.current) el.scrollTop = el.scrollHeight;
+  }, [chat.messages]);
+
+  // 못 보냈으면(3초·막힘 등) 쓰던 글을 돌려준다
+  const { notice, lastText } = chat;
+  useEffect(() => {
+    if (notice?.error && lastText.current) {
+      const back = lastText.current;
+      setText((t) => t || back);
+      lastText.current = "";
+    }
+  }, [notice, lastText]);
+
+  const pick = (id: string) => {
+    if (!crew) return;
+    setBlockAsk(false);
+    setPicked((p) => (p === id ? null : id));
+  };
+
+  return (
+    <section
+      aria-label="채팅"
+      className={cn(
+        "flex min-h-0 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121215]",
+        className,
+        // 꺼져 있으면 폰에서는 작게 — 빈 칸이 화면을 차지하지 않게
+        closed && "max-lg:h-auto",
+      )}
+    >
+      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-white/[0.08] px-4">
+        <h2 className="font-pretendard text-[15px] font-bold text-white">실시간 채팅</h2>
+      </header>
+      {closed ? (
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 py-8 text-center">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.06] text-white/45">
+            <MessageSquareOff size={22} />
+          </span>
+          <p className="font-pretendard text-[15px] font-semibold text-white/70">방송부가 채팅을 껐어요</p>
+        </div>
+      ) : (
+        <ol
+          ref={list}
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+          }}
+          className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 py-4 [scrollbar-width:thin]"
+        >
+          {chat.messages.map((m) => {
+            const open = crew && picked === m.id;
+            const isBlocked = blockedSet.has(m.email);
+            return (
+              <li key={m.id} className="min-w-0 font-pretendard">
+                <div
+                  role={crew ? "button" : undefined}
+                  tabIndex={crew ? 0 : undefined}
+                  onClick={() => pick(m.id)}
+                  onKeyDown={(e) => crew && (e.key === "Enter" || e.key === " ") && pick(m.id)}
+                  className={cn(crew && "-mx-2 cursor-pointer rounded-lg px-2 py-0.5 hover:bg-white/[0.04]", open && "bg-white/[0.06]")}
+                >
+                  <p className="flex min-w-0 items-baseline gap-1.5 text-[12.5px]">
+                    <b className={cn("shrink-0 font-semibold", m.crew ? "text-[#FF3B3B]" : "text-white/85")}>
+                      {m.crew ? `방송부 ${m.name}` : m.name}
+                    </b>
+                    <span className="min-w-0 truncate text-white/35">{m.email}</span>
+                    <span className="ml-auto shrink-0 tabular-nums text-white/30">{hhmm(m.at)}</span>
+                  </p>
+                  <p className="mt-0.5 break-words text-[14.5px] leading-snug text-white">{m.text}</p>
+                </div>
+                {open ? (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      className={MOD_BTN}
+                      onClick={() => {
+                        chat.remove(m.id);
+                        setPicked(null);
+                      }}
+                    >
+                      지우기
+                    </button>
+                    {m.crew || m.email === me?.email ? null : isBlocked ? (
+                      <button
+                        type="button"
+                        className={MOD_BTN}
+                        onClick={() => {
+                          chat.unblock(m.email);
+                          setPicked(null);
+                        }}
+                      >
+                        막기 풀기
+                      </button>
+                    ) : blockAsk ? (
+                      <>
+                        {([30, null] as const).map((min) => (
+                          <button
+                            key={String(min)}
+                            type="button"
+                            className={MOD_BTN}
+                            onClick={() => {
+                              chat.block(m.email, min);
+                              setPicked(null);
+                              setBlockAsk(false);
+                            }}
+                          >
+                            {min ? `${min}분` : "풀 때까지"}
+                          </button>
+                        ))}
+                      </>
+                    ) : (
+                      <button type="button" className={MOD_BTN} onClick={() => setBlockAsk(true)}>
+                        채팅 막기
+                      </button>
+                    )}
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const t = text.trim();
+          if (!t || !canType) return;
+          if (chat.send(t)) setText("");
+        }}
+        className="shrink-0 border-t border-white/[0.08] p-3"
+      >
+        {closed || !me?.email ? null : (
+          <p
+            className={cn(
+              "mb-2 truncate px-1 font-pretendard text-[12px]",
+              chat.notice ? "text-[#FF3B3B]" : "text-white/40",
+            )}
+          >
+            {chat.notice ? chat.notice.text : `${me.name} · ${me.email} 으로 보내요`}
+          </p>
+        )}
+        <div className="flex h-11 items-center gap-2 rounded-full bg-white/[0.07] pl-4 pr-1.5">
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            maxLength={CHAT_MAX}
+            disabled={!canType}
+            aria-label="채팅"
+            placeholder={
+              closed || blocked
+                ? "지금은 채팅을 보낼 수 없어요"
+                : chat.ready && !me?.canSend
+                  ? "학교 계정으로 들어와야 보낼 수 있어요"
+                  : "채팅 보내기"
+            }
+            className="min-w-0 flex-1 bg-transparent font-pretendard text-[14.5px] text-white outline-none placeholder:text-white/35"
+          />
+          <button
+            type="submit"
+            aria-label="보내기"
+            disabled={!canType || !text.trim()}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#0b0b0d] disabled:bg-white/15 disabled:text-white/40"
+          >
+            <SendHorizontal size={16} />
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
 /** 보기 — 큰 화면(소리는 눌러야 켜짐), 정보, 다른 송출 */
 function Watch({
   ch,
@@ -602,18 +925,8 @@ function Watch({
   useEffect(() => setVolume(0), [ch]);
 
   return (
-    <div
-      className={cn(
-        "mx-auto grid w-full gap-6 pb-[calc(32px+env(safe-area-inset-bottom))] md:px-8 md:pt-6 lg:gap-8",
-        // 다른 송출이 있을 때만 오른쪽 줄 — 없으면 화면을 화면 높이에 맞춰 크게, 가운데로
-        others.length > 0 ? "max-w-[1600px] lg:grid-cols-[minmax(0,1fr)_340px]" : "max-w-[1600px]",
-      )}
-    >
-      <section
-        aria-label="송출 보기"
-        className="mx-auto flex w-full min-w-0 flex-col gap-3"
-        style={{ maxWidth: "calc((100dvh - 210px) * 16 / 9)" }}
-      >
+    <div className="mx-auto grid w-full max-w-[1700px] items-start gap-6 pb-[calc(32px+env(safe-area-inset-bottom))] md:px-8 md:pt-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6">
+      <section aria-label="송출 보기" className="flex w-full min-w-0 flex-col gap-3">
         <div
           ref={fs.ref}
           onDoubleClick={() => void fs.toggle()}
@@ -670,10 +983,17 @@ function Watch({
         ) : null}
       </section>
 
+      {/* 채팅 — 노트북은 오른쪽(화면 높이만큼), 폰은 제목 아래 */}
+      <ChatPanel
+        key={ch}
+        ch={ch}
+        className="mx-4 h-[460px] md:mx-0 lg:sticky lg:top-[88px] lg:row-span-2 lg:h-[calc(100dvh-112px)]"
+      />
+
       {others.length > 0 ? (
         <aside aria-label="다른 송출" className="flex flex-col gap-3 px-4 md:px-0">
           <h2 className="font-pretendard text-[17px] font-bold text-white">다른 송출</h2>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-1">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4">
             {others.map((o) => (
               <Card key={o.channel} c={o} now={now} onOpen={() => open(o.channel)} />
             ))}
