@@ -316,11 +316,14 @@ function useFullscreen() {
 /** 소리 크기 막대 — 유튜브처럼 3px 선 + 12px 동그라미 (기본 range 는 선이 굵다) */
 function VolumeSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  // 동그라미(12px)가 양 끝에서 잘리지 않게 6px 안쪽에서 움직인다
   const pick = (clientX: number) => {
     const r = ref.current?.getBoundingClientRect();
     if (!r) return;
-    onChange(Math.round(Math.min(1, Math.max(0, (clientX - r.left) / r.width)) * 100));
+    const x = (clientX - r.left - 6) / Math.max(1, r.width - 12);
+    onChange(Math.round(Math.min(1, Math.max(0, x)) * 100));
   };
+  const at = `calc(6px + (100% - 12px) * ${value / 100})`;
   return (
     <div
       ref={ref}
@@ -339,14 +342,14 @@ function VolumeSlider({ value, onChange }: { value: number; onChange: (v: number
         if (e.key === "ArrowRight" || e.key === "ArrowUp") onChange(Math.min(100, value + 5));
         if (e.key === "ArrowLeft" || e.key === "ArrowDown") onChange(Math.max(0, value - 5));
       }}
-      className="relative mr-4 h-10 w-[56px] shrink-0 cursor-pointer touch-none focus-visible:outline-none"
+      className="relative mr-3 h-10 w-[64px] shrink-0 cursor-pointer touch-none focus-visible:outline-none"
     >
-      <span className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-white/30" />
-      <span className="absolute left-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-white" style={{ width: `${value}%` }} />
+      <span className="absolute inset-x-1.5 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-white/30" />
       <span
-        className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
-        style={{ left: `${value}%` }}
+        className="absolute left-1.5 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-white"
+        style={{ width: `calc((100% - 12px) * ${value / 100})` }}
       />
+      <span className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" style={{ left: at }} />
     </div>
   );
 }
@@ -439,7 +442,7 @@ function PlayerControls({
             <button type="button" onClick={toggleMute} aria-label={muted ? "음소거 해제" : "음소거"} className={btn}>
               <VolIcon size={22} />
             </button>
-            <span className="flex w-0 items-center overflow-hidden transition-[width] duration-200 group-hover/vol:w-[72px] group-focus-within/vol:w-[72px]">
+            <span className="flex w-0 items-center overflow-hidden transition-[width] duration-200 group-hover/vol:w-[76px] group-focus-within/vol:w-[76px]">
               <VolumeSlider value={volume} onChange={setVolume} />
             </span>
           </div>
