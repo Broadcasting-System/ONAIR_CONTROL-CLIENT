@@ -90,7 +90,7 @@ export function useLiveMic(options: LiveMicOptions = {}) {
   }, []);
 
   const start = useCallback(
-    /** start 메시지에 sampleRate 와 같이 실어 보낼 것 — 방송부 {targets, effect, chime} · 선생님 {target} */
+    /** start 메시지에 sampleRate 와 같이 실어 보낼 것 — 방송부 {targets, effect, chime} · 선생님 {targets} */
     async (payload: Record<string, unknown>) => {
       if (stateRef.current !== "idle") return;
       set("connecting");

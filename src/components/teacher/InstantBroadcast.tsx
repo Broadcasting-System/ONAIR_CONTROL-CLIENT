@@ -6,9 +6,10 @@ import { Bell, MapPin, Mic, Play, Radio, RotateCcw, Send, Square, Type } from "l
 import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import OnairButton, { type OnairButtonState } from "@/components/common/OnairButton";
-import Select from "@/components/common/Select";
 import { toast } from "@/components/common/Toast";
 import { LevelMeter, fmtClock } from "@/components/broadcast/parts";
+import TargetSheet from "@/components/broadcast/TargetSheet";
+import { TEST_SPEAKER_ID, isTestSpeaker } from "@/constants/testSpeaker";
 import { useLiveMic } from "@/hooks/useLiveMic";
 import { cn } from "@/lib/utils";
 import { tapi, teacherLiveUrl } from "@/components/teacher/api";
@@ -25,7 +26,7 @@ export interface Space {
 interface NowStatus {
   busy: boolean;
   reason: string | null;
-  mine: { kind: "mic" | "text"; target: string; place: string; text: string; startedAt: number; endsAt: number | null } | null;
+  mine: { kind: "mic" | "text"; target: string; targets?: string[]; place: string; text: string; startedAt: number; endsAt: number | null } | null;
   bell: { time: string; label: string; at: number; jobAt: number } | null;
   micSeconds: number;
   micMinSeconds: number;
@@ -40,7 +41,9 @@ interface NowItem {
   id: string;
   kind: "mic" | "text";
   place: string;
+  /** 첫 곳 (예전 기록은 이것만) */
   target?: string;
+  targets?: string[];
   text?: string;
   seconds: number;
   at: string;
@@ -90,6 +93,11 @@ function whenLabel(at: string): string {
   const hm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   const today = new Date();
   return d.toDateString() === today.toDateString() ? `오늘 ${hm}` : `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
+}
+
+/** 여러 곳 → 한 줄 (서버 places_label 과 같게) — 두 곳까지 '1학년 1반, 교무실', 셋부터 '1학년 1반 외 2곳' */
+function joinPlaces(labels: string[]): string {
+  return labels.length <= 2 ? labels.join(", ") : `${labels[0]} 외 ${labels.length - 1}곳`;
 }
 
 /** 담당에 '2학년 3반' 이 있으면 그 반부터 */
@@ -199,19 +207,24 @@ export default function InstantBroadcast({
 }) {
   const qc = useQueryClient();
   const [mode, setMode] = useState<Mode>("mic");
-  const [target, setTarget] = useState("");
+  /** 방송할 곳 — 빠른 칩(1학년·전교…)은 하나, '다른 곳'은 지도에서 여러 곳 */
+  const [targets, setTargets] = useState<string[]>([]);
+  const [sheet, setSheet] = useState(false);
+  /** 고르기 창 안에서만 바뀌는 것 — [완료]를 눌러야 targets 로 */
+  const [draft, setDraft] = useState<string[]>([]);
   const [text, setText] = useState("");
   const [playing, setPlaying] = useState(false);
   const [plan, setPlan] = useState<Plan | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
 
-  // 담당 반이 있으면 처음엔 그 반
+  // 담당 반이 있으면 처음엔 그 반 (한 번만 — 다 빼도 다시 채우지 않게)
+  const seeded = useRef(false);
   useEffect(() => {
-    if (!target && spaces.length) {
-      const mine = myClass(dept, spaces);
-      if (mine) setTarget(mine);
-    }
-  }, [spaces, dept, target]);
+    if (seeded.current || !spaces.length) return;
+    seeded.current = true;
+    const mine = myClass(dept, spaces);
+    if (mine) setTargets((cur) => (cur.length ? cur : [mine]));
+  }, [spaces, dept]);
 
   const live = useLiveMic({
     url: teacherLiveUrl,
@@ -243,7 +256,7 @@ export default function InstantBroadcast({
 
   const textMine = st?.mine?.kind === "text" ? st.mine : null;
   const send = useMutation({
-    mutationFn: () => tapi<{ endsAt: number }>("/now", { method: "POST", body: JSON.stringify({ target, text: text.trim() }) }),
+    mutationFn: () => tapi<{ endsAt: number }>("/now", { method: "POST", body: JSON.stringify({ targets, text: text.trim() }) }),
     // 상태를 다시 받아 '방송 중'이 보일 때까지 기다린다 (그 사이 고르기 화면이 깜박이지 않게)
     onSuccess: async () => {
       setText("");
@@ -275,13 +288,32 @@ export default function InstantBroadcast({
   const retry = (r: NowItem) => {
     setMode("text");
     setText(r.text ?? "");
-    if (r.target) setTarget(r.target);
+    const back = r.targets?.length ? r.targets : r.target ? [r.target] : [];
+    if (back.length) setTargets(back);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const placeOf = (v: string) => QUICK.find((q) => q.value === v)?.label ?? spaces.find((s) => s.value === v)?.label ?? v;
-  const others = spaces.filter((s) => !QUICK.some((q) => q.value === s.value));
-  const inOthers = others.some((s) => s.value === target);
+  const placesOf = (vs: string[]) => joinPlaces(vs.map(placeOf));
+  // 지도·목록에 올릴 스피커 — 시험 스피커는 지도에 없어서 따로 칩 (최고 관리자만 spaces 에 온다)
+  const others = spaces.filter((s) => !QUICK.some((q) => q.value === s.value) && !isTestSpeaker(s.value));
+  const otherNames = others.map((s) => s.value);
+  const hasTest = spaces.some((s) => isTestSpeaker(s.value));
+  const only = targets.length === 1 ? targets[0] : null;
+  const testOn = only !== null && isTestSpeaker(only);
+  const custom = targets.length > 0 && !testOn && !QUICK.some((q) => q.value === only);
+  const customLabel = !custom ? "다른 곳" : targets.length === 1 ? placeOf(targets[0]) : `${placeOf(targets[0])} 외 ${targets.length - 1}곳`;
+  const openSheet = () => {
+    setDraft(custom ? targets : []);
+    setSheet(true);
+  };
+  // [완료] — 지도 순서(반 → 나머지)로 맞춰 둔다. 다 뺐으면 직접 고른 것만 비운다(빠른 칩은 그대로)
+  const applySheet = () => {
+    const picked = otherNames.filter((n) => draft.includes(n));
+    if (picked.length) setTargets(picked);
+    else if (custom) setTargets([]);
+    setSheet(false);
+  };
 
   // 왜 못 켜는지 — 다른 방송 > 종 > 대상
   const bellLine =
@@ -293,7 +325,7 @@ export default function InstantBroadcast({
     if (st.busy && st.reason) return <Why icon={<Radio size={19} />} text={st.reason} />;
     if (mode === "mic" && st.micBlocked) return bellLine;
     if (mode === "text" && st.textSeconds !== null && (st.textSeconds < 3 || readSeconds(text) > st.textSeconds)) return bellLine;
-    if (!target) return <Why icon={<MapPin size={19} />} text="방송할 곳을 골라 주세요" />;
+    if (!targets.length) return <Why icon={<MapPin size={19} />} text="방송할 곳을 골라 주세요" />;
     return null;
   })();
   const blocked = why !== null;
@@ -317,7 +349,7 @@ export default function InstantBroadcast({
     live.state === "live" ? "active" : live.state === "connecting" || live.state === "stopping" ? "waiting" : blocked ? "disabled" : "idle";
   const pressMic = () => {
     if (live.state === "idle") {
-      if (!blocked && target) live.start({ target });
+      if (!blocked && targets.length) live.start({ targets });
     } else live.stop();
   };
 
@@ -334,7 +366,7 @@ export default function InstantBroadcast({
     return (
       <Shell onRetry={retry} recent={recentQ.data?.items ?? []} dimRecent>
         <Glass className="flex flex-col gap-4 p-[18px] md:gap-5 md:p-6">
-          <OnAirHead place={placeOf(target)} what="마이크" />
+          <OnAirHead place={placesOf(targets)} what="마이크" />
           <div className="flex flex-col items-center">
             <OnairButton
               state={micState}
@@ -364,7 +396,7 @@ export default function InstantBroadcast({
     return (
       <Shell onRetry={retry} recent={recentQ.data?.items ?? []} dimRecent>
         <Glass className="flex flex-col gap-4 p-[18px] md:gap-5 md:p-6">
-          <OnAirHead place={textMine?.place ?? placeOf(target)} what="글" />
+          <OnAirHead place={textMine?.place ?? placesOf(targets)} what="글" />
           <p className="text-center font-orbitron text-[48px] font-bold leading-none tabular-nums text-[#ff4d55] md:text-[56px]">
             {textMine ? fmtClock(elapsed) : "00:00"}
           </p>
@@ -401,26 +433,36 @@ export default function InstantBroadcast({
             const off = !!grade && grades.length > 0 && !grades.includes(Number(grade[1]));
             return (
               <span key={q.value} className="shrink-0">
-                <ChoiceChip on={target === q.value} disabled={off} onClick={() => setTarget(q.value)}>
+                <ChoiceChip on={only === q.value} disabled={off} onClick={() => setTargets([q.value])}>
                   {q.label}
                 </ChoiceChip>
               </span>
             );
           })}
           <span className="shrink-0">
-            <Select
-              value={inOthers ? target : null}
-              onChange={setTarget}
-              placeholder="다른 곳"
-              aria-label="다른 곳 고르기"
-              options={others.map((s) => ({ value: s.value, label: s.label }))}
-              className={cn(
-                "h-[42px] rounded-xl px-3.5 font-pretendard text-[14.5px] font-bold",
-                inOthers ? "border-white bg-white text-[#0a0a0c] [&_svg]:text-[#0a0a0c]" : "border-white/10 bg-white/[0.06] text-white hover:bg-white/[0.1]",
-              )}
-            />
+            <ChoiceChip on={custom} disabled={!others.length} onClick={openSheet}>
+              {customLabel}
+            </ChoiceChip>
           </span>
+          {hasTest && (
+            <span className="shrink-0">
+              <ChoiceChip on={testOn} onClick={() => setTargets([TEST_SPEAKER_ID])}>
+                {placeOf(TEST_SPEAKER_ID)}
+              </ChoiceChip>
+            </span>
+          )}
         </div>
+        <TargetSheet
+          open={sheet}
+          names={otherNames}
+          selected={draft}
+          onChange={setDraft}
+          onClose={() => setSheet(false)}
+          onDone={applySheet}
+          title="다른 곳"
+          ariaLabel="다른 곳 고르기"
+          labelOf={placeOf}
+        />
 
         {mode === "mic" ? (
           <>
