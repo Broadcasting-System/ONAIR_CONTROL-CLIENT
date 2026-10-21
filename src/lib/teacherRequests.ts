@@ -1,5 +1,6 @@
 import { post, request, seg } from "@/lib/http";
 import { getApiBase } from "@/lib/apiBase";
+import { channelName } from "@/constants/channels";
 
 /** 선생님 요청 — 서버 app/services/teacher_service.py 와 같은 모양 */
 export type Kind = "announce" | "media" | "event" | "bell";
@@ -97,7 +98,7 @@ export function whenOf(r: TeacherRequest): string {
 export function whereOf(r: TeacherRequest): string {
   const p = r.payload;
   if (r.kind === "announce") return targetLabel(p.target);
-  if (r.kind === "media") return `CH${p.channel}`;
+  if (r.kind === "media") return channelName(p.channel);
   if (r.kind === "event") return p.place ? HALL_LABEL[p.place] : "";
   return p.mode ? BELL_MODE_LABEL[p.mode] : "";
 }

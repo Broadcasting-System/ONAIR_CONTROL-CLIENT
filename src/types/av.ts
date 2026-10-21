@@ -26,7 +26,7 @@ export interface AvChannel {
   channel: number;
   /** 관리자가 붙인 이름 (비면 '') */
   name: string;
-  /** 이름이 없으면 CHn */
+  /** 이름이 없으면 기본 이름 (방송 & 전광판·다목적홀·강당, 그 밖은 CHn) */
   label: string;
   /** 연결된 홀 — 이 채널을 고르면 그 홀 콘솔이 소리로 자동 선택 */
   hall: string | null;
@@ -76,7 +76,7 @@ export interface AvItem {
   label: string;
   startedAt: string;
   duration: number;
-  /** 예: CH1 강당 프로젝터 + 강당 콘솔 */
+  /** 예: 강당 프로젝터 + 강당 콘솔 */
   source: string;
   channel: number | null;
   channelName: string;

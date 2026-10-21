@@ -3,6 +3,7 @@ import { backendWs } from "@/lib/backend";
 import { getIceServers, startScreenSender, type ScreenSender } from "@/lib/screenSender";
 import { getApiBase } from "@/lib/apiBase";
 import { toast } from "@/components/common/Toast";
+import { channelName } from "@/constants/channels";
 
 async function postScreen(channel: number, active: boolean) {
   const chQs = channel > 1 ? `?channel=${channel}` : "";
@@ -114,7 +115,7 @@ export function useScreenShare(channel: number = 1) {
     });
     senderRef.current = sender;
 
-    toast.success(`CH${ch}에 화면 공유를 시작했습니다.`);
+    toast.success(`${channelName(ch)}에 화면 공유를 시작했습니다.`);
   }, [stop, channel]);
 
   return {

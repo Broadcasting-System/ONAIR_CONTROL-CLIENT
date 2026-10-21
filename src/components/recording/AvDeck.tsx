@@ -7,6 +7,7 @@ import Select from "@/components/common/Select";
 import { clock, gb } from "@/components/recording/format";
 import { cn } from "@/lib/utils";
 import type { AvChannel, AvHall } from "@/types/av";
+import { channelName } from "@/constants/channels";
 
 const field =
   "h-[38px] rounded-[11px] border border-white/[0.14] bg-black/20 font-pretendard text-[13.5px] font-medium text-white max-md:h-11";
@@ -163,11 +164,11 @@ export default function AvDeck({
     { value: "none", label: "소리만" },
     ...channels.map((c) => ({
       value: String(c.channel),
-      textValue: `CH${c.channel} ${c.name}`,
+      textValue: c.label || channelName(c.channel),
       label: (
         <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate">{`CH${c.channel}${c.name ? ` ${c.name}` : c.hallName ? ` ${c.hallName}` : ""}`}</span>
-          {(c.type || "standby") === "standby" ? <small className={sub}>대기</small> : c.name && c.hallName ? <small className={sub}>{c.hallName}</small> : null}
+          <span className="truncate">{c.label || channelName(c.channel)}</span>
+          {(c.type || "standby") === "standby" && <small className={sub}>대기</small>}
         </span>
       ),
     })),

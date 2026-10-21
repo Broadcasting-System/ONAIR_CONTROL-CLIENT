@@ -39,6 +39,7 @@ import {
   ghostBtn,
   inputCls,
 } from "@/components/teacher/parts";
+import { channelName } from "@/constants/channels";
 
 /** 선생님 요청(teacher.bssmcast.com) — 학교 계정으로 들어와 등록 → 방송부 승인 → 요청 보내기·확인.
  *  화면은 주소 쿼리로 나눈다: ?v=new&k=announce · ?v=req&id=… · ?v=list · ?v=ask (폰 요청 탭, PC 는 홈과 같다) */
@@ -731,8 +732,7 @@ function MediaForm({ places, back, done }: { places?: Places; back: () => void; 
               <div className="flex flex-wrap gap-2">
                 {(places?.channels ?? []).map((c) => (
                   <ChoiceChip key={c.channel} on={channel === c.channel} onClick={() => setChannel(c.channel)}>
-                    {c.hallName ?? c.label}
-                    {c.hallName && <small className="font-medium opacity-70">CH{c.channel}</small>}
+                    {c.label || channelName(c.channel)}
                   </ChoiceChip>
                 ))}
               </div>
@@ -766,7 +766,7 @@ function MediaForm({ places, back, done }: { places?: Places; back: () => void; 
                 rows={[
                   source === "youtube" ? ["유튜브", videoId ? `youtu.be/${videoId}` : "-"] : ["파일", file?.name ?? "-"],
                   ["언제", `${dayLabel(date)} ${time}`],
-                  ["어디서", ch?.hallName ? `${ch.hallName} · CH${ch.channel}` : `CH${channel}`],
+                  ["어디서", ch?.label || channelName(channel)],
                 ]}
               />
             </Glass>
@@ -979,7 +979,7 @@ function Detail({ id, back }: { id: string; back: () => void }) {
     r.kind === "announce"
       ? [["언제", `${dayLabel(p.date)} ${p.time}`], ["누구에게", targetLabel(p.target)], ["어떻게", p.method === "tts" ? "글 읽어 주기" : "방송부가 읽기"]]
       : r.kind === "media"
-        ? [p.source === "youtube" ? ["유튜브", <YouTubeLink key="y" id={p.videoId} />] : ["파일", r.upload?.name ?? "-"], ["언제", `${dayLabel(p.date)} ${p.time}`], ["어디서", `CH${p.channel}`], ...(p.memo ? ([["메모", p.memo]] as [string, ReactNode][]) : [])]
+        ? [p.source === "youtube" ? ["유튜브", <YouTubeLink key="y" id={p.videoId} />] : ["파일", r.upload?.name ?? "-"], ["언제", `${dayLabel(p.date)} ${p.time}`], ["어디서", channelName(p.channel)], ...(p.memo ? ([["메모", p.memo]] as [string, ReactNode][]) : [])]
         : r.kind === "event"
           ? [["행사", p.title], ["언제", `${dayLabel(p.date)} ${p.period ?? ""}`], ["장소", p.place ? HALL_LABEL[p.place] : "-"],
              ["필요한 것", [p.needs?.mics ? `무선 마이크 ${p.needs.mics}` : "", p.needs?.screen ? "스크린" : "", p.needs?.lights ? "조명" : "", p.needs?.record ? "녹화" : "", p.needs?.music ? "입장 음악" : ""].filter(Boolean).join(" · ") || "-"]]

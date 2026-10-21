@@ -26,6 +26,7 @@ import {
 } from "@/lib/teacherRequests";
 import Select from "@/components/common/Select";
 import { ChoiceChip, Glass, KindIcon, NewDot, Seg, StatusPill, TierChip, YouTubeLink, inputCls } from "@/components/teacher/parts";
+import { channelName } from "@/constants/channels";
 
 /** 요청함 — 선생님(teacher.bssmcast.com) 요청을 수락·거절·완료 (부원 이상), 선생님 목록은 부원 누구나 보고 승인·등급·내보내기는 부장 이상 */
 
@@ -138,7 +139,7 @@ function Detail({ r, onBack }: { r: TeacherRequest; onBack?: () => void }) {
     r.kind === "announce"
       ? [["언제", `${dayLabel(p.date)} ${p.time}`], ["누구에게", `${targetLabel(p.target)} 스피커`], ["어떻게", p.method === "tts" ? "글 읽어 주기" : "방송부가 읽기"]]
       : r.kind === "media"
-        ? [p.source === "youtube" ? ["유튜브", <YouTubeLink key="y" id={p.videoId} />] : ["파일", r.upload ? <a key="f" href={requestsApi.fileUrl(r.id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 underline underline-offset-4"><FileText size={15} />{r.upload.name}</a> : "-"], ["언제", `${dayLabel(p.date)} ${p.time}`], ["어디서", `CH${p.channel}`], ...(p.memo ? ([["메모", p.memo]] as [string, ReactNode][]) : [])]
+        ? [p.source === "youtube" ? ["유튜브", <YouTubeLink key="y" id={p.videoId} />] : ["파일", r.upload ? <a key="f" href={requestsApi.fileUrl(r.id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 underline underline-offset-4"><FileText size={15} />{r.upload.name}</a> : "-"], ["언제", `${dayLabel(p.date)} ${p.time}`], ["어디서", channelName(p.channel)], ...(p.memo ? ([["메모", p.memo]] as [string, ReactNode][]) : [])]
         : r.kind === "event"
           ? [["행사", p.title], ["언제", `${dayLabel(p.date)} ${p.period ?? ""}`], ["장소", p.place ? HALL_LABEL[p.place] : "-"], ["필요한 것", preview(r).split(" · ").slice(2).join(" · ") || "-"]]
           : [["날짜", (p.dates ?? []).map(dayLabel).join(", ")], ["바꾸기", p.mode ? BELL_MODE_LABEL[p.mode] : "-"]];
@@ -147,8 +148,8 @@ function Detail({ r, onBack }: { r: TeacherRequest; onBack?: () => void }) {
       ? `수락하면 ${dayLabel(p.date)} ${p.time} ${targetLabel(p.target)}에 TTS 예약 방송이 걸려요`
       : r.kind === "media"
         ? p.source === "youtube"
-          ? `수락하면 ${dayLabel(p.date)} ${p.time} CH${p.channel} 유튜브 예약 송출이 걸려요`
-          : `수락하면 파일을 파일 보관함에 넣고 ${dayLabel(p.date)} ${p.time} CH${p.channel} 예약 송출이 걸려요`
+          ? `수락하면 ${dayLabel(p.date)} ${p.time} ${channelName(p.channel)} 유튜브 예약 송출이 걸려요`
+          : `수락하면 파일을 파일 보관함에 넣고 ${dayLabel(p.date)} ${p.time} ${channelName(p.channel)} 예약 송출이 걸려요`
         : "";
   const open = r.status === "new" || r.status === "accepted";
   return (

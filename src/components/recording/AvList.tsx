@@ -14,6 +14,7 @@ import { avApi } from "@/lib/avApi";
 import { recordingApi } from "@/lib/recordingApi";
 import { cn } from "@/lib/utils";
 import type { AvItem } from "@/types/av";
+import { channelName } from "@/constants/channels";
 
 type Filter = "all" | "video" | "audio";
 const FILTERS: { key: Filter; label: string }[] = [
@@ -26,7 +27,7 @@ const isBusy = (i: AvItem) => ["recording", "processing", "importing"].includes(
 // 영상+소리를 합치다 실패해도 화면 영상은 볼 수 있다
 const isPlayable = (i: AvItem) => (i.kind === "audio" ? i.status === "ready" : i.hasVideo);
 const downloadUrl = (i: AvItem) => (i.kind === "audio" ? recordingApi.audioUrl(i.id, 0, true) : avApi.fileUrl(i.id, true));
-const place = (i: AvItem) => (i.kind === "audio" ? i.hallName : i.hallName || (i.channel ? `CH${i.channel}` : ""));
+const place = (i: AvItem) => (i.kind === "audio" ? i.hallName : i.hallName || channelName(i.channel));
 const meta = (i: AvItem) =>
   [when(i.startedAt), place(i), i.status === "ready" && i.size > 0 ? gb(i.size).replace(" ", "") : ""].filter(Boolean).join(" · ");
 const retryName = (i: AvItem) => (i.kind === "audio" ? "다시 가져오기" : "다시 만들기");

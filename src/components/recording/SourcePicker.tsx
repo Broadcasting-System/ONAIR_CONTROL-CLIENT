@@ -5,6 +5,7 @@ import { Mic } from "lucide-react";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 import { cn } from "@/lib/utils";
 import type { AvChannel } from "@/types/av";
+import { channelName } from "@/constants/channels";
 
 // 미러를 640x360 으로 그린 뒤 카드 너비에 맞춰 줄인다 (작은 칸에서도 송출 화면과 같은 배치)
 const MIRROR_W = 640;
@@ -93,10 +94,7 @@ export default function SourcePicker({
               )}
             </div>
             <div className="mt-1.5 flex min-w-0 items-center gap-1.5 px-[3px]">
-              <span className="shrink-0 font-mbc text-[13px] text-white">CH{c.channel}</span>
-              {c.hallName && (
-                <small className="ml-auto truncate font-pretendard text-[11px] font-medium text-white/40">{c.hallName}</small>
-              )}
+              <span className="truncate font-mbc text-[13px] text-white">{c.label || channelName(c.channel)}</span>
             </div>
           </button>
         );

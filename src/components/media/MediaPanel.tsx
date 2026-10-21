@@ -52,6 +52,7 @@ import { useMe } from "@/hooks/useMe";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useScreenShare } from "@/hooks/useScreenShare";
 import type { FileType, UploadedFile } from "@/types/file";
+import { channelName } from "@/constants/channels";
 
 /** 송출 (송출 › 송출 탭) — 옛 송출 화면과 스위처를 하나로.
  *  왼쪽 소스(파일·유튜브·타이머·내 화면·외부 화면)에서 고르고, 오른쪽 송출 화면에서 채널·배치(한 화면·2분할·4분할·PIP)를 정한다.
@@ -349,7 +350,7 @@ export default function MediaPanel({ lead, fromSwitcher }: { lead: ReactNode; fr
     }
   };
 
-  const sendLabel = `CH${channel}에 ${split ? `${LAYOUT_LABEL[layout]} ` : ""}송출`;
+  const sendLabel = `${channelName(channel)}에 ${split ? `${LAYOUT_LABEL[layout]} ` : ""}송출`;
   const slot = view.slots[selected];
   const note: ReactNode = split ? (
     <span className="flex min-w-0 items-center gap-2">
@@ -485,7 +486,7 @@ export default function MediaPanel({ lead, fromSwitcher }: { lead: ReactNode; fr
           </div>
           {isSharing && (
             <div className="flex items-center gap-3">
-              <span className="font-pretendard text-[13px] text-white/50">CH{sharingChannel}에 내 화면을 보내는 중</span>
+              <span className="font-pretendard text-[13px] text-white/50">{channelName(sharingChannel)}에 내 화면을 보내는 중</span>
               <Chip className="ml-auto" onClick={stopShare}>
                 공유 끝내기
               </Chip>

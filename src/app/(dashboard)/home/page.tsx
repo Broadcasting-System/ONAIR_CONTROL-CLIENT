@@ -14,6 +14,7 @@ import { useMobileOnly } from "@/components/mobile/useMobileOnly";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { ROLE_DOT } from "@/components/devices/roleStyle";
 import { cn } from "@/lib/utils";
+import { channelName } from "@/constants/channels";
 
 type Bell = { time: string; label: string };
 type TimeTable = Record<string, { isSpecialActive?: boolean; schedules?: { dayType: string; bells: Bell[] }[] }>;
@@ -102,7 +103,7 @@ export default function MobileHomePage() {
           k="송출"
           v={
             showing.data?.length
-              ? showing.data.map((s) => `CH${s.ch} ${showLabel(s.type)}`).join(" · ")
+              ? showing.data.map((s) => `${channelName(s.ch)} ${showLabel(s.type)}`).join(" · ")
               : "모든 채널 대기"
           }
         />

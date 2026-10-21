@@ -26,6 +26,7 @@ import OnairMark from "@/components/common/OnairMark";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 import { backendBase, resolveMediaUrl } from "@/lib/backend";
 import { cn } from "@/lib/utils";
+import { channelName } from "@/constants/channels";
 
 /** GET /api/live 의 채널 하나 */
 interface LiveChannel {
@@ -74,7 +75,7 @@ const AUDIBLE = new Set(["video", "youtube", "audio"]);
 // 화면 맞춤(원본 비율/꽉 채우기)을 고를 수 있는 송출
 const FITTABLE = new Set(["video", "image", "presentation"]);
 
-const place = (c: LiveChannel) => [c.hallName, c.label].filter(Boolean).join(" · ");
+const place = (c: LiveChannel) => c.label || channelName(c.channel);
 
 function TypeIcon({ type, size = 28 }: { type: string; size?: number }) {
   if (type === "timer") return <Timer size={size} />;

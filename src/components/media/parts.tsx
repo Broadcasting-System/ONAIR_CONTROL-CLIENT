@@ -10,6 +10,7 @@ import type { Health } from "@/hooks/useHealth";
 import { SlotPreview, SwitchMirror } from "@/components/switcher/SlotPreview";
 import type { SwitchLayout } from "@/lib/switchApi";
 import type { UploadedFile } from "@/types/file";
+import { channelName } from "@/constants/channels";
 
 /** 송출 화면의 작은 조각들 — 시안 Desktop/ONAIR-송출-시안/merge.html */
 
@@ -272,14 +273,12 @@ export function ChannelChips({ channel, health, onPick }: { channel: number; hea
             aria-pressed={channel === ch}
             title={[h?.live ? `송출 화면 연결됨: ${names}` : "송출 화면 없음", onAir ? `송출 중: ${TYPE_LABEL[h!.type!] ?? h!.type}` : "꺼짐"].join(" · ")}
             className={cn(
-              "flex h-[42px] min-w-0 flex-1 items-center justify-center gap-[7px] rounded-[11px] border px-0 font-mbc text-[13px] transition-colors md:h-10 md:min-w-16 md:flex-none md:px-3",
+              "flex h-[42px] min-w-0 flex-auto items-center justify-center gap-[6px] rounded-[11px] border px-2 font-mbc text-[12px] md:text-[13px] transition-colors md:h-10 md:min-w-16 md:flex-none md:px-3",
               channel === ch ? "border-white/85 bg-white/[0.08] text-white" : "border-white/10 text-white/60 hover:text-white",
             )}
           >
             {onAir && <i className="h-[7px] w-[7px] shrink-0 rounded-full bg-[#FF3B3B] shadow-[0_0_7px_#FF3B3B]" />}
-            <span className="whitespace-nowrap">
-              CH <b className="font-orbitron text-[13px] font-bold text-white">{ch}</b>
-            </span>
+            <span className="min-w-0 truncate whitespace-nowrap">{channelName(ch)}</span>
           </button>
         );
       })}
@@ -395,7 +394,7 @@ function MiniLive({ ch, files }: { ch: number; files: UploadedFile[] }) {
         <MiniContent content={content} files={files} />
       </div>
       <div className="mt-[5px] truncate whitespace-nowrap font-mbc text-[12px] text-white/60">
-        CH{ch}
+        {channelName(ch)}
         {what && ` · ${what}`}
       </div>
     </>
@@ -459,7 +458,7 @@ export function OtherChannels({
               ) : (
                 <>
                   <div className="relative flex aspect-video items-center justify-center rounded-lg bg-[#0b0b0d] font-pretendard text-[11px] text-white/30">꺼짐</div>
-                  <div className="mt-[5px] font-mbc text-[12px] text-white/60">CH{ch}</div>
+                  <div className="mt-[5px] truncate whitespace-nowrap font-mbc text-[12px] text-white/60">{channelName(ch)}</div>
                 </>
               )}
             </button>

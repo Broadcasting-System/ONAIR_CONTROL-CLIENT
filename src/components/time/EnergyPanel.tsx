@@ -6,6 +6,7 @@ import NeonButton from "@/components/common/NeonButton";
 import { TimePicker } from "@/components/common/DateTimePicker";
 import { useEnergy, type EnergyConfig, type EnergyDay, type EnergyRun } from "@/hooks/useEnergy";
 import { cn } from "@/lib/utils";
+import { channelName } from "@/constants/channels";
 
 const DAY_LABELS: { key: EnergyDay; label: string }[] = [
   { key: "mon", label: "월" },
@@ -40,7 +41,7 @@ function describeRun(r: EnergyRun): string {
   const names = speakers.length
     ? `${speakers.slice(0, 5).join(", ")}${speakers.length > 5 ? ` 외 ${speakers.length - 5}` : ""}`
     : "켜진 곳 없음";
-  const screens = r.displays?.length ? r.displays.map((c) => `CH${c}`).join("·") : "없음";
+  const screens = r.displays?.length ? r.displays.map(channelName).join(", ") : "없음";
   return `스피커 ${speakers.length}곳 (${names}) · 송출 화면 ${screens}`;
 }
 

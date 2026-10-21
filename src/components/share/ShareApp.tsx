@@ -7,6 +7,7 @@ import OnairMark from "@/components/common/OnairMark";
 import { backendBase, backendWs } from "@/lib/backend";
 import { getIceServers, startScreenSender, type ScreenSender } from "@/lib/screenSender";
 import { cn } from "@/lib/utils";
+import { channelName } from "@/constants/channels";
 
 /** 외부 화면 공유(share.bssmcast.com) — 발표자가 방송부 코드로 들어와 자기 화면을 송출 채널로 보낸다.
  *  코드·이름 → 화면 고르기 → 방송부 확인 기다림(미리보기 사진을 몇 초마다 올림) → 허용되면 WebRTC 로 송출 → 끝.
@@ -336,7 +337,7 @@ export default function ShareApp() {
               {step === "live" && (
                 <p className="flex items-center gap-2.5 font-pretendard text-[16px] font-semibold">
                   <Radio size={18} className="text-[#FF3B3B]" />
-                  {me?.place || `CH${me?.channel}`} 화면에 나가는 중
+                  {me?.place || channelName(me?.channel)} 화면에 나가는 중
                 </p>
               )}
 

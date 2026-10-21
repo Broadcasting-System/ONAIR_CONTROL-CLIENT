@@ -8,6 +8,7 @@ import { SourceCard } from "@/components/media/parts";
 import { shareApi, type ShareRequest } from "@/lib/shareApi";
 import type { SwitchSource } from "@/lib/switchApi";
 import { cn } from "@/lib/utils";
+import { channelName } from "@/constants/channels";
 
 /** 외부 화면 받기 — 요청 목록 (송출 › 외부 화면의 빨간 숫자도 이걸로). 열어 둔 동안은 자주, 아니면 가끔 */
 export function useExternalShare(open: boolean, enabled: boolean) {
@@ -120,7 +121,7 @@ export default function ExternalSharePanel({
               slot={here ? slotOf(src) : -1}
               disabled={disabled || !here}
               onClick={here ? () => onPick(src) : undefined}
-              sub={here ? "연결됨" : `CH${r.channel}에 연결됨`}
+              sub={here ? "연결됨" : `${channelName(r.channel)}에 연결됨`}
             >
               <span className="mx-[3px] mb-0.5 mt-1.5 flex">
                 <Mini

@@ -35,6 +35,7 @@ import { useChannelStore, MAX_CHANNELS } from "@/stores/channelStore";
 import { request } from "@/lib/http";
 import { cn } from "@/lib/utils";
 import type { FileType, UploadedFile } from "@/types/file";
+import { channelName } from "@/constants/channels";
 
 /** 파일 — 종류마다 모양이 다른 카드(영상 ▶·사진 액자·PDF/PPT 겹친 종이·음원 파형) + 오른쪽 상세.
  *  카드를 누르면 상세(미리보기·쓰는 곳·송출·이름 바꾸기·지우기). 어디서든 끌어다 놓으면 올라간다. */
@@ -150,13 +151,13 @@ function usesOf(f: LibFile, u?: ReturnType<typeof useUsage>["data"]): Use[] {
     if (!s || !s.type || s.type === "standby") return;
     const inSwitch = s.type === "switch" && (s.slots ?? []).some((sl) => sl?.source && same(sl.source.fileId, sl.source.url));
     if (inSwitch || same(s.fileId, pres ? s.urls?.[0] ?? s.url : s.url))
-      out.push({ kind: "live", label: `CH${i + 1} ${inSwitch ? "스위처 " : ""}송출 중`, short: `송출 중 CH${i + 1}` });
+      out.push({ kind: "live", label: `${channelName(i + 1)} ${inSwitch ? "스위처 " : ""}송출 중`, short: `송출 중 ${channelName(i + 1)}` });
   });
   for (const s of u.schedules) {
     if (!same(s.fileId, s.content)) continue;
     const d = s.schedule?.date ? new Date(`${s.schedule.date}T00:00:00`) : null;
     const day = d ? `${d.getMonth() + 1}/${d.getDate()}(${DOW[d.getDay()]})` : "";
-    out.push({ kind: "reserve", label: `예약 송출 · ${day} ${s.schedule?.time ?? ""} CH${s.channel ?? 1}`, short: `예약 ${d ? `${d.getMonth() + 1}/${d.getDate()}` : ""}` });
+    out.push({ kind: "reserve", label: `예약 송출 · ${day} ${s.schedule?.time ?? ""} ${channelName(s.channel ?? 1)}`, short: `예약 ${d ? `${d.getMonth() + 1}/${d.getDate()}` : ""}` });
   }
   if (f.type === "audio") {
     const n = u.bells.filter((b) => b?.audioFile && keyOf(b.audioFile) === mine).length;
@@ -435,7 +436,7 @@ function Detail({
   const send = async () => {
     try {
       await showMedia(f, ch);
-      toast.success(`CH${ch}에 송출했어요`);
+      toast.success(`${channelName(ch)}에 송출했어요`);
     } catch (e) {
       toast.error((e as Error).message || "송출하지 못했어요");
     }
@@ -496,7 +497,7 @@ function Detail({
             ))}
           </div>
           <NeonButton disabled={isSending} onClick={send} icon={<Send />} className="w-full">
-            CH{ch}에 송출
+            {channelName(ch)}에 송출
           </NeonButton>
         </div>
       )}

@@ -14,6 +14,7 @@ import { showLabel, useShowing } from "@/hooks/useShowing";
 import { useMe } from "@/hooks/useMe";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 import BroadcastCard from "@/components/broadcast/BroadcastCard";
+import { channelName } from "@/constants/channels";
 
 export default function MainPage() {
   const { zones, toggleSpeaker } = useSpeakers();
@@ -41,11 +42,11 @@ export default function MainPage() {
       : live.length === 0
         ? { name: "송출 화면", value: "대기 중" }
         : live.length === 1
-          ? { name: "송출 화면", value: `CH${live[0].ch} ${showLabel(live[0].type)}` }
+          ? { name: "송출 화면", value: `${channelName(live[0].ch)} ${showLabel(live[0].type)}` }
           : {
               name: "송출 화면",
-              value: `CH${live.map((s) => s.ch).join("·")} 송출 중`,
-              title: live.map((s) => `CH${s.ch} ${showLabel(s.type)}`).join(" · "),
+              value: `${live.map((s) => channelName(s.ch)).join(" · ")} 송출 중`,
+              title: live.map((s) => `${channelName(s.ch)} ${showLabel(s.type)}`).join(" · "),
             };
 
   const ms = net.data ? Math.round(net.data.latency) : null;

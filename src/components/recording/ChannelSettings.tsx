@@ -12,6 +12,7 @@ import { useRecording } from "@/hooks/useRecording";
 import { avApi } from "@/lib/avApi";
 import { cn } from "@/lib/utils";
 import type { AvChannel, AvHall, ScreenRecorderStatus } from "@/types/av";
+import { CHANNEL_NAMES } from "@/constants/channels";
 
 type Row = { channel: number; name: string; hall: string | null };
 
@@ -49,7 +50,7 @@ function ChannelTable({ channels, halls }: { channels: AvChannel[]; halls: AvHal
               value={r.name}
               maxLength={20}
               onChange={(e) => set(i, { name: e.target.value })}
-              placeholder="예: 강당 프로젝터"
+              placeholder={CHANNEL_NAMES[r.channel] ?? "예: 강당 프로젝터"}
               className={cn(inputCls, okBorder)}
             />
             <Select
