@@ -39,6 +39,11 @@ type Signal = {
   candidate?: RTCIceCandidateInit;
 };
 
+/** 화면 공유가 송출 화면에 안 나올 때 원인을 보려고 — 개발자 도구 콘솔에 [화면 공유] 로 남긴다 */
+const log = (...a: unknown[]) => console.info("[화면 공유]", ...a);
+const hasTurn = (s: RTCIceServer) =>
+  (Array.isArray(s.urls) ? s.urls : [s.urls]).some((u) => /^turns?:/.test(u));
+
 export interface ScreenSender {
   /** 연결·소켓을 닫는다 (스트림 트랙은 부른 쪽이 멈춘다) */
   close: () => void;
@@ -88,13 +93,22 @@ export function startScreenSender(
           ...target(peer),
         });
     };
+    pc.onicecandidateerror = (e) => {
+      const ev = e as RTCPeerConnectionIceErrorEvent;
+      console.warn("[화면 공유] ICE 서버 오류", ev.url, ev.errorCode, ev.errorText);
+    };
+    pc.oniceconnectionstatechange = () => log(`ICE ${pc.iceConnectionState} (받는 쪽 ${peer || "-"})`);
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "failed" && peers.get(peer)?.pc === pc) closePeer(peer);
+      const state = pc.connectionState;
+      if (state === "failed") console.warn(`[화면 공유] 연결 실패 (받는 쪽 ${peer || "-"}) — 방화벽·TURN 확인`);
+      else log(`연결 ${state} (받는 쪽 ${peer || "-"})`);
+      if (state === "failed" && peers.get(peer)?.pc === pc) closePeer(peer); // 받는 쪽이 hello 로 다시 부른다
     };
     try {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       send({ command: "webrtc", from: "control", kind: "offer", sdp: offer, ...target(peer) });
+      log(`offer 보냄 (받는 쪽 ${peer || "-"})`);
     } catch (e) {
       console.error("offer 생성 실패", e);
     }
@@ -110,10 +124,12 @@ export function startScreenSender(
     if (m?.command !== "webrtc" || m.from === "control") return;
     const peer = m.fromPeer ?? "";
     if (m.kind === "hello") {
+      log(`받는 쪽 hello (${peer || "-"})`);
       await offerTo(peer); // 받는 쪽이 (다시) 붙었다 → 그 화면 몫의 offer
       return;
     }
     if (m.kind === "bye") {
+      if (peers.has(peer)) log(`받는 쪽 떠남 (${peer || "-"})`);
       closePeer(peer);
       return;
     }
@@ -121,6 +137,7 @@ export function startScreenSender(
     if (!p) return;
     if (m.kind === "answer" && m.sdp) {
       try {
+        log(`answer 받음 (받는 쪽 ${peer || "-"})`);
         await p.pc.setRemoteDescription(new RTCSessionDescription(m.sdp));
         for (const c of p.pendingIce) {
           try {
@@ -140,9 +157,15 @@ export function startScreenSender(
     }
   };
   // 이미 떠 있는 받는 쪽들에게 "보낼 게 있다" — 각자 hello 로 답하면 그 화면마다 offer 를 보낸다
-  ws.onopen = () => send({ command: "webrtc", from: "control", kind: "hello" });
-  ws.onclose = () => {
-    if (!closed) onLost();
+  ws.onopen = () => {
+    log(`신호 연결됨 — TURN ${iceServers.some(hasTurn) ? "있음" : "없음(STUN 만)"}`);
+    send({ command: "webrtc", from: "control", kind: "hello" });
+  };
+  ws.onclose = (ev) => {
+    if (closed) return;
+    // 4403 = 서버가 막음 (허용이 끝났거나 다른 채널)
+    console.warn(`[화면 공유] 신호 연결 끊김 (code ${ev.code})`);
+    onLost();
   };
 
   return {

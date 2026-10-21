@@ -163,20 +163,35 @@ export default function ShareApp() {
 
   // 허용되면 그 채널 송출 화면으로 보낸다
   const channel = me?.status === "approved" ? me.channel : null;
+  // 신호 연결이 끊기면 올린다 → 아래 effect 가 다시 붙는다 (전엔 끊긴 뒤 다시 붙지 않아 송출 화면이 '연결 중'에 멈췄다)
+  const [relink, setRelink] = useState(0);
+  const senderChannelRef = useRef<number | null>(null);
   useEffect(() => {
+    // 허용 채널이 바뀌었거나 허용이 풀렸으면 지금 연결은 닫는다
+    if (senderRef.current && senderChannelRef.current !== channel) {
+      senderRef.current.close();
+      senderRef.current = null;
+    }
     if (!token || !stream || !channel || senderRef.current) return;
     let cancelled = false;
     void getIceServers(token).then((ice) => {
       if (cancelled || senderRef.current) return;
       const url = `${backendWs("/api/display/ws", channel, "signal")}&share=${encodeURIComponent(token)}`;
-      senderRef.current = startScreenSender(stream, url, ice, () => {
-        senderRef.current = null; // 끊김 — 다음 상태 확인 때 허용이 살아 있으면 다시 붙는다
+      const sender = startScreenSender(stream, url, ice, () => {
+        if (senderRef.current !== sender) return;
+        // 끊김(터널·와이파이·서버 재시작) — 남은 WebRTC 연결을 닫고(받는 쪽은 bye 로 이미 닫았다) 잠깐 뒤 다시 붙는다.
+        // 허용이 끝났으면 상태 확인(2초)이 먼저 끝내 준다
+        sender.close();
+        senderRef.current = null;
+        setTimeout(() => setRelink((n) => n + 1), 2000);
       });
+      senderRef.current = sender;
+      senderChannelRef.current = channel;
     });
     return () => {
       cancelled = true;
     };
-  }, [token, stream, channel]);
+  }, [token, stream, channel, relink]);
 
   const join = async () => {
     setErr("");
