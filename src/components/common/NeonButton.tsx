@@ -202,7 +202,8 @@ const NeonButton = forwardRef<HTMLButtonElement, NeonButtonProps>(function NeonB
           "--nb-g1": `${h * 0.3}px`,
           "--nb-shift": `${shift}px`,
           "--nb-slide": `${h * 0.9}px`,
-          "--nb-glow": t.glow,
+          // 못 누르는 버튼은 빛을 끈다 — 빛나면 누를 수 있는 것처럼 보인다
+          "--nb-glow": rest.disabled ? "transparent" : t.glow,
           ...style,
         } as CSSProperties
       }

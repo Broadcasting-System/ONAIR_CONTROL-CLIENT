@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, MapPin, Mic, Play, Radio, Send, Square, Type } from "lucide-react";
+import { Bell, MapPin, Mic, Play, Radio, RotateCcw, Send, Square, Type } from "lucide-react";
 import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import OnairButton, { type OnairButtonState } from "@/components/common/OnairButton";
@@ -40,11 +40,14 @@ interface NowItem {
   id: string;
   kind: "mic" | "text";
   place: string;
+  target?: string;
   text?: string;
   seconds: number;
   at: string;
   end: string;
   ok: boolean;
+  /** 못 내보냈을 때 까닭 한마디 */
+  note?: string;
 }
 
 type Mode = "mic" | "text";
@@ -124,7 +127,16 @@ function Why({ icon, text, countdown }: { icon: ReactNode; text: string; countdo
   );
 }
 
-function Recent({ items, className }: { items: NowItem[]; className?: string }) {
+function Recent({
+  items,
+  className,
+  onRetry,
+}: {
+  items: NowItem[];
+  className?: string;
+  /** 못 내보낸 글 — 같은 곳·같은 글로 다시 채운다 */
+  onRetry: (r: NowItem) => void;
+}) {
   const body = items.length ? (
     <div className="flex flex-col">
       {items.map((r, i) => (
@@ -136,13 +148,24 @@ function Recent({ items, className }: { items: NowItem[]; className?: string }) 
             <b className="block truncate font-pretendard text-[15px] text-white">{r.place}</b>
             <span className="mt-0.5 block truncate font-pretendard text-[13.5px] text-white/45">
               {!r.ok
-                ? `${r.kind === "mic" ? "마이크" : "글"} · 못 내보냈어요`
+                ? [`${r.kind === "mic" ? "마이크" : "글"} · 못 내보냈어요`, r.note].filter(Boolean).join(" · ")
                 : r.kind === "mic"
                   ? [`마이크 · ${mmss(r.seconds)}`, END_NOTE[r.end]].filter(Boolean).join(" · ")
                   : `"${r.text ?? ""}"`}
             </span>
           </span>
-          <span className="whitespace-nowrap font-pretendard text-[13.5px] tabular-nums text-white/45">{whenLabel(r.at)}</span>
+          {!r.ok && r.kind === "text" && r.text ? (
+            <button
+              type="button"
+              onClick={() => onRetry(r)}
+              className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/15 px-3.5 font-pretendard text-[13.5px] font-semibold text-white hover:bg-white/[0.08]"
+            >
+              <RotateCcw size={15} />
+              다시 보내기
+            </button>
+          ) : (
+            <span className="whitespace-nowrap font-pretendard text-[13.5px] tabular-nums text-white/45">{whenLabel(r.at)}</span>
+          )}
         </div>
       ))}
     </div>
@@ -248,6 +271,14 @@ export default function InstantBroadcast({
 
   useEffect(() => () => audio.current?.pause(), []);
 
+  // 못 내보낸 글 [다시 보내기] — 같은 곳·같은 글로 채워 두고 위로. 종·다른 방송 검사를 다시 거쳐 직접 보낸다
+  const retry = (r: NowItem) => {
+    setMode("text");
+    setText(r.text ?? "");
+    if (r.target) setTarget(r.target);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const placeOf = (v: string) => QUICK.find((q) => q.value === v)?.label ?? spaces.find((s) => s.value === v)?.label ?? v;
   const others = spaces.filter((s) => !QUICK.some((q) => q.value === s.value));
   const inOthers = others.some((s) => s.value === target);
@@ -301,7 +332,7 @@ export default function InstantBroadcast({
           : `15분이 다 돼서 ${mmss(left)} 뒤에 끝나요`
         : null;
     return (
-      <Shell recent={recentQ.data?.items ?? []} dimRecent>
+      <Shell onRetry={retry} recent={recentQ.data?.items ?? []} dimRecent>
         <Glass className="flex flex-col gap-4 p-[18px] md:gap-5 md:p-6">
           <OnAirHead place={placeOf(target)} what="마이크" />
           <div className="flex flex-col items-center">
@@ -331,7 +362,7 @@ export default function InstantBroadcast({
     const started = textMine ? textMine.startedAt - offset : null;
     const elapsed = started ? (now - started) / 1000 : 0;
     return (
-      <Shell recent={recentQ.data?.items ?? []} dimRecent>
+      <Shell onRetry={retry} recent={recentQ.data?.items ?? []} dimRecent>
         <Glass className="flex flex-col gap-4 p-[18px] md:gap-5 md:p-6">
           <OnAirHead place={textMine?.place ?? placeOf(target)} what="글" />
           <p className="text-center font-orbitron text-[48px] font-bold leading-none tabular-nums text-[#ff4d55] md:text-[56px]">
@@ -347,7 +378,7 @@ export default function InstantBroadcast({
 
   // ---------------- 고르기 ----------------
   return (
-    <Shell recent={recentQ.data?.items ?? []}>
+    <Shell onRetry={retry} recent={recentQ.data?.items ?? []}>
       <Glass className="flex flex-col gap-4 p-[18px] md:gap-[18px] md:px-6 md:pb-6 md:pt-[22px]">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-mbc text-[26px] text-white md:text-[28px]">방송</h2>
@@ -363,7 +394,8 @@ export default function InstantBroadcast({
           </div>
         </div>
 
-        <div className="-mr-[18px] flex gap-2 overflow-x-auto pr-[18px] [scrollbar-width:none] md:mr-0 md:flex-wrap md:overflow-visible md:pr-0">
+        {/* 폰에서 옆으로 밀리는 칩 줄 — 오른쪽 끝을 흐리게 해 더 있다는 걸 보인다 */}
+        <div className="-mr-[18px] flex gap-2 overflow-x-auto pr-[18px] [scrollbar-width:none] max-md:[mask-image:linear-gradient(to_right,#000_82%,transparent)] md:mr-0 md:flex-wrap md:overflow-visible md:pr-0">
           {QUICK.map((q) => {
             const grade = /^(\d)학년$/.exec(q.value);
             const off = !!grade && grades.length > 0 && !grades.includes(Number(grade[1]));
@@ -434,11 +466,25 @@ export default function InstantBroadcast({
 }
 
 /** PC 는 왼쪽 바로 방송 · 오른쪽 최근, 폰은 위아래 */
-function Shell({ children, recent, dimRecent }: { children: ReactNode; recent: NowItem[]; dimRecent?: boolean }) {
+function Shell({
+  children,
+  recent,
+  dimRecent,
+  onRetry,
+}: {
+  children: ReactNode;
+  recent: NowItem[];
+  dimRecent?: boolean;
+  onRetry: (r: NowItem) => void;
+}) {
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
       {children}
-      <Recent items={recent} className={cn("transition-opacity", dimRecent && "pointer-events-none opacity-35")} />
+      <Recent
+        items={recent}
+        onRetry={onRetry}
+        className={cn("transition-opacity", dimRecent && "pointer-events-none opacity-35")}
+      />
     </div>
   );
 }

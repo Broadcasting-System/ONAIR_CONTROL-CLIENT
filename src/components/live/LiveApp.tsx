@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   ChevronLeft,
+  Check,
   ChevronRight,
   Eye,
   Maximize,
@@ -355,6 +356,8 @@ function VolumeSlider({ value, onChange }: { value: number; onChange: (v: number
   );
 }
 
+const FIT_LABEL = { contain: "원본 비율", cover: "꽉 채우기" } as const;
+
 /** 플레이어 조작부 — 유튜브 플레이어 구조: 바 없이 아래만 살짝 어둡게, 얇은 진행선, 반투명 알약 버튼.
  *  가만히 두면 2.5초 뒤 사라지고, 폰은 한 번 누르면 나타난다. */
 function PlayerControls({
@@ -367,7 +370,6 @@ function PlayerControls({
   onFull,
   fit,
   setFit,
-  viewers,
 }: {
   audible: boolean;
   /** 화면 맞춤을 고를 수 있는 송출 (영상·이미지·PPT) */
@@ -380,10 +382,10 @@ function PlayerControls({
   onFull: () => void;
   fit: "contain" | "cover";
   setFit: (f: "contain" | "cover") => void;
-  viewers: number;
 }) {
   const [shown, setShown] = useState(true);
-  const [menu, setMenu] = useState(false);
+  // 설정 — 유튜브처럼 첫 화면(항목 + 지금 값)에서 항목을 누르면 고르는 화면(체크 표시)으로 넘어간다
+  const [menu, setMenu] = useState<null | "main" | "fit">(null);
   const last = useRef(70);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -399,7 +401,7 @@ function PlayerControls({
     };
   }, [wake]);
 
-  const visible = shown || menu;
+  const visible = shown || !!menu;
   const muted = volume === 0;
   const toggleMute = () => {
     if (muted) setVolume(last.current || 70);
@@ -419,7 +421,7 @@ function PlayerControls({
       onPointerMove={(e) => e.pointerType === "mouse" && wake()}
       onClick={(e) => {
         if (menu) {
-          setMenu(false);
+          setMenu(null);
           wake();
           return;
         }
@@ -454,9 +456,11 @@ function PlayerControls({
         </div>
         <span className="flex-1" />
         <div className={cn(pill, "px-1")}>
-          <button type="button" aria-label="설정" onClick={() => setMenu((v) => !v)} className={btn}>
-            <Settings size={22} className={cn("transition-transform duration-200", menu && "rotate-45")} />
-          </button>
+          {fittable ? (
+            <button type="button" aria-label="설정" onClick={() => setMenu((v) => (v ? null : "main"))} className={btn}>
+              <Settings size={22} className={cn("transition-transform duration-200", menu && "rotate-45")} />
+            </button>
+          ) : null}
           {onPip ? (
             <button type="button" aria-label="작은 화면으로 보기" onClick={onPip} className={btn}>
               <PictureInPicture2 size={22} />
@@ -483,17 +487,19 @@ function PlayerControls({
             {muted ? "음소거 해제" : null}
           </button>
         ) : null}
-        <button
-          type="button"
-          aria-label="설정"
-          onClick={(e) => {
-            e.stopPropagation();
-            setMenu((v) => !v);
-          }}
-          className="absolute right-0.5 top-0.5 inline-flex h-10 w-10 items-center justify-center text-white"
-        >
-          <Settings size={21} />
-        </button>
+        {fittable ? (
+          <button
+            type="button"
+            aria-label="설정"
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenu((v) => (v ? null : "main"));
+            }}
+            className="absolute right-0.5 top-0.5 inline-flex h-10 w-10 items-center justify-center text-white"
+          >
+            <Settings size={21} />
+          </button>
+        ) : null}
         <span className="absolute bottom-3.5 left-3 flex items-center gap-1.5 text-[13px] text-white">
           <span className="h-2 w-2 rounded-full bg-[#FF3B3B]" />
           실시간
@@ -512,31 +518,53 @@ function PlayerControls({
       </div>
       <div className="absolute inset-x-0 bottom-0 h-[2px] bg-[#FF3B3B] md:hidden" />
 
-      {/* 설정 메뉴 — 유튜브 팝업처럼 */}
+      {/* 설정 메뉴 — 유튜브 팝업처럼: 항목 → 고르는 화면(체크) → 고르면 첫 화면으로 */}
       {menu ? (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute bottom-[60px] right-3 w-[250px] rounded-xl bg-[rgba(28,28,28,.92)] py-2 text-[13px] text-white max-md:bottom-auto max-md:top-10 max-md:w-[210px]"
+          className="absolute bottom-[60px] right-3 w-[250px] overflow-hidden rounded-xl bg-[rgba(28,28,28,.92)] py-2 text-[13px] text-white max-md:bottom-auto max-md:top-10 max-md:w-[220px]"
         >
-          {fittable ? (
+          {menu === "main" ? (
             <button
               type="button"
-              onClick={() => setFit(fit === "contain" ? "cover" : "contain")}
+              onClick={() => setMenu("fit")}
               className="flex h-10 w-full items-center gap-3.5 px-4 hover:bg-white/10"
             >
               <RectangleHorizontal size={19} />
               화면 맞춤
               <span className="ml-auto flex items-center gap-0.5 text-white/70">
-                {fit === "contain" ? "원본 비율" : "꽉 채우기"}
+                {FIT_LABEL[fit]}
                 <ChevronRight size={16} />
               </span>
             </button>
-          ) : null}
-          <div className="flex h-10 items-center gap-3.5 px-4">
-            <Eye size={19} />
-            보는 사람
-            <span className="ml-auto text-white/70">{viewers}명</span>
-          </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setMenu("main")}
+                className="flex h-10 w-full items-center gap-2 border-b border-white/10 px-3 pb-1 hover:bg-white/10"
+              >
+                <ChevronLeft size={18} />
+                화면 맞춤
+              </button>
+              <div className="pt-1">
+                {(["contain", "cover"] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => {
+                      setFit(f);
+                      setMenu("main");
+                    }}
+                    className="flex h-10 w-full items-center gap-3 px-4 hover:bg-white/10"
+                  >
+                    <span className="flex w-5 justify-center">{fit === f ? <Check size={18} /> : null}</span>
+                    {FIT_LABEL[f]}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       ) : null}
     </div>
@@ -574,8 +602,18 @@ function Watch({
   useEffect(() => setVolume(0), [ch]);
 
   return (
-    <div className="mx-auto grid w-full max-w-[1400px] gap-6 pb-[calc(32px+env(safe-area-inset-bottom))] md:px-8 md:pt-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
-      <section aria-label="송출 보기" className="flex min-w-0 flex-col gap-3">
+    <div
+      className={cn(
+        "mx-auto grid w-full gap-6 pb-[calc(32px+env(safe-area-inset-bottom))] md:px-8 md:pt-6 lg:gap-8",
+        // 다른 송출이 있을 때만 오른쪽 줄 — 없으면 화면을 화면 높이에 맞춰 크게, 가운데로
+        others.length > 0 ? "max-w-[1600px] lg:grid-cols-[minmax(0,1fr)_340px]" : "max-w-[1600px]",
+      )}
+    >
+      <section
+        aria-label="송출 보기"
+        className="mx-auto flex w-full min-w-0 flex-col gap-3"
+        style={{ maxWidth: "calc((100dvh - 210px) * 16 / 9)" }}
+      >
         <div
           ref={fs.ref}
           onDoubleClick={() => void fs.toggle()}
@@ -608,7 +646,6 @@ function Watch({
               onFull={() => void fs.toggle()}
               fit={fit}
               setFit={setFit}
-              viewers={c.viewers}
             />
           ) : (
             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-black/85">
