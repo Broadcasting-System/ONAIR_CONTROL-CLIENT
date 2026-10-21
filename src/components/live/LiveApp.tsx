@@ -854,16 +854,10 @@ function ChatPanel({ ch, className }: { ch: number; className?: string }) {
         }}
         className="shrink-0 border-t border-white/[0.08] p-3"
       >
-        {closed || !me?.email ? null : (
-          <p
-            className={cn(
-              "mb-2 truncate px-1 font-pretendard text-[12px]",
-              chat.notice ? "text-[#FF3B3B]" : "text-white/40",
-            )}
-          >
-            {chat.notice ? chat.notice.text : `${me.name} · ${me.email} 으로 보내요`}
-          </p>
-        )}
+        {/* 걸러진 말 등 알림만 잠깐 — 평소에는 아무것도 안 띄운다 */}
+        {chat.notice ? (
+          <p className="mb-2 truncate px-1 font-pretendard text-[12px] text-[#FF3B3B]">{chat.notice.text}</p>
+        ) : null}
         <div className="flex h-11 items-center gap-2 rounded-full bg-white/[0.07] pl-4 pr-1.5">
           <input
             value={text}
