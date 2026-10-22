@@ -290,6 +290,7 @@ const AUTO_KINDS: Record<string, [label: string, group: string]> = {
   recording: ["녹음·녹화", "녹음·녹화"],
   "live-chat": ["live 채팅 막기", "live 채팅"],
   "live-stream": ["live 중계", "live 중계"],
+  mirror: ["실시간 미러", "실시간 미러"],
 };
 
 const isAuto = (l: LogEntry) => (l.method || "").toUpperCase() === "AUTO";

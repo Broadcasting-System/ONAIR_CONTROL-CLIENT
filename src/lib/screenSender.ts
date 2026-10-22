@@ -37,6 +37,8 @@ type Signal = {
   fromPeer?: string;
   sdp?: RTCSessionDescriptionInit;
   candidate?: RTCIceCandidateInit;
+  /** 실시간 미러를 원하는 받는 쪽 (want=mirror) — 화면 공유는 보내지 않는다 */
+  want?: string;
 };
 
 /** 화면 공유가 송출 화면에 안 나올 때 원인을 보려고 — 개발자 도구 콘솔에 [화면 공유] 로 남긴다 */
@@ -122,6 +124,8 @@ export function startScreenSender(
       return;
     }
     if (m?.command !== "webrtc" || m.from === "control") return;
+    // 실시간 미러(서버 PC 미러 창·미러로 연 송출 화면)는 화면 공유와 따로 논다 (디스플레이 앱 hooks/useMirror.ts)
+    if (m.from === "mirror" || m.want === "mirror") return;
     const peer = m.fromPeer ?? "";
     if (m.kind === "hello") {
       log(`받는 쪽 hello (${peer || "-"})`);
