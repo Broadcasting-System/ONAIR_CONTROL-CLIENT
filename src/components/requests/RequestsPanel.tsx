@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Check, ChevronLeft, Ellipsis, FileText, Play, X } from "lucide-react";
+import { CalendarClock, Check, ChevronLeft, Ellipsis, Play, X } from "lucide-react";
 import EmptyState from "@/components/common/EmptyState";
 import NeonButton from "@/components/common/NeonButton";
 import PageTabs from "@/components/common/PageTabs";
@@ -27,6 +27,7 @@ import {
 import Select from "@/components/common/Select";
 import { ChoiceChip, Glass, KindIcon, NewDot, Seg, StatusPill, TierChip, YouTubeLink, inputCls } from "@/components/teacher/parts";
 import { channelName } from "@/constants/channels";
+import RequestFile, { RowThumb } from "@/components/requests/RequestFile";
 
 /** 요청함 — 선생님(teacher.bssmcast.com) 요청을 수락·거절·완료 (부원 이상), 선생님 목록은 부원 누구나 보고 승인·등급·내보내기는 부장 이상 */
 
@@ -62,7 +63,7 @@ function Row({ r, on, onClick }: { r: TeacherRequest; on: boolean; onClick: () =
       type="button"
       onClick={onClick}
       className={cn(
-        "grid w-full grid-cols-[40px_minmax(0,1fr)] gap-3 rounded-2xl border p-3.5 text-left transition-colors",
+        "grid w-full grid-cols-[40px_minmax(0,1fr)_auto] gap-3 rounded-2xl border p-3.5 text-left transition-colors",
         on ? "border-white/35 bg-white/[0.08]" : "border-white/[0.09] bg-white/[0.045] hover:bg-white/[0.07]",
         !fresh && !on && "opacity-75",
       )}
@@ -82,6 +83,11 @@ function Row({ r, on, onClick }: { r: TeacherRequest; on: boolean; onClick: () =
         </span>
         {preview(r) && <span className="mt-1.5 block truncate font-pretendard text-[13.5px] text-white/65">{preview(r)}</span>}
       </span>
+      {r.kind === "media" && (
+        <span className="self-center">
+          <RowThumb r={r} />
+        </span>
+      )}
     </button>
   );
 }
@@ -139,7 +145,7 @@ function Detail({ r, onBack }: { r: TeacherRequest; onBack?: () => void }) {
     r.kind === "announce"
       ? [["언제", `${dayLabel(p.date)} ${p.time}`], ["누구에게", `${targetLabel(p.target)} 스피커`], ["어떻게", p.method === "tts" ? "글 읽어 주기" : "방송부가 읽기"]]
       : r.kind === "media"
-        ? [p.source === "youtube" ? ["유튜브", <YouTubeLink key="y" id={p.videoId} />] : ["파일", r.upload ? <a key="f" href={requestsApi.fileUrl(r.id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 underline underline-offset-4"><FileText size={15} />{r.upload.name}</a> : "-"], ["언제", `${dayLabel(p.date)} ${p.time}`], ["어디서", channelName(p.channel)], ...(p.memo ? ([["메모", p.memo]] as [string, ReactNode][]) : [])]
+        ? [...((p.source === "youtube" ? [["유튜브", <YouTubeLink key="y" id={p.videoId} />]] : [["파일", <RequestFile key="f" r={r} />]]) as [string, ReactNode][]), ["언제", `${dayLabel(p.date)} ${p.time}`], ["어디서", channelName(p.channel)], ...(p.memo ? ([["메모", p.memo]] as [string, ReactNode][]) : [])]
         : r.kind === "event"
           ? [["행사", p.title], ["언제", `${dayLabel(p.date)} ${p.period ?? ""}`], ["장소", p.place ? HALL_LABEL[p.place] : "-"], ["필요한 것", preview(r).split(" · ").slice(2).join(" · ") || "-"]]
           : [["날짜", (p.dates ?? []).map(dayLabel).join(", ")], ["바꾸기", p.mode ? BELL_MODE_LABEL[p.mode] : "-"]];

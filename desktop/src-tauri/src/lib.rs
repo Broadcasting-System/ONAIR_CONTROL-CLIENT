@@ -601,6 +601,7 @@ pub fn run() {
             // 주의: macOS 는 on_navigation 이 iframe 에도 걸려서 외부 주소 가로채기는 안 한다
             let proxy_port = proxy.port;
             #[allow(unused_mut)]
+            let opener_app = handle.clone();
             let mut b = WebviewWindowBuilder::new(app, MAIN, start_url)
                 .title("ONAIR")
                 // 앱 화면이 어두워서 첫 페이지가 그려지기 전 흰 화면이 번쩍이지 않게
@@ -609,7 +610,29 @@ pub fn run() {
                 .on_page_load(move |_w, p| {
                     ON_PROXY_PAGE.store(is_proxy_url(p.url(), proxy_port), std::sync::atomic::Ordering::SeqCst);
                 })
-                .on_permission_request(|_w, kind| on_webview_permission(kind));
+                .on_permission_request(|_w, kind| on_webview_permission(kind))
+                // 내려받기(요청함 PPT 등) — 처리기가 없으면 웹뷰가 취소한다. 다운로드 폴더에 받고 Finder 로 보여 준다
+                .on_download(|w, e| {
+                    if let tauri::webview::DownloadEvent::Finished { path, success, .. } = e {
+                        match (success, path) {
+                            (true, Some(p)) => {
+                                use tauri_plugin_opener::OpenerExt;
+                                log::info!("내려받음: {}", p.display());
+                                let _ = w.app_handle().opener().reveal_item_in_dir(p);
+                            }
+                            _ => log::warn!("내려받기 실패"),
+                        }
+                    }
+                    true
+                })
+                // 새 탭 링크(유튜브 등 바깥 주소)는 기본 브라우저로 — 웹뷰는 새 창을 열지 않는다
+                .on_new_window(move |url, _f| {
+                    if matches!(url.scheme(), "http" | "https") && !is_proxy_url(&url, proxy_port) {
+                        use tauri_plugin_opener::OpenerExt;
+                        let _ = opener_app.opener().open_url(url.as_str(), None::<&str>);
+                    }
+                    tauri::webview::NewWindowResponse::Deny
+                });
             #[cfg(desktop)]
             {
                 b = b
