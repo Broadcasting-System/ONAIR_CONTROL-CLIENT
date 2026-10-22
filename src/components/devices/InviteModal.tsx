@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import QRCode from "qrcode";
+import { useEffect, useState, useMemo } from "react";
+import { qrSvg } from "@/lib/qrSvg";
 import { X } from "lucide-react";
 import NeonButton from "@/components/common/NeonButton";
 import Portal from "@/components/common/Portal";
@@ -33,19 +33,14 @@ export default function InviteModal({
   onClose: () => void;
   onCancelInvite: () => void;
 }) {
-  const [svg, setSvg] = useState("");
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    let alive = true;
-    // 비밀값이 길어 QR 이 촘촘하다 — 노트북 카메라로 찍기 쉽게 오류 정정은 낮게(L)
-    QRCode.toString(invite.qr, { type: "svg", errorCorrectionLevel: "L", margin: 0, color: { dark: "#111111", light: "#ffffff" } })
-      .then((s) => alive && setSvg(s))
-      .catch(() => alive && setSvg(""));
-    return () => {
-      alive = false;
-    };
+  const svg = useMemo(() => {
+    try {
+      return qrSvg(invite.qr);
+    } catch {
+      return "";
+    }
   }, [invite.qr]);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);

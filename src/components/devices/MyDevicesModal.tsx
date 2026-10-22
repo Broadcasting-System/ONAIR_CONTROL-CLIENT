@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import QRCode from "qrcode";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { qrSvg } from "@/lib/qrSvg";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Laptop, Loader2, Monitor, Plus, Smartphone, Tablet, X } from "lucide-react";
 import Portal from "@/components/common/Portal";
@@ -77,18 +77,14 @@ function left(until: string, now: number): string {
 
 /** 다른 기기 추가 — QR 과 8자리 코드 (30분). 새 기기가 붙으면 목록으로 돌아간다 */
 function AddDevice({ invite, onBack }: { invite: DeviceInviteCreated; onBack: () => void }) {
-  const [svg, setSvg] = useState("");
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    let alive = true;
-    QRCode.toString(invite.qr, { type: "svg", errorCorrectionLevel: "L", margin: 0, color: { dark: "#111111", light: "#ffffff" } })
-      .then((s) => alive && setSvg(s))
-      .catch(() => alive && setSvg(""));
-    return () => {
-      alive = false;
-    };
+  const svg = useMemo(() => {
+    try {
+      return qrSvg(invite.qr);
+    } catch {
+      return "";
+    }
   }, [invite.qr]);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
