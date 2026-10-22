@@ -407,6 +407,7 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
+				DEVELOPMENT_TEAM = "67VUA6VSJ5";
 			};
 			name = debug;
 		};
@@ -438,6 +439,7 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
+				DEVELOPMENT_TEAM = "67VUA6VSJ5";
 			};
 			name = release;
 		};

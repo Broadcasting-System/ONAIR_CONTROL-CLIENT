@@ -297,7 +297,7 @@ async function renderSetup() {
       const r = await call<SaveResult>("verify_and_save", { input: input(force) });
       if (r.saved) {
         setStatus(`<span class="ok">● ${esc(r.message)}</span>`);
-        setTimeout(() => call("open_control").catch((e) => setStatus(`<span class="err">${esc(e)}</span>`)), 700);
+        setTimeout(() => goControl().catch((e) => setStatus(`<span class="err">${esc(e)}</span>`)), 700);
         return;
       }
       setStatus(`<span class="err">${esc(r.message)}</span>`);
@@ -314,13 +314,23 @@ async function renderSetup() {
   forceBtn.onclick = () => submit(true);
   $("#cancel")?.addEventListener("click", () => {
     call("dismiss_pending_link");
-    call("open_control").catch((e) => setStatus(`<span class="err">${esc(e)}</span>`));
+    goControl().catch((e) => setStatus(`<span class="err">${esc(e)}</span>`));
   });
 
   if (pending) {
     linkEl.value = pending;
     await showParsed();
   }
+}
+
+/** 컨트롤 화면으로 — 앱이 창을 넘기는데, iOS 는 등록 직후 가끔 안 넘어가서(2026-10-22 아이폰) 1.5초 뒤에도
+ *  이 화면이면 받은 주소로 직접 넘어간다 */
+async function goControl(): Promise<void> {
+  const url = await call<string>("open_control");
+  const here = location.href;
+  setTimeout(() => {
+    if (location.href === here && typeof url === "string" && url) location.replace(url);
+  }, 1500);
 }
 
 /* ---------------- 설정 화면 ---------------- */
@@ -363,7 +373,7 @@ async function renderSettings() {
   $("#reenter")!.onclick = () => call("show_setup");
   if ($("#logs")) $("#logs")!.onclick = () => call("open_logs").catch((e) => alert(e));
   // 모바일은 설정도 메인 창에서 열려서 '닫기' → 컨트롤 화면 (등록 전이면 등록 화면)
-  $("#close")?.addEventListener("click", () => call(s.configured ? "open_control" : "show_setup"));
+  $("#close")?.addEventListener("click", () => (s.configured ? goControl() : call("show_setup")));
   $("#clear")!.onclick = () => {
     const m = document.createElement("div");
     m.className = "modal";

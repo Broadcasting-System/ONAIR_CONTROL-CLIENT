@@ -62,5 +62,7 @@
 	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>마이크로 교실 스피커에 방송하려고 써요.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

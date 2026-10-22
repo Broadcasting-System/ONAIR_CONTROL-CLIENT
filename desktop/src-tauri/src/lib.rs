@@ -117,13 +117,18 @@ fn show(w: &WebviewWindow) {
 }
 
 /// 메인 창을 컨트롤 화면(프록시)으로
-fn go_control(app: &AppHandle) {
+/// 메인 창을 컨트롤 화면으로 — 연 주소를 돌려준다 (iOS 는 앱 화면에서 navigate 가 가끔 안 먹어서 화면이 직접 다시 연다)
+fn go_control(app: &AppHandle) -> String {
     let st = app.state::<AppState>();
     let to = st.return_to.lock().unwrap().take();
-    if let (Some(w), Ok(u)) = (main_window(app), Url::parse(&st.proxy.boot_url_to(to.as_deref()))) {
-        let _ = w.navigate(u);
+    let url = st.proxy.boot_url_to(to.as_deref());
+    if let (Some(w), Ok(u)) = (main_window(app), Url::parse(&url)) {
+        if let Err(e) = w.navigate(u) {
+            log::warn!("컨트롤 화면으로 못 넘어감: {e}");
+        }
         show(&w);
     }
+    url
 }
 
 /// 메인 창을 등록 화면으로
@@ -357,15 +362,15 @@ async fn redeem_code(app: AppHandle, server: String, api: Option<String>, code: 
 }
 
 #[tauri::command]
-fn open_control(app: AppHandle) -> Result<(), String> {
+fn open_control(app: AppHandle) -> Result<String, String> {
     if app.state::<AppState>().proxy.config().is_none() {
         return Err("아직 등록하지 않았어요.".into());
     }
-    go_control(&app);
+    let url = go_control(&app);
     if let Some(s) = app.get_webview_window(SETTINGS) {
         let _ = s.close();
     }
-    Ok(())
+    Ok(url)
 }
 
 #[tauri::command]

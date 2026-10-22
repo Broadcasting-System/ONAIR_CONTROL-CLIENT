@@ -100,7 +100,8 @@ xcrun simctl launch booted kr.bssm.onair
 xcrun simctl openurl booted "onair://register?d=…"          # 딥링크 시험
 ```
 
-- 기기에 올리거나 .ipa 를 만들려면 Apple 개발자 팀이 필요해요: `APPLE_DEVELOPMENT_TEAM=<팀 ID> npm run tauri ios build` (또는 `tauri.conf.json` 의 `bundle.iOS.developmentTeam`). 시뮬레이터 빌드는 팀 없이 돼요.
+- 기기에 올리거나 .ipa 를 만들려면 Apple 개발자 팀이 필요해요: `tauri.conf.json` 의 `bundle.iOS.developmentTeam` (지금 `67VUA6VSJ5`, 또는 `APPLE_DEVELOPMENT_TEAM` 환경변수). 시뮬레이터 빌드는 팀 없이 돼요.
+- TestFlight: Xcode → Settings → Accounts 에 개발자 계정이 로그인돼 있어야 해요. `npm run tauri ios build -- --export-method app-store-connect` (같은 버전을 다시 올릴 땐 `--build-number <n>`). `Info.ios.plist` 의 `ITSAppUsesNonExemptEncryption=false` 로 수출 규정 질문은 안 떠요.
 - `tauri ios run "iPhone 17"` 은 시뮬레이터 이름을 줘도 기기용(aarch64)으로 빌드하려다 서명에서 멈춰서, 위처럼 `--target aarch64-sim` 으로 빌드해 `simctl` 로 올려요.
 - Info.plist: `NSAllowsLocalNetworking`(웹뷰가 `http://127.0.0.1:<포트>` 프록시를 엶, 바깥 http 는 그대로 막힘), `NSCameraUsageDescription`, `NSMicrophoneUsageDescription`, `onair` URL 스킴(딥링크 플러그인이 `CFBundleURLTypes` 를 넣어 줌).
 - 웹뷰 디버깅: 디버그 빌드는 Safari 개발자 메뉴로 보거나 `brew install ios-webkit-debug-proxy` 후 `ios_webkit_debug_proxy -s unix:<webinspectord_sim.socket>` (소켓 위치는 `lsof -U | grep webinspectord_sim`).
@@ -122,7 +123,9 @@ adb shell am start -a android.intent.action.VIEW -d "'onair://register?d=…'"  
 ```
 
 - 에뮬레이터에서 이 Mac 의 서버는 `http://10.0.2.2:<포트>` 예요.
-- 릴리스(스토어) 빌드: `npm run tauri android build -- --aab` + 서명 키 설정 (`gen/android/keystore.properties`, 커밋 안 함).
+- 릴리스(직접 배포 APK): `npm run tauri android build -- --apk --target aarch64 armv7` → `apk/universal/release/app-universal-release.apk`.
+  서명 키는 `gen/android/keystore.properties`(커밋 안 함, `storeFile`·`storePassword`·`keyAlias`·`keyPassword`) 또는 `ONAIR_ANDROID_KEYSTORE_PROPERTIES=<경로>` 로 줘요. 둘 다 없으면 서명 없는 APK 가 나와요.
+  키를 잃어버리면 이미 깔린 앱 위에 업데이트를 못 해요. 버전은 `tauri.conf.json` 의 `version` (versionCode 는 0.1.0 → 1000 처럼 자동).
 - 화면은 시스템 막대·노치·키보드 안쪽에만 그려요 (`MainActivity.kt` 가 여백을 줌). Android WebView 가 `env(safe-area-inset-bottom)` 을 0 으로 알려 줘서, 웹 쪽 safe-area 대신 앱이 피해 줘요. 그래서 Android 에서는 `env(safe-area-inset-*)` 가 모두 0.
 - 웹뷰 디버깅: `adb forward tcp:9333 localabstract:webview_devtools_remote_$(adb shell pidof kr.bssm.onair)` 후 `chrome://inspect` 또는 `http://127.0.0.1:9333/json`.
 - 평문 http 는 `127.0.0.1` 만 (`res/xml/network_security_config.xml`). 디버그 빌드만 `src/debug/res/xml/…` 로 전부 허용 (`tauri android dev` 가 Mac 의 개발 서버를 열 수 있게). 서버로 가는 요청은 Rust 프록시가 보내서 이 규칙과 상관없어요.

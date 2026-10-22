@@ -18,5 +18,8 @@
 	<string>ONAIR</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>ko</string>
+	<!-- HTTPS(OS 표준 암호화)만 씀 → TestFlight 수출 규정 질문 생략 -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
