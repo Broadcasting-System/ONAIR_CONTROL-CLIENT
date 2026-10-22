@@ -7,7 +7,7 @@ import { backendBase } from "@/lib/backend";
 import { cn } from "@/lib/utils";
 
 /** live 중계 HLS (서버 app/services/live_stream.py) — 서버 PC 가 송출 화면을 찍어 R2 에 올린 720p·480p.
- *  hls.js 로 틀고(처음엔 720p, 망이 느리면 480p), 아이폰처럼 MediaSource 가 없는 곳은 브라우저가 직접 튼다. */
+ *  hls.js 로 틀고(처음엔 480p 로 빨리, 망이 되면 720p), 아이폰처럼 MediaSource 가 없는 곳은 브라우저가 직접 튼다. */
 
 /** GET /api/live 의 hls — R2 공개 주소, 또는 서버가 직접 내보낼 때(/api/live/hls/..) 경로 */
 export interface LiveHls {
@@ -63,22 +63,24 @@ export function HlsVideo({
     let recovered = 0;
     if (!native && Hls.isSupported()) {
       hls = new Hls({
-        // 2초 조각 × 2 뒤에서 튼다 (약 4초 + 올리기) · 10초 넘게 밀리면 앞으로 뛴다 · 조금 밀리면 살짝 빨리 틀어 따라간다
-        liveSyncDurationCount: 2,
-        liveMaxLatencyDurationCount: 5,
-        maxLiveSyncPlaybackRate: 1.15,
-        backBufferLength: 8,
-        maxBufferLength: 10,
-        // 작은 칸(첫 화면)이어도 720p 부터 — 첫 대역폭 추정을 넉넉히, 칸 크기로 화질을 깎지 않는다
+        // 2초 조각 × 3 뒤에서 튼다 (약 6초 + 올리기) — 학교 업로드가 1초쯤 늦거나 R2 에서 받는 데 0.5~1초 걸려도
+        // 멈추지 않게 (2개 뒤일 때 학교 밖 LTE 에서 자주 멈췄다, 2026-10-22 실측: 여유 2.9초).
+        // 16초 넘게 밀리면 앞으로 뛰고, 조금 밀리면 살짝 빨리 틀어 따라간다
+        liveSyncDurationCount: 3,
+        liveMaxLatencyDurationCount: 8,
+        maxLiveSyncPlaybackRate: 1.1,
+        backBufferLength: 10,
+        maxBufferLength: 20,
+        // 처음엔 480p 로 빨리 띄우고, 받는 속도를 재서 되면 720p 로 (칸 크기로 화질을 깎지는 않는다)
         capLevelToPlayerSize: false,
-        abrEwmaDefaultEstimate: 4_000_000,
+        abrEwmaDefaultEstimate: 1_500_000,
       });
       hlsRef.current = hls;
       const h = hls;
       h.on(Hls.Events.MANIFEST_PARSED, () => {
         const heights = h.levels.map((l) => l.height);
-        const top = heights.indexOf(Math.max(...heights));
-        if (top >= 0) h.startLevel = top;
+        const low = heights.indexOf(Math.min(...heights));
+        if (low >= 0) h.startLevel = low;
         cb.current.onLevels?.([...new Set(heights)].sort((a, b) => b - a));
         play();
       });
