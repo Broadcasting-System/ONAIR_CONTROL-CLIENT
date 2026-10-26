@@ -16,10 +16,37 @@ import { DisplayMirror } from "@/components/display/DisplayMirror";
 import BroadcastCard from "@/components/broadcast/BroadcastCard";
 import { channelName } from "@/constants/channels";
 
+/** 메인 — 칸마다 자기 데이터를 직접 가져온다. 5초마다 오는 스피커·응답 시간 폴링이 페이지 전체(방송 칸·방송 모니터)를
+ *  다시 그리지 않도록 (렌더 측정: page.profile.test.tsx) */
 export default function MainPage() {
-  const { zones, toggleSpeaker } = useSpeakers();
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-16 md:h-full">
+      <div className="flex flex-col gap-6 md:col-span-5 md:gap-10 md:h-full">
+        <BroadcastCard />
+
+        <section className="flex-1 flex flex-col" data-tour="main.monitor">
+          <SectionHeader>방송 모니터링</SectionHeader>
+          <div className="flex-1 flex flex-col gap-6 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md shadow-2xl md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-8">
+            <div className="aspect-video w-full rounded-xl bg-black flex items-center justify-center border border-white/10 relative overflow-hidden shadow-inner">
+              <div className="absolute inset-0 bg-gradient-to-t from-red-900/10 to-transparent" />
+              <DisplayMirror />
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-0 bg-[length:100%_2px,3px_100%] pointer-events-none" />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="flex flex-col gap-6 md:col-span-7 md:gap-14 md:h-full">
+        <NetworkSection />
+        <SpeakerSection />
+      </div>
+    </div>
+  );
+}
+
+/** 네트워크 상태 4칸 — 응답 시간이 5초마다 바뀌어 이 칸만 다시 그린다 */
+function NetworkSection() {
   const { summary: hallSummary, isError: hallError } = useHallsStatus();
-  const { canOperate } = useMe();
   const router = useRouter();
 
   const net = useNetworkStatus();
@@ -70,78 +97,67 @@ export default function MainPage() {
       : null;
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-16 md:h-full">
-      <div className="flex flex-col gap-6 md:col-span-5 md:gap-10 md:h-full">
-        <BroadcastCard />
-
-        <section className="flex-1 flex flex-col" data-tour="main.monitor">
-          <SectionHeader>방송 모니터링</SectionHeader>
-          <div className="flex-1 flex flex-col gap-6 rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md shadow-2xl md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-8">
-            <div className="aspect-video w-full rounded-xl bg-black flex items-center justify-center border border-white/10 relative overflow-hidden shadow-inner">
-              <div className="absolute inset-0 bg-gradient-to-t from-red-900/10 to-transparent" />
-              <DisplayMirror />
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-0 bg-[length:100%_2px,3px_100%] pointer-events-none" />
-            </div>
-          </div>
-        </section>
+    <section data-tour="main.network">
+      <SectionHeader>네트워크 상태</SectionHeader>
+      <div className="rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md shadow-2xl md:rounded-[24px] md:border-sidebar-border md:bg-sidebar bg-gradient-to-br from-white/5 to-transparent md:p-8">
+        <div className="grid grid-cols-2 gap-3 md:gap-8">
+          <NetCard item={speakerCard} />
+          <NetCard item={displayCard} />
+          <NetCard item={latencyCard} />
+          {hallCard && <NetCard item={hallCard} onClick={() => router.push("/mixer")} />}
+        </div>
       </div>
+    </section>
+  );
+}
 
-      <div className="flex flex-col gap-6 md:col-span-7 md:gap-14 md:h-full">
-        <section data-tour="main.network">
-          <SectionHeader>네트워크 상태</SectionHeader>
-          <div className="rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md shadow-2xl md:rounded-[24px] md:border-sidebar-border md:bg-sidebar bg-gradient-to-br from-white/5 to-transparent md:p-8">
-            <div className="grid grid-cols-2 gap-3 md:gap-8">
-              <NetCard item={speakerCard} />
-              <NetCard item={displayCard} />
-              <NetCard item={latencyCard} />
-              {hallCard && <NetCard item={hallCard} onClick={() => router.push("/mixer")} />}
-            </div>
-          </div>
-        </section>
+/** 스피커 관리 — 상태가 바뀔 때만 다시 그린다 (useSpeakers 가 같은 상태면 새로 넣지 않는다) */
+function SpeakerSection() {
+  const { zones, toggleSpeaker } = useSpeakers();
+  const { canOperate } = useMe();
 
-        <section className="flex-1 flex flex-col" data-tour="main.speakers">
-          <div className="flex items-center justify-between">
-            <SectionHeader>스피커 관리</SectionHeader>
-            {/* 지도·분류 표는 '스피커 지도' 페이지에 따로 있다 */}
-            <Link
-              href="/speakers"
-              data-tour="main.speaker-map-link"
-              className="mb-4 rounded-lg bg-white/5 px-4 py-3 font-mbc md:py-1.5 text-sm text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              지도로 보기 →
-            </Link>
-          </div>
-          <div className="flex-1 flex flex-col rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md shadow-2xl md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-6">
-            <div className="min-h-0 flex-1">
-              <div className="grid grid-cols-3 gap-2 md:grid-cols-5 md:gap-4" data-tour="main.speaker-list">
-                {zones.map((zone) => (
-                  <StatusCard
-                    key={zone.id}
-                    label={zone.name}
-                    status={zone.status}
-                    variant="speaker"
-                    labelClassName="text-[18px] md:text-[22px]"
-                    onClick={canOperate ? () => toggleSpeaker(zone.id) : undefined}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="mt-4 flex gap-2 justify-center md:gap-12">
-              <div className="min-w-0 flex-1 md:w-[360px] md:min-w-[auto] md:flex-initial">
-                <NeonButton tone="white" size="lg" onClick={() => toggleSpeaker("all")} disabled={!canOperate} className="w-full" data-tour="main.speaker-all">
-                  전체
-                </NeonButton>
-              </div>
-              <div className="min-w-0 flex-1 md:w-[360px] md:min-w-[auto] md:flex-initial">
-                <NeonButton tone="white" size="lg" onClick={() => toggleSpeaker("grade")} disabled={!canOperate} className="w-full" data-tour="main.speaker-grade">
-                  학년 전체
-                </NeonButton>
-              </div>
-            </div>
-          </div>
-        </section>
+  return (
+    <section className="flex-1 flex flex-col" data-tour="main.speakers">
+      <div className="flex items-center justify-between">
+        <SectionHeader>스피커 관리</SectionHeader>
+        {/* 지도·분류 표는 '스피커 지도' 페이지에 따로 있다 */}
+        <Link
+          href="/speakers"
+          data-tour="main.speaker-map-link"
+          className="mb-4 rounded-lg bg-white/5 px-4 py-3 font-mbc md:py-1.5 text-sm text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          지도로 보기 →
+        </Link>
       </div>
-    </div>
+      <div className="flex-1 flex flex-col rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-4 backdrop-blur-md shadow-2xl md:rounded-[24px] md:border-sidebar-border md:bg-sidebar md:p-6">
+        <div className="min-h-0 flex-1">
+          <div className="grid grid-cols-3 gap-2 md:grid-cols-5 md:gap-4" data-tour="main.speaker-list">
+            {zones.map((zone) => (
+              <StatusCard
+                key={zone.id}
+                label={zone.name}
+                status={zone.status}
+                variant="speaker"
+                labelClassName="text-[18px] md:text-[22px]"
+                onClick={canOperate ? () => toggleSpeaker(zone.id) : undefined}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="mt-4 flex gap-2 justify-center md:gap-12">
+          <div className="min-w-0 flex-1 md:w-[360px] md:min-w-[auto] md:flex-initial">
+            <NeonButton tone="white" size="lg" onClick={() => toggleSpeaker("all")} disabled={!canOperate} className="w-full" data-tour="main.speaker-all">
+              전체
+            </NeonButton>
+          </div>
+          <div className="min-w-0 flex-1 md:w-[360px] md:min-w-[auto] md:flex-initial">
+            <NeonButton tone="white" size="lg" onClick={() => toggleSpeaker("grade")} disabled={!canOperate} className="w-full" data-tour="main.speaker-grade">
+              학년 전체
+            </NeonButton>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
