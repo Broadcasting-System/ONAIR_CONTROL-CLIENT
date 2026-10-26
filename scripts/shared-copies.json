@@ -1,0 +1,20 @@
+{
+  "about": "두 저장소에 같은 코드로 두는 파일 — scripts/check-shared-copies.mjs 가 비교한다 (docs/adr-monorepo.md). 고치면 두 저장소를 같이.",
+  "files": [
+    { "control": "src/lib/reconnectingSocket.ts", "display": "lib/reconnectingSocket.ts" },
+    { "control": "src/lib/reconnectingSocket.test.ts", "display": "lib/reconnectingSocket.test.ts" },
+    { "control": "src/lib/sentryOptions.ts", "display": "lib/sentryOptions.ts" },
+    { "control": "src/lib/sentryOptions.test.ts", "display": "lib/sentryOptions.test.ts" },
+    { "control": "src/instrumentation.ts", "display": "instrumentation.ts" },
+    { "control": "src/instrumentation-client.ts", "display": "instrumentation-client.ts" },
+    { "control": "src/test/fakeSocket.ts", "display": "test/fakeSocket.ts" },
+    { "control": "src/test/setup.ts", "display": "test/setup.ts" },
+    { "control": "scripts/check-shared-copies.mjs", "display": "scripts/check-shared-copies.mjs" },
+    { "control": "scripts/shared-copies.json", "display": "scripts/shared-copies.json" }
+  ],
+  "intentionallyDifferent": [
+    { "control": "vitest.config.mts", "display": "vitest.config.mts", "why": "@ 별칭이 가리키는 곳(src / 저장소 루트)과 찾을 테스트 경로가 저장소 구조에 따라 다르다" },
+    { "control": "src/hooks/useDisplaySync.ts", "display": "hooks/useWebSocket.ts", "why": "같은 소켓을 쓰지만 미리보기와 송출 화면이 상태를 다르게 다룬다(중복 거르기·fallbackUrl 등)" },
+    { "control": "src/lib/backend.ts", "display": "lib/backend.ts", "why": "주소 규칙의 바탕은 같지만 컨트롤에만 데스크톱 앱 중계·공개 주소 분기가 있다" }
+  ]
+}

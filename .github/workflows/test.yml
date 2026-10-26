@@ -36,3 +36,14 @@ jobs:
 
       - name: 타입 검사
         run: pnpm exec tsc --noEmit
+
+      # 저장소를 합치지 않는 대신(docs/adr-monorepo.md) 송출 화면 저장소와 같은 코드로 둔 파일이 어긋나면 실패
+      - name: 송출 화면 저장소 main 받기 (공유 파일 비교용)
+        uses: actions/checkout@v4
+        with:
+          repository: Broadcasting-System/ONAIR_DISPLAY-CLIENT
+          ref: main
+          path: .shared-other
+
+      - name: 공유 파일 복사본 검사
+        run: node scripts/check-shared-copies.mjs --self control --other .shared-other
