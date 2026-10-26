@@ -234,7 +234,16 @@ export default function Splash() {
       if (!alive) return;
       if (!t0) t0 = now;
       const t = (now - t0) / 1000;
-      render(Math.min(t, END));
+      // 창 크기가 0(숨긴 탭·아직 배치 전)이면 그리지 않고 시간만 흘린다 — 크기 0 캔버스를 drawImage 하면 오류가 나서
+      // 반복이 멈추고, 시작 화면이 앱을 덮은 채 남았다(Sentry 로 찾음). 그 밖의 오류도 앱을 막지 않게 바로 넘어간다
+      if (W > 0 && H > 0) {
+        try {
+          render(Math.min(t, END));
+        } catch {
+          finish();
+          return;
+        }
+      }
       if (t >= END) { finish(); return; }
       raf = requestAnimationFrame(loop);
     };
