@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { hallApi } from "@/lib/hallApi";
 import { toast } from "@/components/common/Toast";
+import { rollback, snapshot, type Snapshot } from "@/lib/optimistic";
 import type { VideoMatrixState } from "@/types/hall";
 
 const POLL_MS = 3000;
@@ -27,17 +28,18 @@ export function useVideoMatrix(hallId: string | null) {
   );
 
   const refresh = () => qc.invalidateQueries({ queryKey: key });
-  const fail = (e: Error) => {
+  const fail = (e: Error, _vars?: unknown, ctx?: Snapshot<VideoMatrixState>) => {
     toast.error(e.message);
-    refresh();
+    rollback(qc, key, ctx);
   };
 
   const routeMutation = useMutation({
     mutationFn: ({ output, input }: { output: number; input: number }) =>
       hallApi.route(hallId as string, output, input),
     onMutate: async ({ output, input }) => {
-      await qc.cancelQueries({ queryKey: key });
+      const ctx = await snapshot<VideoMatrixState>(qc, key);
       patchRoutes((o, cur) => (o === output ? input : cur));
+      return ctx;
     },
     onError: fail,
   });
@@ -45,8 +47,9 @@ export function useVideoMatrix(hallId: string | null) {
   const routeAllMutation = useMutation({
     mutationFn: (input: number) => hallApi.routeAll(hallId as string, input),
     onMutate: async (input) => {
-      await qc.cancelQueries({ queryKey: key });
+      const ctx = await snapshot<VideoMatrixState>(qc, key);
       patchRoutes(() => input);
+      return ctx;
     },
     onError: fail,
   });
