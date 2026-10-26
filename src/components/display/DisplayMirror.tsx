@@ -345,7 +345,7 @@ export const DisplayMirror = ({
   /** 화면 맞춤 — 정하면 송출 설정 대신 이걸로 (live 플레이어 '꽉 채우기') */
   fit?: "contain" | "cover";
 }) => {
-  const { content } = useDisplaySync(channel, role);
+  const { content, staleSince } = useDisplaySync(channel, role);
   // 컨트롤 미리보기 — 화면 공유는 P2P 라 여기서 못 받는다. live 중계가 돌고 있으면 그 HLS 로 보여 준다
   const liveHls = useLiveHlsUrl(channel, role === "control" && content?.type === "screen");
   const soundRef = useRef(sound);
@@ -509,6 +509,7 @@ export const DisplayMirror = ({
         <h3 className="text-4xl font-black italic tracking-wider text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
           OFF AIR
         </h3>
+        {badge && staleSince != null && <StaleBadge since={staleSince} />}
       </div>
     );
   }
@@ -576,7 +577,8 @@ export const DisplayMirror = ({
         <MirrorYouTube videoId={content.videoId} playback={content.playback} sound={sound} volume={volume} />
       ) : null}
 
-      {badge && (
+      {badge && staleSince != null && <StaleBadge since={staleSince} />}
+      {badge && staleSince == null && (
         <div className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-full border border-red-500/50 bg-red-600/90 px-3 py-1.5 shadow-lg">
           <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
           <span className="text-[10px] font-black uppercase tracking-tighter text-white">
@@ -587,3 +589,23 @@ export const DisplayMirror = ({
     </div>
   );
 };
+
+/** 서버와 끊긴 동안 LIVE MONITOR 자리에 — 보이는 내용은 끊기기 전 것이라 지금 송출과 다를 수 있다 */
+function StaleBadge({ since }: { since: number }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const sec = Math.max(0, Math.floor((now - since) / 1000));
+  const ago = sec < 60 ? `${sec}초` : `${Math.floor(sec / 60)}분`;
+  return (
+    <div
+      className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-full border border-zinc-500/50 bg-zinc-800/90 px-3 py-1.5 shadow-lg"
+      title="서버와 연결이 끊겨 다시 붙는 중이에요. 보이는 화면은 끊기기 전 내용이라 지금 송출과 다를 수 있어요."
+    >
+      <span className="h-2 w-2 rounded-full bg-amber-400" />
+      <span className="text-[10px] font-black tracking-tighter text-white">연결 끊김 · {ago} 전 화면</span>
+    </div>
+  );
+}
