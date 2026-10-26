@@ -21,8 +21,15 @@ interface SpeakerControlResponse {
   action: string;
 }
 
+/** 같은 구역·같은 켜짐이면 true — 폴링 결과가 그대로면 스토어에 새 배열을 넣지 않는다 */
+function sameZones(a: SpeakerZone[], b: SpeakerZone[]) {
+  return a.length === b.length && a.every((z, i) => z.id === b[i].id && z.name === b[i].name && z.status === b[i].status);
+}
+
 export function useSpeakers() {
-  const { zones, setZones } = useSpeakerStore();
+  // 필요한 것만 구독한다 (스토어 전체를 구독하면 다른 값이 바뀌어도 다시 그린다)
+  const zones = useSpeakerStore((s) => s.zones);
+  const setZones = useSpeakerStore((s) => s.setZones);
   const queryClient = useQueryClient();
   // 조작 요청이 진행 중이면 폴링 결과로 화면을 덮지 않는다 (누른 직후 깜빡이며 되돌아가는 것 방지)
   const pending = useRef(0);
@@ -47,6 +54,8 @@ export function useSpeakers() {
         name,
         status: activeSet.has(name) ? "on" : "off",
       }));
+      // 바뀐 게 없으면 그대로 — 매번 새 배열을 넣으면 5초마다 구역 58칸을 다시 그린다
+      if (sameZones(useSpeakerStore.getState().zones, nextZones)) return;
       setZones(nextZones);
     } catch {
       // 네트워크가 잠깐 끊겨도 마지막으로 알던 상태를 유지한다 (격자가 통째로 사라지지 않게)
