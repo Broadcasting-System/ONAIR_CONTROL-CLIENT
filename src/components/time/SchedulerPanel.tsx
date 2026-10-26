@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { getApiBase } from "@/lib/apiBase";
 import { cn } from "@/lib/utils";
 import EmptyState from "@/components/common/EmptyState";
 import { TEST_SPEAKER_LABEL, isTestSpeaker } from "@/constants/testSpeaker";
+import { useVisibleInterval } from "@/hooks/useVisibleInterval";
 
 interface SchedulerJob {
   id: string;
@@ -54,11 +55,7 @@ export default function SchedulerPanel() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchStatus();
-    const id = setInterval(fetchStatus, 3000);
-    return () => clearInterval(id);
-  }, [fetchStatus]);
+  useVisibleInterval(fetchStatus, 3000);
 
   if (denied) {
     return <p className="font-pretendard text-white/40">권한이 없어요</p>;

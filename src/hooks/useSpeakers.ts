@@ -6,6 +6,7 @@ import { SPEAKER_MATRIX_KEY } from "@/hooks/useSpeakerMatrix";
 import { SpeakerZone } from "@/types/speaker";
 import { getApiBase } from "@/lib/apiBase";
 import { toast } from "@/components/common/Toast";
+import { useVisibleInterval } from "@/hooks/useVisibleInterval";
 
 // 봇·시보·다른 기기가 바꾼 스피커 상태도 보이도록 주기적으로 맞춘다
 const STATUS_POLL_MS = 5000;
@@ -55,9 +56,9 @@ export function useSpeakers() {
 
   useEffect(() => {
     loadStatus(true);
-    const id = setInterval(() => loadStatus(), STATUS_POLL_MS);
-    return () => clearInterval(id);
   }, [loadStatus]);
+  // 숨긴 탭에서는 멈추고 다시 보이면 바로 맞춘다
+  useVisibleInterval(() => loadStatus(), STATUS_POLL_MS, { immediate: false });
 
   const callControl = async (targets: string[], action: "on" | "off") => {
     const BASE = getApiBase();

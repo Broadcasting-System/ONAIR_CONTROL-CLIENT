@@ -12,6 +12,7 @@ import { RowMenu, StatusDot, adminField, adminPanel, chipCls } from "@/component
 import { useMe } from "@/hooks/useMe";
 import { del, put, request, seg, HttpError } from "@/lib/http";
 import { cn } from "@/lib/utils";
+import { useVisibleInterval } from "@/hooks/useVisibleInterval";
 
 /* 관리 › 기기 (시안 기기) — 이 기기 줄 + 기기 등록, Tailscale IP 기기 목록(권한·마지막 접속·⋯) */
 
@@ -122,11 +123,7 @@ export default function DevicesPanel({ onDenied }: { onDenied: () => void }) {
     }
   }, [onDenied]);
 
-  useEffect(() => {
-    fetchDevices();
-    const id = setInterval(fetchDevices, 30_000); // 마지막 접속·접속 중
-    return () => clearInterval(id);
-  }, [fetchDevices]);
+  useVisibleInterval(fetchDevices, 30_000); // 마지막 접속·접속 중
 
   const save = useCallback(
     async (ip: string, patch: { label?: string; role?: DeviceRole }, done = "저장했어요") => {

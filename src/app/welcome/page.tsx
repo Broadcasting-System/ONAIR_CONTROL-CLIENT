@@ -14,6 +14,7 @@ import { cohortPrefix, mailIdProblem, personalEmailProblem, suggestMailId } from
 import { cn } from "@/lib/utils";
 import type { CardBg } from "@/types/member";
 import { thisDeviceName } from "@/lib/deviceName";
+import { useVisibleInterval } from "@/hooks/useVisibleInterval";
 
 /** 튜너 눈금에 찍힌 네 단계 — 키 연결은 앱에서 끝내고 이 화면으로 온다 */
 const STEPS = ["키 연결", "프로필", "승인", "ON AIR"] as const;
@@ -200,11 +201,7 @@ export default function WelcomePage() {
   const pending = status === "pending";
 
   // 승인 대기 중이면 5초마다 다시 확인
-  useEffect(() => {
-    if (!pending) return;
-    const id = setInterval(() => refetch(), 5000);
-    return () => clearInterval(id);
-  }, [pending, refetch]);
+  useVisibleInterval(() => refetch(), pending ? 5000 : null, { immediate: false });
 
   // 승인되면 메인으로 (폰은 폰 홈으로 — 등록 중에 /main 을 거쳐 와서 '처음 열면 홈' 이 이미 쓰였을 수 있다)
   useEffect(() => {
