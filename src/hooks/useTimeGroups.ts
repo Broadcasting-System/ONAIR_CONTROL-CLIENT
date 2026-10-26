@@ -8,6 +8,7 @@ import { diffDay, samePair } from "@/components/time/bellUtils";
 import { useQueryClient } from "@tanstack/react-query";
 import type { DeviceSyncResult } from "@/constants/deviceBell";
 import { DEVICE_BELL_KEY } from "./useDeviceBell";
+import { useVisibleInterval } from "@/hooks/useVisibleInterval";
 
 const DAY_ORDER: DayType[] = DAYS.map((d) => d.value);
 const emptyDays = (): DaySchedule[] => DAY_ORDER.map((dayType) => ({ dayType, bells: [] }));
@@ -87,11 +88,7 @@ export const useTimeGroups = () => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchLive();
-    const id = setInterval(fetchLive, 4000);
-    return () => clearInterval(id);
-  }, [fetchLive]);
+  useVisibleInterval(fetchLive, 4000);
 
   const { clipboard, copy, paste } = useBellClipboard();
 

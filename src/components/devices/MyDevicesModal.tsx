@@ -11,6 +11,7 @@ import { toast } from "@/components/common/Toast";
 import { useMe } from "@/hooks/useMe";
 import { memberApi } from "@/lib/memberApi";
 import type { DeviceInviteCreated, MemberDevice } from "@/types/member";
+import { useVisibleInterval } from "@/hooks/useVisibleInterval";
 
 const MAX_DEVICES = 5; // 서버와 같은 값 (member_service.MAX_DEVICES)
 
@@ -140,11 +141,7 @@ export default function MyDevicesModal({ onClose }: { onClose: () => void }) {
   const count = useRef(devices.length);
 
   // QR 을 띄운 동안 3초마다 내 기기 목록을 다시 본다 — 새 기기가 붙으면 목록으로
-  useEffect(() => {
-    if (!invite) return;
-    const id = setInterval(() => refetch(), 3000);
-    return () => clearInterval(id);
-  }, [invite, refetch]);
+  useVisibleInterval(() => refetch(), invite ? 3000 : null, { immediate: false });
   const lastName = devices[devices.length - 1]?.name;
   useEffect(() => {
     if (invite && devices.length > count.current) {

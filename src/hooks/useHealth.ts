@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { getApiBase } from "@/lib/apiBase";
+import { useVisibleInterval } from "@/hooks/useVisibleInterval";
 
 export interface ChannelHealth {
   count: number;
@@ -27,11 +28,7 @@ export function useHealth(intervalMs = 3000) {
     }
   }, []);
 
-  useEffect(() => {
-    fetchHealth();
-    const id = setInterval(fetchHealth, intervalMs);
-    return () => clearInterval(id);
-  }, [fetchHealth, intervalMs]);
+  useVisibleInterval(fetchHealth, intervalMs);
 
   return { health };
 }
