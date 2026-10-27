@@ -29,6 +29,7 @@ import NeonButton from "@/components/common/NeonButton";
 import OnairMark from "@/components/common/OnairMark";
 import { DisplayMirror } from "@/components/display/DisplayMirror";
 import { HlsVideo, hlsSrc, type LiveHls, type Quality } from "@/components/live/HlsVideo";
+import { SfuVideo, type LiveSfu } from "@/components/live/SfuVideo";
 import { useDisplaySync } from "@/hooks/useDisplaySync";
 import { backendBase, resolveMediaUrl } from "@/lib/backend";
 import { cn } from "@/lib/utils";
@@ -44,8 +45,12 @@ interface LiveChannel {
   startedAt: number | null;
   viewers: number;
   thumb: string | null;
-  /** live 중계 — 서버 PC 가 찍어 올린 HLS. 있으면 이걸 튼다 (화면 공유도 보인다) */
+  /** live 중계 — 서버 PC 가 찍어 올린 HLS. 화면 공유를 송출할 때만 생긴다 */
   hls?: LiveHls | null;
+  /** 이 송출을 중계로 봐야 하는지 (화면 공유) — 아니면 송출 내용을 이 기기가 직접 그린다. 예전 서버는 안 보낸다 */
+  relay?: boolean;
+  /** 화면 공유를 Cloudflare Realtime SFU 에서 받을 수 있으면 — 중계(HLS)보다 먼저 (지연 1초 안쪽) */
+  sfu?: LiveSfu | null;
 }
 
 async function fetchLive(): Promise<LiveChannel[]> {
@@ -200,7 +205,20 @@ function HlsStage({
   );
 }
 
-/** 송출 화면 — live 중계(HLS)가 있으면 그것, 없거나 안 되면 송출 내용을 그대로 다시 그린다(DisplayMirror) */
+/** 화면 공유를 SFU 에서 — 보는 사람으로 세어지도록 송출 연결(role=live)은 그대로 */
+function SfuStage({ ch, sfuId, volume, fit, onFatal }: {
+  ch: number;
+  sfuId: string;
+  volume: number;
+  fit: "contain" | "cover";
+  onFatal: () => void;
+}) {
+  useDisplaySync(ch, "live");
+  return <SfuVideo channel={ch} sfuId={sfuId} volume={volume} fit={fit} onFatal={onFatal} />;
+}
+
+/** 송출 화면 — 송출 내용을 이 기기가 그대로 다시 그린다(DisplayMirror, 파일은 R2 사본에서).
+ *  다시 그릴 수 없는 화면 공유는 SFU(Cloudflare Realtime)에서, SFU 가 없으면 live 중계(HLS) — 안 되면 다시 그리기로 */
 function LiveStage({
   c,
   ch,
@@ -221,11 +239,19 @@ function LiveStage({
 }) {
   const url = c?.hls?.url ?? null;
   const [failed, setFailed] = useState<string | null>(null);
-  const useHls = !!url && failed !== url;
+  const sfuId = c?.sfu?.id ?? null;
+  const [sfuFailed, setSfuFailed] = useState<string | null>(null);
+  // 중계가 막 끝난 송출(화면 공유 → 영상)은 남은 조각 대신 바로 다시 그리기로
+  const useHls = !!url && failed !== url && c?.relay !== false;
   // 중계가 바뀌거나 끝나면 화질 목록을 비운다 (예전 화면은 화질을 고를 수 없다)
   useEffect(() => {
     if (!useHls) onLevels?.([]);
   }, [useHls, onLevels]);
+  if (sfuId && sfuFailed !== sfuId) {
+    return (
+      <SfuStage key={sfuId} ch={ch} sfuId={sfuId} volume={volume / 100} fit={fit} onFatal={() => setSfuFailed(sfuId)} />
+    );
+  }
   if (useHls) {
     return (
       <HlsStage
@@ -1082,9 +1108,9 @@ function Watch({
           />
           {c ? (
             <PlayerControls
-              audible={c.hls ? HLS_AUDIBLE.has(c.type) : AUDIBLE.has(c.type)}
-              fittable={!!c.hls || FITTABLE.has(c.type)}
-              onPip={(c.hls || c.type === "video") && pipOk ? pip : undefined}
+              audible={c.hls || c.sfu ? HLS_AUDIBLE.has(c.type) : AUDIBLE.has(c.type)}
+              fittable={!!c.hls || !!c.sfu || FITTABLE.has(c.type)}
+              onPip={(c.hls || c.sfu || c.type === "video") && pipOk ? pip : undefined}
               volume={volume}
               setVolume={setVolume}
               full={fs.full}
