@@ -112,7 +112,7 @@ export function useScreenShare(channel: number = 1) {
       if (senderRef.current !== sender) return;
       void stop();
       toast.error("송출 서버 연결이 끊겨 화면 공유를 종료했습니다.");
-    });
+    }, { channel: ch }); // 학생 live 화면용 SFU 에도 (서버에 설정이 있을 때만)
     senderRef.current = sender;
 
     toast.success(`${channelName(ch)}에 화면 공유를 시작했습니다.`);

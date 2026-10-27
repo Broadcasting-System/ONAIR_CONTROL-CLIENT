@@ -184,7 +184,7 @@ export default function ShareApp() {
         sender.close();
         senderRef.current = null;
         setTimeout(() => setRelink((n) => n + 1), 2000);
-      });
+      }, { channel, shareToken: token }); // 학생 live 화면용 SFU 에도 (서버에 설정이 있을 때만)
       senderRef.current = sender;
       senderChannelRef.current = channel;
     });
