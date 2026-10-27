@@ -44,8 +44,10 @@ interface LiveChannel {
   startedAt: number | null;
   viewers: number;
   thumb: string | null;
-  /** live 중계 — 서버 PC 가 찍어 올린 HLS. 있으면 이걸 튼다 (화면 공유도 보인다) */
+  /** live 중계 — 서버 PC 가 찍어 올린 HLS. 화면 공유를 송출할 때만 생긴다 */
   hls?: LiveHls | null;
+  /** 이 송출을 중계로 봐야 하는지 (화면 공유) — 아니면 송출 내용을 이 기기가 직접 그린다. 예전 서버는 안 보낸다 */
+  relay?: boolean;
 }
 
 async function fetchLive(): Promise<LiveChannel[]> {
@@ -200,7 +202,8 @@ function HlsStage({
   );
 }
 
-/** 송출 화면 — live 중계(HLS)가 있으면 그것, 없거나 안 되면 송출 내용을 그대로 다시 그린다(DisplayMirror) */
+/** 송출 화면 — 송출 내용을 이 기기가 그대로 다시 그린다(DisplayMirror, 파일은 R2 사본에서).
+ *  화면 공유처럼 다시 그릴 수 없는 송출만 live 중계(HLS) — 안 되면 다시 그리기로 */
 function LiveStage({
   c,
   ch,
@@ -221,7 +224,8 @@ function LiveStage({
 }) {
   const url = c?.hls?.url ?? null;
   const [failed, setFailed] = useState<string | null>(null);
-  const useHls = !!url && failed !== url;
+  // 중계가 막 끝난 송출(화면 공유 → 영상)은 남은 조각 대신 바로 다시 그리기로
+  const useHls = !!url && failed !== url && c?.relay !== false;
   // 중계가 바뀌거나 끝나면 화질 목록을 비운다 (예전 화면은 화질을 고를 수 없다)
   useEffect(() => {
     if (!useHls) onLevels?.([]);
