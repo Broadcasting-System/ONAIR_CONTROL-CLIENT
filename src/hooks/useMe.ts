@@ -82,6 +82,8 @@ export function useMe() {
     isAdmin: RANK[role] >= RANK.lead,
     /** 부원 이상 — 모든 조작 */
     canOperate: RANK[role] >= RANK.member,
+    /** 등록된 사람 누구나(졸업·교사 포함) — CUE 를 쓴다. 바꾸는 일은 서버가 역할로 다시 막는다 */
+    canUseCue: role !== "guest",
     isSuperadmin: role === "superadmin",
     canManageMembers: RANK[role] >= RANK.lead,
   };

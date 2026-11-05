@@ -82,8 +82,17 @@ export function useChatConversation(active: boolean) {
   );
 
   const send = useCallback(
-    async (text: string, uploads: ChatUpload[], page: string) => {
+    async (text: string, uploads: ChatUpload[], page: string, answerTo?: string) => {
       if (abortRef.current) return;
+      // 질문 카드에 답했으면 카드에 바로 답을 남긴다 (서버도 같은 답을 저장한다)
+      if (answerTo)
+        setMessages((ms) =>
+          ms.map((m) =>
+            m.questions?.some((q) => q.id === answerTo)
+              ? { ...m, questions: m.questions.map((q) => (q.id === answerTo ? { ...q, answer: text } : q)) }
+              : m,
+          ),
+        );
       const ctrl = new AbortController();
       abortRef.current = ctrl;
       setStreaming(true);
@@ -134,6 +143,9 @@ export function useChatConversation(active: boolean) {
           case "tour":
             patch(liveId, (m) => ({ ...m, tours: [...(m.tours ?? []), { title: ev.title, steps: ev.steps }] }));
             break;
+          case "question":
+            patch(liveId, (m) => ({ ...m, questions: [...(m.questions ?? []), { id: ev.id, questions: ev.questions }] }));
+            break;
           case "error":
             patch(liveId, (m) => ({ ...m, error: ev.message }));
             break;
@@ -155,7 +167,12 @@ export function useChatConversation(active: boolean) {
           loadedRef.current = id;
           setSessionId(id);
         }
-        await chatApi.sendMessage(id, { text, uploadIds: uploads.map((u) => u.uploadId), page }, onEvent, ctrl.signal);
+        await chatApi.sendMessage(
+          id,
+          { text, uploadIds: uploads.map((u) => u.uploadId), page, ...(answerTo ? { answerTo } : {}) },
+          onEvent,
+          ctrl.signal,
+        );
         if (!finished) patch(liveId, (m) => ({ ...m, streaming: false }));
       } catch (e) {
         if (isAbort(e)) patch(liveId, (m) => ({ ...m, streaming: false, stopped: true }));
