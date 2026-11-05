@@ -47,7 +47,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { me, role, isAdmin, canOperate, isSuperadmin } = useMe();
+  const { me, role, isAdmin, canOperate, canUseCue, isSuperadmin } = useMe();
   const [devicesOpen, setDevicesOpen] = useState(false);
   // 요청함 — 새 요청과 승인 기다리는 선생님 수 (부원 누구나)
   const reqCounts = useRequestCounts(canOperate);
@@ -141,7 +141,7 @@ export default function DashboardLayout({
 
         {/* 현재 기기 역할 배지 — 등록된 기기면 누르면 내 기기 */}
         <div className="mt-auto mb-6 shrink-0 pr-[10px] pt-4">
-          {canOperate && <ChatToggle />}
+          {canUseCue && <ChatToggle />}
           <button
             type="button"
             data-tour="nav.me"

@@ -219,7 +219,7 @@ function ChatPanelBody() {
   const toggle = useChatPanel((s) => s.toggle);
   const hydrate = useChatPanel((s) => s.hydrate);
   const qc = useQueryClient();
-  const { role, canOperate } = useMe();
+  const { role, canUseCue } = useMe();
 
   useEffect(() => hydrate(), [hydrate]);
 
@@ -227,11 +227,11 @@ function ChatPanelBody() {
   const status = useQuery({
     queryKey: ["chat", "status"],
     queryFn: chatApi.status,
-    enabled: open && canOperate,
+    enabled: open && canUseCue,
     refetchInterval: open ? 60_000 : false,
     retry: 1,
   });
-  const convo = useChatConversation(open && canOperate && !!status.data?.enabled);
+  const convo = useChatConversation(open && canUseCue && !!status.data?.enabled);
   const composer = useRef<ComposerHandle>(null);
   const panel = useRef<HTMLElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -240,7 +240,7 @@ function ChatPanelBody() {
 
   // Cmd/Ctrl + K 로 열고 닫기
   useEffect(() => {
-    if (!canOperate) return;
+    if (!canUseCue) return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -249,7 +249,7 @@ function ChatPanelBody() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [canOperate, toggle]);
+  }, [canUseCue, toggle]);
 
   // 열리면 입력 칸으로 — 터치 기기(폰·태블릿)는 키보드가 바로 올라와 화면을 가리니 누를 때만
   useEffect(() => {
@@ -287,6 +287,15 @@ function ChatPanelBody() {
     [convo, pathname],
   );
 
+  // 질문 카드에서 고른 답 — 내 메시지로 올라가고 서버는 카드에 답을 남긴다
+  const answer = useCallback(
+    (cardId: string, text: string) => {
+      stick.current = true;
+      void convo.send(text, [], pathname, cardId);
+    },
+    [convo, pathname],
+  );
+
   const pick = (s: Suggestion) => {
     if (s.upload) composer.current?.pickFiles(s.upload, s.text);
     else send(s.text, []);
@@ -299,7 +308,7 @@ function ChatPanelBody() {
     window.dispatchEvent(new Event("onair:refresh"));
   }, [qc]);
 
-  if (!canOperate) return null;
+  if (!canUseCue) return null;
 
   const st = status.data;
   const enabled = !!st?.enabled;
@@ -430,13 +439,16 @@ function ChatPanelBody() {
           <Welcome suggestions={suggestions} onPick={pick} />
         ) : (
           <div className="flex flex-col gap-5 px-5 py-5">
-            {convo.messages.map((m) => (
+            {convo.messages.map((m, i) => (
               <ChatMessage
                 key={m.id}
                 message={m}
                 onLink={onLink}
                 onActionUpdate={convo.updateAction}
                 onActionDone={onActionDone}
+                onAnswer={answer}
+                answerDisabled={convo.streaming}
+                answered={convo.messages.slice(i + 1).some((n) => n.role === "user")}
               />
             ))}
           </div>

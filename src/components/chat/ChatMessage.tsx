@@ -2,6 +2,7 @@
 
 import { ArrowUpRight, Check, Minus, Play, X } from "lucide-react";
 import ActionCard from "@/components/chat/ActionCard";
+import QuestionCard from "@/components/chat/QuestionCard";
 import CueRing from "@/components/common/CueRing";
 import NeonButton from "@/components/common/NeonButton";
 import ChatMarkdown from "@/components/chat/ChatMarkdown";
@@ -63,11 +64,20 @@ export default function ChatMessage({
   onLink,
   onActionUpdate,
   onActionDone,
+  onAnswer,
+  answerDisabled = false,
+  answered = false,
 }: {
   message: LiveMessage;
   onLink: (href: string) => void;
   onActionUpdate: (a: ChatAction) => void;
   onActionDone: () => void;
+  /** 질문 카드에서 고른 답 보내기 */
+  onAnswer?: (cardId: string, text: string) => void;
+  /** 답을 받는 중이라 질문 카드를 잠근다 */
+  answerDisabled?: boolean;
+  /** 이 메시지 뒤로 대화가 이어졌다 (답하지 않은 질문 카드는 흐리게) */
+  answered?: boolean;
 }) {
   if (m.role === "user") {
     return (
@@ -149,6 +159,16 @@ export default function ChatMessage({
 
       {(m.actions ?? []).map((a) => (
         <ActionCard key={a.id} action={a} onUpdate={onActionUpdate} onDone={onActionDone} />
+      ))}
+
+      {(m.questions ?? []).map((q) => (
+        <QuestionCard
+          key={q.id}
+          card={q}
+          disabled={answerDisabled || !!m.streaming || !onAnswer}
+          stale={answered}
+          onAnswer={(id, text) => onAnswer?.(id, text)}
+        />
       ))}
 
       {m.error && <p className="font-pretendard text-[13.5px] text-[#FF6B6B]">{m.error}</p>}

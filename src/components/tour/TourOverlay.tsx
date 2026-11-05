@@ -10,14 +10,16 @@ import NeonButton from "@/components/common/NeonButton";
 /**
  * CUE 화면 튜토리얼 (시안 A) — 그 화면으로 옮기고, data-tour 이름표 요소만 뚫어 보여 주고, 옆에 설명 카드.
  * [다음]을 누르거나 강조된 요소를 직접 눌러도 다음 단계.
- * 이름표가 안 보이면 단계의 open 버튼(편집 창·탭·패널)을 대신 눌러 열고, 그래도 안 보이면(권한·내용이 없음) 그 단계는 건너뛴다.
+ * 이름표가 안 보이면 단계의 open 버튼(편집 창·탭·패널)을 대신 눌러 열고, 그래도 안 보이면(내용이 없음 등)
+ * 강조 없이 설명 카드만 가운데에 띄운다 — 말없이 건너뛰면 단계 수가 어긋나고 설명도 사라진다.
  */
 
 const PAD = 8; // 강조 구멍 여백
 // 카드 너비 — 폰에서는 화면 양옆 16px 을 남긴다
 const cardW = () => Math.min(340, window.innerWidth - 32);
 const GAP = 18; // 구멍과 카드 사이
-const FIND_MS = 3000; // 화면을 옮긴 뒤 요소를 기다리는 시간
+const FIND_MS = 3000; // 같은 화면에서 요소를 기다리는 시간
+const FIND_NAV_MS = 5000; // 화면을 옮긴 뒤 — 폰 앱은 프록시를 거쳐 화면이 늦게 그려진다
 const SETTLE_MS = 500; // 이만큼 기다려도 안 보이면 열기 버튼을 누른다(화면이 그리는 중일 수 있어서)
 
 type Rect = { x: number; y: number; w: number; h: number };
@@ -136,8 +138,10 @@ export default function TourOverlay() {
 
   const [el, setEl] = useState<HTMLElement | null>(null);
   const [hole, setHole] = useState<Rect | null>(null);
-  // 이름표를 찾은 단계 — 찾기 전엔 카드를 안 띄운다(못 띄우는 단계는 설명 없이 넘어가게)
+  // 이름표를 찾은(또는 끝내 못 찾은) 단계 — 찾는 동안엔 카드를 안 띄운다
   const [readyFor, setReadyFor] = useState<unknown>(null);
+  // 끝내 못 찾은 단계 — 강조 없이 가운데 설명만
+  const [missing, setMissing] = useState(false);
   const card = useRef<HTMLDivElement>(null);
   const [cardH, setCardH] = useState(180);
 
@@ -161,7 +165,9 @@ export default function TourOverlay() {
     if (!step) return;
     setEl(null);
     setHole(null);
-    if (!samePage(step.href)) router.push(step.href);
+    setMissing(false);
+    const moving = !samePage(step.href);
+    if (moving) router.push(step.href);
     const skip = () => {
       if (forward) next();
       else if (index > 0) prev();
@@ -173,7 +179,7 @@ export default function TourOverlay() {
     }
     setReadyFor(null);
     const begin = Date.now();
-    const until = begin + FIND_MS;
+    const until = begin + (moving ? FIND_NAV_MS : FIND_MS);
     const openers = [...(step.open ?? [])];
     let closedOnce = false;
     let timer = 0;
@@ -222,7 +228,9 @@ export default function TourOverlay() {
       if (Date.now() < until) {
         timer = window.setTimeout(look, 120);
       } else {
-        skip(); // 화면에 못 띄우는 단계(권한·내용이 없음)는 설명하지 않고 넘긴다
+        // 화면에 안 보이는 단계(내용이 없음 등) — 설명은 남기고 가운데에 띄운다
+        setMissing(true);
+        setReadyFor(step);
       }
     };
     timer = window.setTimeout(look, samePage(step.href) ? 0 : 250);
@@ -369,6 +377,11 @@ export default function TourOverlay() {
           <p className="mt-1.5 whitespace-pre-line font-pretendard text-[15px] leading-relaxed text-white/75">
             {step.text}
           </p>
+          {missing && (
+            <p className="mt-2 font-pretendard text-[13px] leading-snug text-white/45">
+              지금 이 화면에는 안 보여요. 내용이 있거나 창을 열면 나타나요.
+            </p>
+          )}
           <div className="mt-4 flex items-center justify-between">
             <div className="flex gap-[5px]">
               {tour.steps.map((_, k) => (
