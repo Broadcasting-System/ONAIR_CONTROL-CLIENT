@@ -121,249 +121,259 @@ export default function MyStatus({ data }: { data: MyApplication }) {
 
   return (
     <div className="relative h-[100dvh] w-full overflow-clip break-keep bg-black font-pretendard text-white">
+      {/* 워프는 적고 흐리게, 가운데는 어둡게 — 큰 제목이 깨끗하게 읽히도록 */}
       <Warp
         soft
+        count={36}
         className="transition-opacity duration-500"
-        style={{ opacity: dim ? 0.08 : lit ? 0.6 : 0.3 }}
+        style={{ opacity: dim ? 0.05 : lit ? 0.32 : 0.2 }}
       />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 50% 42% at 50% 42%, rgba(0,0,0,.92) 0%, rgba(0,0,0,.7) 45%, transparent 75%)",
+        }}
+      />
+      {/* 지평선은 늘 내용 아래 — 내용 칸 바닥(160px)보다 50px 아래 */}
       <Horizon
-        top={lit ? "calc(100dvh - 240px)" : dim ? "calc(100dvh + 80px)" : "calc(100dvh - 40px)"}
+        top={lit ? "calc(100dvh - 110px)" : dim ? "calc(100dvh + 40px)" : "calc(100dvh - 70px)"}
         dim={dim}
         animate
       />
       <PublicTop center={`방송부 ${cohort}기 · 내 지원`} right={data.email ?? ""} />
 
-      <div className="no-scrollbar absolute inset-x-0 bottom-0 top-[72px] overflow-y-auto">
-        {v === "none" && (
-          <div className="rc-rise flex flex-col items-center gap-[22px] px-5 pt-[160px] text-center">
-            <h1 className={cn(H, "text-[40px] md:text-[56px]")}>아직 지원하지 않았어요</h1>
-            {r && (
-              <NeonButton
-                size="lg"
-                className="h-[60px] w-[240px]"
-                onClick={() => router.push("/recruit/apply")}
-              >
-                지원하기
-              </NeonButton>
-            )}
-          </div>
-        )}
-
-        {v === "submitted" && (
-          <div className="rc-rise flex flex-col items-center gap-[22px] px-5 pt-[98px] text-center">
-            <span className={EYEBROW}>SUBMITTED</span>
-            <h1 className={cn(H, "text-[48px] md:text-[84px]")}>합격을 기원해요</h1>
-            <span className="text-[18px] text-white/75 md:text-[22px]">
-              지원서가 들어갔어요. 면접 시간은 마감 뒤에 여기서 알려 드려요
-            </span>
-            <div className="flex flex-wrap justify-center pb-2 pt-[18px]">
-              {[
-                {
-                  k: "지금 경쟁률",
-                  v: <span className="text-[#FF3B3B]">{ratio}</span>,
-                  show: !!ratio,
-                },
-                { k: "면접", v: dotMd(ivDate), show: !!ivDate },
-                {
-                  k: "발표",
-                  v: `${dotMd(r?.announceAt)} ${hm(r?.announceAt)}`,
-                  show: !!r?.announceAt,
-                },
-              ]
-                .filter((c) => c.show)
-                .map((c, i) => (
-                  <div
-                    key={c.k}
-                    className={cn(
-                      "flex flex-col items-center gap-2 px-6 md:px-10",
-                      i > 0 && "border-l border-white/[0.14]",
-                    )}
-                  >
-                    <span className="text-[15px] text-white/50">{c.k}</span>
-                    <span className="text-[24px] font-bold tabular-nums md:text-[30px]">{c.v}</span>
-                  </div>
-                ))}
+      <div className="no-scrollbar absolute inset-x-0 bottom-[160px] top-[72px] overflow-y-auto">
+        <div className="flex min-h-full flex-col items-center justify-center py-10">
+          {v === "none" && (
+            <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
+              <h1 className={cn(H, "text-[40px] md:text-[56px]")}>아직 지원하지 않았어요</h1>
+              {r && (
+                <NeonButton
+                  size="lg"
+                  className="h-[60px] w-[240px]"
+                  onClick={() => router.push("/recruit/apply")}
+                >
+                  지원하기
+                </NeonButton>
+              )}
             </div>
-            <div className="flex flex-wrap justify-center gap-3">
-              <GhostButton size="lg" onClick={() => router.push("/recruit/apply?edit=1")}>
-                지원서 고치기
-              </GhostButton>
-              <GhostButton size="lg" onClick={() => setCancelAsk(true)}>
-                지원 취소
-              </GhostButton>
-            </div>
-          </div>
-        )}
+          )}
 
-        {v === "wait-slot" && (
-          <div className="rc-rise flex flex-col items-center gap-[22px] px-5 pt-[150px] text-center">
-            <span className={EYEBROW}>MY INTERVIEW</span>
-            <h1 className={cn(H, "text-[40px] md:text-[64px]")}>면접 시간은 곧 알려 드려요</h1>
-            {ivDate && (
-              <span className="text-[20px] text-white/75 md:text-[24px]">
-                면접 {mdDow(ivDate)} · {r?.interview.place}
-              </span>
-            )}
-          </div>
-        )}
-
-        {v === "interview" && iv?.at && (
-          <div className="rc-rise flex flex-col items-center gap-3.5 px-5 pt-[68px]">
-            <span className={EYEBROW}>MY INTERVIEW</span>
-            <span className="text-[22px] text-white/75 md:text-[26px]">{mdDow(iv.at)}</span>
-            <span className="text-[96px] font-extrabold leading-none tracking-[-0.02em] tabular-nums md:text-[150px]">
-              {hm(iv.at)}
-            </span>
-            {ivLeft > 0 && (
-              <span className="text-[18px] text-[#FF3B3B] tabular-nums md:text-[20px]">
-                면접까지 {ivCd.dd} {ivCd.hms}
-              </span>
-            )}
-            <div className="mt-[22px] w-full max-w-[720px] border-b border-white/[0.12]">
-              {[
-                ["장소", iv.place],
-                ["순서", `${iv.no}번째${iv.minutes ? ` · ${iv.minutes}분` : ""}`],
-                ["준비할 것", iv.prep],
-              ]
-                .filter(([, val]) => val)
-                .map(([k, val]) => (
-                  <div
-                    key={k}
-                    className="grid grid-cols-[110px_minmax(0,1fr)] border-t border-white/[0.12] py-[18px] text-[18px] md:grid-cols-[150px_minmax(0,1fr)] md:text-[20px]"
-                  >
-                    <span className="text-[17px] text-white/50">{k}</span>
-                    <span className="tabular-nums">{val}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
-
-        {v === "result-wait" && (
-          <div className="rc-rise flex flex-col items-center gap-[22px] px-5 pt-[148px] text-center">
-            <span className={EYEBROW}>RESULT</span>
-            <h1 className={cn(H, "text-[36px] md:text-[64px]")}>
-              {r?.announceAt ? `결과는 ${mdhm(r.announceAt)}에 나와요` : "결과는 곧 나와요"}
-            </h1>
-            {annLeft > 0 && (
-              <span className="text-[72px] font-extrabold leading-none tabular-nums md:text-[120px]">
-                {annCd.days > 0 && <span className="mr-6">{annCd.dd}</span>}
-                {annCd.hms}
-              </span>
-            )}
-            <span className="text-[20px] text-white/50">면접 봐 줘서 고마워요</span>
-          </div>
-        )}
-
-        {v === "pass" && (
-          <div className="relative flex flex-col items-center gap-[26px] px-5 pt-[158px] text-center">
-            <div className="rc-burst absolute left-1/2 top-[95px] -z-0 h-0 w-0" aria-hidden>
-              <i />
-              <i style={{ animationDelay: ".55s" }} />
-              <i style={{ animationDelay: ".9s" }} />
-            </div>
-            <span className={cn(EYEBROW, "rc-rise d1 relative")}>
-              {data.extra ? "추가 합격" : "PASS"}
-            </span>
-            <h1 className={cn(H, "rc-rise d1 relative text-[56px] md:text-[96px]")}>
-              합격을 축하해요
-            </h1>
-            <span className="rc-rise d2 relative text-[19px] text-white/75 md:text-[22px]">
-              {cohort}기 방송부원이 되려면 입부를 확정해 주세요
-            </span>
-            {due && (
-              <span className="rc-rise d2 relative text-[18px] text-[#FF3B3B] tabular-nums">
-                {mdhm(due)}까지 확정해 주세요
-              </span>
-            )}
-            <div className="rc-rise d3 relative flex flex-wrap justify-center gap-3 pt-1.5">
-              <GhostButton size="lg" onClick={() => setAsking(true)}>
-                입부하지 않을게요
-              </GhostButton>
-              <NeonButton
-                size="lg"
-                disabled={busy}
-                className="h-[60px] w-[260px]"
-                onClick={() => confirm(true)}
-              >
-                입부 확정
-              </NeonButton>
-            </div>
-          </div>
-        )}
-
-        {v === "joined" && (
-          <div className="rc-rise flex flex-col items-center gap-[22px] px-5 pt-[58px] text-center md:pt-[58px]">
-            <span className={EYEBROW}>WELCOME ON AIR</span>
-            <h1 className={cn(H, "text-[44px] md:text-[80px]")}>{cohort}기 방송부원이 됐어요</h1>
-            <span className="text-[18px] text-white/75 md:text-[21px]">
-              이제 ONAIR 의 방송·송출·스피커를 쓸 수 있어요
-            </span>
-            <div className="mt-2.5 flex w-full max-w-[640px] flex-col gap-2.5 text-left">
-              <label htmlFor="ms-mail" className="text-[16px] text-white/55">
-                방송부 메일 아이디
-              </label>
-              <div className="flex items-baseline gap-2">
-                <span className="text-[22px] text-white/50 tabular-nums md:text-[26px]">
-                  {String(cohort).padStart(2, "0")}
-                </span>
-                <input
-                  id="ms-mail"
-                  value={mailId}
-                  maxLength={30}
-                  autoComplete="off"
-                  onChange={(e) =>
-                    setMailId(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))
-                  }
-                  className="h-[60px] min-w-0 flex-1 border-0 border-b-2 border-white/20 bg-transparent px-1 font-pretendard text-[22px] font-semibold text-white outline-none focus:border-[#FF3B3B] md:text-[26px]"
-                />
-                <span className="whitespace-nowrap text-[18px] text-white/50 md:text-[22px]">
-                  @bssmcast.com
-                </span>
+          {v === "submitted" && (
+            <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
+              <span className={EYEBROW}>SUBMITTED</span>
+              <h1 className={cn(H, "text-[48px] md:text-[84px]")}>합격을 기원해요</h1>
+              <div className="flex flex-wrap justify-center pb-2 pt-[18px]">
+                {[
+                  {
+                    k: "지금 경쟁률",
+                    v: <span className="text-[#FF3B3B]">{ratio}</span>,
+                    show: !!ratio,
+                  },
+                  { k: "면접", v: dotMd(ivDate), show: !!ivDate },
+                  {
+                    k: "발표",
+                    v: `${dotMd(r?.announceAt)} ${hm(r?.announceAt)}`,
+                    show: !!r?.announceAt,
+                  },
+                ]
+                  .filter((c) => c.show)
+                  .map((c, i) => (
+                    <div
+                      key={c.k}
+                      className={cn(
+                        "flex flex-col items-center gap-2 px-6 md:px-10",
+                        i > 0 && "border-l border-white/[0.14]",
+                      )}
+                    >
+                      <span className="text-[15px] text-white/50">{c.k}</span>
+                      <span className="text-[24px] font-bold tabular-nums md:text-[30px]">
+                        {c.v}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+              <div className="flex flex-wrap justify-center gap-3">
+                <GhostButton size="lg" onClick={() => router.push("/recruit/apply?edit=1")}>
+                  지원서 고치기
+                </GhostButton>
+                <GhostButton size="lg" onClick={() => setCancelAsk(true)}>
+                  지원 취소
+                </GhostButton>
               </div>
             </div>
-            <div className="pt-2">
-              <NeonButton size="lg" disabled={busy} className="h-[60px] w-[260px]" onClick={enter}>
-                ONAIR 들어가기
-              </NeonButton>
+          )}
+
+          {v === "wait-slot" && (
+            <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
+              <span className={EYEBROW}>MY INTERVIEW</span>
+              <h1 className={cn(H, "text-[40px] md:text-[64px]")}>면접 시간은 곧 알려 드려요</h1>
+              {ivDate && (
+                <span className="text-[20px] text-white/75 md:text-[24px]">
+                  면접 {mdDow(ivDate)} · {r?.interview.place}
+                </span>
+              )}
             </div>
-          </div>
-        )}
+          )}
 
-        {v === "declined" && (
-          <div className="rc-rise flex flex-col items-center gap-[22px] px-5 pt-[178px] text-center">
-            <h1 className={cn(H, "text-[40px] md:text-[56px]")}>입부하지 않기로 했어요</h1>
-            <span className="text-[20px] text-white/50">지원해 줘서 고마워요</span>
-          </div>
-        )}
+          {v === "interview" && iv?.at && (
+            <div className="rc-rise flex flex-col items-center gap-3.5 px-5">
+              <span className={EYEBROW}>MY INTERVIEW</span>
+              <span className="text-[22px] text-white/75 md:text-[26px]">{mdDow(iv.at)}</span>
+              <span className="text-[96px] font-extrabold leading-none tracking-[-0.02em] tabular-nums md:text-[150px]">
+                {hm(iv.at)}
+              </span>
+              {ivLeft > 0 && (
+                <span className="text-[18px] text-[#FF3B3B] tabular-nums md:text-[20px]">
+                  면접까지 {ivCd.dd} {ivCd.hms}
+                </span>
+              )}
+              <div className="mt-[22px] w-full max-w-[720px] border-b border-white/[0.12]">
+                {[
+                  ["장소", iv.place],
+                  ["순서", `${iv.no}번째${iv.minutes ? ` · ${iv.minutes}분` : ""}`],
+                  ["준비할 것", iv.prep],
+                ]
+                  .filter(([, val]) => val)
+                  .map(([k, val]) => (
+                    <div
+                      key={k}
+                      className="grid grid-cols-[110px_minmax(0,1fr)] border-t border-white/[0.12] py-[18px] text-[18px] md:grid-cols-[150px_minmax(0,1fr)] md:text-[20px]"
+                    >
+                      <span className="text-[17px] text-white/50">{k}</span>
+                      <span className="tabular-nums">{val}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
 
-        {v === "fail" && (
-          <div className="rc-rise flex flex-col items-center gap-[22px] px-5 pt-[178px] text-center">
-            <h1 className={cn(H, "text-[36px] md:text-[56px]")}>이번에는 함께하지 못하게 됐어요</h1>
-            <span className="text-[18px] text-white/70 md:text-[20px]">
-              지원하고 면접까지 와 줘서 고마워요. 다음 모집 때 다시 만나요.
-            </span>
-          </div>
-        )}
+          {v === "result-wait" && (
+            <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
+              <span className={EYEBROW}>RESULT</span>
+              <h1 className={cn(H, "text-[36px] md:text-[64px]")}>
+                {r?.announceAt ? `결과는 ${mdhm(r.announceAt)}에 나와요` : "결과는 곧 나와요"}
+              </h1>
+              {annLeft > 0 && (
+                <span className="text-[72px] font-extrabold leading-none tabular-nums md:text-[120px]">
+                  {annCd.days > 0 && <span className="mr-6">{annCd.dd}</span>}
+                  {annCd.hms}
+                </span>
+              )}
+              <span className="text-[20px] text-white/50">면접 봐 줘서 고마워요</span>
+            </div>
+          )}
 
-        {v === "expired" && (
-          <div className="rc-rise flex flex-col items-center gap-[22px] px-5 pt-[178px] text-center">
-            <h1 className={cn(H, "text-[40px] md:text-[56px]")}>입부 확정 기한이 지났어요</h1>
-            <span className="text-[20px] text-white/50">방송부에 물어봐 주세요</span>
-          </div>
-        )}
+          {v === "pass" && (
+            <div className="relative flex flex-col items-center px-5 text-center">
+              <div className="rc-burst absolute left-1/2 top-[86px] h-0 w-0" aria-hidden>
+                <i />
+                <i style={{ animationDelay: ".55s" }} />
+                <i style={{ animationDelay: ".9s" }} />
+              </div>
+              <span className={cn(EYEBROW, "rc-rise d1 relative")}>
+                {data.extra ? "추가 합격" : "PASS"}
+              </span>
+              <h1 className={cn(H, "rc-rise d1 relative mt-5 text-[56px] md:text-[96px]")}>
+                합격을 축하해요
+              </h1>
+              {due && (
+                <span className="rc-rise d2 relative mt-7 flex items-baseline gap-3 text-[17px] md:text-[18px]">
+                  <span className="text-white/50">확정 기한</span>
+                  <span className="font-semibold tabular-nums">{mdhm(due)}</span>
+                </span>
+              )}
+              <div className="rc-rise d3 relative mt-10 flex flex-wrap justify-center gap-3">
+                <GhostButton size="lg" className="w-[140px]" onClick={() => setAsking(true)}>
+                  거절
+                </GhostButton>
+                <NeonButton
+                  size="lg"
+                  disabled={busy}
+                  className="h-[60px] w-[260px]"
+                  onClick={() => confirm(true)}
+                >
+                  입부 확정
+                </NeonButton>
+              </div>
+            </div>
+          )}
 
-        {v === "reserve" && (
-          <div className="rc-rise flex flex-col items-center gap-[22px] px-5 pt-[148px] text-center">
-            <span className={EYEBROW}>RESERVE</span>
-            <h1 className={cn(H, "text-[44px] md:text-[64px]")}>
-              예비 <span className="tabular-nums">{data.reserveRank ?? ""}</span>번이에요
-            </h1>
-            <span className="text-[18px] text-white/70 md:text-[20px]">
-              자리가 나면 여기서 알려 드려요
-            </span>
-          </div>
-        )}
+          {v === "joined" && (
+            <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
+              <span className={EYEBROW}>WELCOME ON AIR</span>
+              <h1 className={cn(H, "text-[44px] md:text-[80px]")}>{cohort}기 방송부원이 됐어요</h1>
+              <div className="mt-2.5 flex w-full max-w-[640px] flex-col gap-2.5 text-left">
+                <label htmlFor="ms-mail" className="text-[16px] text-white/55">
+                  방송부 메일 아이디
+                </label>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[22px] text-white/50 tabular-nums md:text-[26px]">
+                    {String(cohort).padStart(2, "0")}
+                  </span>
+                  <input
+                    id="ms-mail"
+                    value={mailId}
+                    maxLength={30}
+                    autoComplete="off"
+                    onChange={(e) =>
+                      setMailId(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))
+                    }
+                    className="h-[60px] min-w-0 flex-1 border-0 border-b-2 border-white/20 bg-transparent px-1 font-pretendard text-[22px] font-semibold text-white outline-none focus:border-[#FF3B3B] md:text-[26px]"
+                  />
+                  <span className="whitespace-nowrap text-[18px] text-white/50 md:text-[22px]">
+                    @bssmcast.com
+                  </span>
+                </div>
+              </div>
+              <div className="pt-2">
+                <NeonButton
+                  size="lg"
+                  disabled={busy}
+                  className="h-[60px] w-[260px]"
+                  onClick={enter}
+                >
+                  ONAIR 들어가기
+                </NeonButton>
+              </div>
+            </div>
+          )}
+
+          {v === "declined" && (
+            <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
+              <h1 className={cn(H, "text-[40px] md:text-[56px]")}>입부를 거절했어요</h1>
+              <span className="text-[20px] text-white/50">지원해 줘서 고마워요</span>
+            </div>
+          )}
+
+          {v === "fail" && (
+            <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
+              <h1 className={cn(H, "text-[36px] md:text-[56px]")}>
+                이번에는 함께하지 못하게 됐어요
+              </h1>
+              <span className="text-[18px] text-white/70 md:text-[20px]">
+                지원하고 면접까지 와 줘서 고마워요. 다음 모집 때 다시 만나요.
+              </span>
+            </div>
+          )}
+
+          {v === "expired" && (
+            <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
+              <h1 className={cn(H, "text-[40px] md:text-[56px]")}>입부 확정 기한이 지났어요</h1>
+            </div>
+          )}
+
+          {v === "reserve" && (
+            <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
+              <span className={EYEBROW}>RESERVE</span>
+              <h1 className={cn(H, "text-[44px] md:text-[64px]")}>
+                예비 <span className="tabular-nums">{data.reserveRank ?? ""}</span>번이에요
+              </h1>
+            </div>
+          )}
+        </div>
       </div>
 
       {cancelAsk && (
@@ -399,7 +409,7 @@ export default function MyStatus({ data }: { data: MyApplication }) {
           <div className="fixed inset-x-0 bottom-0 top-[72px] z-[60] flex items-center justify-center bg-black/[0.78] p-5">
             <div className="rc-rise flex w-full max-w-[560px] flex-col gap-[18px] rounded-3xl border border-white/[0.14] bg-[#0b0b0b] px-8 py-10 md:px-12 md:py-11">
               <h2 className="m-0 font-mbc text-[32px] font-normal md:text-[40px]">
-                입부하지 않을까요?
+                입부를 거절할까요?
               </h2>
               <span className="text-[18px] leading-[1.7] text-white/75 md:text-[19px]">
                 자리는 다음 지원자에게 넘어가요. 되돌릴 수 없어요.
@@ -414,7 +424,7 @@ export default function MyStatus({ data }: { data: MyApplication }) {
                   className="border-[#FF3B3B] text-[#FF3B3B] enabled:hover:border-[#FF3B3B] enabled:hover:text-[#FF3B3B]"
                   onClick={() => confirm(false)}
                 >
-                  입부하지 않을게요
+                  거절
                 </GhostButton>
               </div>
             </div>

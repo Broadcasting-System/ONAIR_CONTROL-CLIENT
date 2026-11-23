@@ -37,15 +37,19 @@ function particles(count: number, soft: boolean): Pt[] {
 export function Warp({
   soft,
   core,
+  count,
   className,
   style,
 }: {
   soft?: boolean;
   core?: boolean;
+  /** 빛줄기 수 (기본 soft 70 · 140) */
+  count?: number;
   className?: string;
   style?: CSSProperties;
 }) {
-  const pts = useMemo(() => particles(soft ? 70 : 140, !!soft), [soft]);
+  const n = count ?? (soft ? 70 : 140);
+  const pts = useMemo(() => particles(n, !!soft), [n, soft]);
   return (
     <div
       aria-hidden
