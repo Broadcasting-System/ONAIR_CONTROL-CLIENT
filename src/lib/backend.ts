@@ -62,7 +62,8 @@ export function resolveMediaUrl(url?: string | null): string {
   const base = backendBase();
   try {
     const u = new URL(url, base);
-    if (u.pathname.startsWith("/api/files/") || u.pathname.startsWith("/uploads/")) {
+    // /api/live/hls/ — 서버가 live 사본·중계를 직접 내보낼 때(개발·시험 LIVE_HLS_UPLOAD=local)
+    if (u.pathname.startsWith("/api/files/") || u.pathname.startsWith("/uploads/") || u.pathname.startsWith("/api/live/hls/")) {
       return base + u.pathname + u.search;
     }
     return url;

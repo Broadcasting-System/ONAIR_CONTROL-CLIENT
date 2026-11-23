@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- 미리보기 사진·썸네일은 서버·유튜브가 주는 임의 주소 */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import Hls from "hls.js";
 import { resolveMediaUrl } from "@/lib/backend";
 import { shareApi, type ShareRequest } from "@/lib/shareApi";
 import type { SwitchLayout, SwitchSlot, SwitchSource } from "@/lib/switchApi";
@@ -43,10 +44,25 @@ function VideoPreview({ url, startedAt, live, fit, loop }: { url: string; starte
     if (Math.abs(v.currentTime - want) > 1.5) v.currentTime = want;
   };
   useEffect(sync); // startedAt 이 바뀌면 (진행바로 옮김) 다시 맞춘다
+  // live 화면은 영상 칸이 R2 사본(HLS, 두 화질)으로 온다 — 크롬·안드로이드는 hls.js, 아이폰 사파리는 브라우저가 직접
+  const src = resolveMediaUrl(url);
+  const isHls = src.includes(".m3u8");
+  useEffect(() => {
+    const v = ref.current;
+    if (!v || !isHls) return;
+    if (!Hls.isSupported()) {
+      v.src = src;
+      return;
+    }
+    const h = new Hls({ maxBufferLength: 20, maxMaxBufferLength: 20 });
+    h.loadSource(src);
+    h.attachMedia(v);
+    return () => h.destroy();
+  }, [src, isHls]);
   return (
     <video
       ref={ref}
-      src={resolveMediaUrl(url)}
+      src={isHls ? undefined : src}
       muted
       playsInline
       autoPlay={live}

@@ -1,4 +1,5 @@
 import { backendBase } from "@/lib/backend";
+import { startSfuPublisher, type SfuPublisher } from "@/lib/sfuPublisher";
 
 /** 화면 공유 보내는 쪽 — 컨트롤 화면 공유(useScreenShare)와 외부 발표자(share) 가 같이 쓴다.
  *  시그널링은 /api/display/ws (role=signal) 로 hello/offer/answer/ice.
@@ -51,15 +52,18 @@ export interface ScreenSender {
   close: () => void;
 }
 
-/** stream 을 wsUrl 의 채널로 보낸다. onLost — 우리가 닫지 않았는데 소켓이 끊겼을 때 */
+/** stream 을 wsUrl 의 채널로 보낸다. onLost — 우리가 닫지 않았는데 소켓이 끊겼을 때.
+ *  sfu — 학생 live 화면용으로 Cloudflare Realtime SFU 에도 올린다 (lib/sfuPublisher, 서버에 설정이 있을 때만) */
 export function startScreenSender(
   stream: MediaStream,
   wsUrl: string,
   iceServers: RTCIceServer[],
   onLost: () => void,
+  sfu?: { channel: number; shareToken?: string | null },
 ): ScreenSender {
   const ws = new WebSocket(wsUrl);
   let closed = false;
+  const sfuPub: SfuPublisher | null = sfu ? startSfuPublisher(stream, sfu.channel, iceServers, sfu.shareToken) : null;
   const send = (m: object) => {
     if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(m));
   };
@@ -175,6 +179,7 @@ export function startScreenSender(
   return {
     close: () => {
       closed = true;
+      sfuPub?.close();
       peers.forEach((_, k) => closePeer(k));
       try {
         ws.close();
