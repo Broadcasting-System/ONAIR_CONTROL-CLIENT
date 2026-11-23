@@ -44,12 +44,12 @@ export default function MobileTabBar() {
   const pathname = usePathname();
   // 키보드가 올라오면 탭은 숨긴다 (Android 는 키보드 위로 따라 올라와 입력 칸을 가림)
   const typing = useTyping();
-  const { isAdmin, canOperate } = useMe();
+  const { isAdmin, canUseCue } = useMe();
   const on = (p: string[]) => p.some((x) => pathname === x || pathname.startsWith(x + "/"));
   const tabs = [
     { href: "/home", label: "홈", icon: <House size={23} strokeWidth={1.8} />, active: on(["/home"]) },
     { href: "/hall", label: "홀", icon: <SlidersVertical size={23} strokeWidth={1.8} />, active: on(HALL) },
-    ...(canOperate
+    ...(canUseCue
       ? [{ href: "/cue", label: "CUE", icon: <OnairMark size={32} className="-my-1" />, active: on(["/cue"]) }]
       : []),
     { href: "/devices", label: isAdmin ? "관리" : "방송부", icon: <Users size={23} strokeWidth={1.8} />, active: on(ADMIN) },

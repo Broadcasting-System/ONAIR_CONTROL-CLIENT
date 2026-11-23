@@ -71,6 +71,33 @@ export interface DisplayMessage {
   actions?: ChatAction[];
   links?: ChatLink[];
   tours?: ChatTour[];
+  questions?: ChatQuestionCard[];
+}
+
+/** 질문 카드 — 기능에 필요한 값이 모자랄 때 CUE 가 묻는다. 한 카드에 질문 1~4개를 차례로 */
+export interface ChatQuestionOption {
+  label: string;
+  /** 고르면 어떻게 되는지 한 줄 */
+  description?: string;
+  recommended?: boolean;
+}
+
+export interface ChatQuestion {
+  /** 짧은 이름표 (그룹, 요일…) — 답 요약에 쓴다 */
+  header: string;
+  question: string;
+  /** 비면 직접 입력만 */
+  options: ChatQuestionOption[];
+  multi: boolean;
+  allowText: boolean;
+  placeholder?: string;
+}
+
+export interface ChatQuestionCard {
+  id: string;
+  questions: ChatQuestion[];
+  /** 답한 뒤 서버가 남긴 답 (보낸 글 그대로) */
+  answer?: string;
 }
 
 /** CUE 화면 튜토리얼 한 단계 — target 은 화면 요소의 data-tour 이름표(없으면 설명만 가운데) */
@@ -154,6 +181,8 @@ export interface SendMessageBody {
   uploadIds?: string[];
   /** 지금 보고 있는 컨트롤 경로 */
   page?: string;
+  /** 질문 카드에 답한 것이면 그 카드 id */
+  answerTo?: string;
 }
 
 /** SSE 이벤트 (event: <type>) */
@@ -164,5 +193,6 @@ export type ChatStreamEvent =
   | { type: "action"; action: ChatAction }
   | ({ type: "link" } & ChatLink)
   | ({ type: "tour" } & ChatTour)
+  | ({ type: "question" } & ChatQuestionCard)
   | { type: "error"; message: string }
   | { type: "done"; message: DisplayMessage; usage?: { inputTokens: number; outputTokens: number } };
