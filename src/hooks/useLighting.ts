@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { lightingApi } from "@/lib/lightingApi";
 import { toast } from "@/components/common/Toast";
+import { rollback, snapshot, type Snapshot } from "@/lib/optimistic";
 import type { LightColor, LightingState } from "@/types/lighting";
 
 const POLL_MS = 3000;
@@ -25,16 +26,16 @@ export function useLighting(hallId: string | null) {
   );
 
   const refresh = () => qc.invalidateQueries({ queryKey: key });
-  const fail = (e: Error) => {
+  const fail = (e: Error, _vars?: unknown, ctx?: Snapshot<LightingState>) => {
     toast.error(e.message);
-    refresh();
+    rollback(qc, key, ctx);
   };
 
   const setMutation = useMutation({
     mutationFn: (body: { fixtures?: string[]; intensity?: number; color?: LightColor }) =>
       lightingApi.set(hallId as string, body),
     onMutate: async ({ fixtures, intensity, color }) => {
-      await qc.cancelQueries({ queryKey: key });
+      const ctx = await snapshot<LightingState>(qc, key);
       patchCache((s) => ({
         ...s,
         current: null,
@@ -51,6 +52,7 @@ export function useLighting(hallId: string | null) {
               },
         ),
       }));
+      return ctx;
     },
     onError: fail,
   });
@@ -58,8 +60,9 @@ export function useLighting(hallId: string | null) {
   const masterMutation = useMutation({
     mutationFn: (level: number) => lightingApi.master(hallId as string, level),
     onMutate: async (level) => {
-      await qc.cancelQueries({ queryKey: key });
+      const ctx = await snapshot<LightingState>(qc, key);
       patchCache((s) => ({ ...s, master: level }));
+      return ctx;
     },
     onError: fail,
   });
@@ -67,8 +70,9 @@ export function useLighting(hallId: string | null) {
   const blackoutMutation = useMutation({
     mutationFn: (on: boolean) => lightingApi.blackout(hallId as string, on),
     onMutate: async (on) => {
-      await qc.cancelQueries({ queryKey: key });
+      const ctx = await snapshot<LightingState>(qc, key);
       patchCache((s) => ({ ...s, blackout: on }));
+      return ctx;
     },
     onError: fail,
   });
@@ -76,8 +80,9 @@ export function useLighting(hallId: string | null) {
   const sceneMutation = useMutation({
     mutationFn: (sceneId: string) => lightingApi.recallScene(hallId as string, sceneId),
     onMutate: async (sceneId) => {
-      await qc.cancelQueries({ queryKey: key });
+      const ctx = await snapshot<LightingState>(qc, key);
       patchCache((s) => ({ ...s, current: sceneId, blackout: false }));
+      return ctx;
     },
     onSuccess: (res) => {
       toast.success(`'${res.scene}' 장면으로 바꿨습니다.`);

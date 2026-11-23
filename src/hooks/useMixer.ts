@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { hallApi } from "@/lib/hallApi";
 import { toast } from "@/components/common/Toast";
+import { rollback, snapshot } from "@/lib/optimistic";
 import type { MixerChannel, MixerState, ProcessingRole } from "@/types/hall";
 
 // 입력 레벨(VU)을 보여줄 수 있으면 자주, 아니면 상태 확인 정도로만 가져온다.
@@ -36,13 +37,14 @@ export function useMixer(hallId: string | null) {
   const sceneMutation = useMutation({
     mutationFn: (pc: number) => hallApi.recallScene(hallId as string, pc),
     onMutate: async (pc) => {
-      await qc.cancelQueries({ queryKey: key });
+      const ctx = await snapshot<MixerState>(qc, key);
       patchCache((s) => ({ ...s, currentScene: pc }));
+      return ctx;
     },
     onSuccess: (res) => toast.success(`'${res.scene}' 씬으로 전환했습니다.`),
-    onError: (e: Error) => {
+    onError: (e: Error, _vars, ctx) => {
       toast.error(e.message);
-      refresh();
+      rollback(qc, key, ctx);
     },
   });
 
@@ -50,7 +52,7 @@ export function useMixer(hallId: string | null) {
     mutationFn: ({ channel, patch }: { channel: string; patch: ChannelPatch }) =>
       hallApi.setChannel(hallId as string, channel, patch),
     onMutate: async ({ channel, patch }) => {
-      await qc.cancelQueries({ queryKey: key });
+      const ctx = await snapshot<MixerState>(qc, key);
       const apply = (c: MixerChannel): MixerChannel => (c.id === channel ? { ...c, ...patch } : c);
       patchCache((s) => ({
         ...s,
@@ -58,10 +60,11 @@ export function useMixer(hallId: string | null) {
         master: s.master ? apply(s.master) : s.master,
         fx: s.fx?.map(apply),
       }));
+      return ctx;
     },
-    onError: (e: Error) => {
+    onError: (e: Error, _vars, ctx) => {
       toast.error(e.message);
-      refresh();
+      rollback(qc, key, ctx);
     },
   });
 
@@ -69,15 +72,16 @@ export function useMixer(hallId: string | null) {
     mutationFn: ({ channel, role, value }: { channel: string; role: ProcessingRole; value: number | boolean }) =>
       hallApi.setParam(hallId as string, channel, role, value),
     onMutate: async ({ channel, role, value }) => {
-      await qc.cancelQueries({ queryKey: key });
+      const ctx = await snapshot<MixerState>(qc, key);
       patchCache((s) => ({
         ...s,
         channels: s.channels.map((c) => (c.id === channel ? { ...c, params: { ...c.params, [role]: value } } : c)),
       }));
+      return ctx;
     },
-    onError: (e: Error) => {
+    onError: (e: Error, _vars, ctx) => {
       toast.error(e.message);
-      refresh();
+      rollback(qc, key, ctx);
     },
   });
 

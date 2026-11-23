@@ -1,3 +1,12 @@
+# 설치 스크립트를 돌리지 않는 패키지 (돌리지 않아도 동작한다)
+# allowBuilds 는 pnpm 11, ignoredBuiltDependencies 는 그 전 버전 (서버 PC 의 pnpm 버전과 상관없이)
+allowBuilds:
+  esbuild: false
+  msw: false
+  sharp: false
+  unrs-resolver: false
 ignoredBuiltDependencies:
+  - esbuild
+  - msw
   - sharp
   - unrs-resolver
