@@ -212,11 +212,11 @@ export interface MyApplication {
     minutes: number | null;
     prep: string;
   } | null;
-  /** 발표 전이면 null */
+  /** 발표 전이면 null. 지원자에게 예비는 없다 — 추가 합격 전까지 fail, 올라가면 pass */
   result: RecruitResult | null;
-  reserveRank?: number | null;
-  /** 추가 합격 */
+  /** 추가 합격으로 합격 */
   extra?: boolean;
+  /** by = 이 사람의 확정 기한 (추가 합격자는 자기 기한) */
   confirm?: { status: ConfirmState; by: string | null; at: string | null } | null;
   memberId?: string | null;
 }

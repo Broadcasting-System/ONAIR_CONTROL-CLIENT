@@ -16,7 +16,8 @@ import type { MyApplication } from "@/types/recruit";
 
 /**
  * 내 지원 — 시안 MyStatus.dc.html.
- * 면접 시간 전 → 내 면접(큰 시각) → 발표 대기(카운트다운) → 합격(빨간 고리 퍼짐 + 입부 확정/거절) · 불합격 · 예비 · 추가 합격.
+ * 면접 시간 전 → 내 면접(큰 시각) → 발표 대기(카운트다운) → 합격·추가 합격(빨간 고리 퍼짐 + 입부 확정/거절) · 불합격.
+ * 지원자에게 예비는 없다 — 서버가 예비를 추가 합격 전까지 fail 로 준다(예전 서버가 reserve 를 줘도 불합격으로 보인다).
  */
 
 type View =
@@ -29,8 +30,7 @@ type View =
   | "joined"
   | "declined"
   | "expired"
-  | "fail"
-  | "reserve";
+  | "fail";
 
 function viewOf(m: MyApplication, now: number): View {
   if (!m.application || m.application.status !== "active") return "none";
@@ -42,8 +42,7 @@ function viewOf(m: MyApplication, now: number): View {
     if (st === "expired") return "expired";
     return "pass";
   }
-  if (res === "fail") return "fail";
-  if (res === "reserve") return "reserve";
+  if (res === "fail" || res === "reserve") return "fail";
   if (m.canEdit) return "submitted";
   if (!m.interview?.at) return "wait-slot";
   const end = Date.parse(m.interview.at) + (m.interview.minutes || 10) * 60000;
@@ -362,15 +361,6 @@ export default function MyStatus({ data }: { data: MyApplication }) {
           {v === "expired" && (
             <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
               <h1 className={cn(H, "text-[40px] md:text-[56px]")}>입부 확정 기한이 지났어요</h1>
-            </div>
-          )}
-
-          {v === "reserve" && (
-            <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
-              <span className={EYEBROW}>RESERVE</span>
-              <h1 className={cn(H, "text-[44px] md:text-[64px]")}>
-                예비 <span className="tabular-nums">{data.reserveRank ?? ""}</span>번이에요
-              </h1>
             </div>
           )}
         </div>
