@@ -47,6 +47,8 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
       { label: "파일", subLabel: "FILES", path: "/files" },
       // 방송부 명단은 관리 › 부원 › 방송부로 합쳤다. 부장이 아니면 그 보기만 여기서 (내 소개 고치기)
       { label: "방송부", subLabel: "CREW", path: "/devices", hideForAdmin: true },
+      // 방송부 모집 — 공고·지원자·면접·발표 (부원은 지원자·면접만). 지원자 화면은 /recruit
+      { label: "방송부 모집", subLabel: "RECRUIT", path: "/recruiting", operatorOnly: true },
     ],
   },
   {

@@ -1,0 +1,212 @@
+/* 방송부 모집 — 시안(_자료/시안/모집/*.dc.html)의 움직임만 모았다. 모양은 Tailwind 로 */
+
+/* 소리 워프 — 가운데에서 바깥으로 빛줄기 */
+.rc-pt {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 2px;
+  border-radius: 2px;
+  transform-origin: 0 50%;
+  animation-name: rc-warp;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+}
+.rc-pt.soft {
+  animation-name: rc-warp-soft;
+  animation-timing-function: linear;
+}
+@keyframes rc-warp {
+  0% {
+    transform: rotate(var(--a)) translateX(20px) scaleX(0.1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--a)) translateX(var(--far, 820px)) scaleX(1);
+    opacity: 0;
+  }
+}
+@keyframes rc-warp-soft {
+  0% {
+    transform: rotate(var(--a)) translateX(20px) scaleX(0.1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: rotate(var(--a)) translateX(var(--far, 820px)) scaleX(1);
+    opacity: 0;
+  }
+}
+.rc-core {
+  animation: rc-core 1.6s ease-in-out infinite;
+}
+@keyframes rc-core {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+}
+.rc-bob {
+  animation: rc-bob 1.6s infinite;
+}
+@keyframes rc-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+/* 별자리 */
+.rc-tw {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  animation: rc-tw ease-in-out infinite;
+}
+@keyframes rc-tw {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+.rc-ln {
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: rc-ln 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes rc-ln {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.rc-star {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: rc-pop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) forwards;
+}
+.rc-star.now {
+  animation-name: rc-pop, rc-beat;
+  animation-duration: 0.7s, 1.8s;
+  animation-iteration-count: 1, infinite;
+  animation-fill-mode: forwards, none;
+}
+@keyframes rc-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes rc-beat {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(255, 59, 59, 0.7));
+  }
+  50% {
+    filter: drop-shadow(0 0 22px rgba(255, 59, 59, 1));
+  }
+}
+.rc-cap {
+  opacity: 0;
+  animation: rc-capin 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes rc-capin {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 지원서·내 지원 — 한 단계씩 아래에서 올라온다 */
+.rc-rise {
+  animation: rc-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.rc-rise.d1 {
+  animation-delay: 0.9s;
+}
+.rc-rise.d2 {
+  animation-delay: 1.2s;
+}
+.rc-rise.d3 {
+  animation-delay: 1.5s;
+}
+@keyframes rc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 합격 — 빨간 고리가 퍼진다 */
+.rc-burst i {
+  position: absolute;
+  left: -160px;
+  top: -160px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 59, 59, 0.9);
+  opacity: 0;
+  animation: rc-boom 1.6s 0.2s cubic-bezier(0.2, 0.6, 0.3, 1) forwards;
+}
+@keyframes rc-boom {
+  0% {
+    transform: scale(0.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4.2);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-pt,
+  .rc-core,
+  .rc-bob,
+  .rc-tw {
+    animation: none;
+  }
+  .rc-pt {
+    opacity: 0.35;
+    transform: rotate(var(--a)) translateX(160px);
+  }
+  .rc-rise,
+  .rc-star,
+  .rc-cap,
+  .rc-ln {
+    animation-duration: 0.01s;
+    animation-delay: 0s;
+  }
+  .rc-burst i {
+    animation: none;
+  }
+}
