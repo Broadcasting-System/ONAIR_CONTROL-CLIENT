@@ -9,7 +9,6 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { useRouter } from "next/navigation";
 import { ChevronDown, Minus, Plus } from "lucide-react";
 import NeonButton from "@/components/common/NeonButton";
 import { Horizon, Warp } from "@/components/recruit/public/Stage";
@@ -96,7 +95,6 @@ export default function RecruitLanding({
   className?: string;
 }) {
   const r = data.recruit!;
-  const router = useRouter();
   const now = useNow(1000);
   const box = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
@@ -177,7 +175,9 @@ export default function RecruitLanding({
 
   const goApply = () => {
     if (preview) return;
-    router.push(applied ? "/recruit/me" : "/recruit/apply");
+    // 페이지째 이동 — 모집 주소에서는 지원·내 지원 화면이 Cloudflare 학교 메일 로그인 뒤에 있어서
+    // 화면 안 이동(router.push)으로는 로그인 화면으로 넘어가지 못한다
+    window.location.assign(applied ? "/recruit/me" : "/recruit/apply");
   };
   const applyLabel = applied
     ? "내 지원 보기"

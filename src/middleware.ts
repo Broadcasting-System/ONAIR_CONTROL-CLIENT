@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /** 학생용 live·외부 화면 공유 share·선생님 teacher 주소 — 화면은 /live·/share·/teacher 하나만.
+ *  방송부 모집 recruit 주소 — /recruit 아래(공고·지원·내 지원)만. 지원·내 지원 화면만 Cloudflare Access(학교 메일).
  *  첫 주소(/)는 그 화면으로, 다른 화면은 첫 주소로 돌려보낸다.
  *  (API 는 Cloudflare 터널이 서버로 바로 보내고, 서버도 보기 전용 경로만 연다 — 서버 app/services/live_access.py) */
 const hosts = (raw: string) =>
@@ -11,6 +12,7 @@ const hosts = (raw: string) =>
 const LIVE_HOSTS = hosts(process.env.NEXT_PUBLIC_LIVE_HOSTS ?? "live.bssmcast.com");
 const SHARE_HOSTS = hosts(process.env.NEXT_PUBLIC_SHARE_HOSTS ?? "share.bssmcast.com");
 const TEACHER_HOSTS = hosts(process.env.NEXT_PUBLIC_TEACHER_HOSTS ?? "teacher.bssmcast.com");
+const RECRUIT_HOSTS = hosts(process.env.NEXT_PUBLIC_RECRUIT_HOSTS ?? "recruit.bssmcast.com");
 
 const STATIC = /\.(?:svg|png|jpe?g|webp|ico|woff2?|ttf|otf|css|js|map|webmanifest|txt)$/;
 
@@ -22,11 +24,14 @@ export function middleware(req: NextRequest) {
       ? "/share"
       : TEACHER_HOSTS.includes(host)
         ? "/teacher"
-        : null;
+        : RECRUIT_HOSTS.includes(host)
+          ? "/recruit"
+          : null;
   if (!page) return NextResponse.next();
   const { pathname } = req.nextUrl;
   if (pathname === "/") return NextResponse.rewrite(new URL(page, req.url));
-  if (pathname === page || pathname.startsWith("/_next/") || pathname.startsWith("/fonts/") || STATIC.test(pathname)) {
+  const under = page === "/recruit" && pathname.startsWith("/recruit/"); // 모집은 /recruit/apply·/recruit/me 도
+  if (pathname === page || under || pathname.startsWith("/_next/") || pathname.startsWith("/fonts/") || STATIC.test(pathname)) {
     return NextResponse.next();
   }
   // 터널 뒤에서는 req.url 이 서버 안쪽 주소(127.0.0.1:3001)라, 학생이 친 주소(Host)와 https 로 첫 화면을 만든다
