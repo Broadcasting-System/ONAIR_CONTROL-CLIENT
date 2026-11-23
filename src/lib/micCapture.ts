@@ -1,7 +1,9 @@
 /**
  * 기기 마이크 → 실시간 방송용 PCM 조각.
  *
- * - getUserMedia (에코 제거·잡음 억제·자동 크기)
+ * - getUserMedia (에코 제거·잡음 억제). 자동 크기(AGC)는 끈다 — 크기는 서버(app/services/mic_effects.py VoiceLeveler)가
+ *   말할 때만 맞춘다. 브라우저 AGC 까지 켜면 말이 끊길 때 방 잡음을 끌어올려 "쉬익"이 커지고 서버 게이트가 열린 채로 남았다.
+ *   에코 제거는 둔다 — 아이폰 사파리는 이걸 켜야 애플 음성 처리(잡음 억제 포함)가 켜진다
  * - AudioWorklet(인라인 모듈)로 모노 int16 LE 약 20ms 조각을 만든다. 워클릿이 안 되면 ScriptProcessor
  * - 장치 표본율이 48kHz 를 넘으면 정수배로 줄여 서버 범위(16~48kHz) 안에 넣는다
  * - 소리 크기 막대용 AnalyserNode
@@ -9,7 +11,7 @@
  */
 
 export const MIC_CONSTRAINTS: MediaStreamConstraints = {
-  audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+  audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
   video: false,
 };
 
