@@ -174,8 +174,8 @@ export default function MyStatus({ data }: { data: MyApplication }) {
                   { k: "면접", v: dotMd(ivDate), show: !!ivDate },
                   {
                     k: "발표",
-                    v: `${dotMd(r?.announceAt)} ${hm(r?.announceAt)}`,
-                    show: !!r?.announceAt,
+                    v: `${dotMd(r?.announceAt ?? r?.announcePlanned)} ${hm(r?.announceAt ?? r?.announcePlanned)}`,
+                    show: !!(r?.announceAt ?? r?.announcePlanned),
                   },
                 ]
                   .filter((c) => c.show)
@@ -253,7 +253,11 @@ export default function MyStatus({ data }: { data: MyApplication }) {
             <div className="rc-rise flex flex-col items-center gap-[22px] px-5 text-center">
               <span className={EYEBROW}>RESULT</span>
               <h1 className={cn(H, "text-[36px] md:text-[64px]")}>
-                {r?.announceAt ? `결과는 ${mdhm(r.announceAt)}에 나와요` : "결과는 곧 나와요"}
+                {r?.announceAt
+                  ? `결과는 ${mdhm(r.announceAt)}에 나와요`
+                  : r?.announcePlanned
+                    ? `결과는 ${mdhm(r.announcePlanned)}쯤 나와요`
+                    : "결과는 곧 나와요"}
               </h1>
               {annLeft > 0 && (
                 <span className="text-[72px] font-extrabold leading-none tabular-nums md:text-[120px]">

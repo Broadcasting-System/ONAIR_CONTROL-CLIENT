@@ -51,6 +51,7 @@ type Editable = Pick<
   | "applyStart"
   | "applyEnd"
   | "interview"
+  | "announcePlanned"
   | "confirmBy"
   | "faq"
   | "rules"
@@ -70,6 +71,7 @@ const toLocal = (r: Recruit): Editable => ({
   applyStart: r.applyStart,
   applyEnd: r.applyEnd,
   interview: { ...r.interview },
+  announcePlanned: r.announcePlanned ?? null,
   confirmBy: r.confirmBy,
   faq: r.faq.map((f) => ({ ...f })),
   rules: { ...r.rules },
@@ -103,6 +105,7 @@ const FIELDS = [
   "applyStart",
   "applyEnd",
   "interview",
+  "announcePlanned",
   "confirmBy",
   "faq",
   "rules",
@@ -903,7 +906,14 @@ function SettingsPanel({
           </Row>
         </Group>
         <Group title="발표">
-          <Row label="발표">
+          <Row label="발표 예정일">
+            <DateTimeField
+              label="발표 예정일"
+              value={d.announcePlanned}
+              onChange={(v) => set({ announcePlanned: v })}
+            />
+          </Row>
+          <Row label="발표 예약">
             <span className="tabular-nums text-white/75">
               {recruit.announceAt ? mdhm(recruit.announceAt) : "예약 전"}
             </span>

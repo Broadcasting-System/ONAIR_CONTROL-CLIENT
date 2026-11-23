@@ -64,6 +64,8 @@ export interface RecruitPublicInfo {
   applyEnd: string | null;
   interview: InterviewSettings;
   announceAt: string | null;
+  /** 공고에 적는 발표 예정일 (안내용) */
+  announcePlanned: string | null;
   confirmBy: string | null;
   questions: RecruitQuestion[];
   faq: RecruitFaq[];

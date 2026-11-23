@@ -371,9 +371,23 @@ function ApplicantPane({
       ) : (
         <div className="flex-1">
           <PaneRow label="학번">{a.studentId}</PaneRow>
-          <PaneRow label="면접 시간" className="border-b border-white/[0.08]">
+          <PaneRow
+            label="면접 시간"
+            className={cn(a.result === undefined && "border-b border-white/[0.08]")}
+          >
             {a.interviewAt ? mdhm(a.interviewAt) : "배정 전"}
           </PaneRow>
+          {a.result !== undefined && (
+            <PaneRow label="결과" className="border-b border-white/[0.08]">
+              {a.result === "pass"
+                ? "합격"
+                : a.result === "fail"
+                  ? "불합격"
+                  : a.result === "reserve"
+                    ? `예비 ${a.reserveRank ?? ""}`
+                    : "정하기 전"}
+            </PaneRow>
+          )}
         </div>
       )}
       {isLead && (

@@ -343,12 +343,12 @@ export default function RecruitLanding({
                 { k: "경쟁률", v: <span className="text-[#FF3B3B]">{ratio} : 1</span> },
                 { k: "마감", v: closed ? <>마감</> : deadline },
                 {
-                  k: r.announceAt ? "면접 · 발표" : "면접",
+                  k: (r.announceAt ?? r.announcePlanned) ? "면접 · 발표" : "면접",
                   v: (
                     <>
                       {[
                         r.interview.date ? dotMd(`${r.interview.date}T00:00:00`) : "",
-                        dotMd(r.announceAt),
+                        dotMd(r.announceAt ?? r.announcePlanned),
                       ]
                         .filter(Boolean)
                         .join(" · ")}
