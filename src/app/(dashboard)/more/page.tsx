@@ -17,6 +17,7 @@ const ITEMS: { href: string; label: string; sub: string; admin?: boolean; operat
   { href: "/time", label: "시보", sub: "시간표 · 특별(P) 모드" },
   { href: "/speakers", label: "스피커 지도", sub: "층별 지도 · 검색" },
   { href: "/files", label: "파일", sub: "이미지 · 동영상 · 음원 · PPT" },
+  { href: "/recruiting", label: "방송부 모집", sub: "공고 · 지원자 · 면접 · 발표", operator: true },
   { href: "/logs", label: "로그", sub: "누가 무엇을 했는지", admin: true },
   { href: "/test-speaker", label: "시험 스피커", sub: "방송을 이 기기에서 듣기", superadmin: true },
 ];

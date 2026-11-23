@@ -23,6 +23,8 @@ export async function failure(res: Response): Promise<Error> {
   try {
     const body = await res.json();
     if (typeof body?.detail === "string") message = body.detail;
+    // 몇몇 API(방송부 모집 등)는 {message, …} 로 더 알려 준다
+    else if (typeof body?.detail?.message === "string") message = body.detail.message;
   } catch {
     /* 본문 없음 */
   }
