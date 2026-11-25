@@ -1,5 +1,5 @@
 import { getApiBase } from "@/lib/apiBase";
-import { displayAppBase } from "@/lib/backend";
+import { displayAppBase, displayAppReachable } from "@/lib/backend";
 
 export type BannerScene = "blank" | "image" | "gif" | "scoreboard" | "timer" | "default";
 
@@ -150,7 +150,9 @@ export async function fetchBannerStatus(): Promise<BannerStatus | null> {
 }
 
 /** 송출 페이지(디스플레이 앱)의 미리보기 URL. */
+/** 송출 화면 앱에 못 닿으면 "" — 그때 화면은 지금 현수막을 직접 그린다 */
 export function getDisplayPreviewUrl(): string {
+  if (!displayAppReachable()) return "";
   // role=control → 미리보기는 LIVE 송출 카운트에 잡히지 않음
   return `${displayAppBase()}/banner?debug=1&role=control`;
 }

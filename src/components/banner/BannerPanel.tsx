@@ -514,13 +514,16 @@ export default function BannerPanel({ lead }: { lead: ReactNode }) {
             )}
           >
             <LedStrip>
-              {previewUrl && (
+              {previewUrl ? (
                 <iframe
                   src={previewUrl}
                   title="지금 현수막"
                   tabIndex={-1}
                   className={cn("pointer-events-none absolute inset-0 h-full w-full border-0", !isOn && "invisible")}
                 />
+              ) : (
+                // 송출 화면 앱에 못 닿는 곳(Cloudflare 주소·ONAIR 앱)은 지금 현수막을 직접 그린다
+                isOn && <BannerDraftRender scene={live.scene} payload={live.payload} />
               )}
               {!isOn && <span className="absolute inset-0 flex items-center justify-center font-mbc text-[13px] text-white/35 md:text-[15px]">현수막 꺼짐</span>}
             </LedStrip>
