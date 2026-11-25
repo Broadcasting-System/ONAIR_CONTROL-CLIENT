@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { displayAppBase, resolveMediaUrl } from "@/lib/backend";
+import { resolveMediaUrl } from "@/lib/backend";
 import { cn } from "@/lib/utils";
 import {
   type BannerOverlay,
@@ -85,14 +85,14 @@ function Scene({ scene, payload }: { scene: BannerScene; payload: Record<string,
   }
 }
 
-/** 송출 화면 앱의 배경 그림 (못 불러오면 숨기고 아래 색이 보인다) */
+/** 송출 화면 앱과 같은 배경 그림 — 컨트롤 public/banner 에 사본을 둔다 (송출 화면 앱 :3000 은 Cloudflare·앱 안에서 못 닿는다). 못 불러오면 숨기고 아래 색이 보인다 */
 function Bg({ file, fit }: { file: string; fit: "fill" | "cover" }) {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`${displayAppBase()}/${file}`}
+      src={`/banner/${file}`}
       alt=""
       draggable={false}
       onError={() => setFailed(true)}

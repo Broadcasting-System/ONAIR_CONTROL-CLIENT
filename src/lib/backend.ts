@@ -96,6 +96,15 @@ export function backendWs(path: string, channel?: number, role?: string): string
   return base + (base.includes("?") ? "&" : "?") + params.join("&");
 }
 
+/** 송출 화면 앱에 이 기기가 바로 닿는지. 같은 주소 모드(Cloudflare 주소·데스크탑 앱)에서는
+ *  주소를 따로 받지 않으면 https://<호스트>:3000 이 되어 열리지 않는다. */
+export function displayAppReachable(): boolean {
+  const override = process.env.NEXT_PUBLIC_BANNER_DISPLAY_URL;
+  if (override && override.trim()) return true;
+  if (typeof window === "undefined") return true;
+  return !isSameOrigin() || !!window.__ONAIR_DISPLAY_BASE__;
+}
+
 /** 현수막 송출(디스플레이 앱) 주소. 포트는 NEXT_PUBLIC_BANNER_DISPLAY_PORT(기본 3000). */
 export function displayAppBase(): string {
   const override = process.env.NEXT_PUBLIC_BANNER_DISPLAY_URL;
